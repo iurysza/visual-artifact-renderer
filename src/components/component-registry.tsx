@@ -155,7 +155,7 @@ function renderStatCard({ node }: AdapterArgs<"stat-card">) {
   const { label, value, delta, trend = "neutral", caption, tone = "default" } = node.props
 
   return (
-    <div className={cn("rounded-2xl border bg-card p-5 text-card-foreground shadow-sm", tonePanelClass(tone))}>
+    <div className={cn("min-h-full rounded-2xl border-[1.5px] bg-card/95 p-5 text-card-foreground shadow-[0_10px_34px_rgba(20,20,19,0.06)] dark:shadow-black/20", tonePanelClass(tone))}>
       <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
       <div className="mt-3 flex flex-wrap items-end gap-2">
         <p className="font-serif text-4xl font-medium leading-none tracking-[-0.04em] text-foreground">{value}</p>
@@ -216,8 +216,8 @@ function renderChart({ node, context }: AdapterArgs<"chart">) {
   }
 
   return (
-    <div className="rounded-2xl border bg-card p-3 shadow-sm">
-      <ChartContainer config={config} className="min-h-[280px] w-full">
+    <div className="rounded-xl border bg-background/40 p-3">
+      <ChartContainer config={config} className="min-h-[300px] w-full">
         {kind === "bar" ? (
           <BarChart accessibilityLayer data={data} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} strokeDasharray="4 4" />
@@ -251,14 +251,14 @@ function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) {
   return (
     <div className="space-y-3">
       {caption && <p className="text-sm text-muted-foreground">{caption}</p>}
-      <div className={cn("grid gap-4", columnsClass(columns))}>
+      <div className={cn("grid gap-5", columnsClass(columns))}>
         {data.map((row, index) => {
           const title = row[titleKey] ?? row.component ?? row.name ?? `Item ${index + 1}`
           const description = descriptionKey ? row[descriptionKey] : row.notes ?? row.description
           const meta = metaKey ? row[metaKey] : undefined
 
           return (
-            <div key={index} className="rounded-2xl border bg-card p-4 text-card-foreground shadow-sm">
+            <div key={index} className={cn("min-h-full rounded-2xl border-[1.5px] bg-card/95 p-4 text-card-foreground shadow-[0_10px_34px_rgba(20,20,19,0.06)] dark:shadow-black/20", statusPanelClass(row[statusKey]))}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(title)}</p>
@@ -278,7 +278,7 @@ function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) {
 function renderGrid({ node, children }: AdapterArgs<"grid">) {
   const columns = node.props?.columns ?? 2
 
-  return <div className={cn("grid gap-4", columnsClass(columns))}>{children}</div>
+  return <div className={cn("grid gap-5", columnsClass(columns))}>{children}</div>
 }
 
 function renderSection({ node, children }: AdapterArgs<"section">) {
@@ -286,13 +286,14 @@ function renderSection({ node, children }: AdapterArgs<"section">) {
 
   return (
     <section className="space-y-5 scroll-mt-8">
+      <div className="h-px w-full bg-border/80" />
       {(props.title || props.description) && (
-        <div className="border-b pb-4">
+        <div className="pb-1">
           {props.title && <h2 className="font-serif text-3xl font-medium tracking-[-0.025em] text-foreground">{props.title}</h2>}
           {props.description && <p className="mt-2 max-w-3xl text-muted-foreground">{props.description}</p>}
         </div>
       )}
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-5">{children}</div>
     </section>
   )
 }
@@ -310,7 +311,7 @@ function renderTabs({ node, context, renderNodes }: AdapterArgs<"tabs">) {
         ))}
       </TabsList>
       {node.props.items.map((item) => (
-        <TabsContent key={item.value} value={item.value} className="space-y-4 pt-3">
+        <TabsContent key={item.value} value={item.value} className="space-y-5 pt-1">
           {renderNodes(item.nodes, context)}
         </TabsContent>
       ))}
@@ -375,8 +376,8 @@ function TableBlock({
               <TableCell
                 key={column.key}
                 className={cn(
-                  dense ? "py-2" : undefined,
-                  comparison && columnIndex === 0 && "font-medium text-foreground",
+                  dense ? "py-2.5" : undefined,
+                  columnIndex === 0 && "font-medium text-foreground",
                   comparison && "align-top whitespace-normal"
                 )}
               >
@@ -449,6 +450,17 @@ function statusTone(value: string) {
   }
 
   return "neutral"
+}
+
+function statusPanelClass(value: unknown) {
+  const tone = statusTone(formatCell(value))
+
+  return cn(
+    tone === "success" && "border-l-4 border-l-[var(--olive)]",
+    tone === "warning" && "border-l-4 border-l-[var(--clay)]",
+    tone === "danger" && "border-l-4 border-l-[var(--rust)]",
+    tone === "accent" && "border-l-4 border-l-[var(--clay)]"
+  )
 }
 
 function tonePanelClass(tone: ArtifactTone | undefined) {

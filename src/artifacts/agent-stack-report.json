@@ -285,7 +285,7 @@
     {
       "type": "grid",
       "props": {
-        "columns": 4
+        "columns": 3
       },
       "children": [
         {
@@ -356,7 +356,8 @@
           "type": "card",
           "props": {
             "title": "Short version",
-            "description": "Source repo → home overlay → runtime → project cwd"
+            "description": "Source repo → home overlay → runtime → project cwd",
+            "tone": "accent"
           },
           "children": [
             {
@@ -423,7 +424,8 @@
               "type": "card",
               "props": {
                 "title": "Tracked source",
-                "description": "Git repos"
+                "description": "Git repos",
+                "tone": "accent"
               },
               "children": [
                 {
@@ -439,7 +441,8 @@
               "type": "card",
               "props": {
                 "title": "Home overlay",
-                "description": "Links and rendered config"
+                "description": "Links and rendered config",
+                "tone": "success"
               },
               "children": [
                 {
@@ -455,7 +458,8 @@
               "type": "card",
               "props": {
                 "title": "Runtimes",
-                "description": "Where tools run"
+                "description": "Where tools run",
+                "tone": "warning"
               },
               "children": [
                 {
@@ -471,7 +475,8 @@
               "type": "card",
               "props": {
                 "title": "Project cwd",
-                "description": "Where work happens"
+                "description": "Where work happens",
+                "tone": "default"
               },
               "children": [
                 {
@@ -598,7 +603,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Model + mode"
+                      "title": "Model + mode",
+                      "tone": "accent"
                     },
                     "children": [
                       {
@@ -613,7 +619,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Extension layer"
+                      "title": "Extension layer",
+                      "tone": "success"
                     },
                     "children": [
                       {
@@ -628,7 +635,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Subagent defaults"
+                      "title": "Subagent defaults",
+                      "tone": "warning"
                     },
                     "children": [
                       {
@@ -643,7 +651,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Install targets"
+                      "title": "Install targets",
+                      "tone": "default"
                     },
                     "children": [
                       {
@@ -690,7 +699,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Install"
+                      "title": "Install",
+                      "tone": "accent"
                     },
                     "children": [
                       {
@@ -705,7 +715,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Service"
+                      "title": "Service",
+                      "tone": "success"
                     },
                     "children": [
                       {
@@ -720,7 +731,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Shell attach"
+                      "title": "Shell attach",
+                      "tone": "warning"
                     },
                     "children": [
                       {
@@ -735,7 +747,8 @@
                   {
                     "type": "card",
                     "props": {
-                      "title": "Reports"
+                      "title": "Reports",
+                      "tone": "default"
                     },
                     "children": [
                       {
