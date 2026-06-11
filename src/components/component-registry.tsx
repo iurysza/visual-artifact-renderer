@@ -474,7 +474,7 @@ function StatusChip({ value }: { value: unknown }) {
 function statusTone(value: string) {
   const normalized = value.toLowerCase()
 
-  if (["pass", "passed", "ok", "healthy", "linked", "running", "configured", "done", "yes", "success"].some((word) => normalized.includes(word))) {
+  if (["pass", "passed", "ok", "healthy", "linked", "running", "configured", "done", "yes", "success", "guarded", "checked", "loaded", "shared", "attached", "rendered", "manifested", "enforced"].some((word) => normalized.includes(word))) {
     return "success"
   }
 
@@ -482,11 +482,11 @@ function statusTone(value: string) {
     return "warning"
   }
 
-  if (["fail", "failed", "error", "blocked", "danger", "high", "down"].some((word) => normalized.includes(word))) {
+  if (["fail", "failed", "error", "blocked", "danger", "critical", "high", "leak", "down"].some((word) => normalized.includes(word))) {
     return "danger"
   }
 
-  if (["info", "pending", "next", "review", "neutral"].some((word) => normalized.includes(word))) {
+  if (["info", "pending", "next", "review", "neutral", "optional", "preview", "check"].some((word) => normalized.includes(word))) {
     return "accent"
   }
 

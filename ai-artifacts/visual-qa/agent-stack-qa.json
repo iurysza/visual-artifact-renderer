@@ -12,7 +12,7 @@
       "page": {
         "scrollWidth": 1440,
         "clientWidth": 1440,
-        "scrollHeight": 5901
+        "scrollHeight": 5925
       },
       "documentDark": false,
       "offenders": [],
@@ -65,7 +65,7 @@
       "page": {
         "scrollWidth": 1440,
         "clientWidth": 1440,
-        "scrollHeight": 5901
+        "scrollHeight": 5925
       },
       "documentDark": true,
       "offenders": [],
@@ -118,7 +118,7 @@
       "page": {
         "scrollWidth": 390,
         "clientWidth": 390,
-        "scrollHeight": 16850
+        "scrollHeight": 16874
       },
       "documentDark": false,
       "offenders": [],

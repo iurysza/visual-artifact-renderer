@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:artifacts": "tsx scripts/verify-artifacts.ts"
+    "verify:artifacts": "tsx scripts/verify-artifacts.ts",
+    "visual:qa": "node scripts/visual-qa.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

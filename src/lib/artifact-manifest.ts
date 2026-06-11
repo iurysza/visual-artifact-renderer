@@ -9,6 +9,15 @@ export type ArtifactManifestEntry = {
   example: unknown
 }
 
+export const artifactCompositionGuidance = [
+  "Open with a concise thesis and a stat-card summary band.",
+  "Use stat-card for KPI, count, health, and state summaries.",
+  "Use status-grid for component health, readiness, validation, and risk boards.",
+  "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
+  "Use tabs for alternate contexts; use accordion only for secondary detail.",
+  "Avoid generic card soup and avoid file:// links in shareable artifacts.",
+] as const
+
 export const artifactManifest = {
   heading: {
     type: "heading",

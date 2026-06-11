@@ -44,6 +44,23 @@ pnpm lint
 pnpm build
 ```
 
+## Visual QA
+
+With the dev server running, capture light, dark, and mobile screenshots plus layout metrics:
+
+```bash
+pnpm visual:qa
+```
+
+Default outputs:
+
+```txt
+ai-artifacts/visual-qa/agent-stack-light.png
+ai-artifacts/visual-qa/agent-stack-dark.png
+ai-artifacts/visual-qa/agent-stack-mobile-light.png
+ai-artifacts/visual-qa/agent-stack-qa.json
+```
+
 ## Pi tool
 
 Project-local extension:
@@ -102,9 +119,12 @@ grid, section, tabs, accordion
 
 Prefer dashboard components over generic card soup:
 
-- Use `stat-card` for top summary bands and KPI/state tiles.
+- Open with a concise thesis, then a `stat-card` summary band.
+- Use `stat-card` for top KPIs, counts, health, and state tiles.
 - Use `status-grid` for component health, readiness, validation state, and risk boards.
-- Use `comparison-table` for risks, checks, runtime surfaces, options, and parity matrices.
-- Use `card` for narrative chunks that need child nodes, not for every single fact.
+- Use `comparison-table` for evidence, risks, checks, options, runtime surfaces, and parity matrices.
+- Use `tabs` when the same report has alternate contexts, e.g. Pi / OpenCode / wrapper / projects.
+- Use `accordion` only for secondary detail. Do not hide conclusions there.
+- Use `card` for narrative chunks that need child nodes, not for every small fact.
 - Pair `chart` with table detail when exact values matter.
 - Avoid `file://` links in artifacts; link to app routes or public URLs.

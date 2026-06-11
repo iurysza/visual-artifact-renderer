@@ -14,7 +14,7 @@ const samples = [
   {
     slug: "agent-stack-report",
     title: "Agent stack report",
-    description: "Comprehensive Pi + OpenCode stack report using cards, metrics, charts, tabs, tables, and accordions.",
+    description: "Dashboard-grade Pi + OpenCode report with stat cards, status grids, comparison tables, tabs, chart, and risk ledger.",
   },
 ]
 

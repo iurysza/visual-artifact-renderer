@@ -39,11 +39,13 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     description:
       "Validate and save a visual artifact JSON spec to src/artifacts/<slug>.json, then return its local /artifacts/<slug> URL.",
     promptSnippet:
-      "Create a visual artifact page from a constrained JSON spec and return its local URL.",
+      "Create a polished visual artifact from a constrained JSON spec; use strong dashboard/report components and return the local URL.",
     promptGuidelines: [
-      "Use create_visual_artifact when the user asks to create a visual page, report, dashboard, plan, explainer, or document artifact from structured content.",
-      "Before calling create_visual_artifact, follow the supported node manifest in src/lib/artifact-manifest.ts and do not invent JSX, imports, or unsupported node types.",
-      "For dashboards and reports, prefer stat-card for top KPIs, status-grid for health/readiness/risk boards, and comparison-table for checks, options, risks, and runtime matrices.",
+      "Use create_visual_artifact when the user asks for a visual page, report, dashboard, plan, explainer, status brief, or document artifact from structured content.",
+      "Before calling create_visual_artifact, follow src/lib/artifact-manifest.ts exactly. Do not invent JSX, imports, CSS, routes, or unsupported node types.",
+      "Start reports with a crisp thesis and a stat-card summary band. Use embedded data arrays for any repeated facts instead of hardcoding table-like prose.",
+      "Choose stronger components by default: stat-card for KPI/state bands, status-grid for health/readiness/validation/risk boards, comparison-table for evidence/checks/options/risks/runtime matrices, tabs for alternate contexts.",
+      "Use accordion only for secondary details or FAQs. Do not hide primary conclusions, validation results, or risks inside accordions.",
       "Use generic cards for narrative chunks with child nodes, not for every small fact. Avoid file:// links; link to app routes or public URLs.",
     ],
     parameters: CreateVisualArtifactParams,

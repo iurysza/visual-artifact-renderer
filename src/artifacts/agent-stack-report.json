@@ -28,7 +28,7 @@
       },
       {
         "title": "Secrets boundary",
-        "status": "high guard",
+        "status": "guarded",
         "summary": "~/.config/ai/secrets.env stays local. Pi and OpenCode inject values and block obvious reads, listings, and shell leaks.",
         "meta": "local only"
       },
@@ -503,7 +503,7 @@
             "value": "packages + TS",
             "delta": "configured",
             "trend": "neutral",
-            "caption": "Subagents, ask-user, Plannotator, sem, secret env, audits.",
+            "caption": "Subagents, ask-user, Plannotator, sem, secret env, context audit.",
             "tone": "default"
           }
         },
@@ -535,7 +535,7 @@
       "type": "section",
       "props": {
         "title": "Report thesis",
-        "description": "The original report's big idea: source is portable; runtime is local; projects stay project-scoped."
+        "description": "Source is portable. Runtime is local. Projects stay project-scoped."
       },
       "children": [
         {
@@ -556,7 +556,7 @@
       "type": "section",
       "props": {
         "title": "Architecture scan",
-        "description": "A schema-safe replacement for the source report's interactive SVG map."
+        "description": "The source report's interactive SVG, rebuilt with durable Visualizer components."
       },
       "children": [
         {
@@ -639,7 +639,7 @@
       "type": "section",
       "props": {
         "title": "Runtime setup",
-        "description": "Pi, OpenCode, wrapper, and project behavior as separate scan paths."
+        "description": "Pi, OpenCode, wrapper, and project behavior as separate scan paths. Tabs keep contexts adjacent without making one giant table."
       },
       "children": [
         {
