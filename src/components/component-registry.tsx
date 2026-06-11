@@ -1,0 +1,507 @@
+"use client"
+
+import type { ReactNode } from "react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts"
+
+import type { ArtifactColumn, ArtifactNode, ArtifactTone, VisualArtifactSpec } from "@/lib/artifact-schema"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
+import { Separator } from "@/components/ui/separator"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
+
+type ArtifactRenderContext = {
+  data: VisualArtifactSpec["data"]
+}
+
+type RenderNodes = (nodes: ArtifactNode[] | undefined, context: ArtifactRenderContext) => ReactNode
+
+type AdapterArgs<T extends ArtifactNode["type"]> = {
+  node: Extract<ArtifactNode, { type: T }>
+  children?: ReactNode
+  context: ArtifactRenderContext
+  renderNodes: RenderNodes
+}
+
+type RegistryAdapter = (args: {
+  node: ArtifactNode
+  children?: ReactNode
+  context: ArtifactRenderContext
+  renderNodes: RenderNodes
+}) => ReactNode
+
+export const componentRegistry = {
+  heading: renderHeading as RegistryAdapter,
+  text: renderText as RegistryAdapter,
+  card: renderCard as RegistryAdapter,
+  metric: renderMetric as RegistryAdapter,
+  "stat-card": renderStatCard as RegistryAdapter,
+  badge: renderBadge as RegistryAdapter,
+  button: renderButton as RegistryAdapter,
+  separator: renderSeparator as RegistryAdapter,
+  table: renderTable as RegistryAdapter,
+  "data-table": renderDataTable as RegistryAdapter,
+  "comparison-table": renderComparisonTable as RegistryAdapter,
+  chart: renderChart as RegistryAdapter,
+  "status-grid": renderStatusGrid as RegistryAdapter,
+  grid: renderGrid as RegistryAdapter,
+  section: renderSection as RegistryAdapter,
+  tabs: renderTabs as RegistryAdapter,
+  accordion: renderAccordion as RegistryAdapter,
+} satisfies Record<ArtifactNode["type"], RegistryAdapter>
+
+export type { ArtifactRenderContext, RenderNodes }
+
+function renderHeading({ node }: AdapterArgs<"heading">) {
+  const { text, level = 2, align = "left" } = node.props
+  const className = cn(
+    "font-serif font-medium tracking-[-0.025em] text-foreground",
+    level === 1 && "text-4xl leading-tight sm:text-5xl",
+    level === 2 && "text-3xl leading-tight",
+    level === 3 && "text-2xl leading-snug",
+    level === 4 && "text-xl leading-snug",
+    align === "center" && "text-center",
+    align === "right" && "text-right"
+  )
+
+  if (level === 1) return <h1 className={className}>{text}</h1>
+  if (level === 3) return <h3 className={className}>{text}</h3>
+  if (level === 4) return <h4 className={className}>{text}</h4>
+
+  return <h2 className={className}>{text}</h2>
+}
+
+function renderText({ node }: AdapterArgs<"text">) {
+  const { text, tone = "default", size = "base", align = "left" } = node.props
+
+  return (
+    <p
+      className={cn(
+        "max-w-4xl leading-7",
+        tone === "muted" && "text-muted-foreground",
+        size === "sm" && "text-sm leading-6",
+        size === "lg" && "text-lg leading-8",
+        align === "center" && "mx-auto text-center",
+        align === "right" && "ml-auto text-right"
+      )}
+    >
+      {text}
+    </p>
+  )
+}
+
+function renderCard({ node, children }: AdapterArgs<"card">) {
+  const props = node.props ?? {}
+
+  return (
+    <Card size={props.size} className={tonePanelClass(props.tone)}>
+      {(props.title || props.description) && (
+        <CardHeader>
+          {props.title && <CardTitle>{props.title}</CardTitle>}
+          {props.description && <CardDescription>{props.description}</CardDescription>}
+        </CardHeader>
+      )}
+      {children && <CardContent className="space-y-4">{children}</CardContent>}
+    </Card>
+  )
+}
+
+function renderMetric({ node }: AdapterArgs<"metric">) {
+  const { label, value, delta, trend = "neutral" } = node.props
+
+  return (
+    <div className="space-y-2">
+      <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <p className="font-serif text-4xl font-medium leading-none tracking-[-0.035em] text-foreground">{value}</p>
+        {delta && <TrendPill trend={trend}>{delta}</TrendPill>}
+      </div>
+    </div>
+  )
+}
+
+function renderStatCard({ node }: AdapterArgs<"stat-card">) {
+  const { label, value, delta, trend = "neutral", caption, tone = "default" } = node.props
+
+  return (
+    <div className={cn("rounded-2xl border bg-card p-5 text-card-foreground shadow-sm", tonePanelClass(tone))}>
+      <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <div className="mt-3 flex flex-wrap items-end gap-2">
+        <p className="font-serif text-4xl font-medium leading-none tracking-[-0.04em] text-foreground">{value}</p>
+        {delta && <TrendPill trend={trend}>{delta}</TrendPill>}
+      </div>
+      {caption && <p className="mt-3 text-sm leading-6 text-muted-foreground">{caption}</p>}
+    </div>
+  )
+}
+
+function renderBadge({ node }: AdapterArgs<"badge">) {
+  return <Badge variant={node.props.variant}>{node.props.label}</Badge>
+}
+
+function renderButton({ node }: AdapterArgs<"button">) {
+  const { label, href, variant, size } = node.props
+
+  if (href) {
+    return (
+      <a className={buttonVariants({ variant, size })} href={href}>
+        {label}
+      </a>
+    )
+  }
+
+  return (
+    <Button variant={variant} size={size}>
+      {label}
+    </Button>
+  )
+}
+
+function renderSeparator() {
+  return <Separator />
+}
+
+function renderTable({ node, context }: AdapterArgs<"table">) {
+  return <TableBlock data={getRows(context.data, node.props.dataKey)} {...node.props} />
+}
+
+function renderDataTable({ node, context }: AdapterArgs<"data-table">) {
+  return <TableBlock dense data={getRows(context.data, node.props.dataKey)} {...node.props} />
+}
+
+function renderComparisonTable({ node, context }: AdapterArgs<"comparison-table">) {
+  return <TableBlock comparison dense data={getRows(context.data, node.props.dataKey)} {...node.props} />
+}
+
+function renderChart({ node, context }: AdapterArgs<"chart">) {
+  const { dataKey, xKey, yKey, kind = "line", label = yKey, color = "var(--chart-2)" } = node.props
+  const data = getRows(context.data, dataKey)
+  const config = {
+    [yKey]: { label, color },
+  } satisfies ChartConfig
+
+  if (!data.length) {
+    return <MissingData dataKey={dataKey} />
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-3 shadow-sm">
+      <ChartContainer config={config} className="min-h-[280px] w-full">
+        {kind === "bar" ? (
+          <BarChart accessibilityLayer data={data} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="4 4" />
+            <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
+            <YAxis tickLine={false} axisLine={false} width={44} fontSize={12} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey={yKey} fill={`var(--color-${yKey})`} radius={[8, 8, 0, 0]} />
+          </BarChart>
+        ) : (
+          <LineChart accessibilityLayer data={data} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="4 4" />
+            <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
+            <YAxis tickLine={false} axisLine={false} width={44} fontSize={12} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line dataKey={yKey} type="monotone" stroke={`var(--color-${yKey})`} strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+          </LineChart>
+        )}
+      </ChartContainer>
+    </div>
+  )
+}
+
+function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) {
+  const { dataKey, titleKey = "title", statusKey, descriptionKey, metaKey, columns = 3, caption } = node.props
+  const data = getRows(context.data, dataKey)
+
+  if (!data.length) {
+    return <MissingData dataKey={dataKey} />
+  }
+
+  return (
+    <div className="space-y-3">
+      {caption && <p className="text-sm text-muted-foreground">{caption}</p>}
+      <div className={cn("grid gap-4", columnsClass(columns))}>
+        {data.map((row, index) => {
+          const title = row[titleKey] ?? row.component ?? row.name ?? `Item ${index + 1}`
+          const description = descriptionKey ? row[descriptionKey] : row.notes ?? row.description
+          const meta = metaKey ? row[metaKey] : undefined
+
+          return (
+            <div key={index} className="rounded-2xl border bg-card p-4 text-card-foreground shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(title)}</p>
+                  {meta !== undefined && <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{formatCell(meta)}</p>}
+                </div>
+                <StatusChip value={row[statusKey]} />
+              </div>
+              {description !== undefined && <p className="mt-3 text-sm leading-6 text-muted-foreground">{formatCell(description)}</p>}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function renderGrid({ node, children }: AdapterArgs<"grid">) {
+  const columns = node.props?.columns ?? 2
+
+  return <div className={cn("grid gap-4", columnsClass(columns))}>{children}</div>
+}
+
+function renderSection({ node, children }: AdapterArgs<"section">) {
+  const props = node.props ?? {}
+
+  return (
+    <section className="space-y-5 scroll-mt-8">
+      {(props.title || props.description) && (
+        <div className="border-b pb-4">
+          {props.title && <h2 className="font-serif text-3xl font-medium tracking-[-0.025em] text-foreground">{props.title}</h2>}
+          {props.description && <p className="mt-2 max-w-3xl text-muted-foreground">{props.description}</p>}
+        </div>
+      )}
+      <div className="space-y-4">{children}</div>
+    </section>
+  )
+}
+
+function renderTabs({ node, context, renderNodes }: AdapterArgs<"tabs">) {
+  const defaultValue = node.props.defaultValue ?? node.props.items[0]?.value
+
+  return (
+    <Tabs defaultValue={defaultValue}>
+      <TabsList>
+        {node.props.items.map((item) => (
+          <TabsTrigger key={item.value} value={item.value}>
+            {item.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {node.props.items.map((item) => (
+        <TabsContent key={item.value} value={item.value} className="space-y-4 pt-3">
+          {renderNodes(item.nodes, context)}
+        </TabsContent>
+      ))}
+    </Tabs>
+  )
+}
+
+function renderAccordion({ node, context, renderNodes }: AdapterArgs<"accordion">) {
+  return (
+    <Accordion>
+      {node.props.items.map((item, index) => (
+        <AccordionItem key={item.title} value={`item-${index}`}>
+          <AccordionTrigger>{item.title}</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4">{renderNodes(item.nodes, context)}</div>
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
+  )
+}
+
+function TableBlock({
+  data,
+  columns,
+  caption,
+  dense = false,
+  comparison = false,
+  statusKey,
+  dataKey,
+}: {
+  data: Record<string, unknown>[]
+  columns?: ArtifactColumn[]
+  caption?: string
+  dense?: boolean
+  comparison?: boolean
+  statusKey?: string
+  dataKey: string
+}) {
+  if (!data.length) {
+    return <MissingData dataKey={dataKey} />
+  }
+
+  const normalizedColumns = normalizeColumns(columns, data)
+
+  return (
+    <Table>
+      {caption && <TableCaption>{caption}</TableCaption>}
+      <TableHeader>
+        <TableRow>
+          {normalizedColumns.map((column) => (
+            <TableHead key={column.key} className={cn(dense ? "h-9" : undefined, comparison && "font-mono text-[11px] uppercase tracking-[0.12em]")}>
+              {column.label}
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map((row, index) => (
+          <TableRow key={index}>
+            {normalizedColumns.map((column, columnIndex) => (
+              <TableCell
+                key={column.key}
+                className={cn(
+                  dense ? "py-2" : undefined,
+                  comparison && columnIndex === 0 && "font-medium text-foreground",
+                  comparison && "align-top whitespace-normal"
+                )}
+              >
+                {statusKey === column.key ? <StatusChip value={row[column.key]} /> : formatCell(row[column.key])}
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+function MissingData({ dataKey }: { dataKey: string }) {
+  return <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">Missing dataset: {dataKey}</p>
+}
+
+function TrendPill({ trend, children }: { trend: "up" | "down" | "neutral"; children: ReactNode }) {
+  return (
+    <span
+      className={cn(
+        "mb-0.5 rounded-full border px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em]",
+        trend === "up" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+        trend === "down" && "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
+        trend === "neutral" && "border-border bg-muted text-muted-foreground"
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+function StatusChip({ value }: { value: unknown }) {
+  const text = formatCell(value)
+  const tone = statusTone(text)
+
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em]",
+        tone === "success" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+        tone === "warning" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+        tone === "danger" && "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
+        tone === "accent" && "border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300",
+        tone === "neutral" && "border-border bg-muted text-muted-foreground"
+      )}
+    >
+      {text}
+    </span>
+  )
+}
+
+function statusTone(value: string) {
+  const normalized = value.toLowerCase()
+
+  if (["pass", "passed", "ok", "healthy", "linked", "running", "configured", "done", "yes", "success"].some((word) => normalized.includes(word))) {
+    return "success"
+  }
+
+  if (["warn", "warning", "risk", "attention", "partial", "degraded", "drift", "medium"].some((word) => normalized.includes(word))) {
+    return "warning"
+  }
+
+  if (["fail", "failed", "error", "blocked", "danger", "high", "down"].some((word) => normalized.includes(word))) {
+    return "danger"
+  }
+
+  if (["info", "pending", "next", "review", "neutral"].some((word) => normalized.includes(word))) {
+    return "accent"
+  }
+
+  return "neutral"
+}
+
+function tonePanelClass(tone: ArtifactTone | undefined) {
+  return cn(
+    tone && tone !== "default" && "border-l-4",
+    tone === "accent" && "border-l-orange-500",
+    tone === "success" && "border-l-emerald-500",
+    tone === "warning" && "border-l-amber-500",
+    tone === "danger" && "border-l-red-500"
+  )
+}
+
+function columnsClass(columns: 1 | 2 | 3 | 4) {
+  if (columns === 1) return "grid-cols-1"
+  if (columns === 3) return "md:grid-cols-3"
+  if (columns === 4) return "md:grid-cols-2 xl:grid-cols-4"
+
+  return "md:grid-cols-2"
+}
+
+function getRows(data: VisualArtifactSpec["data"], dataKey: string): Record<string, unknown>[] {
+  const dataset = data?.[dataKey]
+
+  if (!Array.isArray(dataset)) {
+    return []
+  }
+
+  return dataset.filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null && !Array.isArray(row))
+}
+
+function normalizeColumns(columns: ArtifactColumn[] | undefined, data: Record<string, unknown>[]) {
+  const source = columns?.length ? columns : Object.keys(data[0] ?? {})
+
+  return source.map((column) => {
+    if (typeof column === "string") {
+      return { key: column, label: toTitle(column) }
+    }
+
+    return { key: column.key, label: column.label ?? toTitle(column.key) }
+  })
+}
+
+function formatCell(value: unknown) {
+  if (value === null || value === undefined) return "—"
+  if (typeof value === "number") return value.toLocaleString()
+  if (typeof value === "string") return value
+  if (typeof value === "boolean") return value ? "Yes" : "No"
+
+  return JSON.stringify(value)
+}
+
+function toTitle(value: string) {
+  return value
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
