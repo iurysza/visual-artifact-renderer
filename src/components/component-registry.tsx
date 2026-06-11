@@ -224,7 +224,7 @@ function renderChart({ node, context }: AdapterArgs<"chart">) {
             <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
             <YAxis tickLine={false} axisLine={false} width={44} fontSize={12} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey={yKey} fill={`var(--color-${yKey})`} radius={[8, 8, 0, 0]} />
+            <Bar dataKey={yKey} fill={color} radius={[8, 8, 0, 0]} barSize={42} isAnimationActive={false} />
           </BarChart>
         ) : (
           <LineChart accessibilityLayer data={data} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
@@ -232,7 +232,7 @@ function renderChart({ node, context }: AdapterArgs<"chart">) {
             <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
             <YAxis tickLine={false} axisLine={false} width={44} fontSize={12} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Line dataKey={yKey} type="monotone" stroke={`var(--color-${yKey})`} strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+            <Line dataKey={yKey} type="monotone" stroke={color} strokeWidth={3} dot={{ r: 3, fill: color }} activeDot={{ r: 5 }} isAnimationActive={false} />
           </LineChart>
         )}
       </ChartContainer>
@@ -357,7 +357,7 @@ function TableBlock({
 
   const normalizedColumns = normalizeColumns(columns, data)
 
-  return (
+  const table = (
     <Table>
       {caption && <TableCaption>{caption}</TableCaption>}
       <TableHeader>
@@ -388,6 +388,47 @@ function TableBlock({
         ))}
       </TableBody>
     </Table>
+  )
+
+  if (!comparison) return table
+
+  return (
+    <>
+      {caption && <p className="text-sm text-muted-foreground md:hidden">{caption}</p>}
+      <div className="grid gap-3 md:hidden">
+        {data.map((row, index) => (
+          <MobileRecord key={index} row={row} columns={normalizedColumns} statusKey={statusKey} />
+        ))}
+      </div>
+      <div className="hidden md:block">{table}</div>
+    </>
+  )
+}
+
+function MobileRecord({ row, columns, statusKey }: { row: Record<string, unknown>; columns: { key: string; label: string }[]; statusKey?: string }) {
+  const [primary, ...rest] = columns
+  const primaryValue = primary ? row[primary.key] : undefined
+
+  return (
+    <article className="rounded-2xl border bg-card p-4 text-card-foreground shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          {primary && <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(primaryValue)}</p>}
+          {primary && <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{primary.label}</p>}
+        </div>
+        {statusKey && row[statusKey] !== undefined && <StatusChip value={row[statusKey]} />}
+      </div>
+      <dl className="mt-4 space-y-3">
+        {rest
+          .filter((column) => column.key !== statusKey)
+          .map((column) => (
+            <div key={column.key} className="grid gap-1 border-t pt-3">
+              <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{column.label}</dt>
+              <dd className="text-sm leading-6 text-muted-foreground">{formatCell(row[column.key])}</dd>
+            </div>
+          ))}
+      </dl>
+    </article>
   )
 }
 

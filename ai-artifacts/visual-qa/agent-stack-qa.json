@@ -1,0 +1,128 @@
+{
+  "url": "http://localhost:9999/artifacts/agent-stack-report",
+  "results": [
+    {
+      "name": "light",
+      "path": "ai-artifacts/visual-qa/agent-stack-light.png",
+      "title": "Visualizer",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "page": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "scrollHeight": 5901
+      },
+      "documentDark": false,
+      "offenders": [],
+      "tables": [
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        }
+      ]
+    },
+    {
+      "name": "dark",
+      "path": "ai-artifacts/visual-qa/agent-stack-dark.png",
+      "title": "Visualizer",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "page": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "scrollHeight": 5901
+      },
+      "documentDark": true,
+      "offenders": [],
+      "tables": [
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        },
+        {
+          "clientWidth": 1214,
+          "scrollWidth": 1214,
+          "hasHorizontalScroll": false
+        }
+      ]
+    },
+    {
+      "name": "mobile-light",
+      "path": "ai-artifacts/visual-qa/agent-stack-mobile-light.png",
+      "title": "Visualizer",
+      "viewport": {
+        "width": 390,
+        "height": 1100
+      },
+      "page": {
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "scrollHeight": 16850
+      },
+      "documentDark": false,
+      "offenders": [],
+      "tables": []
+    }
+  ]
+}
