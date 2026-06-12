@@ -1,19 +1,40 @@
 import { promises as fs } from "fs"
+import os from "os"
 import path from "path"
 
 import { artifactManifest } from "../src/lib/artifact-manifest"
 import { ARTIFACT_NODE_TYPES, VisualArtifactSpecSchema } from "../src/lib/artifact-schema"
 
+async function findArtifactFiles(dir: string): Promise<string[]> {
+  const files: string[] = []
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        const subFiles = await findArtifactFiles(fullPath)
+        files.push(...subFiles)
+      } else if (entry.isFile() && entry.name.endsWith(".json")) {
+        files.push(fullPath)
+      }
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+  }
+  return files
+}
+
 async function main() {
-  const artifactsDir = path.join(process.cwd(), "src", "artifacts")
-  const files = (await fs.readdir(artifactsDir)).filter((file) => file.endsWith(".json"))
+  const artifactsDir = path.join(os.homedir(), ".pi", "artifacts")
+  const files = await findArtifactFiles(artifactsDir)
 
-  for (const file of files) {
-    const raw = await fs.readFile(path.join(artifactsDir, file), "utf8")
+  for (const filePath of files) {
+    const raw = await fs.readFile(filePath, "utf8")
     const parsed = VisualArtifactSpecSchema.parse(JSON.parse(raw))
+    const fileName = path.basename(filePath)
 
-    if (`${parsed.slug}.json` !== file) {
-      throw new Error(`${file} slug does not match filename ${parsed.slug}.json`)
+    if (`${parsed.slug}.json` !== fileName) {
+      throw new Error(`${filePath} slug does not match filename ${parsed.slug}.json`)
     }
   }
 

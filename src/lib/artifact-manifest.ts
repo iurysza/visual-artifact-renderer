@@ -14,12 +14,77 @@ export const artifactCompositionGuidance = [
   "Use stat-card for KPI, count, health, and state summaries.",
   "Use status-grid for component health, readiness, validation, and risk boards.",
   "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
-  "Use flow for pipelines, request paths, and architecture handoffs.",
-  "Use timeline for release phases, lifecycle steps, and operator runbooks.",
-  "Use code-block for commands, config snippets, and file/path maps.",
+  "For architecture pages, put a mermaid or svg-diagram near the top instead of describing topology in prose.",
+  "Use mermaid for lightweight zoomable/pannable text-defined architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.",
+  "Use svg-diagram for trusted full HTML/SVG diagrams when Mermaid is too constrained or layout needs custom control.",
+  "Use flow for request paths, build/deploy chains, data pipelines, and architecture handoffs.",
+  "Use timeline for release phases, lifecycle steps, migrations, and operator runbooks.",
+  "Use code-block for commands, config snippets, env contracts, and file/path maps.",
   "Use tabs for alternate contexts; use accordion only for secondary detail.",
   "Avoid generic card soup and avoid file:// links in shareable artifacts.",
 ] as const
+
+export const artifactPatternExamples = {
+  architecture: {
+    description: "Architecture brief: thesis + stat cards, then Mermaid topology, flow handoff, status-grid, and evidence table.",
+    nodes: [
+      { type: "text", props: { text: "The runtime is a three-stage ADK pipeline with explicit retrieval and TTS boundaries.", size: "lg" } },
+      {
+        type: "grid",
+        props: { columns: 3 },
+        children: [
+          { type: "stat-card", props: { label: "Agents", value: 3, caption: "ImageDescriptor → ContentGenerator → JsonFormatter", tone: "accent" } },
+          { type: "stat-card", props: { label: "Retrieval", value: "ChromaDB", caption: "Grounding through embedded docs", tone: "success" } },
+          { type: "stat-card", props: { label: "Output", value: "JSON + MP3", caption: "Validated response and narration", tone: "default" } },
+        ],
+      },
+      {
+        type: "mermaid",
+        props: {
+          title: "Runtime topology",
+          code: "flowchart LR\n  Client[Mobile client] --> API[FastAPI route]\n  API --> ADK[ADK sequential agent]\n  ADK --> Chroma[(ChromaDB)]\n  ADK --> TTS[Cloud TTS]",
+        },
+      },
+      {
+        type: "flow",
+        props: {
+          title: "Request path",
+          items: [
+            { title: "Client", label: "POST /retrieve" },
+            { title: "FastAPI", description: "Validates request" },
+            { title: "ADK pipeline", description: "Recognizes, retrieves, formats" },
+            { title: "TTS", description: "Synthesizes MP3" },
+          ],
+        },
+      },
+    ],
+  },
+  runbook: {
+    description: "Runbook: stat-card readiness band, timeline for phases, code-block for commands, comparison-table for checks.",
+    nodes: [
+      { type: "timeline", props: { dataKey: "releasePhases", titleKey: "phase", markerKey: "step", descriptionKey: "action", statusKey: "status" } },
+      { type: "code-block", props: { title: "Release smoke", language: "bash", code: "pnpm verify:artifacts\npnpm lint\npnpm build" } },
+    ],
+  },
+  dataApi: {
+    description: "Data/API brief: flow for ingestion or API path, code-block for contracts, comparison-table for route or schema evidence.",
+    nodes: [
+      {
+        type: "flow",
+        props: {
+          title: "Data path",
+          items: [
+            { title: "Source docs" },
+            { title: "Chunk + embed" },
+            { title: "Chroma collection" },
+            { title: "retrieve_documents" },
+          ],
+        },
+      },
+      { type: "code-block", props: { title: "Env contract", language: "bash", code: "MODEL_NAME=...\nTEXT_EMBEDDING_MODEL=text-embedding-005\nTOP_K=5" } },
+    ],
+  },
+} as const
 
 export const artifactManifest = {
   heading: {
@@ -109,6 +174,20 @@ export const artifactManifest = {
     children: false,
     data: "data[dataKey] must be an array of row objects containing xKey and yKey.",
     example: { type: "chart", props: { dataKey: "revenueByMonth", xKey: "month", yKey: "revenue", kind: "line" } },
+  },
+  mermaid: {
+    type: "mermaid",
+    description: "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
+    props: { code: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
+    children: false,
+    example: { type: "mermaid", props: { title: "Request flow", code: "flowchart LR\n  Client --> API\n  API --> DB" } },
+  },
+  "svg-diagram": {
+    type: "svg-diagram",
+    description: "Raw trusted SVG/HTML diagram embedded in a sandboxed iframe. Use for full-screen interactive SVG diagrams from the html-diagram style.",
+    props: { html: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
+    children: false,
+    example: { type: "svg-diagram", props: { title: "Interactive architecture", height: 720, html: "<!doctype html><html><body><svg viewBox='0 0 100 40'><text x='5' y='24'>Architecture</text></svg></body></html>" } },
   },
   flow: {
     type: "flow",

@@ -28,6 +28,7 @@ const TrendSchema = z.enum(["up", "down", "neutral"])
 const ChartKindSchema = z.enum(["line", "bar"])
 const ToneSchema = z.enum(["default", "accent", "success", "warning", "danger"])
 const GridColumnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
+const DiagramHeightSchema = z.number().int().min(240).max(1600)
 
 const FlowItemSchema = z
   .object({
@@ -99,6 +100,14 @@ export type ArtifactNode =
   | {
       type: "chart"
       props: { dataKey: string; xKey: string; yKey: string; kind?: "line" | "bar"; label?: string; color?: string }
+    }
+  | {
+      type: "mermaid"
+      props: { code: string; title?: string; caption?: string; height?: number }
+    }
+  | {
+      type: "svg-diagram"
+      props: { html: string; title?: string; caption?: string; height?: number }
     }
   | {
       type: "flow"
@@ -291,6 +300,32 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             kind: ChartKindSchema.optional(),
             label: z.string().min(1).optional(),
             color: z.string().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("mermaid"),
+        props: z
+          .object({
+            code: z.string().min(1),
+            title: z.string().min(1).optional(),
+            caption: z.string().min(1).optional(),
+            height: DiagramHeightSchema.optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("svg-diagram"),
+        props: z
+          .object({
+            html: z.string().min(1),
+            title: z.string().min(1).optional(),
+            caption: z.string().min(1).optional(),
+            height: DiagramHeightSchema.optional(),
           })
           .strict(),
       })
@@ -501,6 +536,8 @@ export const ARTIFACT_NODE_TYPES = [
   "data-table",
   "comparison-table",
   "chart",
+  "mermaid",
+  "svg-diagram",
   "flow",
   "timeline",
   "code-block",

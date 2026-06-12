@@ -67,6 +67,7 @@ async function capture(cdp, shot) {
   await cdp.send("Page.navigate", { url })
   await waitForLoad(cdp)
   await cdp.send("Runtime.evaluate", { expression: "document.fonts && document.fonts.ready", awaitPromise: true })
+  await waitForRuntime(cdp, "!document.body?.textContent.includes('Rendering Mermaid')", 15_000)
   await cdp.send("Runtime.evaluate", { expression: "window.scrollTo(0, 0)" })
 
   const metrics = await cdp.send("Page.getLayoutMetrics")
@@ -136,6 +137,16 @@ async function waitForLoad(cdp) {
       resolve()
     })
   })
+}
+
+async function waitForRuntime(cdp, expression, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+
+  while (Date.now() < deadline) {
+    const result = await cdp.send("Runtime.evaluate", { expression, returnByValue: true })
+    if (result.result.value) return
+    await sleep(150)
+  }
 }
 
 function connect(wsUrl) {

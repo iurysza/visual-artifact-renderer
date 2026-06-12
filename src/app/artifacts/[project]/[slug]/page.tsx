@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic"
 export default async function ArtifactPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ project: string; slug: string }>
 }) {
-  const { slug } = await params
-  const spec = await getVisualArtifactSpec(slug)
+  const { project, slug } = await params
+  const spec = await getVisualArtifactSpec(project, slug)
 
   if (!spec) {
     notFound()
