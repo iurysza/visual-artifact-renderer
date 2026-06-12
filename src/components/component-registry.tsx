@@ -264,6 +264,44 @@ function renderSvgDiagram({ node }: AdapterArgs<"svg-diagram">) {
   return <SvgDiagram {...node.props} />
 }
 
+let mermaidRenderQueue: Promise<unknown> = Promise.resolve()
+
+function runWithTimeout<T>(fn: () => Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Mermaid render timed out after ${ms}ms`))
+    }, ms)
+
+    fn().then(
+      (result) => {
+        clearTimeout(timeoutId)
+        resolve(result)
+      },
+      (error) => {
+        clearTimeout(timeoutId)
+        reject(error)
+      }
+    )
+  })
+}
+
+function enqueueMermaidRender<T>(renderFn: () => Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const run = async () => {
+      try {
+        const result = await runWithTimeout(renderFn, 10000)
+        resolve(result)
+        return result
+      } catch (error) {
+        reject(error)
+        return undefined
+      }
+    }
+
+    mermaidRenderQueue = mermaidRenderQueue.then(run, run)
+  })
+}
+
 const MERMAID_MIN_SCALE = 0.5
 const MERMAID_MAX_SCALE = 5
 const MERMAID_ZOOM_STEP = 1.2
@@ -329,16 +367,18 @@ function MermaidDiagram({
         setError(null)
         setSvg("")
 
-        const { default: mermaid } = await import("mermaid")
+        const rendered = await enqueueMermaidRender(async () => {
+          const { default: mermaid } = await import("mermaid")
 
-        mermaid.initialize({
-          startOnLoad: false,
-          theme,
-          securityLevel: "strict",
-          fontFamily: "var(--font-geist-sans)",
+          mermaid.initialize({
+            startOnLoad: false,
+            theme,
+            securityLevel: "strict",
+            fontFamily: "var(--font-geist-sans)",
+          })
+
+          return mermaid.render(`${diagramId}-${theme}`, code)
         })
-
-        const rendered = await mermaid.render(`${diagramId}-${theme}`, code)
 
         if (!cancelled) {
           setSvg(rendered.svg)
