@@ -139,5 +139,4 @@ Verification:
 
 ## Notes / open cleanup
 
-- `src/lib/create-visual-artifact.ts` still reflects the early local `src/artifacts/<slug>.json` helper shape. It appears unreferenced; align or remove it if it becomes part of the app/tool surface.
-- `create_visual_artifact` is intentionally global Pi state, not repo-local state.
+- Removed stale `src/lib/create-visual-artifact.ts`; `create_visual_artifact` is intentionally global Pi state, not repo-local state.
