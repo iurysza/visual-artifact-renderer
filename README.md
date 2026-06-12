@@ -7,9 +7,9 @@ Data-driven visual artifacts for local reports, docs, plans, dashboards, and exp
 ```txt
 LLM reads supported node manifest
   → calls create_visual_artifact(JSON)
-  → Pi extension validates with Zod
-  → writes src/artifacts/<slug>.json
-  → /artifacts/[slug] renders the spec
+  → Pi extension validates the spec
+  → writes ~/.pi/artifacts/<project>/<slug>.json
+  → /artifacts/[project]/[slug] renders the spec
   → VisualArtifactRenderer maps nodes to UI adapters
 ```
 
@@ -63,19 +63,25 @@ ai-artifacts/visual-qa/agent-stack-qa.json
 
 ## Pi tool
 
-Project-local extension:
+Global extension:
 
 ```txt
-.pi/extensions/visual-artifact.ts
+~/.pi/agent/extensions/visual-artifact.ts
 ```
 
-After opening this repo in Pi, run:
+Append this path to the `extensions` array in `~/.pi/agent/settings.json`:
 
-```txt
-/reload
+```json
+{
+  "extensions": [
+    "/Users/iurysouza/.pi/agent/extensions/visual-artifact.ts"
+  ]
+}
 ```
 
-Then the agent can call:
+Then run `/reload` in existing Pi sessions, or start a new session.
+
+The agent can call:
 
 ```txt
 create_visual_artifact
@@ -84,35 +90,18 @@ create_visual_artifact
 The tool writes:
 
 ```txt
-src/artifacts/<slug>.json
+~/.pi/artifacts/<project>/<slug>.json
 ```
 
 and returns:
 
 ```txt
-http://localhost:9999/artifacts/<slug>
+http://localhost:9999/artifacts/<project>/<slug>
 ```
-
-### Use from any Pi project
-
-`create_visual_artifact` can be loaded globally while still writing to this Visualizer repo as the central artifact host.
-
-Append this extension path to the `extensions` array in `~/.pi/agent/settings.json`:
-
-```json
-{
-  "extensions": [
-    "/Users/iurysouza/projects/my-repos/vibe-coded/visualizer/.pi/extensions/visual-artifact.ts"
-  ]
-}
-```
-
-Then run `/reload` in existing Pi sessions, or start a new session. Agents launched from other folders will still write pages here and return `http://localhost:9999/artifacts/<slug>`.
 
 Optional overrides:
 
 ```bash
-export VISUAL_ARTIFACT_PROJECT_DIR=/Users/iurysouza/projects/my-repos/vibe-coded/visualizer
 export VISUAL_ARTIFACT_BASE_URL=http://localhost:9999
 ```
 
