@@ -1,0 +1,123 @@
+{
+  "slug": "audioguide-release-ops",
+  "title": "Audio Guide release and operations map",
+  "description": "Native Cloud Build tag releases, Cloud Run runtime secrets, smoke/prod split, and rollback path.",
+  "layout": { "type": "default" },
+  "data": {
+    "releaseInventory": [
+      { "area": "Cloud Build triggers", "count": 2 },
+      { "area": "Secret Manager mounts", "count": 4 },
+      { "area": "Service accounts", "count": 2 },
+      { "area": "Cloud Run services", "count": 2 },
+      { "area": "Manual smoke checks", "count": 1 }
+    ],
+    "identityMatrix": [
+      { "identity": "cloud-build-deployer", "runtime": "Cloud Build trigger", "responsibility": "Build image, push Artifact Registry, deploy Cloud Run, write logs, act as runtime SA", "status": "configured" },
+      { "identity": "docker-pusher", "runtime": "Cloud Run service", "responsibility": "Runtime identity that reads mounted Secret Manager secrets", "status": "secret access" },
+      { "identity": "GitHub Actions release workflow", "runtime": "old path", "responsibility": "No longer owns backend deployment", "status": "disabled" },
+      { "identity": "Terraform Cloud Run resources", "runtime": "fallback only", "responsibility": "Kept temporarily; removed in Phase 2 after Cloud Build prod is proven", "status": "fallback" }
+    ],
+    "secretMounts": [
+      { "secret": "audioguide-maps-api-key", "mount": "/code/.secrets/maps/maps_api_key.txt", "env": "MAPS_API_KEY_PATH", "status": "mounted" },
+      { "secret": "audioguide-openai-api-key", "mount": "/code/.secrets/openai/openai_api_key.txt", "env": "OPENAI_API_KEY_PATH", "status": "mounted" },
+      { "secret": "audioguide-main-sa-credentials", "mount": "/code/.secrets/gcp/service_account_key.json", "env": "GOOGLE_APPLICATION_CREDENTIALS", "status": "mounted" },
+      { "secret": "audioguide-firebase-sa-credentials", "mount": "/code/.secrets/firebase/firebase_service_account_key.json", "env": "FIREBASE_CREDENTIALS_PATH", "status": "mounted" }
+    ],
+    "releaseTimeline": [
+      { "marker": "0", "phase": "Prepare GCP", "action": "Enable Cloud Build, Run, Artifact Registry, Secret Manager, and IAM APIs; create cloud-build-deployer.", "status": "one-time" },
+      { "marker": "1", "phase": "Move secrets", "action": "Create or rotate four Secret Manager values and grant docker-pusher secretAccessor on each.", "status": "guarded" },
+      { "marker": "2", "phase": "Smoke trigger", "action": "Push smoke-v* tag; Cloud Build deploys audioguide-ai-api-service-smoke; verify /health and smoke script.", "status": "manual check" },
+      { "marker": "3", "phase": "Prod trigger", "action": "Push v* semver tag through uv run bump --patch --release; Cloud Build deploys production service.", "status": "release path" },
+      { "marker": "4", "phase": "Terraform cleanup", "action": "After prod is proven, remove fallback Cloud Run resources from Terraform state/code.", "status": "later" }
+    ],
+    "deployRisks": [
+      { "risk": "Cloud Build GitHub app not connected", "severity": "medium", "signal": "Trigger creation fails or never receives tag events", "mitigation": "Connect repository through Cloud Build Repositories or follow gcloud prompt." },
+      { "risk": "$TAG_NAME empty", "severity": "medium", "signal": "Manual build lacks image tag", "mitigation": "Use tag triggers or pass substitution manually." },
+      { "risk": "runtime SA cannot read secrets", "severity": "high", "signal": "Cloud Run starts but secret files are unavailable", "mitigation": "Grant roles/secretmanager.secretAccessor to docker-pusher per secret." },
+      { "risk": "bool('False') auth bug", "severity": "high", "signal": "IS_DEV_MODE=False still parses true", "mitigation": "Follow-up explicit boolean parsing before relying on prod auth assumptions." },
+      { "risk": "infra workflow redeploys old tag", "severity": "high", "signal": "Terraform release path races Cloud Build", "mitigation": "Disable old infra workflow with gh immediately." }
+    ],
+    "triggerSplit": [
+      { "trigger": "smoke", "pattern": "^smoke-v.*$", "service": "audioguide-ai-api-service-smoke", "purpose": "Pre-production Cloud Run target", "status": "manual gate" },
+      { "trigger": "production", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$", "service": "audioguide-ai-api-service", "purpose": "Real release after smoke passes", "status": "release" }
+    ]
+  },
+  "nodes": [
+    { "type": "text", "props": { "text": "Deployment moved from repository-hosted release automation to native Cloud Build tag triggers. The image is built in Cloud Build, pushed to Artifact Registry, deployed to Cloud Run, and receives secrets only as runtime mounts.", "size": "lg" } },
+    {
+      "type": "grid",
+      "props": { "columns": 4 },
+      "children": [
+        { "type": "stat-card", "props": { "label": "Release event", "value": "git tag", "delta": "v* or smoke-v*", "trend": "up", "caption": "Cloud Build starts from tag push", "tone": "success" } },
+        { "type": "stat-card", "props": { "label": "Secret posture", "value": "mounted", "delta": "not baked", "trend": "up", "caption": "Secret Manager files at /code/.secrets/*", "tone": "success" } },
+        { "type": "stat-card", "props": { "label": "Smoke service", "value": "separate", "delta": "manual gate", "trend": "neutral", "caption": "audioguide-ai-api-service-smoke", "tone": "accent" } },
+        { "type": "stat-card", "props": { "label": "Known footgun", "value": "IS_DEV_MODE", "delta": "bool parse", "trend": "down", "caption": "bool('False') risk remains called out", "tone": "danger" } }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "Cloud Build release chain", "description": "The deployment unit is one container image. Build, push, and deploy happen in the Cloud Build pipeline." },
+      "children": [
+        { "type": "flow", "props": { "title": "Tag push → Cloud Run revision", "caption": "Smoke and prod share cloudbuild.yaml; substitutions decide the target service.", "items": [
+          { "label": "git", "title": "Push tag", "description": "smoke-v* for smoke or vX.Y.Z for production.", "status": "release" },
+          { "label": "Cloud Build", "title": "Trigger matches", "description": "GitHub app hands source to Cloud Build with TAG_NAME.", "status": "configured" },
+          { "label": "docker", "title": "Build image", "description": "Docker BuildKit builds Dockerfile.api from clean context.", "status": "running" },
+          { "label": "Artifact Registry", "title": "Push image", "description": "Image tag is ${TAG_NAME} in europe-west3 registry.", "status": "stored" },
+          { "label": "gcloud run deploy", "title": "Deploy service", "description": "Cloud Run gets env vars, service account, resources, and secret mounts.", "status": "deployed" },
+          { "label": "smoke", "title": "Verify health", "description": "/health and uv run smoke confirm the target endpoint.", "status": "manual check" }
+        ] } }
+      ]
+    },
+    {
+      "type": "grid",
+      "props": { "columns": 2 },
+      "children": [
+        { "type": "card", "props": { "title": "Release surface inventory", "description": "Counts from the migration/deployment docs.", "tone": "accent" }, "children": [
+          { "type": "chart", "props": { "dataKey": "releaseInventory", "xKey": "area", "yKey": "count", "kind": "bar", "label": "Count", "color": "var(--chart-3)" } }
+        ] },
+        { "type": "card", "props": { "title": "Canonical release commands", "description": "The operator path stays small; Cloud Build owns the heavy lift.", "tone": "success" }, "children": [
+          { "type": "code-block", "props": { "title": "Smoke then prod", "language": "bash", "code": "git tag smoke-v0.0.1-$(date +%Y%m%d%H%M%S)\ngit push origin smoke-v0.0.1-20260601155613\nAUDIOGUIDE_AUTH_TOKEN=\"<firebase-id-token>\" uv run smoke --target smoke\n\nuv run bump --patch --release\nAUDIOGUIDE_AUTH_TOKEN=\"<firebase-id-token>\" uv run smoke --target prod" } }
+        ] }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "Secrets and identity boundary", "description": "Secrets stop traveling through GitHub Actions or image layers. Cloud Run reads mounted files at runtime." },
+      "children": [
+        { "type": "tabs", "props": { "defaultValue": "identities", "items": [
+          { "value": "identities", "label": "Identities", "nodes": [
+            { "type": "comparison-table", "props": { "dataKey": "identityMatrix", "columns": ["identity", "runtime", "responsibility", "status"], "statusKey": "status" } }
+          ] },
+          { "value": "secrets", "label": "Secret mounts", "nodes": [
+            { "type": "comparison-table", "props": { "dataKey": "secretMounts", "columns": ["secret", "mount", "env", "status"], "statusKey": "status" } }
+          ] },
+          { "value": "triggers", "label": "Smoke vs prod", "nodes": [
+            { "type": "comparison-table", "props": { "dataKey": "triggerSplit", "columns": ["trigger", "pattern", "service", "purpose", "status"], "statusKey": "status" } }
+          ] }
+        ] } }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "Migration and release lifecycle", "description": "The docs split the work into setup, smoke, prod, and later cleanup." },
+      "children": [
+        { "type": "timeline", "props": { "dataKey": "releaseTimeline", "titleKey": "phase", "markerKey": "marker", "descriptionKey": "action", "statusKey": "status" } }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "Risk ledger", "description": "Deployment is now cleaner, but these checks still matter before trusting prod." },
+      "children": [
+        { "type": "comparison-table", "props": { "dataKey": "deployRisks", "columns": ["risk", "severity", "signal", "mitigation"], "statusKey": "severity" } }
+      ]
+    },
+    { "type": "accordion", "props": { "items": [
+      { "title": "Rollback command", "nodes": [
+        { "type": "code-block", "props": { "title": "Cloud Run rollback", "language": "bash", "code": "gcloud run revisions list \\\n  --service=audioguide-ai-api-service \\\n  --region=europe-west3 \\\n  --project=audioguide-ai-api\n\ngcloud run services update-traffic audioguide-ai-api-service \\\n  --region=europe-west3 \\\n  --project=audioguide-ai-api \\\n  --to-revisions PREVIOUS_REVISION_NAME=100" } }
+      ] },
+      { "title": "Runtime secret contract", "nodes": [
+        { "type": "code-block", "props": { "title": "Cloud Run sees file paths", "language": "txt", "code": "MAPS_API_KEY_PATH=.secrets/maps/maps_api_key.txt\nOPENAI_API_KEY_PATH=.secrets/openai/openai_api_key.txt\nGOOGLE_APPLICATION_CREDENTIALS=.secrets/gcp/service_account_key.json\nFIREBASE_CREDENTIALS_PATH=.secrets/firebase/firebase_service_account_key.json" } }
+      ] }
+    ] } }
+  ]
+}

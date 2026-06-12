@@ -45,6 +45,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
       "Before calling create_visual_artifact, follow src/lib/artifact-manifest.ts exactly. Do not invent JSX, imports, CSS, routes, or unsupported node types.",
       "Start reports with a crisp thesis and a stat-card summary band. Use embedded data arrays for any repeated facts instead of hardcoding table-like prose.",
       "Choose stronger components by default: stat-card for KPI/state bands, status-grid for health/readiness/validation/risk boards, comparison-table for evidence/checks/options/risks/runtime matrices, tabs for alternate contexts.",
+      "Use flow for request paths, build/deploy chains, ingestion pipelines, and architecture handoffs; use timeline for release phases and operator runbooks; use code-block for commands, config snippets, env contracts, and file maps.",
       "Use accordion only for secondary details or FAQs. Do not hide primary conclusions, validation results, or risks inside accordions.",
       "Use generic cards for narrative chunks with child nodes, not for every small fact. Avoid file:// links; link to app routes or public URLs.",
     ],

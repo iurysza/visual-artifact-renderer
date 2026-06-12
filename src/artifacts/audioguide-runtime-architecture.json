@@ -1,0 +1,103 @@
+{
+  "slug": "audioguide-runtime-architecture",
+  "title": "Audio Guide runtime architecture",
+  "description": "FastAPI to ADK, retrieval, and TTS in one live request path.",
+  "layout": { "type": "default" },
+  "data": {
+    "runtimeInventory": [
+      { "area": "Request fields", "count": 4 },
+      { "area": "ADK agents", "count": 3 },
+      { "area": "Runtime tools", "count": 2 },
+      { "area": "Retriever doc types", "count": 2 },
+      { "area": "Speech output", "count": 1 }
+    ],
+    "runtimeComponents": [
+      { "component": "FastAPI /retrieve", "layer": "HTTP boundary", "status": "guarded", "notes": "Firebase-protected route accepts lat, long, base64Image, and topics." },
+      { "component": "ADK InMemoryRunner", "layer": "orchestration", "status": "running", "notes": "Runs the shipped sequential pipeline and extracts the final text payload." },
+      { "component": "Google Maps tool", "layer": "external I/O", "status": "configured", "notes": "Finds nearby landmarks and neighborhood context outside prompt text." },
+      { "component": "ChromaDB retriever", "layer": "retrieval", "status": "depends on KB", "notes": "Queries collection `langchain` over HTTP with top_k from settings." },
+      { "component": "Google Cloud TTS", "layer": "speech", "status": "configured", "notes": "Cleans generated text, writes MP3 under storage, returns base64 audio_bytes." },
+      { "component": "topics field", "layer": "request model", "status": "unused", "notes": "Accepted by the API, but not consumed by the live ADK runtime yet." }
+    ],
+    "agentPipeline": [
+      { "step": "1", "agent": "ImageDescriptor", "model": "settings.main_model_name", "input": "Decoded image bytes + coordinate context", "tool": "get_nearby_landmarks", "output": "Landmark-focused description for retrieval", "status": "running" },
+      { "step": "2", "agent": "ContentGenerator", "model": "settings.main_model_name", "input": "Image description + session context", "tool": "retrieve_documents", "output": "Grounded narrative content", "status": "running" },
+      { "step": "3", "agent": "JsonFormatter", "model": "settings.main_model_name", "input": "Generated narrative", "tool": "none", "output": "RetrieveJson-valid JSON only", "status": "schema guard" }
+    ],
+    "retrievalSurface": [
+      { "surface": "Collection", "value": "langchain", "owner": "ChromaDB runtime" },
+      { "surface": "Query path", "value": "collection.query(query_texts=[...], n_results=settings.top_k)", "owner": "DocumentRetriever" },
+      { "surface": "Embedding task", "value": "RETRIEVAL_DOCUMENT", "owner": "GoogleGenAIEmbeddingFunction" },
+      { "surface": "Default embedding model", "value": "text-embedding-005", "owner": "TEXT_EMBEDDING_MODEL" },
+      { "surface": "Stored doc types", "value": "wiki_doc, monument", "owner": "ingestion pipeline" }
+    ],
+    "sharpEdges": [
+      { "risk": "topics ignored", "severity": "medium", "where": "RetrieveRequest accepts topics, runtime does not use them", "mitigation": "Thread topics into ImageDescriptor or ContentGenerator prompt state." },
+      { "risk": "JPEG assumption", "severity": "medium", "where": "ADK message construction assumes JPEG-compatible bytes", "mitigation": "Detect MIME or normalize images at the HTTP boundary." },
+      { "risk": "retrieval coverage", "severity": "attention", "where": "ChromaDB quality depends on manual ingestion state", "mitigation": "Keep fixture landmarks and retrieval smoke cases." }
+    ]
+  },
+  "nodes": [
+    { "type": "text", "props": { "text": "The live backend is a single request pipeline: authenticate, identify the landmark with image plus coordinates, retrieve grounded context, format strict JSON, synthesize MP3, and return text plus audio.", "size": "lg" } },
+    {
+      "type": "grid",
+      "props": { "columns": 4 },
+      "children": [
+        { "type": "stat-card", "props": { "label": "HTTP contract", "value": "POST /retrieve", "delta": "Firebase guarded", "trend": "up", "caption": "lat, long, base64Image, topics", "tone": "success" } },
+        { "type": "stat-card", "props": { "label": "ADK shape", "value": "3 agents", "delta": "sequential", "trend": "neutral", "caption": "Descriptor → generator → formatter", "tone": "accent" } },
+        { "type": "stat-card", "props": { "label": "Runtime tools", "value": "2", "delta": "explicit I/O", "trend": "up", "caption": "Maps and Chroma stay out of prompt text", "tone": "success" } },
+        { "type": "stat-card", "props": { "label": "Known gap", "value": "topics", "delta": "unused", "trend": "down", "caption": "Field exists but is not wired into generation", "tone": "warning" } }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "End-to-end request path", "description": "This is the shipped flow described by the backend docs, not a future-state rewrite." },
+      "children": [
+        { "type": "flow", "props": { "title": "Photo + coordinates → grounded audio guide", "caption": "The final response is JSON with title, content, isInvalidRequest, and base64 MP3 audio_bytes.", "items": [
+          { "label": "client", "title": "Photo + location", "description": "Client sends base64Image, lat, long, and optional topics.", "status": "input" },
+          { "label": "server/main.py", "title": "FastAPI + Firebase", "description": "Request enters /retrieve and protected endpoints require a valid Firebase JWT.", "status": "guarded" },
+          { "label": "retrieve.py", "title": "Runtime handoff", "description": "Request data is passed into process_request and the ADK runner.", "status": "running" },
+          { "label": "root_agent.py", "title": "Sequential ADK agents", "description": "ImageDescriptor, ContentGenerator, and JsonFormatter run in order.", "status": "running" },
+          { "label": "tools.py", "title": "Maps + Chroma tools", "description": "Nearby landmarks, neighborhood, and related documents are stored in session state.", "status": "configured" },
+          { "label": "tts_client.py", "title": "MP3 synthesis", "description": "Cleaned text becomes MP3 and is returned as base64 audio_bytes.", "status": "done" }
+        ] } }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "Runtime component health", "description": "The fastest way to see where architecture responsibility lives." },
+      "children": [
+        { "type": "status-grid", "props": { "dataKey": "runtimeComponents", "titleKey": "component", "statusKey": "status", "descriptionKey": "notes", "metaKey": "layer", "columns": 3 } }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "ADK orchestration detail", "description": "Each agent has a narrow job. The formatter is the schema boundary." },
+      "children": [
+        { "type": "comparison-table", "props": { "dataKey": "agentPipeline", "columns": [ { "key": "step", "label": "#" }, { "key": "agent", "label": "Agent" }, { "key": "input", "label": "Input" }, { "key": "tool", "label": "Tool" }, { "key": "output", "label": "Output" }, { "key": "status", "label": "State" } ], "statusKey": "status" } }
+      ]
+    },
+    {
+      "type": "grid",
+      "props": { "columns": 2 },
+      "children": [
+        { "type": "card", "props": { "title": "Architecture inventory", "description": "Counts from the docs: fields, agents, tools, doc types, and speech output.", "tone": "accent" }, "children": [
+          { "type": "chart", "props": { "dataKey": "runtimeInventory", "xKey": "area", "yKey": "count", "kind": "bar", "label": "Count", "color": "var(--chart-2)" } }
+        ] },
+        { "type": "card", "props": { "title": "Retriever contract", "description": "Concrete moving parts behind grounded generation.", "tone": "success" }, "children": [
+          { "type": "data-table", "props": { "dataKey": "retrievalSurface", "columns": ["surface", "value", "owner"] } }
+        ] }
+      ]
+    },
+    {
+      "type": "section",
+      "props": { "title": "Sharp edges to keep visible", "description": "These behavior notes should shape future implementation work." },
+      "children": [
+        { "type": "comparison-table", "props": { "dataKey": "sharpEdges", "columns": ["risk", "severity", "where", "mitigation"], "statusKey": "severity" } }
+      ]
+    },
+    { "type": "accordion", "props": { "items": [ { "title": "File map behind the runtime", "nodes": [
+      { "type": "code-block", "props": { "title": "Runtime files", "language": "txt", "code": "server/main.py\nserver/services/retriever/retrieve.py\nserver/services/models/retrieve_api_model.py\nserver/agents/root_agent.py\nserver/agents/tools.py\nserver/services/retriever/document_retriever.py\nserver/util.py\nserver/services/tts/tts_client.py\nscripts/apps/scrapper/" } }
+    ] } ] } }
+  ]
+}

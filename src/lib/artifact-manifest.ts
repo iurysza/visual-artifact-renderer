@@ -14,6 +14,9 @@ export const artifactCompositionGuidance = [
   "Use stat-card for KPI, count, health, and state summaries.",
   "Use status-grid for component health, readiness, validation, and risk boards.",
   "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
+  "Use flow for pipelines, request paths, and architecture handoffs.",
+  "Use timeline for release phases, lifecycle steps, and operator runbooks.",
+  "Use code-block for commands, config snippets, and file/path maps.",
   "Use tabs for alternate contexts; use accordion only for secondary detail.",
   "Avoid generic card soup and avoid file:// links in shareable artifacts.",
 ] as const
@@ -106,6 +109,28 @@ export const artifactManifest = {
     children: false,
     data: "data[dataKey] must be an array of row objects containing xKey and yKey.",
     example: { type: "chart", props: { dataKey: "revenueByMonth", xKey: "month", yKey: "revenue", kind: "line" } },
+  },
+  flow: {
+    type: "flow",
+    description: "Inline architecture diagram for ordered handoffs, pipelines, request paths, and deployment chains.",
+    props: { title: "string?", caption: "string?", items: "{ title, label?, description?, status? }[]" },
+    children: false,
+    example: { type: "flow", props: { title: "Request path", items: [{ title: "Client", label: "POST /retrieve" }, { title: "FastAPI" }, { title: "ADK pipeline", status: "running" }] } },
+  },
+  timeline: {
+    type: "timeline",
+    description: "Data-backed vertical timeline for releases, lifecycle phases, runbooks, or migration sequences.",
+    props: { dataKey: "string", titleKey: "string?", markerKey: "string?", descriptionKey: "string?", statusKey: "string?", caption: "string?" },
+    children: false,
+    data: "data[dataKey] must be an array of row objects. Defaults: title, marker, description, status.",
+    example: { type: "timeline", props: { dataKey: "releasePhases", titleKey: "phase", markerKey: "step", descriptionKey: "action", statusKey: "status" } },
+  },
+  "code-block": {
+    type: "code-block",
+    description: "Formatted command/config/path block. Use for commands, env vars, YAML fragments, file maps, and ASCII trees.",
+    props: { title: "string?", language: "string?", code: "string", caption: "string?" },
+    children: false,
+    example: { type: "code-block", props: { title: "Smoke release", language: "bash", code: "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1" } },
   },
   "status-grid": {
     type: "status-grid",

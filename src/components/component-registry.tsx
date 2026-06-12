@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import {
   Bar,
   BarChart,
@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts"
 
-import type { ArtifactColumn, ArtifactNode, ArtifactTone, VisualArtifactSpec } from "@/lib/artifact-schema"
+import type { ArtifactColumn, ArtifactFlowItem, ArtifactNode, ArtifactTone, VisualArtifactSpec } from "@/lib/artifact-schema"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -74,6 +74,9 @@ export const componentRegistry = {
   "data-table": renderDataTable as RegistryAdapter,
   "comparison-table": renderComparisonTable as RegistryAdapter,
   chart: renderChart as RegistryAdapter,
+  flow: renderFlow as RegistryAdapter,
+  timeline: renderTimeline as RegistryAdapter,
+  "code-block": renderCodeBlock as RegistryAdapter,
   "status-grid": renderStatusGrid as RegistryAdapter,
   grid: renderGrid as RegistryAdapter,
   section: renderSection as RegistryAdapter,
@@ -237,6 +240,93 @@ function renderChart({ node, context }: AdapterArgs<"chart">) {
         )}
       </ChartContainer>
     </div>
+  )
+}
+
+function renderFlow({ node }: AdapterArgs<"flow">) {
+  const { title, caption, items } = node.props
+
+  return (
+    <div className="space-y-3 rounded-2xl border bg-card/80 p-4 shadow-sm">
+      {(title || caption) && (
+        <div className="space-y-1">
+          {title && <h3 className="font-serif text-2xl font-medium tracking-[-0.02em] text-foreground">{title}</h3>}
+          {caption && <p className="text-sm leading-6 text-muted-foreground">{caption}</p>}
+        </div>
+      )}
+      <div className="grid gap-3 lg:grid-cols-[repeat(var(--flow-columns),minmax(0,1fr))]" style={{ "--flow-columns": items.length } as CSSProperties}>
+        {items.map((item, index) => (
+          <FlowStep key={`${item.title}-${index}`} item={item} index={index} isLast={index === items.length - 1} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FlowStep({ item, index, isLast }: { item: ArtifactFlowItem; index: number; isLast: boolean }) {
+  return (
+    <div className="relative">
+      <div className={cn("min-h-full rounded-xl border bg-background/70 p-4", item.status && statusPanelClass(item.status))}>
+        <div className="flex items-start justify-between gap-3">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full border bg-card font-mono text-[11px] font-medium text-muted-foreground">
+            {index + 1}
+          </span>
+          {item.status && <StatusChip value={item.status} />}
+        </div>
+        {item.label && <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--clay)]">{item.label}</p>}
+        <p className="mt-1 font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{item.title}</p>
+        {item.description && <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>}
+      </div>
+      {!isLast && <div className="mx-auto hidden h-px w-full translate-x-1/2 bg-border lg:absolute lg:left-1/2 lg:top-7 lg:block" />}
+    </div>
+  )
+}
+
+function renderTimeline({ node, context }: AdapterArgs<"timeline">) {
+  const { dataKey, titleKey = "title", markerKey = "marker", descriptionKey = "description", statusKey = "status", caption } = node.props
+  const data = getRows(context.data, dataKey)
+
+  if (!data.length) {
+    return <MissingData dataKey={dataKey} />
+  }
+
+  return (
+    <div className="space-y-4 rounded-2xl border bg-card/80 p-4 shadow-sm">
+      {caption && <p className="text-sm text-muted-foreground">{caption}</p>}
+      <div className="relative space-y-4 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-border">
+        {data.map((row, index) => (
+          <article key={index} className="relative grid grid-cols-[2rem_1fr] gap-3">
+            <div className="relative z-10 flex size-8 items-center justify-center rounded-full border bg-card font-mono text-[10px] font-medium text-muted-foreground">
+              {formatCell(row[markerKey] ?? index + 1)}
+            </div>
+            <div className={cn("rounded-xl border bg-background/70 p-4", statusPanelClass(row[statusKey]))}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(row[titleKey])}</p>
+                {row[statusKey] !== undefined && <StatusChip value={row[statusKey]} />}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatCell(row[descriptionKey])}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function renderCodeBlock({ node }: AdapterArgs<"code-block">) {
+  const { title, language, code, caption } = node.props
+
+  return (
+    <figure className="overflow-hidden rounded-2xl border bg-zinc-950 text-zinc-50 shadow-sm dark:bg-black">
+      {(title || language) && (
+        <figcaption className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-zinc-400">
+          <span>{title ?? "Snippet"}</span>
+          {language && <span>{language}</span>}
+        </figcaption>
+      )}
+      <pre className="overflow-x-auto p-4 text-sm leading-6"><code>{code}</code></pre>
+      {caption && <p className="border-t border-white/10 px-4 py-2 text-sm text-zinc-400">{caption}</p>}
+    </figure>
   )
 }
 

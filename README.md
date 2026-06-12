@@ -111,8 +111,8 @@ Node set:
 
 ```txt
 heading, text, card, metric, stat-card, badge, button, separator,
-table, data-table, comparison-table, chart, status-grid,
-grid, section, tabs, accordion
+table, data-table, comparison-table, chart, flow, timeline, code-block,
+status-grid, grid, section, tabs, accordion
 ```
 
 ## Artifact composition guidance
@@ -123,6 +123,9 @@ Prefer dashboard components over generic card soup:
 - Use `stat-card` for top KPIs, counts, health, and state tiles.
 - Use `status-grid` for component health, readiness, validation state, and risk boards.
 - Use `comparison-table` for evidence, risks, checks, options, runtime surfaces, and parity matrices.
+- Use `flow` for request paths, build/deploy chains, ingestion pipelines, and architecture handoffs.
+- Use `timeline` for release phases, lifecycle states, migration steps, and operator runbooks.
+- Use `code-block` for commands, config snippets, env contracts, and file maps.
 - Use `tabs` when the same report has alternate contexts, e.g. Pi / OpenCode / wrapper / projects.
 - Use `accordion` only for secondary detail. Do not hide conclusions there.
 - Use `card` for narrative chunks that need child nodes, not for every small fact.

@@ -16,6 +16,21 @@ const samples = [
     title: "Agent stack report",
     description: "Dashboard-grade Pi + OpenCode report with stat cards, status grids, comparison tables, tabs, chart, and risk ledger.",
   },
+  {
+    slug: "audioguide-runtime-architecture",
+    title: "Audio Guide runtime architecture",
+    description: "FastAPI, ADK agents, Maps, ChromaDB, and TTS visualized as one request path.",
+  },
+  {
+    slug: "audioguide-release-ops",
+    title: "Audio Guide release and ops",
+    description: "Cloud Build tag releases, Cloud Run secrets, smoke/prod split, identities, and rollback.",
+  },
+  {
+    slug: "audioguide-dev-data-api",
+    title: "Audio Guide dev/data/API",
+    description: "HTTP contract, UV workflow, Bruno/Telegram testing, and manual knowledge-base ingestion.",
+  },
 ]
 
 const steps = ["JSON spec", "Zod validate", "Render page"]

@@ -29,6 +29,15 @@ const ChartKindSchema = z.enum(["line", "bar"])
 const ToneSchema = z.enum(["default", "accent", "success", "warning", "danger"])
 const GridColumnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
 
+const FlowItemSchema = z
+  .object({
+    title: z.string().min(1),
+    label: z.string().min(1).optional(),
+    description: z.string().min(1).optional(),
+    status: z.string().min(1).optional(),
+  })
+  .strict()
+
 const ColumnSchema = z.union([
   z.string().min(1),
   z
@@ -42,6 +51,7 @@ const ColumnSchema = z.union([
 export type ArtifactColumn = z.infer<typeof ColumnSchema>
 
 export type ArtifactTone = z.infer<typeof ToneSchema>
+export type ArtifactFlowItem = z.infer<typeof FlowItemSchema>
 
 export type ArtifactNode =
   | {
@@ -89,6 +99,18 @@ export type ArtifactNode =
   | {
       type: "chart"
       props: { dataKey: string; xKey: string; yKey: string; kind?: "line" | "bar"; label?: string; color?: string }
+    }
+  | {
+      type: "flow"
+      props: { title?: string; caption?: string; items: ArtifactFlowItem[] }
+    }
+  | {
+      type: "timeline"
+      props: { dataKey: string; titleKey?: string; markerKey?: string; descriptionKey?: string; statusKey?: string; caption?: string }
+    }
+  | {
+      type: "code-block"
+      props: { title?: string; language?: string; code: string; caption?: string }
     }
   | {
       type: "status-grid"
@@ -275,6 +297,46 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       .strict(),
     z
       .object({
+        type: z.literal("flow"),
+        props: z
+          .object({
+            title: z.string().min(1).optional(),
+            caption: z.string().min(1).optional(),
+            items: z.array(FlowItemSchema).min(2),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("timeline"),
+        props: z
+          .object({
+            dataKey: z.string().min(1),
+            titleKey: z.string().min(1).optional(),
+            markerKey: z.string().min(1).optional(),
+            descriptionKey: z.string().min(1).optional(),
+            statusKey: z.string().min(1).optional(),
+            caption: z.string().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("code-block"),
+        props: z
+          .object({
+            title: z.string().min(1).optional(),
+            language: z.string().min(1).optional(),
+            code: z.string().min(1),
+            caption: z.string().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
         type: z.literal("status-grid"),
         props: z
           .object({
@@ -383,6 +445,7 @@ export const VisualArtifactSpecSchema = z
           node.type === "data-table" ||
           node.type === "comparison-table" ||
           node.type === "chart" ||
+          node.type === "timeline" ||
           node.type === "status-grid"
         ) {
           const dataset = spec.data?.[node.props.dataKey]
@@ -438,6 +501,9 @@ export const ARTIFACT_NODE_TYPES = [
   "data-table",
   "comparison-table",
   "chart",
+  "flow",
+  "timeline",
+  "code-block",
   "status-grid",
   "grid",
   "section",
