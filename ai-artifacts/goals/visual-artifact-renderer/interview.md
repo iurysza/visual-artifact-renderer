@@ -1,6 +1,7 @@
 ---
 title: Visual artifact renderer Plannotator interview
 created: 2026-06-11
+updated: 2026-06-12
 ---
 
 # Interview answers
@@ -17,6 +18,12 @@ The system should be generic. It should create visual artifacts for reports, doc
 
 It should not be report-specific.
 
+## Current summary
+
+Visualizer is a local web app plus Pi extension for turning AI-generated JSON into polished visual pages. The LLM chooses from a supported node manifest, embeds any needed data, calls `create_visual_artifact`, and gets a local URL.
+
+The important constraint: the LLM never writes React, routes, JSX, imports, or CSS. It emits a constrained artifact spec; the extension validates it, saves it under `~/.pi/artifacts/<project>/<slug>.json`, and the Next renderer maps each node to trusted UI adapters.
+
 ## Tool name
 
 **`create_visual_artifact`**
@@ -25,38 +32,36 @@ Chosen after Plannotator flagged `create_report` as too narrow.
 
 ## Route and storage
 
-**`/artifacts/[slug]` and `src/artifacts/*.json`**
+**Current:** `/artifacts/[project]/[slug]` and `~/.pi/artifacts/<project>/<slug>.json`
 
-Chosen after renaming the tool to a generic visual artifact tool.
+The original interview picked `/artifacts/[slug]` and `src/artifacts/*.json`. That was right for the first local MVP, but the implemented shape moved artifacts into Pi's global artifact directory so any session can create pages without mutating this repo.
 
 ## Schema scope
 
 **Curated visual artifact DSL**
 
-Use a constrained JSON schema. Only known node types render. No arbitrary JSX, no arbitrary component passthrough.
+Use a constrained JSON schema. Only known node types render. No arbitrary JSX, no arbitrary imports, no arbitrary component passthrough.
 
-## Initial component coverage
+## Current component coverage
 
-Selected groups:
+Supported nodes:
 
-- Basics
-- Data views
-- Navigation / organization
+```txt
+heading, text, card, metric, stat-card, badge, button, separator,
+table, data-table, comparison-table, chart, mermaid, svg-diagram,
+flow, timeline, code-block, status-grid, grid, section, tabs, accordion
+```
 
-Interpretation:
-
-- MVP adapters: `card`, `metric`, `heading`, `text`, `badge`, `button`, `separator`, `table`, `data-table`, `chart`, `tabs`, `accordion`, `grid`, `section`.
-- The pasted component catalog is useful as future manifest inventory.
-- Do **not** implement every component in MVP.
+The component catalog is useful only when represented in the manifest. Unsupported components should not leak into prompts.
 
 ## Data model
 
 **Embed data in artifact JSON**
 
-An artifact is one portable file. Nodes can reference datasets inside the same spec.
+An artifact is one portable file. Nodes reference datasets inside the same spec through `dataKey`.
 
 ## Tool surface
 
 **`create_visual_artifact` only**
 
-Validate slug/spec, write JSON, return URL. Add update/list/delete after the first renderer works.
+Validate slug/spec, write JSON, return URL. Add update/list/delete only after create-and-render remains boring.

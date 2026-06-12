@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { spawn } from "node:child_process"
 
-const url = process.argv[2] ?? "http://localhost:9999/artifacts/agent-stack-report"
+const url = process.argv[2] ?? "http://localhost:9999/artifacts/visualizer/agent-stack-report/"
 const outDir = process.argv[3] ?? "ai-artifacts/visual-qa"
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 const port = Number(process.env.VISUAL_QA_PORT ?? 9333)

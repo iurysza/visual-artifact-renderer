@@ -1,7 +1,8 @@
 ---
 title: Data-driven visual artifact renderer
-status: draft
+status: current
 created: 2026-06-11
+updated: 2026-06-12
 launch: /goal ai-artifacts/goals/visual-artifact-renderer/goal.md
 ---
 
@@ -9,34 +10,48 @@ launch: /goal ai-artifacts/goals/visual-artifact-renderer/goal.md
 
 ## Goal
 
-Build a local visual artifact system where the LLM creates **JSON specs**, not route files or React code.
+Visualizer is a local web app plus Pi extension for turning AI-generated JSON into polished visual pages: reports, plans, dashboards, docs, and explainers. It gives agents a safe presentation layer: choose known nodes, embed data, call one tool, get a local URL.
 
-The LLM calls one PI tool:
+The important trick: the LLM never writes React, routes, JSX, imports, or CSS. It emits a constrained artifact spec; the extension validates it, saves it under `~/.pi/artifacts/<project>/<slug>.json`, and the Next renderer maps each node to trusted UI adapters.
+
+## Current contract
+
+The LLM calls one Pi tool:
 
 ```ts
 create_visual_artifact(input)
 ```
 
-The tool validates the input, writes a JSON spec to `src/artifacts/<slug>.json`, and returns:
+The tool validates the input, derives a project name from the caller's working directory, writes:
 
 ```txt
-http://localhost:9999/artifacts/<slug>
+~/.pi/artifacts/<project>/<slug>.json
 ```
 
-A single Next route renders every artifact:
+and returns:
 
 ```txt
-app/artifacts/[slug]/page.tsx
+http://localhost:9999/artifacts/<project>/<slug>
 ```
 
-Artifacts can be reports, docs, plans, dashboards, explainers, or other visual pages.
+The app renders artifacts through:
+
+```txt
+src/app/artifacts/[project]/[slug]/page.tsx
+```
+
+A project index lives at:
+
+```txt
+src/app/artifacts/[project]/page.tsx
+```
 
 ## Non-goals
 
 - Do not generate `app/artifacts/<slug>/page.tsx` files.
 - Do not support arbitrary React/JSX from the LLM.
-- Do not implement the full component catalog in the first pass.
-- Do not add update/list/delete/versioning before the first renderer works.
+- Do not let the LLM import components, CSS, or runtime code.
+- Do not add update/list/delete/versioning before the create-and-render path stays boring.
 
 ## Mental model
 
@@ -44,17 +59,15 @@ Artifacts can be reports, docs, plans, dashboards, explainers, or other visual p
 component manifest
   → LLM chooses artifact structure
   → create_visual_artifact(JSON)
-  → Zod validation
-  → src/artifacts/<slug>.json
-  → /artifacts/[slug]
+  → tool validation
+  → ~/.pi/artifacts/<project>/<slug>.json
+  → /artifacts/<project>/<slug>
   → VisualArtifactRenderer
   → componentRegistry adapters
   → UI components
 ```
 
 ## Artifact spec shape
-
-MVP shape:
 
 ```ts
 type VisualArtifactSpec = {
@@ -67,75 +80,46 @@ type VisualArtifactSpec = {
 }
 ```
 
-Nodes are discriminated by `type`:
+`projectPath` is a tool-only override. It is used to derive `<project>` and is not stored in the artifact spec.
 
-```ts
-type ArtifactNode =
-  | CardNode
-  | MetricNode
-  | HeadingNode
-  | TextNode
-  | BadgeNode
-  | ButtonNode
-  | SeparatorNode
-  | TableNode
-  | DataTableNode
-  | ChartNode
-  | TabsNode
-  | AccordionNode
-  | GridNode
-  | SectionNode
+## Supported node set
+
+Current nodes:
+
+```txt
+heading, text, card, metric, stat-card, badge, button, separator,
+table, data-table, comparison-table, chart, mermaid, svg-diagram,
+flow, timeline, code-block, status-grid, grid, section, tabs, accordion
 ```
 
-The schema should be strict enough that bad LLM output fails before a file is written.
+Use the strongest component that fits: `stat-card` for top-line state, `status-grid` for readiness/risk boards, `comparison-table` for evidence, `flow` for paths, `timeline` for runbooks, and `mermaid` or `svg-diagram` for architecture.
 
 ## Renderer design
 
 The renderer has three layers:
 
-1. `getVisualArtifactSpec(slug)`
-   - reads `src/artifacts/<slug>.json`
-   - parses with Zod
+1. `src/lib/artifacts.ts`
+   - lists projects from `~/.pi/artifacts/`
+   - lists artifacts inside a project
+   - reads `~/.pi/artifacts/<project>/<slug>.json`
+   - parses specs with `VisualArtifactSpecSchema`
    - returns `null` for missing artifacts
 
-2. `VisualArtifactRenderer`
-   - renders artifact title/description
+2. `src/app/artifacts/[project]/[slug]/page.tsx`
+   - loads the artifact by project and slug
+   - passes build-time data to `ClientArtifactLoader` when available
+   - lets the client fetch the latest JSON so local updates appear without rebuilding
+
+3. `VisualArtifactRenderer` + `componentRegistry`
+   - renders title and description
    - applies page-level layout
    - recursively renders nodes
-
-3. `componentRegistry`
-   - maps artifact node types to React adapters
-   - adapters own compound component details
-   - no node renders by importing arbitrary components from LLM input
-
-## Initial adapter set
-
-Basics:
-
-- `heading`
-- `text`
-- `card`
-- `metric`
-- `badge`
-- `button`
-- `separator`
-
-Data views:
-
-- `table`
-- `data-table`
-- `chart`
-
-Navigation / organization:
-
-- `grid`
-- `section`
-- `tabs`
-- `accordion`
+   - maps node types to trusted adapters
+   - keeps compound component details out of the JSON DSL
 
 ## Data model
 
-Data is embedded in the artifact file:
+Artifact data is embedded in the same JSON file:
 
 ```json
 {
@@ -161,67 +145,38 @@ Data is embedded in the artifact file:
 }
 ```
 
-Nodes reference embedded datasets by key. Large/external data can come later.
+Nodes reference embedded datasets by key. Large files, external fetchers, cache policy, and auth stay out of scope until needed.
 
-## Tool contract
+## Tool behavior
 
-MVP tool:
+`create_visual_artifact` should:
 
-```ts
-type CreateVisualArtifactInput = VisualArtifactSpec
-```
-
-Behavior:
-
-1. Validate input with Zod.
-2. Validate slug.
-3. Ensure `src/artifacts/` exists.
-4. Write `src/artifacts/<slug>.json`.
-5. Return the local URL.
-
-Return shape:
-
-```ts
-type CreateVisualArtifactResult = {
-  slug: string
-  path: string
-  url: string
-}
-```
+1. Validate slug, title, layout, nodes, child nodes, and required `dataKey` datasets.
+2. Derive `<project>` from `projectPath` or the caller's cwd.
+3. Ensure `~/.pi/artifacts/<project>/` exists.
+4. Write pretty JSON to `~/.pi/artifacts/<project>/<slug>.json`.
+5. Return the local artifact URL.
 
 ## Manifest contract
 
-The LLM should receive a manifest generated from the same schema/registry source, not a hand-maintained fantasy list.
+The LLM-facing manifest lives in:
 
-Manifest entries should include:
-
-- node `type`
-- human description
-- allowed props
-- child rules
-- data requirements
-- tiny example
-
-Example:
-
-```json
-{
-  "type": "metric",
-  "description": "Compact KPI display with optional delta",
-  "props": {
-    "label": "string",
-    "value": "string | number",
-    "delta": "string?",
-    "trend": "up | down | neutral?"
-  },
-  "children": false
-}
+```txt
+src/lib/artifact-manifest.ts
 ```
+
+The runtime schema lives in:
+
+```txt
+src/lib/artifact-schema.ts
+```
+
+Manifest entries include node `type`, human description, allowed props, child rules, data requirements, and examples. The manifest should stay aligned with the schema and registry; a fake component list is worse than no list.
 
 ## Success criteria
 
-- A visual artifact can be created by writing one JSON spec.
-- `/artifacts/<slug>` renders it without adding a route file.
+- A visual artifact can be created by one tool call.
+- The file lands in `~/.pi/artifacts/<project>/<slug>.json`.
+- `/artifacts/<project>/<slug>` renders it without adding a route file.
 - Unknown or invalid nodes fail validation.
-- The LLM has enough manifest detail to produce valid artifacts.
-- The first implementation can render a useful report, doc, or plan from the same schema.
+- The same schema can render reports, docs, plans, dashboards, and explainers.

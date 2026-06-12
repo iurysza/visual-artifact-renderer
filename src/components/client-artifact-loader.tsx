@@ -10,7 +10,7 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: { project: 
 
   useEffect(() => {
     // Always fetch latest from server so updates apply without rebuilding
-    fetch(`/visualizer/data/artifacts/${project}/${slug}.json`)
+    fetch(`/artifacts/data/artifacts/${project}/${slug}.json`)
       .then(res => {
         if (!res.ok) throw new Error("Artifact not found")
         return res.json()

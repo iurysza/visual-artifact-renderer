@@ -11,7 +11,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type WheelEvent as ReactWheelEvent,
 } from "react"
 import {
   Bar,
@@ -380,6 +379,7 @@ function MermaidDiagram({
 }
 
 function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string; height: number; instructionsId: string }) {
+  const viewportRef = useRef<HTMLDivElement>(null)
   const svgMountRef = useRef<HTMLDivElement>(null)
   const initialViewBoxRef = useRef<MermaidViewBox | null>(null)
   const viewBoxRef = useRef<MermaidViewBox | null>(null)
@@ -392,10 +392,14 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
 
   const getSvgElement = useCallback(() => svgMountRef.current?.querySelector("svg") as SVGSVGElement | null, [])
 
-  const updateViewBox = useCallback((nextViewBox: MermaidViewBox) => {
-    viewBoxRef.current = nextViewBox
-    setViewBox(nextViewBox)
-  }, [])
+  const updateViewBox = useCallback(
+    (nextViewBox: MermaidViewBox) => {
+      viewBoxRef.current = nextViewBox
+      getSvgElement()?.setAttribute("viewBox", formatSvgViewBox(nextViewBox))
+      setViewBox(nextViewBox)
+    },
+    [getSvgElement]
+  )
 
   const zoomToScaleAt = useCallback(
     (clientX: number, clientY: number, targetScale: number) => {
@@ -515,7 +519,7 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
   }, [getSvgElement, viewBox])
 
   const handleWheel = useCallback(
-    (event: ReactWheelEvent<HTMLDivElement>) => {
+    (event: WheelEvent) => {
       const initialViewBox = initialViewBoxRef.current
       const currentViewBox = viewBoxRef.current
 
@@ -532,6 +536,16 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
     },
     [zoomToScaleAt]
   )
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+
+    if (!viewport) return
+
+    viewport.addEventListener("wheel", handleWheel, { passive: false })
+
+    return () => viewport.removeEventListener("wheel", handleWheel)
+  }, [handleWheel])
 
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -681,6 +695,7 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
   )
 
   const zoomScale = initialViewBox && viewBox ? getMermaidScale(initialViewBox, viewBox) : 1
+  const svgMarkup = useMemo(() => ({ __html: svg }), [svg])
 
   return (
     <div className="flex flex-col gap-3">
@@ -702,6 +717,7 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
         </div>
       </div>
       <div
+        ref={viewportRef}
         aria-describedby={instructionsId}
         aria-label="Zoomable Mermaid diagram"
         className={cn(
@@ -713,7 +729,6 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
-        onWheel={handleWheel}
         role="region"
         style={{ height, touchAction: "none" }}
         tabIndex={0}
@@ -721,7 +736,7 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
         <div
           ref={svgMountRef}
           className="h-full w-full select-none [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-none"
-          dangerouslySetInnerHTML={{ __html: svg }}
+          dangerouslySetInnerHTML={svgMarkup}
         />
       </div>
     </div>

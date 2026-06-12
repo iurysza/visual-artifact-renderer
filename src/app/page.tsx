@@ -48,7 +48,7 @@ export default async function Home() {
               projects.map((project) => (
                 <Link
                   key={project.name}
-                  href={`/artifacts/${project.name}`}
+                  href={`/${project.name}`}
                   className="group rounded-xl border bg-card p-5 text-card-foreground transition hover:-translate-y-0.5 hover:border-primary hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-4">

@@ -2,6 +2,10 @@
 
 Data-driven visual artifacts for local reports, docs, plans, dashboards, and explainers.
 
+Visualizer is a local web app plus Pi extension for turning AI-generated JSON into polished visual pages: reports, plans, dashboards, docs, and explainers. It gives agents a safe presentation layer: choose known nodes, embed data, call one tool, get a local URL.
+
+The important trick: the LLM never writes React, routes, JSX, imports, or CSS. It emits a constrained artifact spec; the extension validates it, saves it under `~/.pi/artifacts/<project>/<slug>.json`, and the Next renderer maps each node to trusted UI adapters.
+
 ## How it works
 
 ```txt
@@ -31,9 +35,9 @@ http://localhost:9999
 Sample artifacts:
 
 ```txt
-http://localhost:9999/artifacts/revenue-dashboard
-http://localhost:9999/artifacts/implementation-plan
-http://localhost:9999/artifacts/agent-stack-report
+http://localhost:9999/artifacts/visualizer/revenue-dashboard/
+http://localhost:9999/artifacts/visualizer/implementation-plan/
+http://localhost:9999/artifacts/visualizer/agent-stack-report/
 ```
 
 ## Verify
@@ -96,7 +100,7 @@ The tool writes:
 and returns:
 
 ```txt
-http://localhost:9999/artifacts/<project>/<slug>
+http://localhost:9999/<project>/<slug>/
 ```
 
 Optional overrides:
