@@ -3,7 +3,12 @@ import { notFound } from "next/navigation"
 
 import { listArtifactsInProject } from "@/lib/artifacts"
 
-export const dynamic = "force-dynamic"
+import { listProjects } from "@/lib/artifacts"
+
+export async function generateStaticParams() {
+  const projects = await listProjects()
+  return projects.map((p) => ({ project: p.name }))
+}
 
 export default async function ProjectArtifactsPage({
   params,

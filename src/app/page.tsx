@@ -4,8 +4,6 @@ import { listProjects } from "@/lib/artifacts"
 
 const steps = ["JSON spec", "Zod validate", "Render page"]
 
-export const dynamic = "force-dynamic"
-
 export default async function Home() {
   const projects = await listProjects()
 
