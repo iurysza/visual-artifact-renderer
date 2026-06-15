@@ -1,0 +1,277 @@
+{
+  "totalPackages": 30,
+  "grouped": [
+    {
+      "group": "ui",
+      "packages": [
+        "@base-ui/react",
+        "class-variance-authority",
+        "clsx",
+        "lucide-react",
+        "sonner",
+        "tailwind-merge",
+        "tailwindcss",
+        "tw-animate-css",
+        "vaul"
+      ],
+      "totalUsage": 53
+    },
+    {
+      "group": "framework",
+      "packages": [
+        "next",
+        "react",
+        "react-dom"
+      ],
+      "totalUsage": 31
+    },
+    {
+      "group": "data-viz",
+      "packages": [
+        "mermaid",
+        "recharts"
+      ],
+      "totalUsage": 5
+    },
+    {
+      "group": "other",
+      "packages": [
+        "@types/node",
+        "@types/react",
+        "@types/react-dom",
+        "eslint",
+        "eslint-config-next",
+        "shadcn",
+        "tsx",
+        "typescript"
+      ],
+      "totalUsage": 3
+    },
+    {
+      "group": "validation",
+      "packages": [
+        "zod"
+      ],
+      "totalUsage": 2
+    },
+    {
+      "group": "forms",
+      "packages": [
+        "date-fns",
+        "react-day-picker"
+      ],
+      "totalUsage": 1
+    },
+    {
+      "group": "themes",
+      "packages": [
+        "next-themes"
+      ],
+      "totalUsage": 1
+    },
+    {
+      "group": "highlighting",
+      "packages": [
+        "shiki"
+      ],
+      "totalUsage": 1
+    },
+    {
+      "group": "styling",
+      "packages": [
+        "@tailwindcss/postcss"
+      ],
+      "totalUsage": 0
+    },
+    {
+      "group": "testing",
+      "packages": [
+        "@types/jsdom",
+        "jsdom"
+      ],
+      "totalUsage": 0
+    }
+  ],
+  "packages": [
+    {
+      "name": "@base-ui/react",
+      "version": "^1.5.0",
+      "kind": "dependency",
+      "usageCount": 27
+    },
+    {
+      "name": "react",
+      "version": "19.2.4",
+      "kind": "dependency",
+      "usageCount": 23
+    },
+    {
+      "name": "lucide-react",
+      "version": "^1.17.0",
+      "kind": "dependency",
+      "usageCount": 13
+    },
+    {
+      "name": "class-variance-authority",
+      "version": "^0.7.1",
+      "kind": "dependency",
+      "usageCount": 8
+    },
+    {
+      "name": "next",
+      "version": "16.2.9",
+      "kind": "dependency",
+      "usageCount": 8
+    },
+    {
+      "name": "recharts",
+      "version": "3.8.0",
+      "kind": "dependency",
+      "usageCount": 4
+    },
+    {
+      "name": "sonner",
+      "version": "^2.0.7",
+      "kind": "dependency",
+      "usageCount": 2
+    },
+    {
+      "name": "zod",
+      "version": "^4.4.3",
+      "kind": "dependency",
+      "usageCount": 2
+    },
+    {
+      "name": "eslint-config-next",
+      "version": "16.2.9",
+      "kind": "devDependency",
+      "usageCount": 2
+    },
+    {
+      "name": "clsx",
+      "version": "^2.1.1",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "mermaid",
+      "version": "^11.15.0",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "next-themes",
+      "version": "^0.4.6",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "react-day-picker",
+      "version": "^10.0.1",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "shiki",
+      "version": "^4.2.0",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "tailwind-merge",
+      "version": "^3.6.0",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "vaul",
+      "version": "^1.1.2",
+      "kind": "dependency",
+      "usageCount": 1
+    },
+    {
+      "name": "eslint",
+      "version": "^9",
+      "kind": "devDependency",
+      "usageCount": 1
+    },
+    {
+      "name": "date-fns",
+      "version": "^4.4.0",
+      "kind": "dependency",
+      "usageCount": 0
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.4",
+      "kind": "dependency",
+      "usageCount": 0
+    },
+    {
+      "name": "shadcn",
+      "version": "^4.11.0",
+      "kind": "dependency",
+      "usageCount": 0
+    },
+    {
+      "name": "tw-animate-css",
+      "version": "^1.4.0",
+      "kind": "dependency",
+      "usageCount": 0
+    },
+    {
+      "name": "@tailwindcss/postcss",
+      "version": "^4",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "@types/jsdom",
+      "version": "^28.0.3",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "@types/node",
+      "version": "^20",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "@types/react",
+      "version": "^19",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "@types/react-dom",
+      "version": "^19",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "jsdom",
+      "version": "^29.1.1",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "tailwindcss",
+      "version": "^4",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "tsx",
+      "version": "^4.22.4",
+      "kind": "devDependency",
+      "usageCount": 0
+    },
+    {
+      "name": "typescript",
+      "version": "^5",
+      "kind": "devDependency",
+      "usageCount": 0
+    }
+  ]
+}
