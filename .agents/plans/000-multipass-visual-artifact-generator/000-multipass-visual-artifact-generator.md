@@ -369,8 +369,10 @@ Generated agentic report packets:
 
 Generated report direction output:
 
-- `report-direction.json`: thesis, intended artifact shape, audience, emphasis, section order, source packet mapping, recommended node types, data keys, snippet IDs, and unresolved questions
-- `report-direction.md`: human-readable storyboard that tells section passes what to build and why
+- `report-direction.json`: orientation-first thesis, intended artifact shape, audience, emphasis, section order, source packet mapping, recommended node types, data keys, snippet IDs, and unresolved questions
+- `report-direction.md`: human-readable storyboard that tells section passes what the reader should understand and why
+
+The director must not turn the final report into a remediation backlog. Its first job is to inform: what this project is, what matters, where to look, and how the pieces relate. Recommendations are allowed only as a small trailing section.
 
 ## Codebase orientation workflow instructions
 
@@ -464,12 +466,14 @@ type ReportDirectionBrief = {
   thesis: string
   intendedArtifact: "code-architecture" | "explainer" | "data-dashboard" | "runbook"
   audience: string
+  reportMode: "orientation-first"
   emphasis: string[]
   sectionOrder: string[]
   sections: Array<{
     id: string
     title: string
     purpose: string
+    readerQuestion: string
     sourcePacketIds: string[]
     suggestedNodeTypes: string[]
     dataKeys?: string[]
@@ -483,6 +487,10 @@ type ReportDirectionBrief = {
 Rules:
 
 - This pass steers the report narrative; deterministic extractors do not.
+- The report is orientation-first: explain what the project is, what matters, where to look, and how the pieces relate.
+- Do not lead with issues, fixes, refactors, or "what to do next".
+- Treat "attention areas" as important places to understand, not automatically as bad code.
+- Keep recommendations optional and trailing; they must not drive the artifact structure.
 - Decide what artifact to create, what to emphasize, and the section order before section passes start.
 - Prefer evidence-backed narrative direction over generic "show everything" structure.
 - Do not emit final `VisualArtifactSpec`; emit a brief for section passes and the assembler.
@@ -600,9 +608,9 @@ Responsibilities:
 
 ## Phase 8 — Report Director protocol
 
-- [ ] step 1: add a non-deterministic report director pass before section generation
-- [ ] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets
-- [ ] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping
+- [x] step 1: add a non-deterministic report director pass before section generation
+- [x] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets
+- [x] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping
 
 ## Phase 9 — Section generation protocol
 
