@@ -294,6 +294,60 @@ async function runJscpd(
   return { result, packet }
 }
 
+async function runDifftastic(
+  repoRoot: string,
+  context: ReturnType<typeof createExtractorContext>,
+): Promise<{ result: ToolResult; packet: VisualArtifactReportPacketInput }> {
+  const outputFile = path.join(context.assetsDir, "difftastic.json")
+  // Compare working tree against HEAD for structural changes
+  const cmd = `DFT_DISPLAY=json DFT_UNSTABLE=yes difft HEAD -- src > ${outputFile}`
+  const result = runTool("difftastic", cmd, repoRoot)
+  const data = parseJsonSafe(await fs.readFile(outputFile, "utf8").catch(() => "{}")) as any
+
+  const files = data?.files ?? []
+  const changedFiles = files.filter((f: any) => f.status === "changed")
+  const addedFiles = files.filter((f: any) => f.status === "added")
+  const removedFiles = files.filter((f: any) => f.status === "removed")
+
+  const topChanges = changedFiles
+    .slice(0, 10)
+    .map((f: any) => ({
+      path: f.path,
+      lhsChanges: f.lhs?.changes?.length ?? 0,
+      rhsChanges: f.rhs?.changes?.length ?? 0,
+    }))
+
+  const packet: VisualArtifactReportPacketInput = {
+    id: "difftastic",
+    kind: "change-scenario-trace",
+    title: "Structural diff from difftastic",
+    summary: `${changedFiles.length} files changed, ${addedFiles.length} added, ${removedFiles.length} removed since HEAD.`,
+    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
+    facts: {
+      changedFiles: changedFiles.length,
+      addedFiles: addedFiles.length,
+      removedFiles: removedFiles.length,
+      topChanges,
+    },
+    findings: [
+      {
+        title: `${changedFiles.length} files changed structurally since HEAD`,
+        evidence: topChanges.map((c: any) => `${c.path} (${c.lhsChanges} → ${c.rhsChanges} changes)`),
+        whyItMatters: "Structural diffs reveal which AST nodes changed, not just lines. This helps estimate change risk and blast radius.",
+        confidence: "high",
+      },
+    ],
+    assets: [
+      makeAsset(context, "difftastic.json", "json", "Difftastic output", "Structural diff with AST-level changes per file"),
+    ],
+    assemblyHints: [
+      { section: "change-risk map", suggestedNodeTypes: ["timeline", "comparison-table"], priority: "secondary" },
+    ],
+  }
+
+  return { result, packet }
+}
+
 function renderDigest(
   slug: string,
   toolResults: ToolResult[],
@@ -363,6 +417,12 @@ async function main() {
   toolResults.push(jscpd.result)
   packets.push(jscpd.packet)
   await writePacket(context, jscpd.packet)
+
+  // Secondary: difftastic for structural diff
+  const diff = await runDifftastic(repoRoot, context)
+  toolResults.push(diff.result)
+  packets.push(diff.packet)
+  await writePacket(context, diff.packet)
 
   // Write manifest
   const manifest = {
