@@ -1,9 +1,8 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { listArtifactsInProject } from "@/lib/artifacts"
-
-import { listProjects } from "@/lib/artifacts"
+import { listArtifactsInProject, listProjects } from "@/lib/artifacts"
+import { artifactPagePath } from "@/lib/paths"
 
 export async function generateStaticParams() {
   const projects = await listProjects()
@@ -43,7 +42,7 @@ export default async function ProjectArtifactsPage({
         {artifacts.map((artifact) => (
           <Link
             key={artifact.slug}
-            href={`/${project}/${artifact.slug}`}
+            href={artifactPagePath(project, artifact.slug)}
             className="group rounded-xl border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
           >
             <div className="flex items-start justify-between gap-4">

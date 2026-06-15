@@ -27,7 +27,6 @@ export async function listProjects(): Promise<ProjectListing[]> {
     for (const entry of entries) {
       if (!entry.isDirectory()) continue
 
-      const projectDir = path.join(ARTIFACTS_DIR, entry.name)
       const artifacts = await listArtifactsInProject(entry.name)
 
       if (artifacts.length === 0) continue
@@ -67,12 +66,23 @@ export async function listArtifactsInProject(projectName: string): Promise<Artif
       const filePath = path.join(projectDir, entry.name)
       const stats = await fs.stat(filePath)
       const raw = await fs.readFile(filePath, "utf8")
-      const parsed = VisualArtifactSpecSchema.safeParse(JSON.parse(raw))
+      let title = slug
+      let description: string | undefined
+
+      try {
+        const parsed = VisualArtifactSpecSchema.safeParse(JSON.parse(raw))
+        if (parsed.success) {
+          title = parsed.data.title
+          description = parsed.data.description
+        }
+      } catch {
+        // Invalid local artifact JSON should not take down the index page.
+      }
 
       artifacts.push({
         slug: parsedSlug.data,
-        title: parsed.success ? parsed.data.title : slug,
-        description: parsed.success ? parsed.data.description : undefined,
+        title,
+        description,
         modifiedAt: stats.mtime,
       })
     }
@@ -98,9 +108,10 @@ export async function getVisualArtifactSpec(projectName: string, slug: string): 
 
   try {
     const file = await fs.readFile(filePath, "utf8")
-    return VisualArtifactSpecSchema.parse(JSON.parse(file))
+    const parsed = VisualArtifactSpecSchema.safeParse(JSON.parse(file))
+    return parsed.success ? parsed.data : null
   } catch (error) {
-    if (isMissingFileError(error)) {
+    if (isMissingFileError(error) || error instanceof SyntaxError) {
       return null
     }
 

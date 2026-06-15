@@ -1,27 +1,59 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { VisualArtifactRenderer } from "@/components/visual-artifact-renderer"
+import { artifactDataUrl, artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/paths"
 import type { VisualArtifactSpec } from "@/lib/artifact-schema"
 
-export function ClientArtifactLoader({ project, slug, initialSpec }: { project: string; slug: string; initialSpec?: VisualArtifactSpec }) {
+interface ClientArtifactLoaderProps {
+  project?: string
+  slug?: string
+  initialSpec?: VisualArtifactSpec
+}
+
+export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtifactLoaderProps) {
+  const params = useMemo<ArtifactRouteParams | null>(() => {
+    if (project && slug) return { project, slug }
+    if (typeof window === "undefined") return null
+    return artifactParamsFromPath(window.location.pathname)
+  }, [project, slug])
   const [spec, setSpec] = useState<VisualArtifactSpec | null>(initialSpec || null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Always fetch latest from server so updates apply without rebuilding
-    fetch(`/artifacts/data/artifacts/${project}/${slug}.json`)
+    if (!params) return
+
+    // Always fetch latest from server so updates apply without rebuilding.
+    // The URL is derived from the current deployment base path so it works
+    // under Next.js dev, the static export server, and proxied mounts.
+    const url = artifactDataUrl(params.project, params.slug)
+    fetch(url)
       .then(res => {
-        if (!res.ok) throw new Error("Artifact not found")
+        if (!res.ok) throw new Error(`Artifact not found (${res.status})`)
         return res.json()
       })
-      .then(data => setSpec(data))
+      .then(data => {
+        setSpec(data)
+        setError(null)
+      })
       .catch(err => {
         if (!initialSpec) {
           setError(err.message)
+        } else {
+          // In dev mode there is no handler for the artifact JSON endpoint,
+          // so we keep using the statically embedded spec but warn loudly.
+          console.warn(`[ClientArtifactLoader] Failed to refresh artifact from ${url}:`, err.message)
         }
       })
-  }, [project, slug, initialSpec])
+  }, [params, initialSpec])
+
+  if (!params && !spec) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full items-center justify-center">
+        <p className="text-muted-foreground">Error: Unable to resolve artifact from the current URL</p>
+      </main>
+    )
+  }
 
   if (error) {
     return (

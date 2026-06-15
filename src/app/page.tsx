@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { listProjects } from "@/lib/artifacts"
+import { projectPagePath } from "@/lib/paths"
 
 const steps = ["JSON spec", "Zod validate", "Render page"]
 
@@ -48,7 +49,7 @@ export default async function Home() {
               projects.map((project) => (
                 <Link
                   key={project.name}
-                  href={`/${project.name}`}
+                  href={projectPagePath(project.name)}
                   className="group rounded-xl border bg-card p-5 text-card-foreground transition hover:-translate-y-0.5 hover:border-primary hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-4">

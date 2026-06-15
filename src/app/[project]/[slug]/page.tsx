@@ -1,7 +1,5 @@
 import { listProjects, listArtifactsInProject, getVisualArtifactSpec } from "@/lib/artifacts"
 import { ClientArtifactLoader } from "@/components/client-artifact-loader"
-import { VisualArtifactRenderer } from "@/components/visual-artifact-renderer"
-import { notFound } from "next/navigation"
 
 export async function generateStaticParams() {
   const projects = await listProjects()

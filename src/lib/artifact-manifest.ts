@@ -206,7 +206,7 @@ export const artifactManifest = {
   },
   "code-block": {
     type: "code-block",
-    description: "Formatted command/config/path block. Use for commands, env vars, YAML fragments, file maps, and ASCII trees.",
+    description: "Syntax-highlighted code block with a copy button. Use for commands, config snippets, env contracts, file maps, and ASCII trees. Set language for accurate highlighting (bash, typescript, python, yaml, json, etc.).",
     props: { title: "string?", language: "string?", code: "string", caption: "string?" },
     children: false,
     example: { type: "code-block", props: { title: "Smoke release", language: "bash", code: "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1" } },
