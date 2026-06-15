@@ -9,7 +9,7 @@ steps:
       - "- [ ] step 3: map each source idea to a workflow report packet consumed by the final assembler"
   - phase: report packet contract
     steps:
-      - "- [x] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints"
+      - "- [x] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, and confidence"
       - "- [x] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/"
       - "- [ ] step 3: require workflow runners to emit reports only, never the final VisualArtifactSpec"
   - phase: extension contract
@@ -171,12 +171,10 @@ type VisualArtifactReportPacket = {
     | "recommendations"
   title: string
   summary: string
-  instructionsSource: string[]
   facts: Record<string, unknown>
   findings: Array<{
     title: string
     evidence: string[]
-    whyItMatters: string
     changeRisk?: "low" | "medium" | "high"
     testCoverage?: string
     suggestedNextStep?: string
@@ -197,11 +195,6 @@ type VisualArtifactReportPacket = {
     startLine?: number
     endLine?: number
     description?: string
-  }>
-  assemblyHints?: Array<{
-    section: string
-    suggestedNodeTypes: string[]
-    priority: "primary" | "secondary"
   }>
   unresolvedQuestions?: string[]
 }
@@ -562,7 +555,7 @@ Responsibilities:
 
 ## Phase 2 — Report packet contract
 
-- [x] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints
+- [x] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, and confidence
 - [x] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/
 - [ ] step 3: require workflow runners to emit reports only, never the final VisualArtifactSpec
 
