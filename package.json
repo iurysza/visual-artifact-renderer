@@ -10,6 +10,7 @@
     "lint": "eslint",
     "verify:artifacts": "tsx scripts/verify-artifacts.ts",
     "visual:qa": "node scripts/visual-qa.mjs",
+    "extract": "tsx scripts/extract/index.ts",
     "validate:mermaid": "tsx scripts/validate-mermaid.ts",
     "test:mermaid-validator": "tsx scripts/test-mermaid-validator.ts"
   },

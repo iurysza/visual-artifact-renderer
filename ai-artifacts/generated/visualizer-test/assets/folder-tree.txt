@@ -3,11 +3,8 @@
 │ ├─ generated
 │ │ └─ visualizer-test
 │ │   ├─ assets
-│ │   │ └─ folder-tree.txt
 │ │   ├─ packets
-│ │   │ └─ repo-profile.json
 │ │   └─ reports
-│ │     └─ repo-profile.md
 │ ├─ goals
 │ │ └─ visual-artifact-renderer
 │ │   ├─ plan.md
@@ -65,6 +62,9 @@
 │ │ ├─ lib
 │ │ │ └─ runner.ts
 │ │ ├─ repo-profile.ts
+│ │ ├─ package-deps.ts
+│ │ ├─ internal-imports.ts
+│ │ ├─ index.ts
 │ │ └─ folder-layers.ts
 │ ├─ test-mermaid-validator.ts
 │ ├─ serve.mjs

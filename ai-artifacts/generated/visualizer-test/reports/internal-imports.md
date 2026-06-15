@@ -1,6 +1,6 @@
 # Internal import graph
 
-Extracted 12 internal import edges from 70 source files. Top internal target: src/lib/report-packet.ts.
+Extracted 18 internal import edges from 72 source files. Top internal target: src/lib/report-packet.ts.
 
 **Instructions source:** .agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md
 
@@ -8,20 +8,36 @@ Extracted 12 internal import edges from 70 source files. Top internal target: sr
 
 ```json
 {
-  "sourceFileCount": 70,
-  "internalEdgeCount": 12,
+  "sourceFileCount": 72,
+  "internalEdgeCount": 18,
   "topInternalTargets": [
     {
       "target": "src/lib/report-packet.ts",
-      "count": 4
+      "count": 5
     },
     {
       "target": "scripts/extract/lib/runner.ts",
-      "count": 3
+      "count": 4
     },
     {
       "target": "src/lib/mermaid-validator.ts",
       "count": 2
+    },
+    {
+      "target": "scripts/extract/repo-profile.ts",
+      "count": 1
+    },
+    {
+      "target": "scripts/extract/folder-layers.ts",
+      "count": 1
+    },
+    {
+      "target": "scripts/extract/internal-imports.ts",
+      "count": 1
+    },
+    {
+      "target": "scripts/extract/package-deps.ts",
+      "count": 1
     },
     {
       "target": "src/lib/artifact-manifest.ts",
@@ -54,16 +70,16 @@ Extracted 12 internal import edges from 70 source files. Top internal target: sr
       "count": 23
     },
     {
+      "package": "node:fs",
+      "count": 13
+    },
+    {
       "package": "lucide-react",
       "count": 13
     },
     {
-      "package": "node:fs",
-      "count": 12
-    },
-    {
       "package": "node:path",
-      "count": 8
+      "count": 10
     },
     {
       "package": "next",
@@ -83,7 +99,7 @@ Extracted 12 internal import edges from 70 source files. Top internal target: sr
 
 ## Findings
 
-### 12 internal import edges across 70 files
+### 18 internal import edges across 72 files
 
 **Evidence:**
 - internal-imports.json

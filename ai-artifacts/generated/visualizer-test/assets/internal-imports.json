@@ -1,6 +1,6 @@
 {
-  "fileCount": 70,
-  "internalEdgeCount": 12,
+  "fileCount": 72,
+  "internalEdgeCount": 18,
   "edges": [
     {
       "from": "scripts/extract/folder-layers.ts",
@@ -13,6 +13,30 @@
       "to": "../../src/lib/report-packet",
       "source": "scripts/extract/folder-layers.ts",
       "resolved": "src/lib/report-packet.ts"
+    },
+    {
+      "from": "scripts/extract/index.ts",
+      "to": "./repo-profile",
+      "source": "scripts/extract/index.ts",
+      "resolved": "scripts/extract/repo-profile.ts"
+    },
+    {
+      "from": "scripts/extract/index.ts",
+      "to": "./folder-layers",
+      "source": "scripts/extract/index.ts",
+      "resolved": "scripts/extract/folder-layers.ts"
+    },
+    {
+      "from": "scripts/extract/index.ts",
+      "to": "./internal-imports",
+      "source": "scripts/extract/index.ts",
+      "resolved": "scripts/extract/internal-imports.ts"
+    },
+    {
+      "from": "scripts/extract/index.ts",
+      "to": "./package-deps",
+      "source": "scripts/extract/index.ts",
+      "resolved": "scripts/extract/package-deps.ts"
     },
     {
       "from": "scripts/extract/internal-imports.ts",
@@ -30,6 +54,18 @@
       "from": "scripts/extract/lib/runner.ts",
       "to": "../../../src/lib/report-packet",
       "source": "scripts/extract/lib/runner.ts",
+      "resolved": "src/lib/report-packet.ts"
+    },
+    {
+      "from": "scripts/extract/package-deps.ts",
+      "to": "./lib/runner",
+      "source": "scripts/extract/package-deps.ts",
+      "resolved": "scripts/extract/lib/runner.ts"
+    },
+    {
+      "from": "scripts/extract/package-deps.ts",
+      "to": "../../src/lib/report-packet",
+      "source": "scripts/extract/package-deps.ts",
       "resolved": "src/lib/report-packet.ts"
     },
     {

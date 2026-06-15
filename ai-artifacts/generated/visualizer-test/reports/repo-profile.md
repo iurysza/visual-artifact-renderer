@@ -24,6 +24,7 @@ Profile of visualizer: Next.js, React, Base UI, Tailwind CSS, shadcn/ui, pnpm pa
     "lint": "eslint",
     "verify:artifacts": "tsx scripts/verify-artifacts.ts",
     "visual:qa": "node scripts/visual-qa.mjs",
+    "extract": "tsx scripts/extract/index.ts",
     "validate:mermaid": "tsx scripts/validate-mermaid.ts",
     "test:mermaid-validator": "tsx scripts/test-mermaid-validator.ts"
   },
@@ -128,6 +129,7 @@ Profile of visualizer: Next.js, React, Base UI, Tailwind CSS, shadcn/ui, pnpm pa
 - lint
 - verify:artifacts
 - visual:qa
+- extract
 - validate:mermaid
 - test:mermaid-validator
 
