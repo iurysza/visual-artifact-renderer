@@ -50,6 +50,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CodeBlock } from "@/components/ui/code-block"
 import { cn } from "@/lib/utils"
 
 type ArtifactRenderContext = {
@@ -919,17 +920,25 @@ function renderFlow({ node }: AdapterArgs<"flow">) {
 }
 
 function FlowStep({ item, index }: { item: ArtifactFlowItem; index: number }) {
+  const statusStr = item.status !== undefined ? formatCell(item.status) : ""
+  const descStr = item.description !== undefined ? formatCell(item.description) : ""
+  
+  const showStatus = item.status !== undefined && 
+                     statusStr.length > 0 && 
+                     statusStr.length <= 16 && 
+                     statusStr.toLowerCase() !== descStr.toLowerCase()
+
   return (
     <div className="relative">
       <div className={cn("min-h-full rounded-xl border bg-background/70 p-4", item.status && statusPanelClass(item.status))}>
         <div className="flex items-start justify-between gap-3">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full border bg-card font-mono text-[11px] font-medium text-muted-foreground">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full border bg-card font-mono text-xs font-medium text-muted-foreground">
             {index + 1}
           </span>
-          {item.status && <StatusChip value={item.status} />}
+          {showStatus && <StatusChip value={item.status} />}
         </div>
         {item.label && <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--clay)]">{item.label}</p>}
-        <p className="mt-1 font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{item.title}</p>
+        <p className="mt-1 truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{item.title}</p>
         {item.description && <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>}
       </div>
     </div>
@@ -947,41 +956,39 @@ function renderTimeline({ node, context }: AdapterArgs<"timeline">) {
   return (
     <div className="flex flex-col gap-4 rounded-2xl border bg-card/80 p-4 shadow-sm">
       {caption && <p className="text-sm text-muted-foreground">{caption}</p>}
-      <div className="relative flex flex-col gap-4 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-border">
-        {data.map((row, index) => (
-          <article key={index} className="relative grid grid-cols-[2rem_1fr] gap-3">
-            <div className="relative z-10 flex size-8 items-center justify-center rounded-full border bg-card font-mono text-[10px] font-medium text-muted-foreground">
-              {formatCell(row[markerKey] ?? index + 1)}
-            </div>
-            <div className={cn("rounded-xl border bg-background/70 p-4", statusPanelClass(row[statusKey]))}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(row[titleKey])}</p>
-                {row[statusKey] !== undefined && <StatusChip value={row[statusKey]} />}
+      <div className="relative flex flex-col gap-4 before:absolute before:bottom-4 before:left-4 before:top-4 before:w-px before:bg-border">
+        {data.map((row, index) => {
+          const statusVal = row[statusKey]
+          const descStr = row[descriptionKey] !== undefined ? formatCell(row[descriptionKey]) : ""
+          const statusStr = statusVal !== undefined ? formatCell(statusVal) : ""
+          
+          const showStatus = statusVal !== undefined && 
+                             statusStr.length > 0 && 
+                             statusStr.length <= 16 && 
+                             statusStr.toLowerCase() !== descStr.toLowerCase()
+
+          return (
+            <article key={index} className="relative grid grid-cols-[2rem_1fr] gap-3">
+              <div className="relative z-10 flex size-8 items-center justify-center rounded-full border bg-card font-mono text-[10px] font-medium text-muted-foreground">
+                {formatCell(row[markerKey] ?? index + 1)}
               </div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatCell(row[descriptionKey])}</p>
-            </div>
-          </article>
-        ))}
+              <div className={cn("rounded-xl border bg-background/70 p-4", statusPanelClass(row[statusKey]))}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <p className="truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(row[titleKey])}</p>
+                  {showStatus && <StatusChip value={row[statusKey]} />}
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatCell(row[descriptionKey])}</p>
+              </div>
+            </article>
+          )
+        })}
       </div>
     </div>
   )
 }
 
 function renderCodeBlock({ node }: AdapterArgs<"code-block">) {
-  const { title, language, code, caption } = node.props
-
-  return (
-    <figure className="overflow-hidden rounded-2xl border bg-zinc-950 text-zinc-50 shadow-sm dark:bg-black">
-      {(title || language) && (
-        <figcaption className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-zinc-400">
-          <span>{title ?? "Snippet"}</span>
-          {language && <span>{language}</span>}
-        </figcaption>
-      )}
-      <pre className="overflow-x-auto p-4 text-sm leading-6"><code>{code}</code></pre>
-      {caption && <p className="border-t border-white/10 px-4 py-2 text-sm text-zinc-400">{caption}</p>}
-    </figure>
-  )
+  return <CodeBlock {...node.props} />
 }
 
 function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) {
@@ -1000,15 +1007,25 @@ function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) {
           const title = row[titleKey] ?? row.component ?? row.name ?? `Item ${index + 1}`
           const description = descriptionKey ? row[descriptionKey] : row.notes ?? row.description
           const meta = metaKey ? row[metaKey] : undefined
+          
+          const statusVal = row[statusKey]
+          const descStr = description !== undefined ? formatCell(description) : ""
+          const statusStr = statusVal !== undefined ? formatCell(statusVal) : ""
+          
+          // Only show top-right status badge if it's short and not redundant with the description
+          const showStatus = statusVal !== undefined && 
+                             statusStr.length > 0 && 
+                             statusStr.length <= 16 && 
+                             statusStr.toLowerCase() !== descStr.toLowerCase()
 
           return (
             <div key={index} className={cn("min-h-full rounded-2xl border-[1.5px] bg-card/95 p-4 text-card-foreground shadow-[0_10px_34px_rgba(20,20,19,0.06)] dark:shadow-black/20", statusPanelClass(row[statusKey]))}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(title)}</p>
+                  <p className="truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(title)}</p>
                   {meta !== undefined && <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{formatCell(meta)}</p>}
                 </div>
-                <StatusChip value={row[statusKey]} />
+                {showStatus && <StatusChip value={statusVal} />}
               </div>
               {description !== undefined && <p className="mt-3 text-sm leading-6 text-muted-foreground">{formatCell(description)}</p>}
             </div>
@@ -1188,7 +1205,7 @@ function StatusChip({ value }: { value: unknown }) {
   const text = formatCell(value)
   const tone = statusTone(text)
 
-  return <Badge variant={statusBadgeVariant(tone)}>{text}</Badge>
+  return <Badge variant={statusBadgeVariant(tone)} className="max-w-[50%] justify-start">{text}</Badge>
 }
 
 function statusBadgeVariant(tone: ReturnType<typeof statusTone>) {
