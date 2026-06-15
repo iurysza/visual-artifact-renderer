@@ -1,0 +1,144 @@
+.
+├─ ai-artifacts
+│ ├─ generated
+│ │ └─ visualizer-test
+│ │   ├─ assets
+│ │   │ └─ folder-tree.txt
+│ │   ├─ packets
+│ │   │ └─ repo-profile.json
+│ │   └─ reports
+│ │     └─ repo-profile.md
+│ ├─ goals
+│ │ └─ visual-artifact-renderer
+│ │   ├─ plan.md
+│ │   ├─ interview.md
+│ │   ├─ goal.md
+│ │   ├─ facts.md
+│ │   ├─ dev-log.md
+│ │   ├─ design.md
+│ │   └─ README.md
+│ ├─ mermaid-graph-debug
+│ │ ├─ report.md
+│ │ ├─ cold-load-test.mjs
+│ │ ├─ cdp-repro.mjs
+│ │ ├─ cdp-repro-output.json
+│ │ └─ cdp-repro-output-after.json
+│ ├─ mermaid-validator
+│ │ ├─ example.mmd
+│ │ ├─ dev-log.md
+│ │ ├─ broken.mmd
+│ │ └─ README.md
+│ ├─ visual-qa
+│ │ ├─ audioguide
+│ │ │ ├─ dev
+│ │ │ │ ├─ agent-stack-qa.json
+│ │ │ │ ├─ agent-stack-mobile-light.png
+│ │ │ │ ├─ agent-stack-light.png
+│ │ │ │ └─ agent-stack-dark.png
+│ │ │ ├─ release
+│ │ │ │ ├─ agent-stack-qa.json
+│ │ │ │ ├─ agent-stack-mobile-light.png
+│ │ │ │ ├─ agent-stack-light.png
+│ │ │ │ └─ agent-stack-dark.png
+│ │ │ └─ runtime
+│ │ │   ├─ runtime-after-wait.png
+│ │ │   ├─ interactive-check.png
+│ │ │   ├─ agent-stack-qa.json
+│ │ │   ├─ agent-stack-mobile-light.png
+│ │ │   ├─ agent-stack-light.png
+│ │ │   └─ agent-stack-dark.png
+│ │ ├─ agent-stack-qa.json
+│ │ ├─ agent-stack-mobile-light.png
+│ │ ├─ agent-stack-light.png
+│ │ └─ agent-stack-dark.png
+│ ├─ architecture-review-handoff.md
+│ ├─ url-migration-delegate-report.md
+│ └─ validation-script.sh
+├─ public
+│ ├─ next.svg
+│ ├─ globe.svg
+│ ├─ file.svg
+│ ├─ vercel.svg
+│ └─ window.svg
+├─ scripts
+│ ├─ extract
+│ │ ├─ lib
+│ │ │ └─ runner.ts
+│ │ ├─ repo-profile.ts
+│ │ └─ folder-layers.ts
+│ ├─ test-mermaid-validator.ts
+│ ├─ serve.mjs
+│ ├─ validate-mermaid.ts
+│ ├─ verify-artifacts.ts
+│ └─ visual-qa.mjs
+├─ src
+│ ├─ app
+│ │ ├─ [project]
+│ │ │ ├─ [slug]
+│ │ │ │ └─ page.tsx
+│ │ │ └─ page.tsx
+│ │ ├─ components
+│ │ │ └─ page.tsx
+│ │ ├─ live-artifact
+│ │ │ └─ page.tsx
+│ │ ├─ page.tsx
+│ │ ├─ layout.tsx
+│ │ ├─ globals.css
+│ │ └─ favicon.ico
+│ ├─ components
+│ │ ├─ ui
+│ │ │ ├─ ... 8 more files
+│ │ │ ├─ tooltip.tsx
+│ │ │ ├─ toggle.tsx
+│ │ │ ├─ toggle-group.tsx
+│ │ │ ├─ textarea.tsx
+│ │ │ ├─ tabs.tsx
+│ │ │ ├─ table.tsx
+│ │ │ ├─ switch.tsx
+│ │ │ ├─ spinner.tsx
+│ │ │ ├─ sonner.tsx
+│ │ │ ├─ slider.tsx
+│ │ │ ├─ skeleton.tsx
+│ │ │ ├─ sheet.tsx
+│ │ │ ├─ separator.tsx
+│ │ │ ├─ select.tsx
+│ │ │ ├─ scroll-area.tsx
+│ │ │ ├─ radio-group.tsx
+│ │ │ ├─ progress.tsx
+│ │ │ ├─ popover.tsx
+│ │ │ ├─ pagination.tsx
+│ │ │ ├─ navigation-menu.tsx
+│ │ │ ├─ label.tsx
+│ │ │ ├─ input.tsx
+│ │ │ ├─ hover-card.tsx
+│ │ │ ├─ empty.tsx
+│ │ │ ├─ dropdown-menu.tsx
+│ │ │ ├─ drawer.tsx
+│ │ │ ├─ dialog.tsx
+│ │ │ ├─ collapsible.tsx
+│ │ │ ├─ code-block.tsx
+│ │ │ └─ checkbox.tsx
+│ │ ├─ theme-toggle.tsx
+│ │ ├─ component-registry.tsx
+│ │ ├─ client-artifact-loader.tsx
+│ │ └─ visual-artifact-renderer.tsx
+│ └─ lib
+│   ├─ report-packet.ts
+│   ├─ paths.ts
+│   ├─ mermaid-validator.ts
+│   ├─ artifacts.ts
+│   ├─ artifact-schema.ts
+│   ├─ artifact-manifest.ts
+│   └─ utils.ts
+├─ tsconfig.tsbuildinfo
+├─ tsconfig.json
+├─ skills-lock.json
+├─ postcss.config.mjs
+├─ pnpm-workspace.yaml
+├─ pnpm-lock.yaml
+├─ package.json
+├─ next.config.ts
+├─ next-env.d.ts
+├─ eslint.config.mjs
+├─ components.json
+└─ README.md

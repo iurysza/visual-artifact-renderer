@@ -1,0 +1,49 @@
+{
+  "id": "folder-layers",
+  "kind": "folder-layers",
+  "title": "Folder layers",
+  "summary": "Pruned folder tree of visualizer-test. Top-level areas: ai-artifacts, public, scripts, src.",
+  "instructionsSource": [
+    ".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"
+  ],
+  "facts": {
+    "topLevelDirectories": [
+      "ai-artifacts",
+      "public",
+      "scripts",
+      "src"
+    ],
+    "totalDirectories": 28,
+    "totalFiles": 122,
+    "maxDepth": 6,
+    "maxFilesPerDir": 30
+  },
+  "findings": [
+    {
+      "title": "Top-level structure: ai-artifacts, public, scripts, src",
+      "evidence": [
+        "folder-tree.txt"
+      ],
+      "whyItMatters": "Top-level folders reveal how the project is organized and where different concerns live.",
+      "confidence": "high"
+    }
+  ],
+  "assets": [
+    {
+      "type": "text",
+      "path": "assets/folder-tree.txt",
+      "title": "Pruned folder tree",
+      "description": "Compact ASCII tree with hidden directories and large file lists pruned"
+    }
+  ],
+  "assemblyHints": [
+    {
+      "section": "technical layers",
+      "suggestedNodeTypes": [
+        "mermaid",
+        "code-block"
+      ],
+      "priority": "secondary"
+    }
+  ]
+}
