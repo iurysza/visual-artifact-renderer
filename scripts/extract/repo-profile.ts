@@ -177,33 +177,25 @@ export async function runRepoProfileExtractor(repoRoot: string, slug: string, ou
     kind: "repo-profile",
     title: "Repository profile",
     summary: `Profile of ${packageJson?.name ?? slug}: ${frameworks.join(", ") || "unknown framework"}, ${packageManager} package manager, ${Object.keys(dependencies).length} dependencies, ${entryPoints.length} candidate entry points.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts,
     findings: [
       {
         title: frameworks.length > 0 ? `Detected frameworks: ${frameworks.join(", ")}` : "No major framework detected",
         evidence: Object.keys({ ...dependencies, ...devDependencies }).slice(0, 20),
-        whyItMatters: "Framework choice shapes how the system is built, tested, and deployed.",
         confidence: frameworks.length > 0 ? "high" : "medium",
       },
       {
         title: `Package manager: ${packageManager}`,
         evidence: [packageManager === "unknown" ? "No lockfile found" : `Lockfile present (${packageManager})`],
-        whyItMatters: "Determines install commands, workspace support, and dependency resolution behavior.",
         confidence: packageManager === "unknown" ? "low" : "high",
       },
       {
         title: `Test commands: ${testCommands.length > 0 ? testCommands.join(", ") : "none found"}`,
         evidence: Object.keys(scripts),
-        whyItMatters: "Test commands reveal the primary feedback loops for changes.",
         confidence: testCommands.length > 0 ? "high" : "medium",
       },
     ],
     assets: [],
-    assemblyHints: [
-      { section: "overview", suggestedNodeTypes: ["stat-card", "status-grid"], priority: "primary" },
-      { section: "technical layers", suggestedNodeTypes: ["comparison-table"], priority: "secondary" },
-    ],
   })
 
   return parseRepoProfilePacket(context)

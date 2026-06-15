@@ -92,11 +92,6 @@ function renderPacketMarkdown(packet: VisualArtifactReportPacket): string {
   lines.push(packet.summary)
   lines.push("")
 
-  if (packet.instructionsSource.length > 0) {
-    lines.push("**Instructions source:** " + packet.instructionsSource.join(", "))
-    lines.push("")
-  }
-
   if (Object.keys(packet.facts).length > 0) {
     lines.push("## Facts")
     lines.push("")
@@ -117,7 +112,6 @@ function renderPacketMarkdown(packet: VisualArtifactReportPacket): string {
         lines.push(`- ${evidence}`)
       }
       lines.push("")
-      lines.push(`**Why it matters:** ${finding.whyItMatters}`)
       if (finding.changeRisk) lines.push(`**Change risk:** ${finding.changeRisk}`)
       if (finding.testCoverage) lines.push(`**Test coverage:** ${finding.testCoverage}`)
       if (finding.suggestedNextStep) lines.push(`**Suggested next step:** ${finding.suggestedNextStep}`)
@@ -156,15 +150,6 @@ function renderPacketMarkdown(packet: VisualArtifactReportPacket): string {
       lines.push("```")
       lines.push("")
     }
-  }
-
-  if (packet.assemblyHints.length > 0) {
-    lines.push("## Assembly hints")
-    lines.push("")
-    for (const hint of packet.assemblyHints) {
-      lines.push(`- **${hint.section}** (${hint.priority}): ${hint.suggestedNodeTypes.join(", ")}`)
-    }
-    lines.push("")
   }
 
   if (packet.unresolvedQuestions && packet.unresolvedQuestions.length > 0) {

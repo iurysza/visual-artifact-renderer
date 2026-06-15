@@ -169,7 +169,6 @@ export async function runPackageDepsExtractor(repoRoot: string, slug: string, ou
     kind: "dependency-graph",
     title: "Package dependency groups",
     summary: `Grouped ${Object.keys(allDeps).length} declared packages. Top groups: ${topGroups.map(g => `${g.group} (${g.packages.length})`).join(", ") || "none"}.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       totalPackages: Object.keys(allDeps).length,
       topGroups: topGroups.map(g => ({ group: g.group, count: g.packages.length, totalUsage: g.totalUsage })),
@@ -182,15 +181,11 @@ export async function runPackageDepsExtractor(repoRoot: string, slug: string, ou
       {
         title: `${Object.keys(allDeps).length} declared packages across ${groupedArray.length} groups`,
         evidence: [packageDepsJson],
-        whyItMatters: "Package groups show what kinds of external capabilities the system relies on and where coupling to third-party code is concentrated.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, packageDepsJson, "json", "Package dependency groups", "Declared packages grouped by purpose with usage counts from source imports"),
-    ],
-    assemblyHints: [
-      { section: "technical layers", suggestedNodeTypes: ["data-table", "comparison-table"], priority: "secondary" },
     ],
   })
 

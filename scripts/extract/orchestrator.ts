@@ -88,7 +88,6 @@ async function runDependencyCruiser(
     kind: "dependency-graph",
     title: "Dependency graph from dependency-cruiser",
     summary: `Cruised ${totalCruised} total modules, ${modules.length} project modules. ${violations.length} violations. Top modules by dependency count: ${topModules.map((m: any) => m.source).join(", ") || "none"}.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       totalModules: totalCruised,
       projectModules: modules.length,
@@ -100,15 +99,11 @@ async function runDependencyCruiser(
       {
         title: `${totalCruised} modules cruised, ${violations.length} violations`,
         evidence: ["dependency-cruiser.json"],
-        whyItMatters: "Dependency graph reveals module coupling, layering, and architecture rule violations.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, "dependency-cruiser.json", "json", "Dependency cruiser output", "Full module dependency graph with violations and summary"),
-    ],
-    assemblyHints: [
-      { section: "technical layers", suggestedNodeTypes: ["mermaid", "data-table"], priority: "primary" },
     ],
   }
 
@@ -134,7 +129,6 @@ async function runKnip(
     kind: "repo-profile",
     title: "Unused code and dependencies from knip",
     summary: `Found ${unusedFiles.length} unused files, ${unusedDeps.length} unused dependencies, ${unusedExports.length} unused exports.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       unusedFiles: unusedFiles.slice(0, 20),
       unusedDependencies: unusedDeps.slice(0, 20),
@@ -145,15 +139,11 @@ async function runKnip(
       {
         title: `${unusedFiles.length} unused files, ${unusedDeps.length} unused deps, ${unusedExports.length} unused exports`,
         evidence: ["knip.json"],
-        whyItMatters: "Unused code increases maintenance burden and can hide dead code that may still be imported or referenced.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, "knip.json", "json", "Knip output", "Unused files, dependencies, and exports"),
-    ],
-    assemblyHints: [
-      { section: "overview", suggestedNodeTypes: ["stat-card", "status-grid"], priority: "secondary" },
     ],
   }
 
@@ -213,7 +203,6 @@ async function runAstGrep(
     kind: "codebase-orientation",
     title: "AST patterns from ast-grep",
     summary: `Found ${functions.length} function declarations, ${hooks.length} hooks. ${largeFunctions.length} large functions (>500 chars).`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       totalFunctions: functions.length,
       totalHooks: hooks.length,
@@ -223,15 +212,11 @@ async function runAstGrep(
       {
         title: `${largeFunctions.length} large functions detected`,
         evidence: largeFunctions.map((f: any) => `${f.name} at ${f.file}:${f.line}`),
-        whyItMatters: "Large functions may indicate low cohesion and complex conditional logic. Consider extracting smaller functions.",
         confidence: "medium",
       },
     ],
     assets: [
       makeAsset(context, "ast-grep.json", "json", "AST grep output", "Function declarations, hooks, and AST pattern matches"),
-    ],
-    assemblyHints: [
-      { section: "change-risk map", suggestedNodeTypes: ["comparison-table", "status-grid"], priority: "secondary" },
     ],
   }
 
@@ -267,7 +252,6 @@ async function runJscpd(
     kind: "knowledge-duplication-audit",
     title: "Code duplication from jscpd",
     summary: `Found ${duplicates.length} duplicates. ${percentage}% of ${totalLines} lines are duplicated.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       totalDuplicates: duplicates.length,
       totalLines,
@@ -279,15 +263,11 @@ async function runJscpd(
       {
         title: `${duplicates.length} duplicated blocks (${percentage}% of lines)`,
         evidence: ["jscpd-report.json"],
-        whyItMatters: "Duplicated code increases maintenance cost and risk of inconsistent fixes. Extract shared logic when practical.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, "jscpd-report.json", "json", "jscpd output", "Duplicated code blocks with file locations and line counts"),
-    ],
-    assemblyHints: [
-      { section: "technical layers", suggestedNodeTypes: ["comparison-table"], priority: "secondary" },
     ],
   }
 
@@ -322,7 +302,6 @@ async function runDifftastic(
     kind: "change-scenario-trace",
     title: "Structural diff from difftastic",
     summary: `${changedFiles.length} files changed, ${addedFiles.length} added, ${removedFiles.length} removed since HEAD.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       changedFiles: changedFiles.length,
       addedFiles: addedFiles.length,
@@ -333,15 +312,11 @@ async function runDifftastic(
       {
         title: `${changedFiles.length} files changed structurally since HEAD`,
         evidence: topChanges.map((c: any) => `${c.path} (${c.lhsChanges} → ${c.rhsChanges} changes)`),
-        whyItMatters: "Structural diffs reveal which AST nodes changed, not just lines. This helps estimate change risk and blast radius.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, "difftastic.json", "json", "Difftastic output", "Structural diff with AST-level changes per file"),
-    ],
-    assemblyHints: [
-      { section: "change-risk map", suggestedNodeTypes: ["timeline", "comparison-table"], priority: "secondary" },
     ],
   }
 

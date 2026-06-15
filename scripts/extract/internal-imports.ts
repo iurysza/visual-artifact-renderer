@@ -249,7 +249,6 @@ export async function runInternalImportsExtractor(repoRoot: string, slug: string
     kind: "dependency-graph",
     title: "Internal import graph",
     summary: `Extracted ${edges.length} internal import edges from ${sourceFiles.length} source files. Top internal target: ${topTargets[0]?.target ?? "none"}.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       sourceFileCount: sourceFiles.length,
       internalEdgeCount: edges.length,
@@ -260,17 +259,12 @@ export async function runInternalImportsExtractor(repoRoot: string, slug: string
       {
         title: `${edges.length} internal import edges across ${sourceFiles.length} files`,
         evidence: [internalImportsJson, dependencyGraphMmd],
-        whyItMatters: "Import relationships reveal coupling, layering, and which modules are central to the architecture.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, internalImportsJson, "json", "Internal import edges", "First 500 internal import edges with source and resolved target"),
       makeAsset(context, dependencyGraphMmd, "mermaid", "Dependency graph", "Top modules by internal import connectivity"),
-    ],
-    assemblyHints: [
-      { section: "technical layers", suggestedNodeTypes: ["mermaid"], priority: "primary" },
-      { section: "integration points", suggestedNodeTypes: ["data-table"], priority: "secondary" },
     ],
   })
 

@@ -120,7 +120,6 @@ export async function runFolderLayersExtractor(repoRoot: string, slug: string, o
     kind: "folder-layers",
     title: "Folder layers",
     summary: `Pruned folder tree of ${slug}. Top-level areas: ${topLevelDirs.join(", ") || "none"}.`,
-    instructionsSource: [".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"],
     facts: {
       topLevelDirectories: topLevelDirs,
       totalDirectories: tree.dirCount,
@@ -132,15 +131,11 @@ export async function runFolderLayersExtractor(repoRoot: string, slug: string, o
       {
         title: `Top-level structure: ${topLevelDirs.join(", ") || "flat"}`,
         evidence: [treeFileName],
-        whyItMatters: "Top-level folders reveal how the project is organized and where different concerns live.",
         confidence: "high",
       },
     ],
     assets: [
       makeAsset(context, treeFileName, "text", "Pruned folder tree", "Compact ASCII tree with hidden directories and large file lists pruned"),
-    ],
-    assemblyHints: [
-      { section: "technical layers", suggestedNodeTypes: ["mermaid", "code-block"], priority: "secondary" },
     ],
   })
 

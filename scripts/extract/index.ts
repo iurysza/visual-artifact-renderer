@@ -140,17 +140,6 @@ function renderDigest(manifest: ExtractorRunManifest, packets: VisualArtifactRep
     lines.push("")
   }
 
-  const hints = packets.flatMap((packet) => packet.assemblyHints.map((hint) => ({ packet, hint })))
-  if (hints.length > 0) {
-    lines.push("## Assembly hints")
-    lines.push("")
-    lines.push(...markdownTable([
-      ["Section", "Priority", "Suggested node types", "Source packet"],
-      ...hints.map(({ packet, hint }) => [hint.section, hint.priority, hint.suggestedNodeTypes.join(", "), packet.id]),
-    ]))
-    lines.push("")
-  }
-
   const unresolved = packets.flatMap((packet) => (packet.unresolvedQuestions ?? []).map((question) => ({ packet, question })))
   if (unresolved.length > 0) {
     lines.push("## Unresolved questions")

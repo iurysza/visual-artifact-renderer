@@ -20,7 +20,6 @@ export const ReportPacketFindingSchema = z
   .object({
     title: z.string().min(1),
     evidence: z.array(z.string().min(1)),
-    whyItMatters: z.string().min(1),
     changeRisk: z.enum(["low", "medium", "high"]).optional(),
     testCoverage: z.string().min(1).optional(),
     suggestedNextStep: z.string().min(1).optional(),
@@ -34,14 +33,6 @@ export const ReportPacketAssetSchema = z
     path: z.string().min(1),
     title: z.string().min(1),
     description: z.string().min(1).optional(),
-  })
-  .strict()
-
-export const ReportPacketAssemblyHintSchema = z
-  .object({
-    section: z.string().min(1),
-    suggestedNodeTypes: z.array(z.string().min(1)),
-    priority: z.enum(["primary", "secondary"]),
   })
   .strict()
 
@@ -63,13 +54,11 @@ export const VisualArtifactReportPacketSchema = z
     kind: ReportPacketKindSchema,
     title: z.string().min(1),
     summary: z.string().min(1),
-    instructionsSource: z.array(z.string().min(1)),
     facts: z.record(z.string(), z.unknown()).default({}),
     findings: z.array(ReportPacketFindingSchema).default([]),
     dataPatches: z.record(z.string(), z.array(z.unknown())).optional(),
     assets: z.array(ReportPacketAssetSchema).default([]),
     codeSnippets: z.array(ReportPacketCodeSnippetSchema).default([]),
-    assemblyHints: z.array(ReportPacketAssemblyHintSchema).default([]),
     unresolvedQuestions: z.array(z.string().min(1)).optional(),
   })
   .strict()
@@ -77,7 +66,6 @@ export const VisualArtifactReportPacketSchema = z
 export type ReportPacketKind = z.infer<typeof ReportPacketKindSchema>
 export type ReportPacketFinding = z.infer<typeof ReportPacketFindingSchema>
 export type ReportPacketAsset = z.infer<typeof ReportPacketAssetSchema>
-export type ReportPacketAssemblyHint = z.infer<typeof ReportPacketAssemblyHintSchema>
 export type ReportPacketCodeSnippet = z.infer<typeof ReportPacketCodeSnippetSchema>
 export type VisualArtifactReportPacket = z.infer<typeof VisualArtifactReportPacketSchema>
 export type VisualArtifactReportPacketInput = z.input<typeof VisualArtifactReportPacketSchema>
