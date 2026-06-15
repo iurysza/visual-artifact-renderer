@@ -30,6 +30,29 @@ Each step produces files that the next step consumes.
 
 Steps 1-2 are deterministic + agentic extraction. Steps 3-5 are agentic passes. Step 6 is the agent calling `create_visual_artifact`.
 
+## Unified pipeline
+
+**Run everything in one shot:**
+```bash
+pnpm extract:pipeline
+```
+
+This runs all 5 steps sequentially. Each step reads the files from the previous step.
+
+**Or run steps individually for granular control:**
+```bash
+pnpm extract                # deterministic extraction
+pnpm extract:agentic        # agentic workflows
+pnpm extract:director       # report director
+pnpm extract:visualization  # visualization strategy
+pnpm extract:assembler      # final assembler
+```
+
+**Or combine extraction phases:**
+```bash
+pnpm extract:all            # deterministic + agentic together
+```
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │  Deterministic  │───▶│  Agentic Report │───▶│  Report Director│
@@ -57,18 +80,27 @@ Steps 1-2 are deterministic + agentic extraction. Steps 3-5 are agentic passes. 
 
 ## Step-by-step instructions
 
-### Step 1 & 2: Extraction + Agentic reports
+### Full pipeline (one command)
+
+**Run everything:**
+```bash
+pnpm extract:pipeline
+```
+
+This runs all 5 steps sequentially and produces the final `visual-artifact-spec.json`. After it completes, you (the agent) read the spec and call `create_visual_artifact`.
+
+### Individual steps
+
+**Steps 1 & 2: Extraction + Agentic reports**
 
 **Quick run (both together):**
 ```bash
 pnpm extract:all
 ```
 
-This runs deterministic extraction followed by agentic report workflows in one shot.
+**Or separately:**
 
-**Or run separately for granular control:**
-
-**Step 1: Deterministic extraction**
+Step 1 — Deterministic extraction:
 ```bash
 pnpm extract
 ```
@@ -84,7 +116,7 @@ This executes a batch of cheap deterministic probes (dependency-cruiser, knip, a
 The slug defaults to the project directory name. Pass a custom slug if needed:
 `pnpm extract <repoRoot> <slug>`.
 
-**Step 2: Agentic report workflows**
+Step 2 — Agentic report workflows:
 ```bash
 pnpm extract:agentic
 ```
@@ -226,7 +258,7 @@ Read `src/lib/artifact-manifest.ts` for full descriptions, props, and examples.
 
 ## Troubleshooting
 
-**If `pnpm extract` fails:** Check that dependency-cruiser, knip, ast-grep, and jscpd are installed globally or in the project. Run `pnpm install` first.
+**If `pnpm extract:pipeline` fails at a step:** Check that dependency-cruiser, knip, ast-grep, and jscpd are installed. Run `pnpm install` first. If a specific step fails, you can re-run it individually (`pnpm extract:director`, `pnpm extract:assembler`, etc.) after fixing the issue.
 
 **If the Report Director produces empty/short output:** Check that `ai-artifacts/generated/<slug>/packets/` and `reports/` are populated after Step 1.
 
