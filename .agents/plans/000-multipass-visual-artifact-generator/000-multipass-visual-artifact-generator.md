@@ -38,14 +38,14 @@ steps:
     steps:
       - "- [ ] step 1: implement the codebase orientation report workflow: purpose, architecture overview, domain concepts, important components, flows, boundaries, testing, runtime concerns, tradeoffs, recommendations"
       - "- [ ] step 2: implement the important-component workflow using product importance, change frequency, blast radius, boundary ownership, complexity concentration, test path, and domain language"
-      - "- [ ] step 3: require neutral language: report importance, change risk, evidence, and verification paths instead of calling code bad"
+      - "- [x] step 3: require neutral language: report importance, change risk, evidence, and verification paths instead of calling code bad"
   - phase: hotspot and change-risk workflows
     steps:
       - "- [ ] step 1: implement hotspot audit: git churn plus size/complexity to find high-attention files"
       - "- [ ] step 2: implement change-scenario tracing for three realistic product changes"
-      - "- [ ] step 3: implement boundary inspection, dependency-direction check, god-module search, and side-effect mapping"
-      - "- [ ] step 4: implement testability, duplicated-knowledge, complex-conditional, and abstraction-usefulness probes"
-      - "- [ ] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence"
+      - "- [x] step 3: implement boundary inspection, dependency-direction check, god-module search, and side-effect mapping"
+      - "- [x] step 4: implement testability, duplicated-knowledge, complex-conditional, and abstraction-usefulness probes"
+      - "- [x] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence"
   - phase: report director protocol
     steps:
       - "- [ ] step 1: add a non-deterministic report director pass before section generation"
@@ -588,15 +588,15 @@ Responsibilities:
 
 - [ ] step 1: implement the codebase orientation report workflow: purpose, architecture overview, domain concepts, important components, flows, boundaries, testing, runtime concerns, tradeoffs, recommendations
 - [ ] step 2: implement the important-component workflow using product importance, change frequency, blast radius, boundary ownership, complexity concentration, test path, and domain language
-- [ ] step 3: require neutral language: report importance, change risk, evidence, and verification paths instead of calling code bad
+- [x] step 3: require neutral language: report importance, change risk, evidence, and verification paths instead of calling code bad
 
 ## Phase 7 — Hotspot and change-risk workflows
 
 - [ ] step 1: implement hotspot audit: git churn plus size/complexity to find high-attention files
 - [ ] step 2: implement change-scenario tracing for three realistic product changes
-- [ ] step 3: implement boundary inspection, dependency-direction check, god-module search, and side-effect mapping
-- [ ] step 4: implement testability, duplicated-knowledge, complex-conditional, and abstraction-usefulness probes
-- [ ] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence
+- [x] step 3: implement boundary inspection, dependency-direction check, god-module search, and side-effect mapping
+- [x] step 4: implement testability, duplicated-knowledge, complex-conditional, and abstraction-usefulness probes
+- [x] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence
 
 ## Phase 8 — Report Director protocol
 
