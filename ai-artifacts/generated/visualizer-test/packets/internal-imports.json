@@ -1,0 +1,122 @@
+{
+  "id": "internal-imports",
+  "kind": "dependency-graph",
+  "title": "Internal import graph",
+  "summary": "Extracted 12 internal import edges from 70 source files. Top internal target: src/lib/report-packet.ts.",
+  "instructionsSource": [
+    ".agents/plans/000-multipass-visual-artifact-generator/000-multipass-visual-artifact-generator.md"
+  ],
+  "facts": {
+    "sourceFileCount": 70,
+    "internalEdgeCount": 12,
+    "topInternalTargets": [
+      {
+        "target": "src/lib/report-packet.ts",
+        "count": 4
+      },
+      {
+        "target": "scripts/extract/lib/runner.ts",
+        "count": 3
+      },
+      {
+        "target": "src/lib/mermaid-validator.ts",
+        "count": 2
+      },
+      {
+        "target": "src/lib/artifact-manifest.ts",
+        "count": 1
+      },
+      {
+        "target": "src/lib/artifact-schema.ts",
+        "count": 1
+      },
+      {
+        "target": "src/app/globals.css",
+        "count": 1
+      }
+    ],
+    "topPackageImports": [
+      {
+        "package": "@/components",
+        "count": 57
+      },
+      {
+        "package": "@/lib",
+        "count": 50
+      },
+      {
+        "package": "@base-ui/react",
+        "count": 27
+      },
+      {
+        "package": "react",
+        "count": 23
+      },
+      {
+        "package": "lucide-react",
+        "count": 13
+      },
+      {
+        "package": "node:fs",
+        "count": 12
+      },
+      {
+        "package": "node:path",
+        "count": 8
+      },
+      {
+        "package": "next",
+        "count": 8
+      },
+      {
+        "package": "class-variance-authority",
+        "count": 8
+      },
+      {
+        "package": "node:os",
+        "count": 5
+      }
+    ]
+  },
+  "findings": [
+    {
+      "title": "12 internal import edges across 70 files",
+      "evidence": [
+        "internal-imports.json",
+        "dependency-graph.mmd"
+      ],
+      "whyItMatters": "Import relationships reveal coupling, layering, and which modules are central to the architecture.",
+      "confidence": "high"
+    }
+  ],
+  "assets": [
+    {
+      "type": "json",
+      "path": "assets/internal-imports.json",
+      "title": "Internal import edges",
+      "description": "First 500 internal import edges with source and resolved target"
+    },
+    {
+      "type": "mermaid",
+      "path": "assets/dependency-graph.mmd",
+      "title": "Dependency graph",
+      "description": "Top modules by internal import connectivity"
+    }
+  ],
+  "assemblyHints": [
+    {
+      "section": "technical layers",
+      "suggestedNodeTypes": [
+        "mermaid"
+      ],
+      "priority": "primary"
+    },
+    {
+      "section": "integration points",
+      "suggestedNodeTypes": [
+        "data-table"
+      ],
+      "priority": "secondary"
+    }
+  ]
+}

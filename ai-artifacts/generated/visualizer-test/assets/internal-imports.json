@@ -1,0 +1,78 @@
+{
+  "fileCount": 70,
+  "internalEdgeCount": 12,
+  "edges": [
+    {
+      "from": "scripts/extract/folder-layers.ts",
+      "to": "./lib/runner",
+      "source": "scripts/extract/folder-layers.ts",
+      "resolved": "scripts/extract/lib/runner.ts"
+    },
+    {
+      "from": "scripts/extract/folder-layers.ts",
+      "to": "../../src/lib/report-packet",
+      "source": "scripts/extract/folder-layers.ts",
+      "resolved": "src/lib/report-packet.ts"
+    },
+    {
+      "from": "scripts/extract/internal-imports.ts",
+      "to": "./lib/runner",
+      "source": "scripts/extract/internal-imports.ts",
+      "resolved": "scripts/extract/lib/runner.ts"
+    },
+    {
+      "from": "scripts/extract/internal-imports.ts",
+      "to": "../../src/lib/report-packet",
+      "source": "scripts/extract/internal-imports.ts",
+      "resolved": "src/lib/report-packet.ts"
+    },
+    {
+      "from": "scripts/extract/lib/runner.ts",
+      "to": "../../../src/lib/report-packet",
+      "source": "scripts/extract/lib/runner.ts",
+      "resolved": "src/lib/report-packet.ts"
+    },
+    {
+      "from": "scripts/extract/repo-profile.ts",
+      "to": "./lib/runner",
+      "source": "scripts/extract/repo-profile.ts",
+      "resolved": "scripts/extract/lib/runner.ts"
+    },
+    {
+      "from": "scripts/extract/repo-profile.ts",
+      "to": "../../src/lib/report-packet",
+      "source": "scripts/extract/repo-profile.ts",
+      "resolved": "src/lib/report-packet.ts"
+    },
+    {
+      "from": "scripts/test-mermaid-validator.ts",
+      "to": "../src/lib/mermaid-validator",
+      "source": "scripts/test-mermaid-validator.ts",
+      "resolved": "src/lib/mermaid-validator.ts"
+    },
+    {
+      "from": "scripts/validate-mermaid.ts",
+      "to": "../src/lib/mermaid-validator",
+      "source": "scripts/validate-mermaid.ts",
+      "resolved": "src/lib/mermaid-validator.ts"
+    },
+    {
+      "from": "scripts/verify-artifacts.ts",
+      "to": "../src/lib/artifact-manifest",
+      "source": "scripts/verify-artifacts.ts",
+      "resolved": "src/lib/artifact-manifest.ts"
+    },
+    {
+      "from": "scripts/verify-artifacts.ts",
+      "to": "../src/lib/artifact-schema",
+      "source": "scripts/verify-artifacts.ts",
+      "resolved": "src/lib/artifact-schema.ts"
+    },
+    {
+      "from": "src/app/layout.tsx",
+      "to": "./globals.css",
+      "source": "src/app/layout.tsx",
+      "resolved": "src/app/globals.css"
+    }
+  ]
+}
