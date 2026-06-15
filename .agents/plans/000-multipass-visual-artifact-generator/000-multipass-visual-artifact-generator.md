@@ -9,7 +9,7 @@ steps:
       - "- [ ] step 3: map each source idea to a workflow report packet consumed by the final assembler"
   - phase: report packet contract
     steps:
-      - "- [ ] step 1: define the report packet schema for facts, findings, evidence, assets, confidence, and assembly hints"
+      - "- [ ] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints"
       - "- [ ] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/"
       - "- [ ] step 3: require workflow runners to emit reports only, never the final VisualArtifactSpec"
   - phase: extension contract
@@ -26,12 +26,14 @@ steps:
       - "- [ ] step 3: make the planner return target audience, sections, node types, data keys, report packet IDs, graph ideas, and assembly order"
   - phase: deterministic extractor packets
     steps:
-      - "- [ ] step 1: implement repo profile extraction: package manager, framework, scripts, deps, entry points, tests, routes"
-      - "- [ ] step 2: implement folder/layer extraction with ignored directory pruning"
-      - "- [ ] step 3: implement internal import/dependency graph extraction"
-      - "- [ ] step 4: implement package dependency grouping"
-      - "- [ ] step 5: emit compact JSON facts, tables, Mermaid graphs, and report packets under ai-artifacts/generated/<slug>/"
-      - "- [ ] step 6: add validation fixtures for at least this repo"
+      - "- [ ] step 1: implement one batch extractor runner that executes all cheap deterministic probes in a single script/tool invocation"
+      - "- [ ] step 2: implement repo profile extraction: package manager, framework, scripts, deps, entry points, tests, routes"
+      - "- [ ] step 3: implement folder/layer extraction with ignored directory pruning"
+      - "- [ ] step 4: implement internal import/dependency graph extraction"
+      - "- [ ] step 5: implement package dependency grouping"
+      - "- [ ] step 6: emit compact JSON facts, LLM digest Markdown, tables, Mermaid graphs, and report packets under ai-artifacts/generated/<slug>/"
+      - "- [ ] step 7: make extractor output evidence for later writers, never final artifact structure"
+      - "- [ ] step 8: add validation fixtures for at least this repo"
   - phase: codebase orientation workflows
     steps:
       - "- [ ] step 1: implement the codebase orientation report workflow: purpose, architecture overview, domain concepts, important components, flows, boundaries, testing, runtime concerns, tradeoffs, recommendations"
@@ -44,16 +46,21 @@ steps:
       - "- [ ] step 3: implement boundary inspection, dependency-direction check, god-module search, and side-effect mapping"
       - "- [ ] step 4: implement testability, duplicated-knowledge, complex-conditional, and abstraction-usefulness probes"
       - "- [ ] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence"
+  - phase: report director protocol
+    steps:
+      - "- [ ] step 1: add a non-deterministic report director pass before section generation"
+      - "- [ ] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets"
+      - "- [ ] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping"
   - phase: section generation protocol
     steps:
-      - "- [ ] step 1: update the visual-artifact skill with router, planner, report packet, section, and assembler instructions"
+      - "- [ ] step 1: update the visual-artifact skill with router, planner, report packet, report director, section, and assembler instructions"
       - "- [ ] step 2: define code architecture artifact sections: overview, domain concepts, technical layers, integration points, runtime flow, data boundaries, change-risk map, testing confidence, tradeoffs, recommendations"
-      - "- [ ] step 3: require each section pass to consume only the plan plus selected report packets and output ArtifactNode[] plus optional data patches"
+      - "- [ ] step 3: require each section pass to consume the director brief plus selected report packets/snippets and output ArtifactNode[] plus optional data patches"
       - "- [ ] step 4: allow independent section passes to run serially in v1 and parallelize only after packet contracts are stable"
-      - "- [ ] step 5: add compact examples for planner output, report packets, section output, and final spec assembly"
+      - "- [ ] step 5: add compact examples for planner output, report packets, director brief, section output, and final spec assembly"
   - phase: assembly and validation
     steps:
-      - "- [ ] step 1: merge report packets, deterministic facts, generated assets, and section specs into one VisualArtifactSpec"
+      - "- [ ] step 1: merge report packets, deterministic facts, generated assets, code snippets, director brief, and section specs into one VisualArtifactSpec"
       - "- [ ] step 2: validate final spec against artifact-schema and extension validator limits"
       - "- [ ] step 3: run Mermaid validation for generated diagrams"
       - "- [ ] step 4: verify every report packet referenced by the final artifact exists on disk"
@@ -62,7 +69,7 @@ steps:
     steps:
       - "- [ ] step 1: add one complete code architecture example artifact generated from report packets"
       - "- [ ] step 2: document generator lifecycle, call-site responsibilities, and tool responsibilities"
-      - "- [ ] step 3: document when to use deterministic extractors, agentic report workflows, section passes, and LLM-only sections"
+      - "- [ ] step 3: document when to use deterministic extractors, agentic report workflows, director briefs, section passes, and LLM-only sections"
       - "- [ ] step 4: document the code-quality mental model and hotspot algorithms as reusable workflow instructions"
   - phase: future expansion
     steps:
@@ -76,9 +83,9 @@ steps:
 
 ## Outcome
 
-Integrate a layered multi-pass generator into the existing `visual-artifact` extension. The frontend renderer stays stable. The extension/skill layer becomes responsible for routing, planning, deterministic extraction, agentic report workflows, section generation, assembly, validation, and final artifact creation.
+Integrate a layered multi-pass generator into the existing `visual-artifact` extension. The frontend renderer stays stable. The extension/skill layer becomes responsible for routing, planning, deterministic extraction, agentic report workflows, report direction, section generation, assembly, validation, and final artifact creation.
 
-The important change: intermediate agents do **not** directly build the final page. They run focused workflows and emit structured **report packets**. The call site receives those packets, facts, diagrams, and assembly hints. A final assembler model uses that evidence to build the visual artifact spec and then calls `create_visual_artifact`.
+The important change: intermediate agents do **not** directly build the final page. They run focused workflows and emit structured **report packets**. The deterministic extractor batch collects cheap evidence in one go. A Report Director then reads the packets, facts, source prompts, and original intent to steer narrative direction before section passes and final assembly.
 
 ## Source ideas integrated
 
@@ -182,6 +189,15 @@ type VisualArtifactReportPacket = {
     title: string
     description?: string
   }>
+  codeSnippets?: Array<{
+    title: string
+    language?: string
+    code: string
+    path?: string
+    startLine?: number
+    endLine?: number
+    description?: string
+  }>
   assemblyHints?: Array<{
     section: string
     suggestedNodeTypes: string[]
@@ -196,6 +212,7 @@ Rules:
 - A workflow runner emits report packets only.
 - A workflow runner must not call `create_visual_artifact`.
 - A workflow runner must cite concrete evidence: files, commands, graph edges, tests, imports, package metadata, or repo facts.
+- A workflow runner can include compact `codeSnippets` for assembler-owned `code-block` nodes; snippets must include path/line evidence when possible and stay short enough to review.
 - A workflow runner can suggest node types and data patches, but the assembler owns the final `VisualArtifactSpec`.
 - Packets are saved by default for debugging, review, and repeatable assembly.
 
@@ -203,12 +220,46 @@ Rules:
 
 1. **Router** decides generator type: `code-architecture`, later `explainer`, `data-dashboard`, `runbook`.
 2. **Planner pass** returns the visualization plan: audience, sections, node types, data keys, extractors needed, report workflows needed, diagram ideas, packet IDs, assembly order.
-3. **Deterministic extractor pass** runs scripts/tools and emits fact packets plus generated assets.
-4. **Agentic report workflow pass** runs focused instructions against deterministic facts and source snippets; each workflow emits one report packet.
-5. **Section generation pass** consumes selected report packets and writes `ArtifactNode[]` plus optional `data` patches.
-6. **Assembler pass** merges deterministic facts, report packets, generated assets, and section specs into one `VisualArtifactSpec`.
-7. **Validation pass** checks schema, extension limits, packet references, asset existence, Mermaid syntax, and renderer compatibility.
-8. **Writer pass** calls `create_visual_artifact` and returns the URL.
+3. **Deterministic extractor batch pass** runs one script/tool invocation that executes many cheap deterministic probes and emits fact packets, normalized command output, an LLM-friendly digest, and generated assets.
+4. **Agentic report workflow pass** runs focused instructions against deterministic facts, source snippets, and source prompt context; each workflow emits one report packet.
+5. **Report Director pass** reads all packets, digests, assets, snippets, source prompts, and original user intent; it chooses the report thesis, artifact shape, section order, emphasis, and packet-to-section mapping.
+6. **Section generation pass** consumes the director brief plus selected report packets/snippets and writes `ArtifactNode[]` plus optional `data` patches.
+7. **Assembler pass** merges deterministic facts, report packets, generated assets, code snippets, section specs, and the director brief into one `VisualArtifactSpec`.
+8. **Validation pass** checks schema, extension limits, packet references, asset existence, Mermaid syntax, and renderer compatibility.
+9. **Artifact writer pass** calls `create_visual_artifact` and returns the URL.
+
+## Deterministic extractor intent
+
+Deterministic extractors are not meant to create deterministic final artifacts. Their job is to reduce LLM/tool-call round trips by running a useful bundle of cheap repo probes in one go, then formatting the output so the next LLM pass can ingest it quickly.
+
+V1 should prefer one batch extractor command over many separate tool calls. The batch runner should collect:
+
+- repo profile: package manager, framework, scripts, dependencies, dev dependencies, entry points, tests, routes
+- folder/layer map: compact pruned tree, important directories, ignored/generated directories
+- import graph: internal module/file edges, likely boundaries, cycles when cheap to detect
+- package dependency groups: UI, runtime, data, testing, build/tooling, observability, unknown
+- git/code facts when cheap: churn, file sizes, extension counts, recent commits, likely hotspots
+- generated assets: Mermaid graphs, compact tables, JSON facts, and source snippet references
+
+Outputs should be optimized for LLM ingestion:
+
+- `extractor-digest.md`: short, ranked, human-readable summary with paths and evidence
+- `extractor-run.json`: normalized command inventory and compact results
+- report packet JSON files for deterministic facts
+- generated Mermaid/assets under `ai-artifacts/generated/<slug>/assets/`
+
+The extractor should preserve raw-enough evidence for later verification, but it should also pre-shape data: rank, group, summarize, normalize paths, cap noisy lists, and call out missing/uncertain data. It can suggest hints, but it must not decide the final artifact narrative, node order, or page structure.
+
+## Workflow prompt context
+
+Every agentic report workflow must receive the full intent context, not only extractor output:
+
+- the integrated implementation plan: `000-multipass-visual-artifact-generator.md`
+- source prompt/instruction files: `idea.md`, `mental-model.md`, `code-base-report-guidelines.md`, and `hotspot-audit-algorithm.md`
+- the original user intent from this thread/handoff, especially the requirement that workflows produce reports that feed a final assembly step
+- deterministic fact packets, generated assets, and relevant source snippets selected by the planner
+
+This keeps the workflow agents aligned with the original design: evidence and report packets first, final visual artifact assembly last.
 
 ## Call-site contract
 
@@ -219,14 +270,16 @@ type GeneratedArtifactContext = {
   slug: string
   generatorType: "code-architecture" | "explainer" | "data-dashboard" | "runbook"
   planPath: string
+  deterministicDigestPath: string
   packetPaths: string[]
   reportPaths: string[]
   assetPaths: string[]
+  directorBriefPath?: string
   assemblyInstructions: string
 }
 ```
 
-The assembler model uses this context as its source of truth. It should not re-investigate everything from scratch unless a packet declares missing evidence.
+The Report Director uses this context first to decide narrative direction and section order. The assembler model then uses the director brief plus packets as its source of truth. Neither step should re-investigate everything from scratch unless a packet declares missing evidence.
 
 ## V1 vertical slice: code architecture report
 
@@ -253,6 +306,8 @@ Generated artifact should include:
 
 Generated deterministic outputs:
 
+- `extractor-digest.md`: LLM-oriented summary of the most useful deterministic facts, rankings, evidence paths, and caveats
+- `extractor-run.json`: normalized inventory of commands/probes run and their compact results
 - `facts.json`: framework, package manager, scripts, deps, routes, entry points, components, test commands
 - `folder-tree.txt`: compact pruned tree
 - `internal-imports.json`: source file/module import edges
@@ -272,6 +327,11 @@ Generated agentic report packets:
 - `side-effect-map`: database writes, network calls, file writes, analytics, global state, time/randomness, cache mutation
 - `abstraction-usefulness-audit`: useful abstractions vs unnecessary indirection/speculative generality
 - `recommendations`: ranked, practical next steps based on evidence from the other packets
+
+Generated report direction output:
+
+- `report-direction.json`: thesis, intended artifact shape, audience, emphasis, section order, source packet mapping, recommended node types, data keys, snippet IDs, and unresolved questions
+- `report-direction.md`: human-readable storyboard that tells section passes what to build and why
 
 ## Codebase orientation workflow instructions
 
@@ -343,13 +403,61 @@ Ranking rule:
 
 > Rank findings by future change risk, not ugliness.
 
+## Report Director protocol
+
+The Report Director is the non-deterministic writer/planner that turns evidence into editorial direction before section generation.
+
+It receives:
+
+- the integrated plan and source prompt/instruction files
+- the original user intent/handoff context
+- planner output
+- deterministic extractor digest and fact packets
+- agentic report packets
+- selected assets and code snippets
+- artifact manifest constraints
+
+It returns:
+
+```ts
+type ReportDirectionBrief = {
+  id: string
+  thesis: string
+  intendedArtifact: "code-architecture" | "explainer" | "data-dashboard" | "runbook"
+  audience: string
+  emphasis: string[]
+  sectionOrder: string[]
+  sections: Array<{
+    id: string
+    title: string
+    purpose: string
+    sourcePacketIds: string[]
+    suggestedNodeTypes: string[]
+    dataKeys?: string[]
+    codeSnippetIds?: string[]
+  }>
+  risksAndCaveats: string[]
+  unresolvedQuestions?: string[]
+}
+```
+
+Rules:
+
+- This pass steers the report narrative; deterministic extractors do not.
+- Decide what artifact to create, what to emphasize, and the section order before section passes start.
+- Prefer evidence-backed narrative direction over generic "show everything" structure.
+- Do not emit final `VisualArtifactSpec`; emit a brief for section passes and the assembler.
+
 ## Section generation protocol
 
 A section pass should be small and bounded. It receives:
 
 - the planner output
+- the report direction brief
 - selected report packet paths
+- selected deterministic digest excerpts
 - selected asset paths
+- selected code snippets
 - the artifact manifest
 - the exact target section
 
@@ -361,12 +469,14 @@ type SectionResult = {
   nodes: ArtifactNode[]
   dataPatches?: Record<string, unknown[]>
   sourcePacketIds: string[]
+  codeSnippetIds?: string[]
   warnings?: string[]
 }
 ```
 
 Rules:
 
+- Follow the Report Director brief for narrative emphasis, section purpose, and ordering.
 - Do not reread the whole repo unless the packet says evidence is missing.
 - Do not invent facts not present in packets.
 - Prefer `stat-card`, `status-grid`, `comparison-table`, `timeline`, `flow`, `mermaid`, and `data-table` over prose walls.
@@ -380,9 +490,10 @@ The assembler owns the final artifact spec.
 Inputs:
 
 - planner output
+- Report Director brief
 - all report packets
 - all section results
-- deterministic data files
+- deterministic data files and extractor digest
 - Mermaid assets
 - artifact manifest
 
@@ -405,7 +516,7 @@ Responsibilities:
 
 ## Phase 2 — Report packet contract
 
-- [ ] step 1: define the report packet schema for facts, findings, evidence, assets, confidence, and assembly hints
+- [ ] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints
 - [ ] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/
 - [ ] step 3: require workflow runners to emit reports only, never the final VisualArtifactSpec
 
@@ -425,12 +536,14 @@ Responsibilities:
 
 ## Phase 5 — Deterministic extractor packets
 
-- [ ] step 1: implement repo profile extraction: package manager, framework, scripts, deps, entry points, tests, routes
-- [ ] step 2: implement folder/layer extraction with ignored directory pruning
-- [ ] step 3: implement internal import/dependency graph extraction
-- [ ] step 4: implement package dependency grouping
-- [ ] step 5: emit compact JSON facts, tables, Mermaid graphs, and report packets under ai-artifacts/generated/<slug>/
-- [ ] step 6: add validation fixtures for at least this repo
+- [ ] step 1: implement one batch extractor runner that executes all cheap deterministic probes in a single script/tool invocation
+- [ ] step 2: implement repo profile extraction: package manager, framework, scripts, deps, entry points, tests, routes
+- [ ] step 3: implement folder/layer extraction with ignored directory pruning
+- [ ] step 4: implement internal import/dependency graph extraction
+- [ ] step 5: implement package dependency grouping
+- [ ] step 6: emit compact JSON facts, LLM digest Markdown, tables, Mermaid graphs, and report packets under ai-artifacts/generated/<slug>/
+- [ ] step 7: make extractor output evidence for later writers, never final artifact structure
+- [ ] step 8: add validation fixtures for at least this repo
 
 ## Phase 6 — Codebase orientation workflows
 
@@ -446,30 +559,36 @@ Responsibilities:
 - [ ] step 4: implement testability, duplicated-knowledge, complex-conditional, and abstraction-usefulness probes
 - [ ] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence
 
-## Phase 8 — Section generation protocol
+## Phase 8 — Report Director protocol
 
-- [ ] step 1: update the visual-artifact skill with router, planner, report packet, section, and assembler instructions
+- [ ] step 1: add a non-deterministic report director pass before section generation
+- [ ] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets
+- [ ] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping
+
+## Phase 9 — Section generation protocol
+
+- [ ] step 1: update the visual-artifact skill with router, planner, report packet, report director, section, and assembler instructions
 - [ ] step 2: define code architecture artifact sections: overview, domain concepts, technical layers, integration points, runtime flow, data boundaries, change-risk map, testing confidence, tradeoffs, recommendations
-- [ ] step 3: require each section pass to consume only the plan plus selected report packets and output ArtifactNode[] plus optional data patches
+- [ ] step 3: require each section pass to consume the director brief plus selected report packets/snippets and output ArtifactNode[] plus optional data patches
 - [ ] step 4: allow independent section passes to run serially in v1 and parallelize only after packet contracts are stable
-- [ ] step 5: add compact examples for planner output, report packets, section output, and final spec assembly
+- [ ] step 5: add compact examples for planner output, report packets, director brief, section output, and final spec assembly
 
-## Phase 9 — Assembly and validation
+## Phase 10 — Assembly and validation
 
-- [ ] step 1: merge report packets, deterministic facts, generated assets, and section specs into one VisualArtifactSpec
+- [ ] step 1: merge report packets, deterministic facts, generated assets, code snippets, director brief, and section specs into one VisualArtifactSpec
 - [ ] step 2: validate final spec against artifact-schema and extension validator limits
 - [ ] step 3: run Mermaid validation for generated diagrams
 - [ ] step 4: verify every report packet referenced by the final artifact exists on disk
 - [ ] step 5: call create_visual_artifact only after schema, asset, packet, and diagram validation pass
 
-## Phase 10 — Docs and examples
+## Phase 11 — Docs and examples
 
 - [ ] step 1: add one complete code architecture example artifact generated from report packets
 - [ ] step 2: document generator lifecycle, call-site responsibilities, and tool responsibilities
-- [ ] step 3: document when to use deterministic extractors, agentic report workflows, section passes, and LLM-only sections
+- [ ] step 3: document when to use deterministic extractors, agentic report workflows, director briefs, section passes, and LLM-only sections
 - [ ] step 4: document the code-quality mental model and hotspot algorithms as reusable workflow instructions
 
-## Phase 11 — Future expansion
+## Phase 12 — Future expansion
 
 - [ ] step 1: add optional ARCHITECTURE.md update mode after visual artifact generation works
 - [ ] step 2: add generic explainer generator after code architecture is stable
@@ -489,7 +608,8 @@ Responsibilities:
 
 - Persist deterministic extractor outputs and report packets by default under `ai-artifacts/generated/<slug>/`.
 - Keep `ARCHITECTURE.md` update mode out of core v1; add it after artifact generation works.
-- Use serial report and section generation in v1; evaluate parallelism only after packet contracts are stable.
+- Use serial report, director, and section generation in v1; evaluate parallelism only after packet contracts are stable.
+- Deterministic extractors batch cheap probes into one invocation for LLM ingestion; they do not choose the final artifact narrative or page structure.
 
 ## Unresolved questions
 
