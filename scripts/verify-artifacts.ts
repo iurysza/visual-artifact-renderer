@@ -54,7 +54,27 @@ async function main() {
     throw new Error("Unknown node type should fail validation")
   }
 
-  console.log(`Verified ${files.length} artifact spec(s) and ${ARTIFACT_NODE_TYPES.length} manifest entries.`)
+  const codeBlock = VisualArtifactSpecSchema.safeParse({
+    slug: "code-block-contract",
+    title: "Code block contract",
+    nodes: [
+      {
+        type: "code-block",
+        props: {
+          title: "Example snippet",
+          language: "typescript",
+          code: "const answer: number = 42",
+          caption: "Copyable syntax-highlighted snippet",
+        },
+      },
+    ],
+  })
+
+  if (!codeBlock.success) {
+    throw new Error(`Code block node should pass validation: ${codeBlock.error.message}`)
+  }
+
+  console.log(`Verified ${files.length} artifact spec(s), ${ARTIFACT_NODE_TYPES.length} manifest entries, and code-block contract.`)
 }
 
 main().catch((error) => {

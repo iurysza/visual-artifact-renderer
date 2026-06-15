@@ -40,6 +40,56 @@ http://localhost:9999/artifacts/visualizer/implementation-plan/
 http://localhost:9999/artifacts/visualizer/agent-stack-report/
 ```
 
+## Serve the static export locally
+
+Build once, then run a tiny local server (no Next.js dev overhead):
+
+```bash
+pnpm build
+pnpm serve
+```
+
+The server binds to `127.0.0.1:9999` by default and serves the built `out/` directory. It accepts requests under `/artifacts/` for direct local use **and** at the root so Tailscale Serve path prefixes work without re-exporting the app:
+
+```txt
+http://localhost:9999/artifacts/
+```
+
+Fresh artifact JSON is read from `~/.pi/artifacts/` at `/artifacts/data/artifacts/<project>/<slug>.json`. If a new artifact was created after the last build, `pnpm serve` serves a generic live shell at `/artifacts/<project>/<slug>/` and loads that JSON client-side, so direct tool-returned URLs open without rebuilding. Project indexes still refresh on the next `pnpm build`.
+
+Environment variables:
+
+```bash
+VISUALIZER_PORT=9999
+VISUALIZER_HOST=127.0.0.1
+VISUALIZER_OUT_DIR=./out
+VISUALIZER_ARTIFACTS_DIR=~/.pi/artifacts
+VISUALIZER_MOUNT_PATH=/artifacts
+VISUALIZER_OPEN=1
+```
+
+### Tailscale Serve
+
+Expose it on your tailnet like the reports route:
+
+```bash
+tailscale serve --yes --bg --https 443 --set-path /artifacts/ http://127.0.0.1:9999
+```
+
+Then open:
+
+```txt
+https://iurys-macbook-pro.taila5dafe.ts.net/artifacts/
+```
+
+If `tailscale serve status` still shows `/artifacts/` proxying to an old port like `127.0.0.1:9998`, rerun the command above to update it to `127.0.0.1:9999`.
+
+Direct `http://<tailscale-ip>:9999/artifacts/` access is separate from Tailscale Serve. It only works when the local server is listening on a non-loopback interface:
+
+```bash
+VISUALIZER_HOST=0.0.0.0 pnpm serve
+```
+
 ## Verify
 
 ```bash
@@ -100,14 +150,16 @@ The tool writes:
 and returns:
 
 ```txt
-http://localhost:9999/<project>/<slug>/
+http://localhost:9999/artifacts/<project>/<slug>/
 ```
 
 Optional overrides:
 
 ```bash
-export VISUAL_ARTIFACT_BASE_URL=http://localhost:9999
+export VISUAL_ARTIFACT_BASE_URL=http://localhost:9999/artifacts
 ```
+
+`VISUAL_ARTIFACT_BASE_URL` is the visualizer deployment root. The tool appends `<project>/<slug>/`.
 
 ## Supported nodes
 

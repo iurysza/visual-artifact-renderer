@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { spawn } from "node:child_process"
 
+// Canonical artifact URL shape; keep in sync with src/lib/paths.ts artifactPageUrl().
 const url = process.argv[2] ?? "http://localhost:9999/artifacts/visualizer/agent-stack-report/"
 const outDir = process.argv[3] ?? "ai-artifacts/visual-qa"
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
