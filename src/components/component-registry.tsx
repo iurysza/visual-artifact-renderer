@@ -51,7 +51,9 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeBlock } from "@/components/ui/code-block"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { Maximize2Icon, Minimize2Icon } from "lucide-react"
 
 type ArtifactRenderContext = {
   data: VisualArtifactSpec["data"]
@@ -420,6 +422,58 @@ function MermaidDiagram({
 }
 
 function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string; height: number; instructionsId: string }) {
+  const [isMaximized, setIsMaximized] = useState(false)
+
+  return (
+    <>
+      <MermaidViewport
+        svg={svg}
+        height={height}
+        instructionsId={instructionsId}
+        onToggleMaximize={() => setIsMaximized(true)}
+      />
+      <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
+        <DialogContent
+          className="gap-0 overflow-hidden rounded-2xl p-0"
+          style={{
+            width: "min(calc(100vw - 1rem), 80rem)",
+            maxWidth: "calc(100vw - 1rem)",
+            height: "80dvh",
+            maxHeight: "calc(100dvh - 1rem)",
+          }}
+          showCloseButton={false}
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>Maximized Mermaid diagram</DialogTitle>
+          </DialogHeader>
+          <div className="flex h-full min-h-0 flex-col gap-3 p-3 sm:p-4">
+            <MermaidViewport
+              svg={svg}
+              height="100%"
+              instructionsId={`${instructionsId}-maximized`}
+              isMaximized
+              onToggleMaximize={() => setIsMaximized(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+function MermaidViewport({
+  svg,
+  height,
+  instructionsId,
+  onToggleMaximize,
+  isMaximized = false,
+}: {
+  svg: string
+  height: number | string
+  instructionsId: string
+  onToggleMaximize?: () => void
+  isMaximized?: boolean
+}) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const svgMountRef = useRef<HTMLDivElement>(null)
   const initialViewBoxRef = useRef<MermaidViewBox | null>(null)
@@ -737,9 +791,10 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
 
   const zoomScale = initialViewBox && viewBox ? getMermaidScale(initialViewBox, viewBox) : 1
   const svgMarkup = useMemo(() => ({ __html: svg }), [svg])
+  const fillsParent = height === "100%"
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn("flex flex-col gap-3", fillsParent && "h-full min-h-0")}>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
         <p id={instructionsId} className="text-xs leading-5 text-muted-foreground">
           ⌘/Ctrl + wheel or pinch to zoom. Drag to pan. Focus the diagram for arrows, +/−, and 0/F reset.
@@ -755,14 +810,26 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
           <Button type="button" variant="secondary" size="sm" onClick={resetView}>
             Fit
           </Button>
+          {onToggleMaximize && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={isMaximized ? "Minimize Mermaid diagram" : "Maximize Mermaid diagram"}
+              onClick={onToggleMaximize}
+            >
+              {isMaximized ? <Minimize2Icon className="h-4 w-4" /> : <Maximize2Icon className="h-4 w-4" />}
+            </Button>
+          )}
         </div>
       </div>
       <div
         ref={viewportRef}
         aria-describedby={instructionsId}
-        aria-label="Zoomable Mermaid diagram"
+        aria-label={isMaximized ? "Maximized Mermaid diagram" : "Zoomable Mermaid diagram"}
         className={cn(
           "overflow-hidden rounded-xl border bg-background/60 p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
+          fillsParent && "min-h-0 flex-1",
           isDragging ? "cursor-grabbing" : "cursor-grab"
         )}
         onKeyDown={handleKeyDown}
@@ -771,7 +838,7 @@ function ZoomableMermaidViewport({ svg, height, instructionsId }: { svg: string;
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         role="region"
-        style={{ height, touchAction: "none" }}
+        style={{ height: fillsParent ? undefined : height, touchAction: "none" }}
         tabIndex={0}
       >
         <div
