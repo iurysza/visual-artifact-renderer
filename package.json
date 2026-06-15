@@ -13,6 +13,7 @@
     "extract": "tsx scripts/extract/index.ts",
     "extract:orchestrator": "tsx scripts/extract/orchestrator.ts",
     "extract:director": "tsx scripts/extract/run-report-director.ts",
+    "extract:visualization": "tsx scripts/extract/run-visualization-strategy.ts",
     "validate:mermaid": "tsx scripts/validate-mermaid.ts",
     "test:mermaid-validator": "tsx scripts/test-mermaid-validator.ts"
   },

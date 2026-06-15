@@ -48,9 +48,14 @@ steps:
       - "- [x] step 5: score every attention point with evidence, why it matters, change risk, test coverage, next step, and confidence"
   - phase: report director protocol
     steps:
-      - "- [ ] step 1: add a non-deterministic report director pass before section generation"
-      - "- [ ] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets"
-      - "- [ ] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping"
+      - "- [x] step 1: add a non-deterministic report director pass before section generation"
+      - "- [x] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets"
+      - "- [x] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping"
+  - phase: visualization strategy protocol
+    steps:
+      - "- [x] step 1: add a non-deterministic Markdown-only art director pass after Report Director"
+      - "- [x] step 2: make it read report direction, source prompts, deterministic digest, report packets, reports, and artifact component palette"
+      - "- [x] step 3: make it output open visualization instructions for the final tool-calling assembler, not typed component specs"
   - phase: section generation protocol
     steps:
       - "- [ ] step 1: update the visual-artifact skill with router, planner, report packet, report director, section, and assembler instructions"
@@ -212,14 +217,15 @@ Rules:
 ## V1 pipeline
 
 1. **Router** decides generator type: `code-architecture`, later `explainer`, `data-dashboard`, `runbook`.
-2. **Planner pass** returns the visualization plan: audience, sections, node types, data keys, extractors needed, report workflows needed, diagram ideas, packet IDs, assembly order.
+2. **Planner pass** returns the initial generation plan: audience, extractors needed, report workflows needed, packet IDs, and assembly order.
 3. **Deterministic extractor batch pass** runs one script/tool invocation that executes many cheap deterministic probes and emits fact packets, normalized command output, an LLM-friendly digest, and generated assets.
 4. **Agentic report workflow pass** runs focused instructions against deterministic facts, source snippets, and source prompt context; each workflow emits one report packet.
 5. **Report Director pass** reads all packets, digests, assets, snippets, source prompts, and original user intent; it chooses the report thesis, artifact shape, section order, emphasis, and packet-to-section mapping.
-6. **Section generation pass** consumes the director brief plus selected report packets/snippets and writes `ArtifactNode[]` plus optional `data` patches.
-7. **Assembler pass** merges deterministic facts, report packets, generated assets, code snippets, section specs, and the director brief into one `VisualArtifactSpec`.
-8. **Validation pass** checks schema, extension limits, packet references, asset existence, Mermaid syntax, and renderer compatibility.
-9. **Artifact writer pass** calls `create_visual_artifact` and returns the URL.
+6. **Visualization strategy pass** reads the director brief, reports, packets, source prompts, and artifact component palette; it writes an open Markdown art-direction brief for how the final artifact should visualize the information.
+7. **Section generation pass** consumes the director brief, visualization strategy, and selected report packets/snippets, then writes `ArtifactNode[]` plus optional `data` patches.
+8. **Assembler pass** merges deterministic facts, report packets, generated assets, code snippets, section specs, the director brief, and visualization strategy into one `VisualArtifactSpec`.
+9. **Validation pass** checks schema, extension limits, packet references, asset existence, Mermaid syntax, and renderer compatibility.
+10. **Artifact writer pass** calls `create_visual_artifact` and returns the URL.
 
 ## Deterministic extractor intent
 
@@ -313,11 +319,12 @@ type GeneratedArtifactContext = {
   reportPaths: string[]
   assetPaths: string[]
   directorBriefPath?: string
+  visualizationStrategyPath?: string
   assemblyInstructions: string
 }
 ```
 
-The Report Director uses this context first to decide narrative direction and section order. The assembler model then uses the director brief plus packets as its source of truth. Neither step should re-investigate everything from scratch unless a packet declares missing evidence.
+The Report Director uses this context first to decide narrative direction and section order. The Visualization Strategy pass then decides how to present that direction using the available artifact components. The assembler model uses the director brief, visualization strategy, and packets as its source of truth. These steps should not re-investigate everything from scratch unless a packet declares missing evidence.
 
 ## V1 vertical slice: code architecture report
 
@@ -373,6 +380,10 @@ Generated report direction output:
 - `report-direction.md`: human-readable storyboard that tells section passes what the reader should understand and why
 
 The director must not turn the final report into a remediation backlog. Its first job is to inform: what this project is, what matters, where to look, and how the pieces relate. Recommendations are allowed only as a small trailing section.
+
+Generated visualization strategy output:
+
+- `visualization-strategy.md`: open-ended art-direction brief for the final tool-calling assembler. It suggests composition, component usage, section treatment, evidence display, and diagram/table/card opportunities in prose. It is intentionally not a typed schema.
 
 ## Codebase orientation workflow instructions
 
@@ -495,6 +506,35 @@ Rules:
 - Prefer evidence-backed narrative direction over generic "show everything" structure.
 - Do not emit final `VisualArtifactSpec`; emit a brief for section passes and the assembler.
 
+## Visualization strategy protocol
+
+The Visualization Strategy pass is a non-deterministic art-director pass after Report Director and before section generation.
+
+It receives:
+
+- the Report Director JSON and Markdown brief
+- the integrated plan and source prompt/instruction files
+- deterministic extractor digest and fact packets
+- agentic free-flow reports
+- selected assets and snippets
+- artifact component manifest, composition guidance, and examples
+
+It returns only:
+
+```text
+ai-artifacts/generated/<slug>/visualization-strategy.md
+```
+
+Rules:
+
+- Markdown only. Do not create a strict visualization schema.
+- This is a thinking/planning pass, not deterministic assembly.
+- Suggest how to show the information: page rhythm, opening structure, section treatment, component palette, diagrams, tables, cards, evidence/caption strategy.
+- Use component names as suggestions, not hard requirements.
+- Do not emit final `VisualArtifactSpec`; do not call `create_visual_artifact`.
+- Keep the artifact orientation-first: help the reader understand the project, moving parts, important areas, and navigation path.
+- Do not turn the visual strategy into a fix plan or remediation backlog.
+
 ## Section generation protocol
 
 A section pass should be small and bounded. It receives:
@@ -612,30 +652,36 @@ Responsibilities:
 - [x] step 2: make the director read the plan, original prompts, deterministic digest, report packets, assets, and snippets
 - [x] step 3: make the director output thesis, artifact type, emphasis, section order, node recommendations, and packet-to-section mapping
 
-## Phase 9 — Section generation protocol
+## Phase 9 — Visualization strategy protocol
 
-- [ ] step 1: update the visual-artifact skill with router, planner, report packet, report director, section, and assembler instructions
+- [x] step 1: add a Markdown-only visualization art-director pass after Report Director
+- [x] step 2: make it read report direction, source prompts, deterministic digest, report packets, reports, and artifact component palette
+- [x] step 3: make it output open visualization instructions for the final tool-calling assembler, not typed component specs
+
+## Phase 10 — Section generation protocol
+
+- [ ] step 1: update the visual-artifact skill with router, planner, report packet, report director, visualization strategy, section, and assembler instructions
 - [ ] step 2: define code architecture artifact sections: overview, domain concepts, technical layers, integration points, runtime flow, data boundaries, change-risk map, testing confidence, tradeoffs, recommendations
-- [ ] step 3: require each section pass to consume the director brief plus selected report packets/snippets and output ArtifactNode[] plus optional data patches
+- [ ] step 3: require each section pass to consume the director brief, visualization strategy, and selected report packets/snippets and output ArtifactNode[] plus optional data patches
 - [ ] step 4: allow independent section passes to run serially in v1 and parallelize only after packet contracts are stable
-- [ ] step 5: add compact examples for planner output, report packets, director brief, section output, and final spec assembly
+- [ ] step 5: add compact examples for planner output, report packets, director brief, visualization strategy, section output, and final spec assembly
 
-## Phase 10 — Assembly and validation
+## Phase 11 — Assembly and validation
 
-- [ ] step 1: merge report packets, deterministic facts, generated assets, code snippets, director brief, and section specs into one VisualArtifactSpec
+- [ ] step 1: merge report packets, deterministic facts, generated assets, code snippets, director brief, visualization strategy, and section specs into one VisualArtifactSpec
 - [ ] step 2: validate final spec against artifact-schema and extension validator limits
 - [ ] step 3: run Mermaid validation for generated diagrams
 - [ ] step 4: verify every report packet referenced by the final artifact exists on disk
 - [ ] step 5: call create_visual_artifact only after schema, asset, packet, and diagram validation pass
 
-## Phase 11 — Docs and examples
+## Phase 12 — Docs and examples
 
 - [ ] step 1: add one complete code architecture example artifact generated from report packets
 - [ ] step 2: document generator lifecycle, call-site responsibilities, and tool responsibilities
-- [ ] step 3: document when to use deterministic extractors, agentic report workflows, director briefs, section passes, and LLM-only sections
+- [ ] step 3: document when to use deterministic extractors, agentic report workflows, director briefs, visualization strategy, section passes, and LLM-only sections
 - [ ] step 4: document the code-quality mental model and hotspot algorithms as reusable workflow instructions
 
-## Phase 12 — Future expansion
+## Phase 13 — Future expansion
 
 - [ ] step 1: add optional ARCHITECTURE.md update mode after visual artifact generation works
 - [ ] step 2: add generic explainer generator after code architecture is stable
@@ -655,7 +701,7 @@ Responsibilities:
 
 - Persist deterministic extractor outputs and report packets by default under `ai-artifacts/generated/<slug>/`.
 - Keep `ARCHITECTURE.md` update mode out of core v1; add it after artifact generation works.
-- Use serial report, director, and section generation in v1; evaluate parallelism only after packet contracts are stable.
+- Use serial report, director, visualization strategy, and section generation in v1; evaluate parallelism only after packet contracts are stable.
 - Deterministic extractors batch cheap probes into one invocation for LLM ingestion; they do not choose the final artifact narrative or page structure.
 
 ## Unresolved questions
