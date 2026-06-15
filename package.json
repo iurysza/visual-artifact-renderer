@@ -12,6 +12,7 @@
     "visual:qa": "node scripts/visual-qa.mjs",
     "extract": "tsx scripts/extract/index.ts",
     "extract:orchestrator": "tsx scripts/extract/orchestrator.ts",
+    "extract:all": "tsx scripts/extract/index.ts && tsx scripts/extract/run-agentic-workflows.ts",
     "extract:agentic": "tsx scripts/extract/run-agentic-workflows.ts",
     "extract:director": "tsx scripts/extract/run-report-director.ts",
     "extract:visualization": "tsx scripts/extract/run-visualization-strategy.ts",

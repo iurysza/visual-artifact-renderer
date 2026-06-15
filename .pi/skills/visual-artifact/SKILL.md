@@ -25,8 +25,10 @@ The user may say: "generate a visual artifact", "create a code report",
 
 ## Pipeline overview
 
-The pipeline is a **10-step serial flow**. Do not skip steps. Do not reorder steps.
+The pipeline is a **6-step serial flow**. Do not skip steps. Do not reorder steps.
 Each step produces files that the next step consumes.
+
+Steps 1-2 are deterministic + agentic extraction. Steps 3-5 are agentic passes. Step 6 is the agent calling `create_visual_artifact`.
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -34,23 +36,42 @@ Each step produces files that the next step consumes.
 │  Extraction     │    │  Workflows      │    │  (Editorial)    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                        │
-┌─────────────────┐    ┌─────────────────┐    ┌────────▼────────┐
-│  Final Assembly │◀───│  Visualization  │◀───│  Visualization  │
-│  (JSON spec)    │    │  Strategy       │    │  Strategy       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │
-         ▼
-┌─────────────────┐    ┌─────────────────┐
-│  create_visual  │───▶│  Shareable page │
-│  _artifact      │    │  (validated)    │
-└─────────────────┘    └─────────────────┘
+                                                       ▼
+                                            ┌─────────────────┐
+                                            │  Visualization  │
+                                            │  Strategy       │
+                                            └─────────────────┘
+                                                       │
+                                                       ▼
+                                            ┌─────────────────┐
+                                            │  Final Assembly │
+                                            │  (JSON spec)    │
+                                            └─────────────────┘
+                                                       │
+                                                       ▼
+                                            ┌─────────────────┐
+                                            │  create_visual  │───▶│  Shareable page │
+                                            │  _artifact      │    │  (validated)    │
+                                            └─────────────────┘    └─────────────────┘
 ```
 
 ## Step-by-step instructions
 
-### Step 1: Deterministic extraction
+### Step 1 & 2: Extraction + Agentic reports
 
-Run: `pnpm extract`
+**Quick run (both together):**
+```bash
+pnpm extract:all
+```
+
+This runs deterministic extraction followed by agentic report workflows in one shot.
+
+**Or run separately for granular control:**
+
+**Step 1: Deterministic extraction**
+```bash
+pnpm extract
+```
 
 This executes a batch of cheap deterministic probes (dependency-cruiser, knip, ast-grep, jscpd) and produces:
 
@@ -63,9 +84,10 @@ This executes a batch of cheap deterministic probes (dependency-cruiser, knip, a
 The slug defaults to the project directory name. Pass a custom slug if needed:
 `pnpm extract <repoRoot> <slug>`.
 
-### Step 2: Agentic report workflows
-
-Run: `pnpm extract:agentic` (or call `scripts/extract/run-agentic-workflows.ts`)
+**Step 2: Agentic report workflows**
+```bash
+pnpm extract:agentic
+```
 
 This launches subagent scouts for focused report workflows:
 - codebase-orientation
