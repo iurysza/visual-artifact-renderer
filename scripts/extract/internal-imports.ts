@@ -82,50 +82,8 @@ function extractImports(content: string): string[] {
   return imports
 }
 
-function resolveImport(repoRoot: string, sourcePath: string, importPath: string): string | null {
-  // Only resolve internal (non-package) imports
-  if (!importPath.startsWith(".") && !importPath.startsWith("/")) return null
-
-  const sourceDir = path.dirname(sourcePath)
-  let resolved = importPath.startsWith("/")
-    ? path.join(repoRoot, importPath)
-    : path.resolve(repoRoot, sourceDir, importPath)
-
-  // Try common extensions and index files
-  const candidates = [
-    resolved,
-    `${resolved}.ts`,
-    `${resolved}.tsx`,
-    `${resolved}.js`,
-    `${resolved}.jsx`,
-    `${resolved}.mjs`,
-    path.join(resolved, "index.ts"),
-    path.join(resolved, "index.tsx"),
-    path.join(resolved, "index.js"),
-    path.join(resolved, "index.jsx"),
-  ]
-
-  for (const candidate of candidates) {
-    const relative = path.relative(repoRoot, candidate)
-    if (!relative.startsWith("..") && !path.isAbsolute(relative)) {
-      try {
-        const stat = fs.stat(candidate)
-        if (stat.then(s => s.isFile())) return relative.replace(/\\/g, "/")
-      } catch {
-        // continue
-      }
-    }
-  }
-
-  return importPath
-}
-
 function isInternalImport(importPath: string): boolean {
   return importPath.startsWith(".") || importPath.startsWith("/")
-}
-
-function isPackageImport(importPath: string): boolean {
-  return !isInternalImport(importPath)
 }
 
 const IGNORED_PREFIXES = ["node_modules/", ".next/", "out/", "dist/", "build/", "coverage/", ".cache/", ".turbo/", ".vercel/", ".netlify/"]

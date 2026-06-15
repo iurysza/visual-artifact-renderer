@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import type { VisualArtifactReportPacket, ReportPacketAsset } from "../../../src/lib/report-packet"
+import { VisualArtifactReportPacketSchema, type VisualArtifactReportPacket, type VisualArtifactReportPacketInput, type ReportPacketAsset } from "../../../src/lib/report-packet"
 
 export interface ExtractorContext {
   repoRoot: string
@@ -67,13 +67,14 @@ export function expandHome(filePath: string): string {
 
 export async function writePacket(
   context: ExtractorContext,
-  packet: VisualArtifactReportPacket,
+  packet: VisualArtifactReportPacketInput,
 ): Promise<void> {
-  const packetPath = path.join(context.packetsDir, `${packet.id}.json`)
-  await writeJson(packetPath, packet)
+  const normalizedPacket = VisualArtifactReportPacketSchema.parse(packet)
+  const packetPath = path.join(context.packetsDir, `${normalizedPacket.id}.json`)
+  await writeJson(packetPath, normalizedPacket)
 
-  const reportPath = path.join(context.reportsDir, `${packet.id}.md`)
-  await writeText(reportPath, renderPacketMarkdown(packet))
+  const reportPath = path.join(context.reportsDir, `${normalizedPacket.id}.md`)
+  await writeText(reportPath, renderPacketMarkdown(normalizedPacket))
 }
 
 export function assetPath(context: ExtractorContext, fileName: string): string {
@@ -133,6 +134,28 @@ function renderPacketMarkdown(packet: VisualArtifactReportPacket): string {
       if (asset.description) lines.push(`  ${asset.description}`)
     }
     lines.push("")
+  }
+
+  if (packet.codeSnippets.length > 0) {
+    lines.push("## Code snippets")
+    lines.push("")
+    for (const snippet of packet.codeSnippets) {
+      lines.push(`### ${snippet.title}`)
+      lines.push("")
+      if (snippet.description) {
+        lines.push(snippet.description)
+        lines.push("")
+      }
+      if (snippet.path) {
+        const lineRange = snippet.startLine ? `:${snippet.startLine}${snippet.endLine ? `-${snippet.endLine}` : ""}` : ""
+        lines.push(`Source: \`${snippet.path}${lineRange}\``)
+        lines.push("")
+      }
+      lines.push(`\`\`\`${snippet.language ?? "text"}`)
+      lines.push(snippet.code)
+      lines.push("```")
+      lines.push("")
+    }
   }
 
   if (packet.assemblyHints.length > 0) {

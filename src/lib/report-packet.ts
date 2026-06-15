@@ -45,6 +45,18 @@ export const ReportPacketAssemblyHintSchema = z
   })
   .strict()
 
+export const ReportPacketCodeSnippetSchema = z
+  .object({
+    title: z.string().min(1),
+    language: z.string().min(1).optional(),
+    code: z.string().min(1),
+    path: z.string().min(1).optional(),
+    startLine: z.number().int().positive().optional(),
+    endLine: z.number().int().positive().optional(),
+    description: z.string().min(1).optional(),
+  })
+  .strict()
+
 export const VisualArtifactReportPacketSchema = z
   .object({
     id: z.string().min(1),
@@ -52,10 +64,11 @@ export const VisualArtifactReportPacketSchema = z
     title: z.string().min(1),
     summary: z.string().min(1),
     instructionsSource: z.array(z.string().min(1)),
-    facts: z.record(z.unknown()).default({}),
+    facts: z.record(z.string(), z.unknown()).default({}),
     findings: z.array(ReportPacketFindingSchema).default([]),
-    dataPatches: z.record(z.array(z.unknown())).optional(),
+    dataPatches: z.record(z.string(), z.array(z.unknown())).optional(),
     assets: z.array(ReportPacketAssetSchema).default([]),
+    codeSnippets: z.array(ReportPacketCodeSnippetSchema).default([]),
     assemblyHints: z.array(ReportPacketAssemblyHintSchema).default([]),
     unresolvedQuestions: z.array(z.string().min(1)).optional(),
   })
@@ -65,7 +78,9 @@ export type ReportPacketKind = z.infer<typeof ReportPacketKindSchema>
 export type ReportPacketFinding = z.infer<typeof ReportPacketFindingSchema>
 export type ReportPacketAsset = z.infer<typeof ReportPacketAssetSchema>
 export type ReportPacketAssemblyHint = z.infer<typeof ReportPacketAssemblyHintSchema>
+export type ReportPacketCodeSnippet = z.infer<typeof ReportPacketCodeSnippetSchema>
 export type VisualArtifactReportPacket = z.infer<typeof VisualArtifactReportPacketSchema>
+export type VisualArtifactReportPacketInput = z.input<typeof VisualArtifactReportPacketSchema>
 
 export function parseReportPacket(value: unknown): VisualArtifactReportPacket {
   return VisualArtifactReportPacketSchema.parse(value)

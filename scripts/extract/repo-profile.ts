@@ -7,11 +7,10 @@ import {
   fileExists,
   readJson,
   writePacket,
-  makeAsset,
 } from "./lib/runner"
 import { VisualArtifactReportPacket } from "../../src/lib/report-packet"
 
-interface RepoProfileFacts {
+interface RepoProfileFacts extends Record<string, unknown> {
   packageManager: "pnpm" | "npm" | "yarn" | "bun" | "unknown"
   framework: string[]
   scripts: Record<string, string>

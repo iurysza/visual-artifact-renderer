@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 import { promises as fs } from "node:fs"
+import type { Dirent } from "node:fs"
 import path from "node:path"
 import {
   createExtractorContext,
@@ -42,7 +43,7 @@ async function buildTree(repoRoot: string, relativeDir: string, depth: number): 
   const name = path.basename(relativeDir) || path.basename(repoRoot)
   const node: FolderNode = { name, path: relativeDir || ".", children: [], fileCount: 0, dirCount: 0 }
 
-  let entries: Awaited<ReturnType<typeof fs.readdir>>
+  let entries: Dirent[]
   try {
     entries = await fs.readdir(fullPath, { withFileTypes: true })
   } catch {
@@ -62,7 +63,7 @@ async function buildTree(repoRoot: string, relativeDir: string, depth: number): 
   }
 
   dirs.sort((a, b) => a.name.localeCompare(b.name))
-  files.sort((a, b) => a.localeCompare(b.name))
+  files.sort((a, b) => a.localeCompare(b))
 
   if (depth >= MAX_DEPTH) {
     node.fileCount = files.length
