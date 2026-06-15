@@ -9,8 +9,8 @@ steps:
       - "- [ ] step 3: map each source idea to a workflow report packet consumed by the final assembler"
   - phase: report packet contract
     steps:
-      - "- [ ] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints"
-      - "- [ ] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/"
+      - "- [x] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints"
+      - "- [x] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/"
       - "- [ ] step 3: require workflow runners to emit reports only, never the final VisualArtifactSpec"
   - phase: extension contract
     steps:
@@ -26,13 +26,13 @@ steps:
       - "- [ ] step 3: make the planner return target audience, sections, node types, data keys, report packet IDs, graph ideas, and assembly order"
   - phase: deterministic extractor packets
     steps:
-      - "- [ ] step 1: implement one batch extractor runner that executes all cheap deterministic probes in a single script/tool invocation"
-      - "- [ ] step 2: implement repo profile extraction: package manager, framework, scripts, deps, entry points, tests, routes"
-      - "- [ ] step 3: implement folder/layer extraction with ignored directory pruning"
-      - "- [ ] step 4: implement internal import/dependency graph extraction"
-      - "- [ ] step 5: implement package dependency grouping"
-      - "- [ ] step 6: emit compact JSON facts, LLM digest Markdown, tables, Mermaid graphs, and report packets under ai-artifacts/generated/<slug>/"
-      - "- [ ] step 7: make extractor output evidence for later writers, never final artifact structure"
+      - "- [x] step 1: implement one batch extractor runner that executes real CLI tools (dependency-cruiser, knip, ast-grep, jscpd) in a single script invocation"
+      - "- [x] step 2: run dependency-cruiser for module graph, knip for unused deps, ast-grep for AST patterns, jscpd for duplication"
+      - "- [x] step 3: parse tool JSON outputs and normalize into report packets"
+      - "- [x] step 4: preserve raw tool outputs as assets for verification"
+      - "- [x] step 5: emit extractor-digest.md and extractor-run.json from tool results"
+      - "- [x] step 6: integrate scip-typescript and difftastic as secondary tools when needed"
+      - "- [x] step 7: make extractor output evidence for later writers, never final artifact structure"
       - "- [ ] step 8: add validation fixtures for at least this repo"
   - phase: codebase orientation workflows
     steps:
@@ -250,6 +250,51 @@ Outputs should be optimized for LLM ingestion:
 
 The extractor should preserve raw-enough evidence for later verification, but it should also pre-shape data: rank, group, summarize, normalize paths, cap noisy lists, and call out missing/uncertain data. It can suggest hints, but it must not decide the final artifact narrative, node order, or page structure.
 
+
+## Deterministic extractor tool research
+
+After researching static analysis tools suitable for a single batch extractor pipeline, the chosen core is:
+
+**Core pipeline:** `dependency-cruiser + knip + ast-grep + jscpd`
+
+**Secondary additions:** `scip-typescript` (when semantic symbol/reference data is needed), `difftastic` (only for change/diff analysis).
+
+### Tool ranking
+
+| Tool | Fit | What it extracts | JSON output |
+|------|-----|------------------|-------------|
+| **dependency-cruiser** | Strong | Full module dependency graph, circular deps, orphans, architecture rule violations | `depcruise src --output-type json` |
+| **ast-grep** | Strong | AST pattern matches across JS/TS by YAML rules or inline patterns | `sg scan --rule ./rules/ --json` or `sg run -p 'pattern' --json` |
+| **knip** | Strong | Unused files, unused exports, unused dependencies, unresolved imports | `knip --reporter json` |
+| **jscpd** | Strong | Duplicated code blocks with token/line counts | `jscpd ./src --reporters json` |
+| **scip-typescript** | Medium | Compiler-accurate symbol index: definitions, references, hover docs | `scip-typescript index` → `.scip` (needs conversion step) |
+| **difftastic** | Medium | Structural diff (AST-based, not line-by-line) | `DFT_DISPLAY=json DFT_UNSTABLE=yes difft old.ts new.ts` |
+
+### Tools to skip
+
+| Tool | Why |
+|------|-----|
+| **complexity-report / escomplex** | Unmaintained, uses Esprima (fails on modern TS/TSX) |
+| **tree-sitter CLI (native)** | Outputs S-expressions, not JSON; needs wrappers |
+| **js-callgraph / code2flow** | Academic/legacy, limited TS support |
+| **unimported** | Archived; community moved to `knip` |
+
+### Research gaps
+
+- No single tool does everything. The pipeline must orchestrate 4–6 tools.
+- **ts-morph has no official CLI** — you need a third-party wrapper or a thin Node script.
+- **Change-risk scoring is not built-in** — you must combine complexity + dependency depth + test coverage + diff size yourself.
+- **SCIP/LSIF consumption is harder than production** — generating `index.scip` is easy; converting to queryable JSON needs extra tools.
+
+### Implementation note
+
+The hand-rolled regex-based extractors (repo-profile.ts, folder-layers.ts, internal-imports.ts, package-deps.ts) are replaced by a shell orchestrator that runs the real CLI tools and merges their JSON outputs into the `VisualArtifactReportPacket` format. The orchestrator should:
+
+1. Run `dependency-cruiser`, `knip`, `ast-grep`, `jscpd` as the core batch
+2. Parse each tool's JSON output and normalize it into report packets
+3. Emit the `extractor-digest.md` and `extractor-run.json` as before
+4. Preserve raw tool outputs as assets for later verification
+
 ## Workflow prompt context
 
 Every agentic report workflow must receive the full intent context, not only extractor output:
@@ -307,12 +352,13 @@ Generated artifact should include:
 Generated deterministic outputs:
 
 - `extractor-digest.md`: LLM-oriented summary of the most useful deterministic facts, rankings, evidence paths, and caveats
-- `extractor-run.json`: normalized inventory of commands/probes run and their compact results
-- `facts.json`: framework, package manager, scripts, deps, routes, entry points, components, test commands
-- `folder-tree.txt`: compact pruned tree
-- `internal-imports.json`: source file/module import edges
-- `package-deps.json`: package dependency groups
-- `dependency-graph.mmd`: Mermaid graph for important code boundaries
+- `extractor-run.json`: normalized inventory of tools run and their compact results
+- `dependency-cruiser.json`: full module dependency graph, circular deps, orphans from `dependency-cruiser --output-type json`
+- `knip.json`: unused files, unused exports, unused dependencies from `knip --reporter json`
+- `ast-grep.json`: AST pattern matches (god objects, complex conditionals, side effects) from `ast-grep scan --json`
+- `jscpd.json`: duplicated code blocks from `jscpd --reporters json`
+- `dependency-graph.mmd`: Mermaid graph from dependency-cruiser or madge
+- `scip.json`: semantic symbol index from `scip-typescript` (optional, when symbol data needed)
 - `runtime-flow.mmd`: Mermaid flow when entry points are detectable
 
 Generated agentic report packets:
@@ -516,8 +562,8 @@ Responsibilities:
 
 ## Phase 2 — Report packet contract
 
-- [ ] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints
-- [ ] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/
+- [x] step 1: define the report packet schema for facts, findings, evidence, assets, code snippets, confidence, and assembly hints
+- [x] step 2: persist every packet and generated asset under ai-artifacts/generated/<slug>/
 - [ ] step 3: require workflow runners to emit reports only, never the final VisualArtifactSpec
 
 ## Phase 3 — Extension contract
@@ -536,13 +582,13 @@ Responsibilities:
 
 ## Phase 5 — Deterministic extractor packets
 
-- [ ] step 1: implement one batch extractor runner that executes all cheap deterministic probes in a single script/tool invocation
-- [ ] step 2: implement repo profile extraction: package manager, framework, scripts, deps, entry points, tests, routes
-- [ ] step 3: implement folder/layer extraction with ignored directory pruning
-- [ ] step 4: implement internal import/dependency graph extraction
-- [ ] step 5: implement package dependency grouping
-- [ ] step 6: emit compact JSON facts, LLM digest Markdown, tables, Mermaid graphs, and report packets under ai-artifacts/generated/<slug>/
-- [ ] step 7: make extractor output evidence for later writers, never final artifact structure
+- [x] step 1: implement one batch extractor runner that executes real CLI tools (dependency-cruiser, knip, ast-grep, jscpd) in a single script invocation
+- [x] step 2: run dependency-cruiser for module graph, knip for unused deps, ast-grep for AST patterns, jscpd for duplication
+- [x] step 3: parse tool JSON outputs and normalize into report packets
+- [x] step 4: preserve raw tool outputs as assets for verification
+- [x] step 5: emit extractor-digest.md and extractor-run.json from tool results
+- [x] step 6: integrate scip-typescript and difftastic as secondary tools when needed
+- [x] step 7: make extractor output evidence for later writers, never final artifact structure
 - [ ] step 8: add validation fixtures for at least this repo
 
 ## Phase 6 — Codebase orientation workflows
