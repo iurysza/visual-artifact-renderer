@@ -65,11 +65,11 @@ steps:
       - "- [ ] step 5: add compact examples for planner output, report packets, director brief, section output, and final spec assembly"
   - phase: assembly and validation
     steps:
-      - "- [ ] step 1: merge report packets, deterministic facts, generated assets, code snippets, director brief, and section specs into one VisualArtifactSpec"
+      - "- [x] step 1: merge report packets, deterministic facts, generated assets, code snippets, director brief, and section specs into one VisualArtifactSpec JSON"
       - "- [ ] step 2: validate final spec against artifact-schema and extension validator limits"
       - "- [ ] step 3: run Mermaid validation for generated diagrams"
       - "- [ ] step 4: verify every report packet referenced by the final artifact exists on disk"
-      - "- [ ] step 5: call create_visual_artifact only after schema, asset, packet, and diagram validation pass"
+      - "- [x] step 5: write the validated JSON spec to disk; parent agent calls create_visual_artifact, not the assembler pass"
   - phase: docs and examples
     steps:
       - "- [ ] step 1: add one complete code architecture example artifact generated from report packets"
@@ -385,6 +385,10 @@ Generated visualization strategy output:
 
 - `visualization-strategy.md`: open-ended art-direction brief for the final tool-calling assembler. It suggests composition, component usage, section treatment, evidence display, and diagram/table/card opportunities in prose. It is intentionally not a typed schema.
 
+Generated final assembly output:
+
+- `visual-artifact-spec.json`: validated `VisualArtifactSpec` JSON written by the assembler pass. The parent agent reads this file and calls `create_visual_artifact` with its contents.
+
 ## Codebase orientation workflow instructions
 
 This workflow produces the main orientation report packet.
@@ -572,7 +576,7 @@ Rules:
 
 ## Assembly protocol
 
-The assembler owns the final artifact spec.
+The assembler owns the final artifact spec JSON.
 
 Inputs:
 
@@ -592,8 +596,11 @@ Responsibilities:
 - deduplicate repeated findings
 - preserve source packet references in captions or supporting tables when useful
 - enforce schema and node limits
-- validate diagrams before calling the writer
-- call `create_visual_artifact` only after validation succeeds
+- validate diagrams
+- write the final `VisualArtifactSpec` JSON to disk
+- **do not** call `create_visual_artifact` directly from the assembler pass
+
+The parent agent reads the validated JSON spec and calls `create_visual_artifact` itself.
 
 ## Phase 1 — Source consolidation
 
