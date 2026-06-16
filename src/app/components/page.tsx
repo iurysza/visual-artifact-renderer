@@ -1272,7 +1272,7 @@ console.log(greeting);`}
                   html={visualizerPipelineDiagram}
                   title="Visualizer pipeline"
                   caption="Click nodes and use the flow chips to explore."
-                  height={480}
+                  height={640}
                 />
               </div>
             </div>

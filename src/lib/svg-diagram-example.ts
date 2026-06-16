@@ -78,38 +78,15 @@ export const visualizerPipelineDiagram = `<!doctype html>
   }
   #themeToggle:hover { color: var(--ink); border-color: var(--muted); }
 
-  .workspace { flex: 1; display: flex; min-height: 0; }
   .stage { flex: 1; position: relative; min-width: 0; overflow: hidden; }
   .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .panel {
-    width: 260px; flex: none; border-left: 1px solid var(--line-soft); padding: 16px;
-    overflow-y: auto; background: var(--bg);
+  
+  .card {
+    position: absolute; right: 24px; bottom: 24px; width: 280px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    z-index: 10;
   }
-
-  .zone rect { fill: var(--zone); stroke: var(--line); stroke-width: 1; stroke-dasharray: 5 5; rx: 16; }
-  .zone .ztitle { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; fill: var(--muted); }
-
-  .node { cursor: pointer; }
-  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; rx: 10; transition: stroke .15s ease, filter .15s ease; }
-  .node:hover rect { stroke: var(--muted); }
-  .node.sel rect { stroke: var(--clay) !important; stroke-width: 2; }
-  .node .t { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; }
-  .node .m { font-family: var(--mono); font-size: 10px; fill: var(--muted); pointer-events: none; }
-  .node.store rect { fill: var(--surface2); }
-  .node.out rect { stroke-dasharray: 6 3; }
-
-  .edge { stroke: var(--muted); stroke-width: 1.6; fill: none; marker-end: url(#a-mut); transition: opacity .2s ease, stroke .2s ease; }
-  .edge.dash { stroke-dasharray: 5 4; }
-
-  .stage.flowing .edge { opacity: 0.12; }
-  .stage.flowing .node { opacity: 0.35; }
-  .stage.flowing .zone { opacity: 0.45; }
-  .stage.flowing .edge.lit { opacity: 1; stroke: var(--clay); marker-end: url(#a-clay); stroke-dasharray: 7 5; animation: march 0.9s linear infinite; }
-  .stage.flowing .node.lit { opacity: 1; }
-  .stage.flowing .node.lit rect { stroke: var(--clay); }
-  @keyframes march { to { stroke-dashoffset: -12; } }
-  @media (prefers-reduced-motion: reduce) { .stage.flowing .edge.lit { animation: none; } }
-
   .card h3 { font-family: var(--serif); font-weight: 500; font-size: 16px; color: var(--ink); margin-bottom: 2px; }
   .card .meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 8px; }
   .card p { font-size: 12px; line-height: 1.55; }
@@ -124,13 +101,10 @@ export const visualizerPipelineDiagram = `<!doctype html>
     .bar .sub { display: none; }
     .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
     .chips::-webkit-scrollbar { display: none; }
-    .workspace { flex-direction: column; }
-    .panel { width: auto; border-left: none; border-top: 1px solid var(--line-soft); padding: 12px; flex: none; max-height: 38%; }
-    .stage { min-height: 220px; overflow: auto; }
-    .stage svg { position: relative; min-width: 360px; min-height: 100%; height: auto; }
     .diagram-desktop { display: none; }
     .diagram-mobile { display: block; }
     .hint { display: none; }
+    .card { left: 16px; right: 16px; bottom: 16px; width: auto; padding: 12px 16px; }
     .card p { font-size: 11.5px; }
   }
 </style>
@@ -153,9 +127,8 @@ export const visualizerPipelineDiagram = `<!doctype html>
   <button id="themeToggle">Theme</button>
 </div>
 
-<div class="workspace">
-  <div class="stage" id="stage">
-    <svg class="diagram-desktop" viewBox="0 0 1000 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visualizer pipeline diagram">
+<div class="stage" id="stage">
+  <svg class="diagram-desktop" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visualizer pipeline diagram">
       <defs>
         <marker id="a-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
@@ -238,7 +211,7 @@ export const visualizerPipelineDiagram = `<!doctype html>
       </g>
     </svg>
 
-    <svg class="diagram-mobile" viewBox="0 0 400 900" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Visualizer pipeline diagram mobile">
+    <svg class="diagram-mobile" viewBox="0 0 400 1100" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Visualizer pipeline diagram mobile">
       <defs>
         <marker id="am-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
@@ -323,9 +296,7 @@ export const visualizerPipelineDiagram = `<!doctype html>
     </svg>
 
     <div class="hint">Theme syncs with the visualizer.</div>
-  </div>
-
-  <div class="panel">
+    
     <div class="card" id="detail">
       <h3 id="d-title">Click a node</h3>
       <div class="meta" id="d-meta">pipeline stage</div>
