@@ -1,3 +1,8 @@
+---
+name: visual-artifact
+description: Generate visual artifacts (codebase overviews, architecture diagrams, dashboards, explainers) from code or data. Routes the model through the vaz-pipeline for codebase artifacts or direct create_visual_artifact for simple data-driven artifacts.
+---
+
 # visual-artifact
 
 Generate visual artifacts (codebase overviews, architecture diagrams, dashboards, explainers) from code or data.

@@ -35,7 +35,7 @@ chmod +x "$BIN_DIR"/vaz-*
 
 echo "[vaz-bootstrap] Installing Pi extension..."
 mkdir -p "$(dirname "$EXTENSION_DST")"
-cp "$VAZ_DIR/.pi/extensions/visual-artifact.ts" "$EXTENSION_DST"
+cp "$VAZ_DIR/pi-extension/visual-artifact.ts" "$EXTENSION_DST"
 
 echo "[vaz-bootstrap] Done."
 echo ""

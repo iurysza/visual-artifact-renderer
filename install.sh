@@ -6,7 +6,7 @@ set -e
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 SKILL_SRC="$REPO_ROOT/.pi/skills/visual-artifact"
 SKILL_DST="$HOME/.pi/skills/visual-artifact"
-EXTENSION_SRC="$REPO_ROOT/.pi/extensions/visual-artifact.ts"
+EXTENSION_SRC="$REPO_ROOT/pi-extension/visual-artifact.ts"
 EXTENSION_DST="$HOME/.pi/agent/extensions/visual-artifact.ts"
 BIN_DIR="$HOME/.pi/bin"
 VAZ_DIR="$HOME/.pi/tools/visualizer"
