@@ -3,6 +3,8 @@ import { notFound } from "next/navigation"
 
 import { listArtifactsInProject, listProjects } from "@/lib/artifacts"
 import { artifactPagePath } from "@/lib/paths"
+import { formatDateTime } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
 export async function generateStaticParams() {
   const projects = await listProjects()
@@ -22,20 +24,17 @@ export default async function ProjectArtifactsPage({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-6 py-20 sm:px-8">
-      <div className="mb-10 space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground hover:text-foreground transition">
-            ← Visualizer
-          </Link>
-          <span className="font-mono text-xs text-muted-foreground">/</span>
-          <span className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-foreground">
+    <main className="mx-auto w-full max-w-4xl px-6 py-12 sm:px-8 lg:py-16">
+      <div className="mb-10 flex items-end justify-between gap-4">
+        <div>
+          <p className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+            Project
+          </p>
+          <h1 className="mt-2 font-serif text-4xl font-medium tracking-[-0.02em] text-foreground">
             {project}
-          </span>
+          </h1>
         </div>
-        <h1 className="font-serif text-4xl font-medium tracking-[-0.02em] text-foreground">
-          Artifacts
-        </h1>
+        <Badge variant="secondary">{artifacts.length} artifact{artifacts.length === 1 ? "" : "s"}</Badge>
       </div>
 
       <div className="grid gap-4">
@@ -52,7 +51,7 @@ export default async function ProjectArtifactsPage({
                   <p className="mt-2 text-sm text-muted-foreground">{artifact.description}</p>
                 )}
                 <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">
-                  {artifact.modifiedAt.toLocaleDateString()} {artifact.modifiedAt.toLocaleTimeString()}
+                  {formatDateTime(artifact.modifiedAt)}
                 </p>
               </div>
               <span className="mt-1 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[var(--clay)]">→</span>

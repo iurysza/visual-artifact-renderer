@@ -1,70 +1,130 @@
 import Link from "next/link"
 
-import { listProjects } from "@/lib/artifacts"
-import { projectPagePath } from "@/lib/paths"
-
-const steps = ["JSON spec", "Zod validate", "Render page"]
+import { listProjects, listRecentArtifacts } from "@/lib/artifacts"
+import { artifactPagePath, projectPagePath } from "@/lib/paths"
+import { formatDate } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function Home() {
-  const projects = await listProjects()
+  const [projects, recent] = await Promise.all([
+    listProjects(),
+    listRecentArtifacts(6),
+  ])
+
+  const totalArtifacts = projects.reduce((sum, project) => sum + project.artifactCount, 0)
+  const lastUpdated = recent[0]?.modifiedAt ?? projects[0]?.lastModifiedAt
 
   return (
-    <main className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-6 py-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
-      <section className="space-y-8">
-        <div className="space-y-4">
-          <p className="flex items-center gap-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground before:h-px before:w-7 before:bg-[var(--clay)]">
-            Visualizer
-          </p>
-          <h1 className="max-w-3xl font-serif text-5xl font-medium leading-[1.02] tracking-[-0.035em] text-foreground sm:text-6xl">
-            Data-driven visual artifacts.
-          </h1>
-          <p className="max-w-2xl text-lg leading-8 text-muted-foreground">
-            Drop validated JSON into <code className="rounded-md border bg-muted px-1.5 py-0.5 text-sm text-foreground">~/.pi/artifacts/</code>. One route turns it into a polished report, plan, dashboard, or explainer.
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          {steps.map((step, index) => (
-            <div key={step} className="rounded-xl border bg-card/80 p-4 shadow-sm">
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--clay)]">0{index + 1}</p>
-              <p className="mt-2 text-sm font-medium text-card-foreground">{step}</p>
-            </div>
-          ))}
+    <main className="mx-auto w-full max-w-6xl px-6 py-12 sm:px-8 lg:py-16">
+      <section className="mb-12 space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="max-w-3xl font-serif text-4xl font-medium tracking-[-0.03em] text-foreground sm:text-5xl">
+              Your visual workspace.
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
+              Browse reports, dashboards, and explainers generated from your local artifacts.
+            </p>
+          </div>
+          <Link
+            href="/components"
+            className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-card-foreground shadow-sm transition hover:border-[var(--clay)] hover:text-[var(--clay)]"
+          >
+            <span>View Components</span>
+            <span className="font-mono text-xs">→</span>
+          </Link>
         </div>
       </section>
 
-      <section className="rounded-2xl border bg-card/90 p-4 shadow-[0_24px_70px_rgba(20,20,19,0.10)] backdrop-blur dark:shadow-black/25">
-        <div className="rounded-xl border bg-muted/60 p-3">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Projects</p>
-            <span className="rounded-full border bg-card px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              local
-            </span>
+      <section className="mb-12 grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Projects
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-serif text-3xl font-medium tracking-[-0.04em]">{projects.length}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Artifacts
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-serif text-3xl font-medium tracking-[-0.04em]">{totalArtifacts}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Last updated
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-serif text-3xl font-medium tracking-[-0.04em]">
+              {lastUpdated ? formatDate(lastUpdated) : "—"}
+            </p>
+          </CardContent>
+        </Card>
+      </section>
+
+      {recent.length > 0 && (
+        <section className="mb-16">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="font-serif text-2xl font-medium tracking-[-0.02em]">Recent</h2>
+            <Badge variant="secondary">Last {recent.length}</Badge>
           </div>
 
-          <div className="grid gap-3">
-            {projects.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">No projects found in ~/.pi/artifacts/</p>
-            ) : (
-              projects.map((project) => (
-                <Link
-                  key={project.name}
-                  href={projectPagePath(project.name)}
-                  className="group rounded-xl border bg-card p-5 text-card-foreground transition hover:-translate-y-0.5 hover:border-primary hover:shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className="font-serif text-2xl font-medium tracking-[-0.02em]">{project.name}</h2>
-                      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                        {project.artifactCount} artifact{project.artifactCount === 1 ? "" : "s"} • Last updated {project.lastModifiedAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className="mt-1 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[var(--clay)]">→</span>
-                  </div>
-                </Link>
-              ))
-            )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recent.map((artifact) => (
+              <Link
+                key={`${artifact.project}-${artifact.slug}`}
+                href={artifactPagePath(artifact.project, artifact.slug)}
+                className="group flex flex-col rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+              >
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {artifact.project}
+                </p>
+                <h3 className="mt-2 font-serif text-xl font-medium tracking-[-0.02em]">{artifact.title}</h3>
+                {artifact.description && (
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{artifact.description}</p>
+                )}
+                <p className="mt-auto pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                  {formatDate(artifact.modifiedAt)}
+                </p>
+              </Link>
+            ))}
           </div>
+        </section>
+      )}
+
+      <section>
+        <h2 className="mb-6 font-serif text-2xl font-medium tracking-[-0.02em]">Projects</h2>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {projects.map((project) => (
+            <Link
+              key={project.name}
+              href={projectPagePath(project.name)}
+              className="group flex items-center justify-between rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+            >
+              <div>
+                <h3 className="font-serif text-xl font-medium tracking-[-0.02em]">{project.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {project.artifactCount} artifact{project.artifactCount === 1 ? "" : "s"}
+                </p>
+              </div>
+              <span className="text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[var(--clay)]">
+                →
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
     </main>

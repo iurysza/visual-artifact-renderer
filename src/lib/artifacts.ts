@@ -19,6 +19,10 @@ export interface ArtifactListing {
   modifiedAt: Date
 }
 
+export interface RecentArtifact extends ArtifactListing {
+  project: string
+}
+
 export async function listProjects(): Promise<ProjectListing[]> {
   try {
     const entries = await fs.readdir(ARTIFACTS_DIR, { withFileTypes: true })
@@ -117,6 +121,22 @@ export async function getVisualArtifactSpec(projectName: string, slug: string): 
 
     throw error
   }
+}
+
+export async function listRecentArtifacts(limit = 6): Promise<RecentArtifact[]> {
+  const projects = await listProjects()
+  const recent: RecentArtifact[] = []
+
+  for (const project of projects) {
+    const artifacts = await listArtifactsInProject(project.name)
+    for (const artifact of artifacts) {
+      recent.push({ ...artifact, project: project.name })
+    }
+  }
+
+  return recent
+    .sort((a, b) => b.modifiedAt.getTime() - a.modifiedAt.getTime())
+    .slice(0, limit)
 }
 
 function isMissingFileError(error: unknown) {

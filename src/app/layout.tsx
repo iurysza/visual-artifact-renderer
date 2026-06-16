@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Script from "next/script"
 import { Geist, Geist_Mono } from "next/font/google"
 
-import { ThemeToggle } from "@/components/theme-toggle"
+import { SiteHeader } from "@/components/site-header"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -47,8 +47,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeScript }}
         />
       </head>
-      <body className="min-h-full bg-background text-foreground">
-        <ThemeToggle />
+      <body className="flex min-h-full flex-col bg-background text-foreground">
+        <SiteHeader />
         {children}
       </body>
     </html>

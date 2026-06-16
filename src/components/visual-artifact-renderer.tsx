@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import type { ReactNode } from "react"
 
 import type { ArtifactNode, VisualArtifactSpec } from "@/lib/artifact-schema"
@@ -17,17 +16,9 @@ export function VisualArtifactRenderer({ spec }: { spec: VisualArtifactSpec }) {
     <main className="mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14">
       <header className="overflow-hidden rounded-[1.35rem] border-[1.5px] bg-card/95 shadow-[0_18px_60px_rgba(20,20,19,0.08)] dark:shadow-black/25">
         <div className="border-b bg-muted/45 px-5 py-3 sm:px-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href="/"
-              className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground transition hover:text-[var(--clay)]"
-            >
-              ← Index
-            </Link>
-            <div className="flex flex-wrap gap-2">
-              <HeroPill>{datasetCount} dataset{datasetCount === 1 ? "" : "s"}</HeroPill>
-              <HeroPill>{nodeCount} nodes</HeroPill>
-            </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <HeroPill>{datasetCount} dataset{datasetCount === 1 ? "" : "s"}</HeroPill>
+            <HeroPill>{nodeCount} nodes</HeroPill>
           </div>
         </div>
 
