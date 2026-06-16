@@ -130,6 +130,14 @@ export const artifactManifest = {
     requiresData: true,
     example: { type: "radar-chart", props: { dataKey: "skillScores", subjectKey: "skill", valueKey: "score" } },
   },
+  "scatter-chart": {
+    type: "scatter-chart",
+    description: "A scatter chart for correlations.",
+    props: { dataKey: "string", xKey: "string?", yKey: "string?", label: "string?", color: "string?" },
+    children: false,
+    requiresData: true,
+    example: { type: "scatter-chart", props: { dataKey: "experienceVsSalary", xKey: "years", yKey: "salary" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",

@@ -110,6 +110,10 @@ export type ArtifactNode =
       props: { dataKey: string; subjectKey?: string; valueKey?: string; label?: string; color?: string }
     }
   | {
+      type: "scatter-chart"
+      props: { dataKey: string; xKey?: string; yKey?: string; label?: string; color?: string }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -340,6 +344,20 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             dataKey: z.string().min(1),
             subjectKey: z.string().min(1).optional(),
             valueKey: z.string().min(1).optional(),
+            label: z.string().min(1).optional(),
+            color: z.string().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("scatter-chart"),
+        props: z
+          .object({
+            dataKey: z.string().min(1),
+            xKey: z.string().min(1).optional(),
+            yKey: z.string().min(1).optional(),
             label: z.string().min(1).optional(),
             color: z.string().min(1).optional(),
           })
@@ -729,6 +747,7 @@ export const ARTIFACT_NODE_TYPES = [
   "alert",
   "area-chart",
   "radar-chart",
+  "scatter-chart",
   "definition-list",
   "diff",
   "donut-chart",

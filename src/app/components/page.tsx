@@ -44,6 +44,7 @@ import { ArtifactImage } from "@/components/ui/artifact-image"
 import { PieChart } from "@/components/ui/pie-chart"
 import { AreaChart } from "@/components/ui/area-chart"
 import { RadarChart } from "@/components/ui/radar-chart"
+import { ScatterChart } from "@/components/ui/scatter-chart"
 import { Stepper } from "@/components/ui/stepper"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -1054,6 +1055,21 @@ export default function ComponentsPage() {
                       { subject: "Range", value: 60 },
                       { subject: "Defense", value: 70 },
                       { subject: "Magic", value: 50 },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Subheading>Scatter Chart</Subheading>
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                  <ScatterChart
+                    data={[
+                      { x: 1, y: 2 },
+                      { x: 2, y: 5 },
+                      { x: 3, y: 3 },
+                      { x: 4, y: 8 },
+                      { x: 5, y: 7 },
                     ]}
                   />
                 </div>
