@@ -191,7 +191,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { CodeBlock } from "@/components/ui/code-block"
 import { SvgDiagram } from "@/components/svg-diagram"
-import { MermaidDiagram } from "@/components/component-registry"
+import { MermaidDiagram } from "@/components/mermaid/mermaid-diagram"
 import { visualizerPipelineDiagram } from "@/lib/svg-diagram-example"
 import { cn } from "@/lib/utils"
 
