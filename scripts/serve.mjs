@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
-import { stat } from "node:fs/promises";
+import { stat, readdir, readFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,11 +64,127 @@ function stripMountPath(urlPath) {
   if (urlPath === MOUNT_PATH || urlPath.startsWith(`${MOUNT_PATH}/`)) {
     return urlPath.slice(MOUNT_PATH.length) || "/";
   }
-  // Also allow the same content to be served at the root so Tailscale Serve
-  // path prefixes work without re-exporting the app with a different basePath.
-  // This is intentional: Tailscale strips /artifacts before proxying, so the
-  // backend sees root paths while direct visitors still use /artifacts/.
-  return urlPath;
+  // The app is mounted under a single base path everywhere (local, Tailscale,
+  // blog). Requests outside that mount are 404; Tailscale should be configured
+  // to proxy /artifacts/ to /artifacts/ on the backend so the prefix is preserved.
+  return null;
+}
+
+async function readArtifactMeta(filePath) {
+  let title = path.basename(filePath, ".json");
+  let description;
+  try {
+    const raw = await readFile(filePath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.title === "string" && parsed.title.length > 0) title = parsed.title;
+    if (typeof parsed.description === "string" && parsed.description.length > 0) description = parsed.description;
+  } catch {
+    // ignore malformed JSON
+  }
+  return { title, description };
+}
+
+async function scanArtifacts() {
+  const projects = [];
+  const allArtifacts = [];
+
+  try {
+    const entries = await readdir(ARTIFACTS_DIR, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+
+      const projectDir = path.join(ARTIFACTS_DIR, entry.name);
+      const files = await readdir(projectDir, { withFileTypes: true });
+      const projectArtifacts = [];
+
+      for (const file of files) {
+        if (!file.isFile() || !file.name.endsWith(".json")) continue;
+
+        const slug = file.name.replace(/\.json$/, "");
+        if (!ROUTE_SEGMENT_RE.test(slug)) continue;
+        if (slug === entry.name) continue;
+
+        const filePath = path.join(projectDir, file.name);
+        const stats = await stat(filePath);
+        const meta = await readArtifactMeta(filePath);
+
+        const artifact = {
+          slug,
+          title: meta.title,
+          description: meta.description,
+          modifiedAt: stats.mtime.toISOString(),
+        };
+        projectArtifacts.push(artifact);
+        allArtifacts.push({ ...artifact, project: entry.name });
+      }
+
+      if (projectArtifacts.length === 0) continue;
+
+      projectArtifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
+      const lastModifiedAt = projectArtifacts[0].modifiedAt;
+
+      projects.push({
+        name: entry.name,
+        artifactCount: projectArtifacts.length,
+        lastModifiedAt,
+      });
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+
+  projects.sort((a, b) => new Date(b.lastModifiedAt).getTime() - new Date(a.lastModifiedAt).getTime());
+  allArtifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
+
+  return { projects, artifacts: allArtifacts };
+}
+
+async function serveIndexJson(reqPath, res) {
+  if (reqPath !== "/data/artifacts/index.json") return false;
+  const { projects, artifacts } = await scanArtifacts();
+  const recent = artifacts.slice(0, 12);
+  const body = JSON.stringify({ projects, recent }, null, 2);
+  send(res, 200, body, "application/json; charset=utf-8");
+  return true;
+}
+
+async function serveProjectIndexJson(reqPath, res) {
+  const prefix = "/data/artifacts/";
+  if (!reqPath.startsWith(prefix) || !reqPath.endsWith("/index.json")) return false;
+  const relative = reqPath.slice(prefix.length);
+  const project = relative.replace(/\/index\.json$/, "");
+  if (!ROUTE_SEGMENT_RE.test(project)) return false;
+
+  const projectDir = path.resolve(ARTIFACTS_DIR, project);
+  if (!projectDir.startsWith(ARTIFACTS_DIR + path.sep)) return false;
+
+  const artifacts = [];
+  try {
+    const files = await readdir(projectDir, { withFileTypes: true });
+    for (const file of files) {
+      if (!file.isFile() || !file.name.endsWith(".json")) continue;
+
+      const slug = file.name.replace(/\.json$/, "");
+      if (!ROUTE_SEGMENT_RE.test(slug)) continue;
+
+      const filePath = path.join(projectDir, file.name);
+      const stats = await stat(filePath);
+      const meta = await readArtifactMeta(filePath);
+      artifacts.push({
+        slug,
+        title: meta.title,
+        description: meta.description,
+        modifiedAt: stats.mtime.toISOString(),
+      });
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+
+  artifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
+  const body = JSON.stringify({ project, artifacts }, null, 2);
+  send(res, 200, body, "application/json; charset=utf-8");
+  return true;
 }
 
 function mimeType(filePath) {
@@ -205,6 +321,8 @@ const server = createServer(async (req, res) => {
 
   // Artifact JSON lives outside the static export so updates apply without rebuilding.
   if (stripped.startsWith("/data/artifacts/")) {
+    if (await serveIndexJson(stripped, res)) return;
+    if (await serveProjectIndexJson(stripped, res)) return;
     if (await serveArtifactJson(stripped, res)) return;
     send(res, 404, "Artifact not found", "text/html; charset=utf-8");
     return;
@@ -250,12 +368,12 @@ await startupChecks();
 
 server.listen(PORT, HOST, async () => {
   const localUrl = `http://${HOST}:${PORT}${MOUNT_PATH}/`;
-  const rootUrl = `http://${HOST}:${PORT}/`;
   console.log(`Visualizer server running at ${localUrl}`);
-  console.log(`Also serving at root: ${rootUrl} (for Tailscale Serve path prefix mode)`);
   console.log(`Serving static export: ${OUT_DIR}`);
   console.log(`Serving artifacts JSON: ${ARTIFACTS_DIR}`);
   console.log(`Artifact JSON endpoint: ${MOUNT_PATH}${DATA_PATH}/<project>/<slug>.json`);
+  console.log(`Live index endpoint: ${MOUNT_PATH}${DATA_PATH}/index.json`);
+  console.log(`Live project index endpoint: ${MOUNT_PATH}${DATA_PATH}/<project>/index.json`);
   console.log(`Live artifact fallback: ${MOUNT_PATH}/<project>/<slug>/ -> ${LIVE_ARTIFACT_SHELL}/`);
 
   const tailscaleIp = await getTailscaleIp();

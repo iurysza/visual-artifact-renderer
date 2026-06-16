@@ -40,9 +40,9 @@ type PieChartKeyedDataProps = PieChartBaseProps & {
 
 type PieChartProps = PieChartNamedDataProps | PieChartKeyedDataProps
 
-function buildConfig(items: { name: string; color: string }[]): ChartConfig {
+function buildConfig(items: { name: string; fill: string }[]): ChartConfig {
   return items.reduce<ChartConfig>((acc, item) => {
-    acc[item.name] = { label: item.name, color: item.color }
+    acc[item.name] = { label: item.name, color: item.fill }
     return acc
   }, {})
 }
@@ -64,8 +64,9 @@ function normalizeData(
       return entry as NamedDataPoint
     }
 
-    const name = String(entry[categoryKey] ?? `Item ${index + 1}`)
-    const rawValue = entry[valueKey]
+    const record = entry as Record<string, unknown>
+    const name = String(record[categoryKey] ?? `Item ${index + 1}`)
+    const rawValue = record[valueKey]
     const value = typeof rawValue === "number" ? rawValue : 0
 
     return { name, value }

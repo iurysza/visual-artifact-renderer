@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
-import { execSync } from "node:child_process"
-import path from "node:path"
-import { promises as fs } from "node:fs"
-import { loadAndRenderPrompt } from "../../lib/prompt"
+import { execSync } from "node:child_process";
+import path from "node:path";
+import { promises as fs } from "node:fs";
+import { loadAndRenderPrompt } from "../../lib/prompt";
 
 const WORKFLOWS = [
   {
@@ -22,6 +22,9 @@ Structure your report exactly as follows:
 10. Strengths, Tradeoffs, and Attention Areas
 11. Recommendations
 12. Summary
+
+
+I think it's important to understand I think it's important to extract from this code base as well like very important components and like public surfacing API. Like what are the most important components, you know, like what are where are the key pieces of business logic, stuff like that. 
 
 Remember: Code quality is not "clean-looking code." It is how safely, cheaply, and confidently the system can be changed. Avoid saying "this code is bad". Instead use neutral language like "This component is central because it coordinates X. Changes here require broad context."`,
   },
@@ -105,40 +108,46 @@ Test coverage: [Current state]
 Suggested next step: [Practical recommendation]
 Confidence: [High/Medium/Low]`,
   },
-]
+];
 
 async function main() {
-  const repoRoot = path.resolve(process.argv[2] ?? process.cwd())
-  const slug = process.argv[3] ?? path.basename(repoRoot)
+  const repoRoot = path.resolve(process.argv[2] ?? process.cwd());
+  const slug = process.argv[3] ?? path.basename(repoRoot);
 
-  const outputDir = path.join(repoRoot, "ai-artifacts", "generated", slug)
-  const digestPath = path.join(outputDir, "extractor-digest.md")
-  const reportsDir = path.join(outputDir, "reports")
+  const outputDir = path.join(repoRoot, "ai-artifacts", "generated", slug);
+  const digestPath = path.join(outputDir, "extractor-digest.md");
+  const reportsDir = path.join(outputDir, "reports");
 
-  await fs.mkdir(reportsDir, { recursive: true })
+  await fs.mkdir(reportsDir, { recursive: true });
 
-  console.log(`Running agentic workflows for ${slug}...`)
+  console.log(`Running agentic workflows for ${slug}...`);
 
-  const promptPath = path.join(path.dirname(import.meta.url).replace("file://", ""), "prompt.md")
+  const promptPath = path.join(
+    path.dirname(import.meta.url).replace("file://", ""),
+    "prompt.md",
+  );
 
   for (const workflow of WORKFLOWS) {
-    const reportPath = path.join(reportsDir, `${workflow.id}.md`)
-    console.log(`\n--- Starting workflow: ${workflow.id} ---`)
+    const reportPath = path.join(reportsDir, `${workflow.id}.md`);
+    console.log(`\n--- Starting workflow: ${workflow.id} ---`);
 
     const prompt = await loadAndRenderPrompt(promptPath, {
       task: workflow.task,
       digestPath,
       reportPath,
-    })
+    });
 
     try {
-      execSync(`pi --print "${prompt.replace(/"/g, '\\"')}"`, { stdio: "inherit", cwd: repoRoot })
-      console.log(`✓ Completed: ${workflow.id}`)
+      execSync(`pi --print "${prompt.replace(/"/g, '\\"')}"`, {
+        stdio: "inherit",
+        cwd: repoRoot,
+      });
+      console.log(`✓ Completed: ${workflow.id}`);
     } catch (error) {
-      console.error(`✗ Failed: ${workflow.id}`)
-      console.error(error)
+      console.error(`✗ Failed: ${workflow.id}`);
+      console.error(error);
     }
   }
 }
 
-main().catch(console.error)
+main().catch(console.error);

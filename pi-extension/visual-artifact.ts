@@ -315,6 +315,24 @@ function deriveProjectName(projectPath: string): string {
   }
 }
 
+function getTailscaleBaseUrl(): string | null {
+  try {
+    const output = execSync("tailscale status --json", {
+      encoding: "utf8",
+      timeout: 3000,
+    })
+    const status = JSON.parse(output) as { Self?: { DNSName?: string } }
+    const dnsName = status.Self?.DNSName
+    if (typeof dnsName === "string" && dnsName.length > 0) {
+      const host = dnsName.endsWith(".") ? dnsName.slice(0, -1) : dnsName
+      return `https://${host}/artifacts`
+    }
+  } catch {
+    // Tailscale not installed or not running.
+  }
+  return null
+}
+
 const CreateVisualArtifactParams = Type.Object({
   slug: Type.String({ maxLength: 80, description: "kebab-case artifact slug. Example: revenue-dashboard" }),
   title: Type.String({ maxLength: 120, description: "Artifact title" }),
@@ -347,7 +365,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "create_visual_artifact",
     label: "Create Visual Artifact",
-    description: "Validate and save a visual artifact JSON spec to ~/.pi/artifacts/<project>/<slug>.json, then return its local URL.",
+    description: "Validate and save a visual artifact JSON spec to ~/.pi/artifacts/<project>/<slug>.json, then return its URL (local tailnet URL when Tailscale is available).",
     promptSnippet: "Create a polished visual artifact from any Pi session; save it globally and return the URL.",
     promptGuidelines: [
       "For codebase visual artifacts (overviews, architecture diagrams, repo summaries), use the visual-artifact skill pipeline: run `vaz-pipeline <repoRoot>`, read the generated `visual-artifact-spec.json`, then call `create_visual_artifact`.",
@@ -355,6 +373,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
       "Before calling `create_visual_artifact`, read `artifact-contract.json` from the visualizer runtime and only use supported node types and props.",
       "Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call `create_visual_artifact`.",
       "Artifacts are saved globally under ~/.pi/artifacts/<project>/<slug>.json; the project name is derived from the caller's working directory.",
+      "When Tailscale is running, the tool result includes a tailnetUrl; prefer it for sharing outside the local machine.",
     ],
     parameters: CreateVisualArtifactParams,
     async execute(
@@ -369,16 +388,28 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
       const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? ".")
       const projectName = deriveProjectName(projectPath)
       const filePath = resolve(GLOBAL_ARTIFACTS_DIR, projectName, `${spec.slug}.json`)
-      const url = `${process.env.VISUAL_ARTIFACT_BASE_URL ?? DEFAULT_BASE_URL}/${projectName}/${spec.slug}/`
+
+      const localBaseUrl = DEFAULT_BASE_URL
+      const tailscaleBaseUrl = getTailscaleBaseUrl()
+      const preferredBaseUrl = process.env.VISUAL_ARTIFACT_BASE_URL ?? tailscaleBaseUrl ?? localBaseUrl
+
+      const localUrl = `${localBaseUrl}/${projectName}/${spec.slug}/`
+      const tailnetUrl = tailscaleBaseUrl ? `${tailscaleBaseUrl}/${projectName}/${spec.slug}/` : undefined
+      const url = `${preferredBaseUrl}/${projectName}/${spec.slug}/`
 
       await withFileMutationQueue(filePath, async () => {
         await mkdir(dirname(filePath), { recursive: true })
         await writeFile(filePath, `${JSON.stringify(spec, null, 2)}\n`, "utf8")
       })
 
+      let text = `Created visual artifact ${spec.slug} in project ${projectName} at ${filePath}. Open ${url}`
+      if (tailnetUrl && url !== tailnetUrl) {
+        text += ` (tailnet: ${tailnetUrl})`
+      }
+
       return {
-        content: [{ type: "text", text: `Created visual artifact ${spec.slug} in project ${projectName} at ${filePath}. Open ${url}` }],
-        details: { slug: spec.slug, projectName, projectPath, path: filePath, url },
+        content: [{ type: "text", text }],
+        details: { slug: spec.slug, projectName, projectPath, path: filePath, url, localUrl, tailnetUrl },
       }
     },
   })

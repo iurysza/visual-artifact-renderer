@@ -28,6 +28,7 @@ interface HeatmapProps extends Omit<React.ComponentProps<typeof Card>, "data"> {
   color?: string
   formatValue?: (value: number) => string
   emptyValue?: React.ReactNode
+  caption?: string
 }
 
 function getKey(item: HeatmapDataPoint, key: string | undefined, fallback: string): string {
@@ -86,6 +87,7 @@ function Heatmap({
   color = "var(--primary)",
   formatValue = formatNumber,
   emptyValue = "—",
+  caption,
   className,
   ...props
 }: HeatmapProps) {
@@ -229,6 +231,9 @@ function Heatmap({
             ))}
           </div>
         </TooltipProvider>
+        {caption && (
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">{caption}</p>
+        )}
       </CardContent>
     </Card>
   )

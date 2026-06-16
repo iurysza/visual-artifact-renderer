@@ -48,9 +48,15 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
   }, [params, initialSpec])
 
   if (!params && !spec) {
+    // During SSR the shell doesn't know the URL yet; show a loading state so
+    // the static export doesn't bake an error message into the HTML. On the
+    // client, params are resolved from window.location and the fetch begins.
     return (
       <main className="mx-auto flex min-h-screen w-full items-center justify-center">
-        <p className="text-muted-foreground">Error: Unable to resolve artifact from the current URL</p>
+        <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]"></span>
+          Loading artifact...
+        </div>
       </main>
     )
   }

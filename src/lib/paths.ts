@@ -33,6 +33,16 @@ export function artifactDataPath(project: string, slug: string): string {
   return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}.json`
 }
 
+/** Absolute public path to the live home index JSON. */
+export function artifactIndexPath(): string {
+  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/index.json`
+}
+
+/** Absolute public path to the live project index JSON. */
+export function projectIndexPath(project: string): string {
+  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/index.json`
+}
+
 /**
  * Resolve the deployment base path at runtime.
  *
