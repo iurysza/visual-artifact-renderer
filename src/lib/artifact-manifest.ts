@@ -114,6 +114,14 @@ export const artifactManifest = {
     requiresData: true,
     example: { type: "donut-chart", props: { dataKey: "browserStats", categoryKey: "browser", valueKey: "visitors" } },
   },
+  "area-chart": {
+    type: "area-chart",
+    description: "An area chart for cumulative trends.",
+    props: { dataKey: "string", xKey: "string?", yKey: "string?", label: "string?", color: "string?" },
+    children: false,
+    requiresData: true,
+    example: { type: "area-chart", props: { dataKey: "monthlyRevenue", xKey: "month", yKey: "revenue" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",

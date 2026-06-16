@@ -42,6 +42,7 @@ import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
 import { ArtifactImage } from "@/components/ui/artifact-image"
 import { PieChart } from "@/components/ui/pie-chart"
+import { AreaChart } from "@/components/ui/area-chart"
 import { Stepper } from "@/components/ui/stepper"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -1023,6 +1024,21 @@ export default function ComponentsPage() {
                       { name: "Firefox", value: 25 },
                     ]}
                     kind="donut"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Subheading>Area Chart</Subheading>
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                  <AreaChart
+                    data={[
+                      { x: "Jan", y: 100 },
+                      { x: "Feb", y: 120 },
+                      { x: "Mar", y: 170 },
+                      { x: "Apr", y: 140 },
+                      { x: "May", y: 200 },
+                    ]}
                   />
                 </div>
               </div>

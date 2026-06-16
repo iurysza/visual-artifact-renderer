@@ -59,6 +59,7 @@ import { FileTree } from "@/components/ui/file-tree"
 import { ArtifactImage } from "@/components/ui/artifact-image"
 import { PieChart as PieChartComponent } from "@/components/ui/pie-chart"
 import { Stepper } from "@/components/ui/stepper"
+import { AreaChart } from "@/components/ui/area-chart"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -87,6 +88,7 @@ type RegistryAdapter = (args: {
 
 export const componentRegistry = {
   alert: renderAlert as RegistryAdapter,
+  "area-chart": renderAreaChart as RegistryAdapter,
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "donut-chart": renderDonutChart as RegistryAdapter,
@@ -128,6 +130,21 @@ function renderAlert({ node }: AdapterArgs<"alert">) {
       <AlertTitle>{title}</AlertTitle>
       {description && <AlertDescription>{description}</AlertDescription>}
     </Alert>
+  )
+}
+
+function renderAreaChart({ node, context }: AdapterArgs<"area-chart">) {
+  const { dataKey, xKey, yKey, label, color } = node.props
+  const data = getRows(context.data, dataKey)
+  if (!data.length) return <MissingData dataKey={dataKey} />
+  return (
+    <AreaChart
+      data={data as Record<string, unknown>[]}
+      xKey={xKey}
+      yKey={yKey}
+      label={label}
+      color={color}
+    />
   )
 }
 

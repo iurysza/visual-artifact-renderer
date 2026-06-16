@@ -102,6 +102,10 @@ export type ArtifactNode =
       props: { dataKey: string; categoryKey: string; valueKey: string }
     }
   | {
+      type: "area-chart"
+      props: { dataKey: string; xKey?: string; yKey?: string; label?: string; color?: string }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -306,6 +310,20 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             dataKey: z.string().min(1),
             categoryKey: z.string().min(1),
             valueKey: z.string().min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("area-chart"),
+        props: z
+          .object({
+            dataKey: z.string().min(1),
+            xKey: z.string().min(1).optional(),
+            yKey: z.string().min(1).optional(),
+            label: z.string().min(1).optional(),
+            color: z.string().min(1).optional(),
           })
           .strict(),
       })
@@ -691,6 +709,7 @@ export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>
 
 export const ARTIFACT_NODE_TYPES = [
   "alert",
+  "area-chart",
   "definition-list",
   "diff",
   "donut-chart",
