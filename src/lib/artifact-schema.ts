@@ -78,6 +78,10 @@ export type ArtifactNode =
       props: { items: FileTreeItem[] }
     }
   | {
+      type: "diff"
+      props: { before: string; after: string; language?: string }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -203,6 +207,18 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
         props: z
           .object({
             items: z.array(FileTreeItemSchema).min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("diff"),
+        props: z
+          .object({
+            before: z.string(),
+            after: z.string(),
+            language: z.string().optional(),
           })
           .strict(),
       })
@@ -578,6 +594,7 @@ export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>
 
 export const ARTIFACT_NODE_TYPES = [
   "definition-list",
+  "diff",
   "file-tree",
   "heading",
   "text",

@@ -91,6 +91,14 @@ export const artifactManifest = {
     limits: { items: 20 },
     example: { type: "definition-list", props: { items: [{ term: "Term", description: "Description" }] } },
   },
+  "diff": {
+    type: "diff",
+    description: "Code or text difference visualization.",
+    props: { before: "string", after: "string", language: "string?" },
+    children: false,
+    limits: { text: 5000 },
+    example: { type: "diff", props: { before: "a", after: "b", language: "typescript" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",

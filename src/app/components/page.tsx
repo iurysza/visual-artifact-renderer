@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DefinitionList } from "@/components/ui/definition-list"
+import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -951,6 +952,15 @@ export default function ComponentsPage() {
                     { term: "Agent", description: "An autonomous entity." },
                     { term: "Prompt", description: "Instructions given to an LLM." },
                   ]}
+                />
+              </div>
+
+              <div>
+                <Subheading>Diff</Subheading>
+                <Diff
+                  before="const a = 1;"
+                  after="const a = 2;"
+                  language="typescript"
                 />
               </div>
 

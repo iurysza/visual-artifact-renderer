@@ -53,6 +53,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Prose } from "@/components/ui/prose"
 import { CodeBlock } from "@/components/ui/code-block"
 import { DefinitionList } from "@/components/ui/definition-list"
+import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -82,6 +83,7 @@ type RegistryAdapter = (args: {
 
 export const componentRegistry = {
   "definition-list": renderDefinitionList as RegistryAdapter,
+  diff: renderDiff as RegistryAdapter,
   "file-tree": renderFileTree as RegistryAdapter,
   heading: renderHeading as RegistryAdapter,
   prose: renderProse as RegistryAdapter,
@@ -113,6 +115,11 @@ export type { ArtifactRenderContext, RenderNodes }
 function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {
   const { items } = node.props
   return <DefinitionList items={items} />
+}
+
+function renderDiff({ node }: AdapterArgs<"diff">) {
+  const { before, after, language } = node.props
+  return <Diff before={before} after={after} language={language} />
 }
 
 function renderFileTree({ node }: AdapterArgs<"file-tree">) {
