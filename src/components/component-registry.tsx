@@ -56,6 +56,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
 
+import { SvgDiagram } from "@/components/svg-diagram"
+
 type ArtifactRenderContext = {
   data: VisualArtifactSpec["data"]
 }
@@ -940,36 +942,6 @@ function getPointerCenter(firstPointer: PointerPosition, secondPointer: PointerP
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
-}
-
-function SvgDiagram({
-  html,
-  title,
-  caption,
-  height = 720,
-}: {
-  html: string
-  title?: string
-  caption?: string
-  height?: number
-}) {
-  return (
-    <figure className="flex flex-col gap-3 rounded-2xl border bg-card/80 p-4 shadow-sm">
-      {(title || caption) && (
-        <figcaption className="flex flex-col gap-1">
-          {title && <h3 className="font-serif text-2xl font-medium tracking-[-0.02em] text-foreground">{title}</h3>}
-          {caption && <p className="text-sm leading-6 text-muted-foreground">{caption}</p>}
-        </figcaption>
-      )}
-      <iframe
-        title={title ?? "Interactive SVG diagram"}
-        sandbox="allow-scripts allow-same-origin"
-        srcDoc={html}
-        className="w-full rounded-xl border bg-background"
-        style={{ height }}
-      />
-    </figure>
-  )
 }
 
 function renderFlow({ node }: AdapterArgs<"flow">) {

@@ -179,6 +179,8 @@ import {
 } from "@/components/ui/chart"
 import { Calendar } from "@/components/ui/calendar"
 import { CodeBlock } from "@/components/ui/code-block"
+import { SvgDiagram } from "@/components/svg-diagram"
+import { visualizerPipelineDiagram } from "@/lib/svg-diagram-example"
 import { cn } from "@/lib/utils"
 
 import {
@@ -285,6 +287,7 @@ const navSections = [
   { id: "calendar", title: "Calendar" },
   { id: "markdown", title: "Markdown" },
   { id: "code-block", title: "Code Block" },
+  { id: "diagrams", title: "Diagrams" },
 ]
 
 function Section({
@@ -1239,6 +1242,40 @@ console.log(greeting);`}
               language="typescript"
               title="example.ts"
             />
+          </Section>
+
+          {/* Diagrams */}
+          <Section
+            id="diagrams"
+            title="Diagrams"
+            description="Use Mermaid for quick text-defined charts. Use svg-diagram for interactive, animated, or custom-layout SVGs when Mermaid is too constrained."
+          >
+            <div className="grid gap-8">
+              <div>
+                <Subheading>Mermaid</Subheading>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Best for flowcharts, sequences, ERDs, and C4 diagrams that can be authored as text.
+                </p>
+                <CodeBlock
+                  code={`{\n  "type": "mermaid",\n  "props": {\n    "title": "Request flow",\n    "code": "flowchart LR\\n  Client --> API\\n  API --> DB"\n  }\n}`}
+                  language="json"
+                  title="mermaid node"
+                />
+              </div>
+
+              <div>
+                <Subheading>SVG Diagram</Subheading>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  A full HTML/SVG document rendered in a sandboxed iframe. Supports animations, clickable nodes, and custom themes.
+                </p>
+                <SvgDiagram
+                  html={visualizerPipelineDiagram}
+                  title="Visualizer pipeline"
+                  caption="Click nodes and use the flow chips to explore."
+                  height={480}
+                />
+              </div>
+            </div>
           </Section>
         </main>
       </div>

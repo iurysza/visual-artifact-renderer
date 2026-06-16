@@ -9,6 +9,7 @@ The brief should tell the final tool-calling assembler how to visualize the repo
 The assembler will later receive all packets, reports, the director brief, this visualization strategy, and the artifact manifest, then generate the actual component JSON.
 
 Core intent:
+
 - The final artifact should inform, not become a remediation backlog.
 - Explain what this project is, what matters, where to look, and how pieces relate.
 - Use visual structure to help the reader build a mental model quickly.
@@ -18,10 +19,12 @@ Core intent:
 Read these first:
 
 Report direction:
+
 - {{reportDirectionJsonPathRelative}}
 - {{reportDirectionMarkdownPathRelative}}
 
 Deterministic evidence:
+
 - {{digestPathRelative}}
 - {{extractorRunPathRelative}}
 
@@ -45,34 +48,54 @@ Write Markdown with this loose shape. Adapt if the evidence suggests a better st
 # Visualization Strategy
 
 ## Visual thesis
+
 One paragraph on what the page should help the reader understand.
 
 ## Composition approach
+
 How the artifact should feel and scan: orientation-first, evidence-backed, not a wall of prose, not card soup.
 
 ## Opening section
+
 How to open the artifact: thesis, summary band, first diagram/table/card set. Explain why.
 
 ## Section-by-section visual treatment
+
 For each Report Director section:
+
 - What the reader should learn
-- Best component ideas to use (examples: text, stat-card, status-grid, comparison-table, mermaid, flow, timeline, code-block, tabs, accordion)
+- Best component ideas to use (examples: text, stat-card, status-grid, comparison-table, mermaid, svg-diagram, flow, timeline, code-block, tabs, accordion)
 - What evidence/data should be surfaced
 - What should stay out of the main path
 - Any diagram idea in plain language if useful
 
 ## Data and evidence to expose
+
 Loose notes on tables, status grids, metrics, captions, source references, and useful data keys. Do not force exact schemas.
 
 ## Component palette guidance
+
 Which components should dominate and which should be used sparingly.
 
+For diagrams specifically:
+- Default to mermaid for architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.
+- Use svg-diagram when mermaid's auto-layout is wrong, when request paths need to animate step-by-step, or when nodes need to be clickable with detail cards.
+- Do not use svg-diagram for simple charts that mermaid can express cleanly.
+
 ## Assembly instructions for the final tool-calling LLM
+
 Direct instructions the assembler can follow when generating the final VisualArtifactSpec.
 
 Important style rules:
+
 - Prefer concrete visual decisions over generic advice.
 - Do not tell the reader what to fix first unless it belongs in a small final section.
 - Do not invent facts beyond the packets/reports.
 - Keep the brief useful to another LLM, not beautiful for humans.
 - If a visual idea is uncertain, say what evidence would resolve it.
+
+---
+
+In general, you should try to make this as a compelling visual artifact that one can parse and understand the idea. it is important that we pepper some text sections, you know, like a paragraph here and there, a visual call out for visual queue for for a topic, you know.
+
+If it makes sense.

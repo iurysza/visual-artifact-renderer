@@ -295,7 +295,7 @@
       }
     },
     "mermaid": {
-      "description": "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
+      "description": "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text. Prefer mermaid first; escalate to svg-diagram only when layout, animation, or interactivity needs custom control.",
       "props": {
         "code": "string",
         "title": "string?",
@@ -315,7 +315,7 @@
       }
     },
     "svg-diagram": {
-      "description": "Raw trusted SVG/HTML diagram embedded in a sandboxed iframe. Use for full-screen interactive SVG diagrams from the html-diagram style.",
+      "description": "Full-screen interactive SVG/HTML diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. Higher authoring cost than mermaid, so only use it when the diagram benefits from it.",
       "props": {
         "html": "string",
         "title": "string?",
@@ -556,20 +556,6 @@
     "timeline",
     "status-grid"
   ],
-  "compositionGuidance": [
-    "Open with a concise thesis and a stat-card summary band.",
-    "Use stat-card for KPI, count, health, and state summaries.",
-    "Use status-grid for component health, readiness, validation, and risk boards.",
-    "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
-    "For architecture pages, put a mermaid or svg-diagram near the top instead of describing topology in prose.",
-    "Use mermaid for lightweight zoomable/pannable text-defined architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.",
-    "Use svg-diagram for trusted full HTML/SVG diagrams when Mermaid is too constrained or layout needs custom control.",
-    "Use flow for request paths, build/deploy chains, data pipelines, and architecture handoffs.",
-    "Use timeline for release phases, lifecycle steps, migrations, and operator runbooks.",
-    "Use code-block for commands, config snippets, env contracts, and file/path maps.",
-    "Use tabs for alternate contexts; use accordion only for secondary detail.",
-    "Avoid generic card soup and avoid file:// links in shareable artifacts."
-  ],
   "patternExamples": {
     "architecture": {
       "description": "Architecture brief: thesis + stat cards, then Mermaid topology, flow handoff, status-grid, and evidence table.",
@@ -706,6 +692,20 @@
       ]
     }
   },
+  "compositionGuidance": [
+    "Open with a concise thesis and a stat-card summary band.",
+    "Use stat-card for KPI, count, health, and state summaries.",
+    "Use status-grid for component health, readiness, validation, and risk boards.",
+    "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
+    "For architecture pages, put a mermaid or svg-diagram near the top instead of describing topology in prose.",
+    "Use mermaid for lightweight zoomable/pannable text-defined architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.",
+    "Use svg-diagram when Mermaid's auto-layout is wrong, when the diagram needs animated request paths, or when nodes must be clickable with detail cards.",
+    "Use flow for request paths, build/deploy chains, data pipelines, and architecture handoffs.",
+    "Use timeline for release phases, lifecycle steps, migrations, and operator runbooks.",
+    "Use code-block for commands, config snippets, env contracts, and file/path maps.",
+    "Use tabs for alternate contexts; use accordion only for secondary detail.",
+    "Avoid generic card soup and avoid file:// links in shareable artifacts."
+  ],
   "globalLimits": {
     "dataRowsMax": 20,
     "dataStringMax": 200
