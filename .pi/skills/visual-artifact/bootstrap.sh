@@ -6,6 +6,7 @@ set -e
 VAZ_DIR="${VAZ_DIR:-$HOME/.pi/tools/visualizer}"
 BIN_DIR="${HOME}/.pi/bin"
 SKILL_DIR="${VAZ_SKILL_DIR:-$HOME/.pi/skills/visual-artifact}"
+EXTENSION_DST="$HOME/.pi/agent/extensions/visual-artifact.ts"
 REPO_URL="${VAZ_REPO_URL:-https://github.com/iurysouza/visualizer.git}"
 
 echo "[vaz-bootstrap] Bootstrapping visual-artifact runtime..."
@@ -31,6 +32,10 @@ mkdir -p "$BIN_DIR"
 echo "[vaz-bootstrap] Installing wrapper scripts..."
 cp "$SKILL_DIR/bin/"* "$BIN_DIR/"
 chmod +x "$BIN_DIR"/vaz-*
+
+echo "[vaz-bootstrap] Installing Pi extension..."
+mkdir -p "$(dirname "$EXTENSION_DST")"
+cp "$VAZ_DIR/.pi/extensions/visual-artifact.ts" "$EXTENSION_DST"
 
 echo "[vaz-bootstrap] Done."
 echo ""

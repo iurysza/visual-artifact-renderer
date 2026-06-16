@@ -109,6 +109,7 @@ Ensure `~/.pi/bin` is in your PATH. `install.sh` will remind you if it is not.
 
 - **Never call `create_visual_artifact` from inside a `pi --print` subprocess.** The assembler pass writes JSON to disk; the parent agent (you) calls the tool.
 - **Always pass the `data` object** from `visual-artifact-spec.json` to `create_visual_artifact`.
+- **Before calling `create_visual_artifact`, read `~/.pi/tools/visualizer/artifact-contract.json`** and only use supported node types and props.
 - **Keep the renderer running** before calling `create_visual_artifact` if you want the artifact URL to resolve locally.
 - **Orientation-first, not fix-first:** for codebase artifacts, answer "what is this project?" before recommendations.
 - **Deterministic extractors output facts only.** Interpretation belongs to agentic report workflows, the report director, and the visualization strategy.
