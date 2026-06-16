@@ -200,10 +200,10 @@ export const artifactManifest = {
   },
   "svg-diagram": {
     type: "svg-diagram",
-    description: "Raw trusted SVG/HTML diagram embedded in a sandboxed iframe. Use for full-screen interactive SVG diagrams from the html-diagram style.",
+    description: "Full-screen interactive SVG/HTML architecture diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. The html value must be a complete self-contained document with hand-rolled CSS variables for light/dark themes, an apply-before-paint theme script, a theme toggle, and an SVG styled through CSS classes (no hard-coded hex inside SVG).",
     props: { html: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
     children: false,
-    example: { type: "svg-diagram", props: { title: "Interactive architecture", height: 720, html: "<!doctype html><html><body><svg viewBox='0 0 100 40'><text x='5' y='24'>Architecture</text></svg></body></html>" } },
+    example: { type: "svg-diagram", props: { title: "Interactive architecture", height: 720, html: "<!doctype html><html><head><script>(function(){try{const k='visualizer-theme',s=localStorage.getItem(k),d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}})();</script><style>:root{--bg:#FAF9F5;--ink:#141413;}html.dark{--bg:#141413;--ink:#FAF9F5;}body{background:var(--bg);}</style></head><body><svg viewBox='0 0 100 40'><text x='5' y='24' fill='var(--ink)'>Architecture</text></svg></body></html>" } },
   },
   flow: {
     type: "flow",

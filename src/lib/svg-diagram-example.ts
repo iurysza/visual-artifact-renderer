@@ -4,39 +4,66 @@ export const visualizerPipelineDiagram = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Visualizer pipeline</title>
+<script>
+  (function () {
+    const key = "visualizer-theme";
+    const stored = localStorage.getItem(key);
+    const dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+  })();
+</script>
 <style>
   :root {
-    --bg: #FAF9F5; --surface: #FFFFFF; --surface2: #F0EEE6;
-    --ink: #141413; --body: #3D3D3A; --muted: #87867F;
-    --line: #D1CFC5; --line-soft: #E6E3DA;
-    --clay: #D97757; --clay-soft: rgba(217,119,87,0.10);
-    --olive: #788C5D; --olive-soft: rgba(120,140,93,0.12);
+    --bg: #FAF9F5;
+    --surface: #FFFFFF;
+    --surface2: #F0EEE6;
+    --ink: #141413;
+    --body: #3D3D3A;
+    --muted: #87867F;
+    --line: #D1CFC5;
+    --line-soft: #E6E3DA;
+    --clay: #D97757;
+    --clay-soft: rgba(217,119,87,0.10);
+    --olive: #788C5D;
+    --olive-soft: rgba(120,140,93,0.12);
     --gold: #C9A45C;
+    --zone: rgba(20,20,19,0.025);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   html.dark {
-    --bg: #141413; --surface: #1F1F1D; --surface2: #2A2A28;
-    --ink: #FAF9F5; --body: #D1CFC5; --muted: #87867F;
-    --line: #3D3D3A; --line-soft: #2A2A28;
-    --clay: #E48A6E; --clay-soft: rgba(228,138,110,0.14);
-    --olive: #9DB07C; --olive-soft: rgba(157,176,124,0.16);
+    --bg: #141413;
+    --surface: #1F1F1D;
+    --surface2: #2A2A28;
+    --ink: #FAF9F5;
+    --body: #D1CFC5;
+    --muted: #87867F;
+    --line: #3D3D3A;
+    --line-soft: #2A2A28;
+    --clay: #E48A6E;
+    --clay-soft: rgba(228,138,110,0.14);
+    --olive: #9DB07C;
+    --olive-soft: rgba(157,176,124,0.16);
     --gold: #D4B36F;
+    --zone: rgba(250,249,245,0.03);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
     background: var(--bg); color: var(--body); font-family: var(--sans);
-    -webkit-font-smoothing: antialiased; overflow: hidden;
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; overflow: hidden;
   }
+
   .bar {
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    padding: 12px 20px; border-bottom: 1px solid var(--line-soft);
+    padding: 12px 20px; border-bottom: 1px solid var(--line-soft); flex: none;
   }
-  .bar h1 { font-family: var(--serif); font-weight: 500; font-size: 18px; color: var(--ink); }
-  .bar .sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .bar h1 { font-family: var(--serif); font-weight: 500; font-size: 19px; color: var(--ink); letter-spacing: -0.01em; }
+  .bar .sub { font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
   .spacer { flex: 1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
   .chip {
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
     padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px;
@@ -44,19 +71,31 @@ export const visualizerPipelineDiagram = `<!doctype html>
   }
   .chip:hover { color: var(--ink); border-color: var(--muted); }
   .chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  #themeToggle {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: transparent; color: var(--muted); cursor: pointer;
+  }
+  #themeToggle:hover { color: var(--ink); border-color: var(--muted); }
+
   .stage { flex: 1; position: relative; min-height: 0; }
   .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .zone rect { fill: rgba(20,20,19,0.02); stroke: var(--line); stroke-width: 1; stroke-dasharray: 5 5; rx: 14; }
+
+  .zone rect { fill: var(--zone); stroke: var(--line); stroke-width: 1; stroke-dasharray: 5 5; rx: 16; }
   .zone .ztitle { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; fill: var(--muted); }
+
   .node { cursor: pointer; }
-  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; rx: 10; transition: stroke .15s ease; }
+  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; rx: 10; transition: stroke .15s ease, filter .15s ease; }
   .node:hover rect { stroke: var(--muted); }
-  .node.sel rect { stroke: var(--clay); stroke-width: 2; }
+  .node.sel rect { stroke: var(--clay) !important; stroke-width: 2; }
   .node .t { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; }
   .node .m { font-family: var(--mono); font-size: 10px; fill: var(--muted); pointer-events: none; }
   .node.store rect { fill: var(--surface2); }
   .node.out rect { stroke-dasharray: 6 3; }
-  .edge { stroke: var(--muted); stroke-width: 1.6; fill: none; marker-end: url(#a-mut); transition: opacity .2s ease; }
+
+  .edge { stroke: var(--muted); stroke-width: 1.6; fill: none; marker-end: url(#a-mut); transition: opacity .2s ease, stroke .2s ease; }
+  .edge.dash { stroke-dasharray: 5 4; }
+
   .stage.flowing .edge { opacity: 0.12; }
   .stage.flowing .node { opacity: 0.35; }
   .stage.flowing .zone { opacity: 0.45; }
@@ -65,6 +104,7 @@ export const visualizerPipelineDiagram = `<!doctype html>
   .stage.flowing .node.lit rect { stroke: var(--clay); }
   @keyframes march { to { stroke-dashoffset: -12; } }
   @media (prefers-reduced-motion: reduce) { .stage.flowing .edge.lit { animation: none; } }
+
   .card {
     position: absolute; right: 16px; bottom: 16px; width: 280px;
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
@@ -74,6 +114,7 @@ export const visualizerPipelineDiagram = `<!doctype html>
   .card .meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 8px; }
   .card p { font-size: 12px; line-height: 1.55; }
   .card code { font-family: var(--mono); font-size: 11px; color: var(--clay); }
+  .hint { position: absolute; left: 16px; bottom: 16px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -91,10 +132,11 @@ export const visualizerPipelineDiagram = `<!doctype html>
     <button class="chip" data-flow="assemble">Assemble</button>
     <button class="chip" data-flow="render">Render</button>
   </div>
+  <button id="themeToggle">Theme</button>
 </div>
 
 <div class="stage" id="stage">
-<svg viewBox="0 0 960 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visualizer pipeline diagram">
+<svg viewBox="0 0 1000 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visualizer pipeline diagram">
   <defs>
     <marker id="a-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
@@ -105,89 +147,84 @@ export const visualizerPipelineDiagram = `<!doctype html>
   </defs>
 
   <g class="zone">
-    <rect x="40" y="80" width="260" height="360"/>
+    <rect x="40" y="80" width="280" height="380"/>
     <text class="ztitle" x="60" y="105">Sources</text>
   </g>
   <g class="zone">
-    <rect x="330" y="80" width="300" height="360"/>
-    <text class="ztitle" x="350" y="105">Pipeline</text>
+    <rect x="360" y="80" width="320" height="380"/>
+    <text class="ztitle" x="380" y="105">Pipeline</text>
   </g>
   <g class="zone">
-    <rect x="660" y="80" width="260" height="360"/>
-    <text class="ztitle" x="680" y="105">Outputs</text>
+    <rect x="720" y="80" width="240" height="380"/>
+    <text class="ztitle" x="740" y="105">Outputs</text>
   </g>
 
-  <path class="edge" id="e-repo"     d="M285,160 L345,160"/>
-  <path class="edge" id="e-packets"  d="M285,240 L345,240"/>
-  <path class="edge" id="e-direct"   d="M285,320 L345,320"/>
-  <path class="edge" id="e-extract"  d="M615,180 L665,180"/>
-  <path class="edge" id="e-report"   d="M615,260 L665,260"/>
-  <path class="edge" id="e-visual"   d="M615,340 L665,340"/>
-  <path class="edge" id="e-assemble" d="M905,200 L905,240"/>
-  <path class="edge" id="e-render"   d="M905,340 L905,380"/>
+  <path class="edge" id="e-repo"     d="M315,170 L365,170"/>
+  <path class="edge" id="e-packets"  d="M315,250 L365,250"/>
+  <path class="edge" id="e-direct"   d="M315,330 L365,330"/>
+  <path class="edge" id="e-extract"  d="M675,190 L725,190"/>
+  <path class="edge" id="e-report"   d="M675,270 L725,270"/>
+  <path class="edge" id="e-visual"   d="M675,350 L725,350"/>
+  <path class="edge" id="e-assemble" d="M855,240 L855,290"/>
+  <path class="edge" id="e-render"   d="M855,370 L855,410"/>
 
   <g class="node" data-k="repo">
-    <rect x="85" y="130" width="170" height="60"/>
-    <text class="t" x="105" y="155">Local repo</text>
-    <text class="m" x="105" y="175">files, deps, structure</text>
+    <rect x="70" y="140" width="220" height="60"/>
+    <text class="t" x="90" y="165">Local repo</text>
+    <text class="m" x="90" y="185">files, deps, structure</text>
   </g>
   <g class="node" data-k="packets">
-    <rect x="85" y="210" width="170" height="60"/>
-    <text class="t" x="105" y="235">Packet reports</text>
-    <text class="m" x="105" y="255">agentic findings</text>
+    <rect x="70" y="220" width="220" height="60"/>
+    <text class="t" x="90" y="245">Packet reports</text>
+    <text class="m" x="90" y="265">agentic findings</text>
   </g>
   <g class="node" data-k="context">
-    <rect x="85" y="290" width="170" height="60"/>
-    <text class="t" x="105" y="315">Source context</text>
-    <text class="m" x="105" y="335">north star, instructions</text>
+    <rect x="70" y="300" width="220" height="60"/>
+    <text class="t" x="90" y="325">Source context</text>
+    <text class="m" x="90" y="345">north star, instructions</text>
   </g>
 
   <g class="node" data-k="extract">
-    <rect x="355" y="130" width="250" height="100"/>
-    <text class="t" x="375" y="155">Deterministic extraction</text>
-    <text class="m" x="375" y="175">repo profile · imports · deps</text>
-    <text class="m" x="375" y="195">digest + evidence packets</text>
+    <rect x="390" y="120" width="260" height="100"/>
+    <text class="t" x="410" y="145">Deterministic extraction</text>
+    <text class="m" x="410" y="165">repo profile · imports · deps</text>
+    <text class="m" x="410" y="185">digest + evidence packets</text>
   </g>
   <g class="node" data-k="director">
-    <rect x="355" y="260" width="250" height="60"/>
-    <text class="t" x="375" y="285">Report director</text>
-    <text class="m" x="375" y="305">thesis · sections · audience</text>
+    <rect x="390" y="260" width="260" height="60"/>
+    <text class="t" x="410" y="285">Report director</text>
+    <text class="m" x="410" y="305">thesis · sections · audience</text>
   </g>
   <g class="node" data-k="visual">
-    <rect x="355" y="340" width="250" height="60"/>
-    <text class="t" x="375" y="365">Visualization strategy</text>
-    <text class="m" x="375" y="385">components · diagrams · flow</text>
+    <rect x="390" y="340" width="260" height="60"/>
+    <text class="t" x="410" y="365">Visualization strategy</text>
+    <text class="m" x="410" y="385">components · diagrams · flow</text>
   </g>
 
   <g class="node store" data-k="json">
-    <rect x="675" y="130" width="220" height="100"/>
-    <text class="t" x="695" y="155">VisualArtifactSpec JSON</text>
-    <text class="m" x="695" y="175">validated schema</text>
-    <text class="m" x="695" y="195">~/.pi/artifacts/project/slug</text>
+    <rect x="740" y="140" width="200" height="100"/>
+    <text class="t" x="760" y="165">Spec JSON</text>
+    <text class="m" x="760" y="185">validated schema</text>
+    <text class="m" x="760" y="205">~/.pi/artifacts/...</text>
   </g>
   <g class="node store" data-k="manifest">
-    <rect x="675" y="260" width="220" height="60"/>
-    <text class="t" x="695" y="285">Artifact manifest</text>
-    <text class="m" x="695" y="305">node type guidance</text>
+    <rect x="740" y="290" width="200" height="60"/>
+    <text class="t" x="760" y="315">Manifest</text>
+    <text class="m" x="760" y="335">node type guidance</text>
   </g>
   <g class="node out" data-k="renderer">
-    <rect x="675" y="340" width="220" height="60"/>
-    <text class="t" x="695" y="365">Component registry</text>
-    <text class="m" x="695" y="385">renders nodes to React</text>
-  </g>
-
-  <g class="node out" data-k="page">
-    <rect x="820" y="400" width="100" height="50"/>
-    <text class="t" x="840" y="425">Page</text>
-    <text class="m" x="840" y="442">static export</text>
+    <rect x="755" y="410" width="170" height="50"/>
+    <text class="t" x="775" y="435">Renderer</text>
+    <text class="m" x="775" y="452">React components</text>
   </g>
 </svg>
 
-<div class="card" id="detail">
-  <h3 id="d-title">Click a node</h3>
-  <div class="meta" id="d-meta">pipeline stage</div>
-  <p id="d-body">Select a node to see what it does. Use the chips above to animate request paths.</p>
-</div>
+  <div class="card" id="detail">
+    <h3 id="d-title">Click a node</h3>
+    <div class="meta" id="d-meta">pipeline stage</div>
+    <p id="d-body">Select a node to see what it does. Use the chips above to animate request paths.</p>
+  </div>
+  <div class="hint">Theme syncs with the visualizer.</div>
 </div>
 
 <script>
@@ -201,14 +238,13 @@ const DETAIL = {
   json: { t:"VisualArtifactSpec", m:"validated output", b:"The final JSON artifact written to <code>~/.pi/artifacts/</code>. The renderer reads it and produces the page." },
   manifest: { t:"Artifact manifest", m:"component guidance", b:"Describes every node type, when to use it, and composition patterns. The assembler consults it." },
   renderer: { t:"Component registry", m:"React rendering", b:"Maps each node type to a React component: tables, charts, mermaid, and interactive svg-diagram iframes." },
-  page: { t:"Static page", m:"exported artifact page", b:"The final Next.js page rendered during static export and served from the visualizer." },
 };
 
 const FLOWS = {
   extract:  { edges:["e-repo","e-extract"], nodes:["repo","extract","json"], steps:["Repo files are parsed deterministically","A structured digest + evidence packets are produced","Output is saved as validated VisualArtifactSpec JSON"] },
   direct:   { edges:["e-packets","e-direct","e-report"], nodes:["packets","context","director","manifest"], steps:["Scout packets and source context feed the director","The director chooses artifact type and section order","The manifest guides component selection"] },
   assemble: { edges:["e-report","e-visual","e-assemble"], nodes:["director","visual","json","manifest"], steps:["Visualization strategy picks components per section","Final assembler writes the VisualArtifactSpec JSON","Schema validation runs before writing"] },
-  render:   { edges:["e-assemble","e-render"], nodes:["json","renderer","page"], steps:["Renderer reads the artifact JSON","Each node maps to a React component","Static export produces the final page"] },
+  render:   { edges:["e-assemble","e-render"], nodes:["json","renderer"], steps:["Renderer reads the artifact JSON","Each node maps to a React component","Static export produces the final page"] },
 };
 
 const stage = document.getElementById('stage');
@@ -237,6 +273,13 @@ nodes.forEach(n => n.addEventListener('click', () => {
   document.getElementById('d-meta').textContent = d.m;
   document.getElementById('d-body').innerHTML = d.b;
 }));
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const dark = !document.documentElement.classList.contains('dark');
+  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  localStorage.setItem('visualizer-theme', dark ? 'dark' : 'light');
+});
 </script>
 </body>
 </html>`

@@ -42,4 +42,13 @@ Requirements for the Final JSON Spec:
 - Keep the narrative orientation-first. Do not build a remediation backlog.
 - If unsure about a value, use evidence from the packets/reports.
 
+When generating an svg-diagram node, the `html` value must be a complete self-contained HTML document that follows the html-diagram style:
+- Hand-rolled CSS variables on :root for the light theme and html.dark for the dark theme.
+- An apply-before-paint script in <head> that reads localStorage key `visualizer-theme` (fallback to prefers-color-scheme) and toggles the `dark` class on <html>.
+- A small theme toggle button that persists the choice back to `visualizer-theme`.
+- Full-screen inside the iframe: html, body { height: 100%; overflow: hidden; } with a flex top-bar + SVG stage.
+- The SVG is styled through CSS classes using those variables; never put hard-coded hex colors inside SVG elements.
+- Include interactive touches when useful: clickable nodes with a detail card, flow chips that light up edges/nodes and animate request paths.
+- Keep prose minimal; the diagram itself should explain the stack.
+
 Write the complete JSON to the file path above. Do not call create_visual_artifact; the parent agent will do that.

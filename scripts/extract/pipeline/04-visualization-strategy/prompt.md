@@ -82,6 +82,15 @@ For diagrams specifically:
 - Use svg-diagram when mermaid's auto-layout is wrong, when request paths need to animate step-by-step, or when nodes need to be clickable with detail cards.
 - Do not use svg-diagram for simple charts that mermaid can express cleanly.
 
+When planning an svg-diagram, the final assembler must produce a complete self-contained HTML document with:
+- Hand-rolled CSS variables on :root (light) and html.dark (dark); never hard-code hex colors inside SVG elements.
+- An apply-before-paint script in <head> that reads localStorage key `visualizer-theme` or falls back to prefers-color-scheme, and toggles the `dark` class on <html>.
+- A small theme toggle button that persists the choice back to localStorage.
+- Full-screen layout: html, body { height: 100%; overflow: hidden; } with a flex column (top bar + svg stage).
+- A high-quality SVG centerpiece: subtle zones, rounded-rect nodes, readable typography, and edges styled through CSS classes using the variables.
+- Optional but encouraged interactivity: clickable nodes with a detail card, and flow-selector chips that light up + animate request paths.
+- Minimal prose. The diagram itself should make the architecture click.
+
 ## Assembly instructions for the final tool-calling LLM
 
 Direct instructions the assembler can follow when generating the final VisualArtifactSpec.
