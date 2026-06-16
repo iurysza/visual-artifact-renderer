@@ -6,7 +6,17 @@ export type ArtifactManifestEntry = {
   props: Record<string, string>
   children: false | "nodes" | "items"
   data?: string
+  requiresData?: boolean
   example: unknown
+  limits?: {
+    text?: number
+    label?: number
+    code?: number
+    items?: number
+    itemStatus?: number
+    children?: number
+    status?: number
+  }
 }
 
 export const artifactCompositionGuidance = [
@@ -92,6 +102,7 @@ export const artifactManifest = {
     description: "Section or page heading. Use sparingly; renderer already supplies the page hero.",
     props: { text: "string", level: "1 | 2 | 3 | 4?", align: "left | center | right?" },
     children: false,
+    limits: { text: 120 },
     example: { type: "heading", props: { text: "Quarterly Revenue", level: 2 } },
   },
   text: {
@@ -99,6 +110,7 @@ export const artifactManifest = {
     description: "Paragraph text for narrative. Keep copy compact; use tables/status grids for structured facts.",
     props: { text: "string", tone: "default | muted?", size: "sm | base | lg?", align: "left | center | right?" },
     children: false,
+    limits: { text: 800 },
     example: { type: "text", props: { text: "Revenue grew across enterprise accounts.", tone: "muted" } },
   },
   card: {
@@ -106,6 +118,7 @@ export const artifactManifest = {
     description: "General content container. Use tone for a subtle left accent; do not wrap every tiny fact in a card when stat-card/status-grid fits better.",
     props: { title: "string?", description: "string?", size: "default | sm?", tone: "default | accent | success | warning | danger?" },
     children: "nodes",
+    limits: { children: 10 },
     example: { type: "card", props: { title: "Summary", tone: "accent" }, children: [{ type: "text", props: { text: "One clear idea." } }] },
   },
   metric: {
@@ -113,6 +126,7 @@ export const artifactManifest = {
     description: "Compact KPI display inside another container. Prefer stat-card for top-level dashboard KPI tiles.",
     props: { label: "string", value: "string | number", delta: "string?", trend: "up | down | neutral?" },
     children: false,
+    limits: { label: 40 },
     example: { type: "metric", props: { label: "Revenue", value: "$128,400", delta: "+12.5%", trend: "up" } },
   },
   "stat-card": {
@@ -120,6 +134,7 @@ export const artifactManifest = {
     description: "Standalone dashboard KPI tile. Best for summary bands: counts, state, health, totals, deltas.",
     props: { label: "string", value: "string | number", delta: "string?", trend: "up | down | neutral?", caption: "string?", tone: "default | accent | success | warning | danger?" },
     children: false,
+    limits: { label: 40 },
     example: { type: "stat-card", props: { label: "Install state", value: "linked", delta: "healthy", trend: "up", caption: "Tracked targets already linked.", tone: "success" } },
   },
   badge: {
@@ -127,6 +142,7 @@ export const artifactManifest = {
     description: "Small passive label. Use for metadata, not primary status summaries.",
     props: { label: "string", variant: "default | secondary | destructive | outline | ghost | link?" },
     children: false,
+    limits: { label: 40 },
     example: { type: "badge", props: { label: "On track", variant: "secondary" } },
   },
   button: {
@@ -134,6 +150,7 @@ export const artifactManifest = {
     description: "Action link or button-looking link. Avoid file:// links in shareable artifacts.",
     props: { label: "string", href: "string?", variant: "default | outline | secondary | ghost | destructive | link?", size: "default | xs | sm | lg?" },
     children: false,
+    limits: { label: 40 },
     example: { type: "button", props: { label: "Open source", href: "https://example.com", variant: "outline" } },
   },
   separator: {
@@ -148,6 +165,7 @@ export const artifactManifest = {
     description: "Readable table backed by embedded data. Use for fewer rows or narrative tables.",
     props: { dataKey: "string", columns: "(string | { key, label? })[]?", caption: "string?" },
     children: false,
+    requiresData: true,
     data: "data[dataKey] must be an array of row objects.",
     example: { type: "table", props: { dataKey: "revenueByMonth", columns: ["month", "revenue"] } },
   },
@@ -156,6 +174,7 @@ export const artifactManifest = {
     description: "Dense table variant for operational data, logs, inventories, and evidence lists.",
     props: { dataKey: "string", columns: "(string | { key, label? })[]?", caption: "string?" },
     children: false,
+    requiresData: true,
     data: "data[dataKey] must be an array of row objects.",
     example: { type: "data-table", props: { dataKey: "accounts", columns: [{ key: "name", label: "Account" }] } },
   },
@@ -164,6 +183,7 @@ export const artifactManifest = {
     description: "Dashboard comparison table with stronger first column and optional status chips. Use for options, risks, validations, runtimes, and parity checks.",
     props: { dataKey: "string", columns: "(string | { key, label? })[]?", statusKey: "string?", caption: "string?" },
     children: false,
+    requiresData: true,
     data: "data[dataKey] must be an array of row objects. statusKey values are rendered as status chips.",
     example: { type: "comparison-table", props: { dataKey: "checks", columns: ["check", "result", "evidence"], statusKey: "result" } },
   },
@@ -172,6 +192,7 @@ export const artifactManifest = {
     description: "Line or bar chart backed by embedded data. Pair charts with table detail when exact values matter.",
     props: { dataKey: "string", xKey: "string", yKey: "string", kind: "line | bar?", label: "string?", color: "string?" },
     children: false,
+    requiresData: true,
     data: "data[dataKey] must be an array of row objects containing xKey and yKey.",
     example: { type: "chart", props: { dataKey: "revenueByMonth", xKey: "month", yKey: "revenue", kind: "line" } },
   },
@@ -180,6 +201,7 @@ export const artifactManifest = {
     description: "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
     props: { code: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
     children: false,
+    limits: { code: 5000 },
     example: { type: "mermaid", props: { title: "Request flow", code: "flowchart LR\n  Client --> API\n  API --> DB" } },
   },
   "svg-diagram": {
@@ -194,6 +216,7 @@ export const artifactManifest = {
     description: "Inline architecture diagram for ordered handoffs, pipelines, request paths, and deployment chains.",
     props: { title: "string?", caption: "string?", items: "{ title, label?, description?, status? }[]" },
     children: false,
+    limits: { items: 6, itemStatus: 16 },
     example: { type: "flow", props: { title: "Request path", items: [{ title: "Client", label: "POST /retrieve" }, { title: "FastAPI" }, { title: "ADK pipeline", status: "running" }] } },
   },
   timeline: {
@@ -201,6 +224,8 @@ export const artifactManifest = {
     description: "Data-backed vertical timeline for releases, lifecycle phases, runbooks, or migration sequences.",
     props: { dataKey: "string", titleKey: "string?", markerKey: "string?", descriptionKey: "string?", statusKey: "string?", caption: "string?" },
     children: false,
+    requiresData: true,
+    limits: { status: 16 },
     data: "data[dataKey] must be an array of row objects. Defaults: title, marker, description, status.",
     example: { type: "timeline", props: { dataKey: "releasePhases", titleKey: "phase", markerKey: "step", descriptionKey: "action", statusKey: "status" } },
   },
@@ -209,6 +234,7 @@ export const artifactManifest = {
     description: "Syntax-highlighted code block with a copy button. Use for commands, config snippets, env contracts, file maps, and ASCII trees. Set language for accurate highlighting (bash, typescript, python, yaml, json, etc.).",
     props: { title: "string?", language: "string?", code: "string", caption: "string?" },
     children: false,
+    limits: { code: 3000 },
     example: { type: "code-block", props: { title: "Smoke release", language: "bash", code: "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1" } },
   },
   "status-grid": {
@@ -216,6 +242,8 @@ export const artifactManifest = {
     description: "Data-backed grid of operational states with status chips. Best for health, readiness, validation, component state, and risk boards.",
     props: { dataKey: "string", titleKey: "string?", statusKey: "string", descriptionKey: "string?", metaKey: "string?", columns: "1 | 2 | 3 | 4?", caption: "string?" },
     children: false,
+    requiresData: true,
+    limits: { status: 16 },
     data: "data[dataKey] must be an array of row objects. statusKey chooses chip tone from values like pass/ok/healthy/warn/fail/risk.",
     example: { type: "status-grid", props: { dataKey: "runtimeStatus", titleKey: "component", statusKey: "status", descriptionKey: "notes", columns: 3 } },
   },
@@ -224,6 +252,7 @@ export const artifactManifest = {
     description: "Responsive grid layout for child nodes. Use with stat-card, card, badge groups, and mixed dashboard sections.",
     props: { columns: "1 | 2 | 3 | 4?" },
     children: "nodes",
+    limits: { children: 12 },
     example: { type: "grid", props: { columns: 2 }, children: [{ type: "card", props: { title: "A" } }] },
   },
   section: {
@@ -231,6 +260,7 @@ export const artifactManifest = {
     description: "Named content section with optional description. Use sections to create scan rhythm before dense components.",
     props: { title: "string?", description: "string?" },
     children: "nodes",
+    limits: { children: 10 },
     example: { type: "section", props: { title: "Findings" }, children: [{ type: "text", props: { text: "One finding." } }] },
   },
   tabs: {
@@ -238,6 +268,7 @@ export const artifactManifest = {
     description: "Tabbed organization for alternate views. Good for Pi/OpenCode/wrapper splits or monthly/segment detail.",
     props: { defaultValue: "string?", items: "{ value, label, nodes }[]" },
     children: "items",
+    limits: { items: 5 },
     example: { type: "tabs", props: { items: [{ value: "summary", label: "Summary", nodes: [{ type: "text", props: { text: "Tab content." } }] }] } },
   },
   accordion: {
@@ -245,8 +276,9 @@ export const artifactManifest = {
     description: "Expandable sections for details, FAQs, sharp edges, or lower-priority evidence. Do not hide primary conclusions here.",
     props: { items: "{ title, nodes }[]" },
     children: "items",
+    limits: { items: 8 },
     example: { type: "accordion", props: { items: [{ title: "Why?", nodes: [{ type: "text", props: { text: "Because it is useful." } }] }] } },
   },
 } satisfies Record<ArtifactNode["type"], ArtifactManifestEntry>
 
-export const artifactComponentManifest = Object.values(artifactManifest)
+export const artifactComponentManifest: ArtifactManifestEntry[] = Object.values(artifactManifest)

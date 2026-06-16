@@ -9,9 +9,9 @@ The important trick: the LLM never writes React, routes, JSX, imports, or CSS. I
 ## How it works
 
 ```txt
-LLM reads supported node manifest
+LLM reads supported node contract
   → calls create_visual_artifact(JSON)
-  → Pi extension validates the spec
+  → Pi extension validates the spec against the contract
   → writes ~/.pi/artifacts/<project>/<slug>.json
   → /artifacts/[project]/[slug] renders the spec
   → VisualArtifactRenderer maps nodes to UI adapters
@@ -93,6 +93,8 @@ VISUALIZER_HOST=0.0.0.0 pnpm serve
 ## Verify
 
 ```bash
+pnpm export:contract
+pnpm test:contract
 pnpm verify:artifacts
 pnpm lint
 pnpm build
@@ -163,16 +165,28 @@ export VISUAL_ARTIFACT_BASE_URL=http://localhost:9999/artifacts
 
 ## Supported nodes
 
-Manifest:
+Contract (single source for both the LLM and the Pi extension):
+
+```txt
+artifact-contract.json
+```
+
+Schema (source of truth):
+
+```txt
+src/lib/artifact-schema.ts
+```
+
+Manifest (source of truth):
 
 ```txt
 src/lib/artifact-manifest.ts
 ```
 
-Schema:
+Regenerate the contract after changing the schema or manifest:
 
-```txt
-src/lib/artifact-schema.ts
+```bash
+pnpm export:contract
 ```
 
 Node set:

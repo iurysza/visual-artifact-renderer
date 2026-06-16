@@ -9,6 +9,8 @@
     "serve": "node scripts/serve.mjs",
     "lint": "eslint",
     "verify:artifacts": "tsx scripts/verify-artifacts.ts",
+    "export:contract": "tsx scripts/export-contract.ts",
+    "test:contract": "tsx scripts/test-contract-validation.ts",
     "visual:qa": "node scripts/visual-qa.mjs",
     "extract": "tsx scripts/extract/pipeline/run.ts",
     "extract:pipeline": "tsx scripts/extract/pipeline/run.ts",

@@ -2,7 +2,7 @@ import { promises as fs } from "fs"
 import os from "os"
 import path from "path"
 
-import { artifactManifest } from "../src/lib/artifact-manifest"
+import { artifactComponentManifest, artifactManifest } from "../src/lib/artifact-manifest"
 import { ARTIFACT_NODE_TYPES, VisualArtifactSpecSchema } from "../src/lib/artifact-schema"
 
 async function findArtifactFiles(dir: string): Promise<string[]> {
@@ -74,7 +74,37 @@ async function main() {
     throw new Error(`Code block node should pass validation: ${codeBlock.error.message}`)
   }
 
-  console.log(`Verified ${files.length} artifact spec(s), ${ARTIFACT_NODE_TYPES.length} manifest entries, and code-block contract.`)
+  const contractPath = path.resolve(__dirname, "..", "artifact-contract.json")
+  const contractRaw = await fs.readFile(contractPath, "utf8")
+  const contract = JSON.parse(contractRaw)
+
+  const manifestDataNodes = artifactComponentManifest
+    .filter((entry) => entry.requiresData)
+    .map((entry) => entry.type)
+    .sort()
+
+  const contractDataNodes = [...contract.dataNodes].sort()
+  if (JSON.stringify(manifestDataNodes) !== JSON.stringify(contractDataNodes)) {
+    throw new Error(
+      `Contract dataNodes mismatch: manifest=[${manifestDataNodes.join(", ")}] contract=[${contractDataNodes.join(", ")}]`,
+    )
+  }
+
+  const contractNodeTypes = [...contract.nodeTypes].sort()
+  const schemaNodeTypes = [...ARTIFACT_NODE_TYPES].sort()
+  if (JSON.stringify(contractNodeTypes) !== JSON.stringify(schemaNodeTypes)) {
+    throw new Error(
+      `Contract nodeTypes mismatch: schema=[${schemaNodeTypes.join(", ")}] contract=[${contractNodeTypes.join(", ")}]`,
+    )
+  }
+
+  for (const type of ARTIFACT_NODE_TYPES) {
+    if (!contract.nodes[type]) {
+      throw new Error(`Contract missing node definition for ${type}`)
+    }
+  }
+
+  console.log(`Verified ${files.length} artifact spec(s), ${ARTIFACT_NODE_TYPES.length} manifest entries, contract sync, and code-block contract.`)
 }
 
 main().catch((error) => {

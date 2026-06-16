@@ -1,0 +1,697 @@
+{
+  "version": "1.0.0",
+  "nodeTypes": [
+    "heading",
+    "text",
+    "card",
+    "metric",
+    "stat-card",
+    "badge",
+    "button",
+    "separator",
+    "table",
+    "data-table",
+    "comparison-table",
+    "chart",
+    "mermaid",
+    "svg-diagram",
+    "flow",
+    "timeline",
+    "code-block",
+    "status-grid",
+    "grid",
+    "section",
+    "tabs",
+    "accordion"
+  ],
+  "nodes": {
+    "heading": {
+      "description": "Section or page heading. Use sparingly; renderer already supplies the page hero.",
+      "props": {
+        "text": "string",
+        "level": "1 | 2 | 3 | 4?",
+        "align": "left | center | right?"
+      },
+      "children": false,
+      "example": {
+        "type": "heading",
+        "props": {
+          "text": "Quarterly Revenue",
+          "level": 2
+        }
+      },
+      "limits": {
+        "text": 120
+      }
+    },
+    "text": {
+      "description": "Paragraph text for narrative. Keep copy compact; use tables/status grids for structured facts.",
+      "props": {
+        "text": "string",
+        "tone": "default | muted?",
+        "size": "sm | base | lg?",
+        "align": "left | center | right?"
+      },
+      "children": false,
+      "example": {
+        "type": "text",
+        "props": {
+          "text": "Revenue grew across enterprise accounts.",
+          "tone": "muted"
+        }
+      },
+      "limits": {
+        "text": 800
+      }
+    },
+    "card": {
+      "description": "General content container. Use tone for a subtle left accent; do not wrap every tiny fact in a card when stat-card/status-grid fits better.",
+      "props": {
+        "title": "string?",
+        "description": "string?",
+        "size": "default | sm?",
+        "tone": "default | accent | success | warning | danger?"
+      },
+      "children": "nodes",
+      "example": {
+        "type": "card",
+        "props": {
+          "title": "Summary",
+          "tone": "accent"
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "text": "One clear idea."
+            }
+          }
+        ]
+      },
+      "limits": {
+        "children": 10
+      }
+    },
+    "metric": {
+      "description": "Compact KPI display inside another container. Prefer stat-card for top-level dashboard KPI tiles.",
+      "props": {
+        "label": "string",
+        "value": "string | number",
+        "delta": "string?",
+        "trend": "up | down | neutral?"
+      },
+      "children": false,
+      "example": {
+        "type": "metric",
+        "props": {
+          "label": "Revenue",
+          "value": "$128,400",
+          "delta": "+12.5%",
+          "trend": "up"
+        }
+      },
+      "limits": {
+        "label": 40
+      }
+    },
+    "stat-card": {
+      "description": "Standalone dashboard KPI tile. Best for summary bands: counts, state, health, totals, deltas.",
+      "props": {
+        "label": "string",
+        "value": "string | number",
+        "delta": "string?",
+        "trend": "up | down | neutral?",
+        "caption": "string?",
+        "tone": "default | accent | success | warning | danger?"
+      },
+      "children": false,
+      "example": {
+        "type": "stat-card",
+        "props": {
+          "label": "Install state",
+          "value": "linked",
+          "delta": "healthy",
+          "trend": "up",
+          "caption": "Tracked targets already linked.",
+          "tone": "success"
+        }
+      },
+      "limits": {
+        "label": 40
+      }
+    },
+    "badge": {
+      "description": "Small passive label. Use for metadata, not primary status summaries.",
+      "props": {
+        "label": "string",
+        "variant": "default | secondary | destructive | outline | ghost | link?"
+      },
+      "children": false,
+      "example": {
+        "type": "badge",
+        "props": {
+          "label": "On track",
+          "variant": "secondary"
+        }
+      },
+      "limits": {
+        "label": 40
+      }
+    },
+    "button": {
+      "description": "Action link or button-looking link. Avoid file:// links in shareable artifacts.",
+      "props": {
+        "label": "string",
+        "href": "string?",
+        "variant": "default | outline | secondary | ghost | destructive | link?",
+        "size": "default | xs | sm | lg?"
+      },
+      "children": false,
+      "example": {
+        "type": "button",
+        "props": {
+          "label": "Open source",
+          "href": "https://example.com",
+          "variant": "outline"
+        }
+      },
+      "limits": {
+        "label": 40
+      }
+    },
+    "separator": {
+      "description": "Visual separator between sections.",
+      "props": {},
+      "children": false,
+      "example": {
+        "type": "separator"
+      }
+    },
+    "table": {
+      "description": "Readable table backed by embedded data. Use for fewer rows or narrative tables.",
+      "props": {
+        "dataKey": "string",
+        "columns": "(string | { key, label? })[]?",
+        "caption": "string?"
+      },
+      "children": false,
+      "data": "data[dataKey] must be an array of row objects.",
+      "requiresData": true,
+      "example": {
+        "type": "table",
+        "props": {
+          "dataKey": "revenueByMonth",
+          "columns": [
+            "month",
+            "revenue"
+          ]
+        }
+      }
+    },
+    "data-table": {
+      "description": "Dense table variant for operational data, logs, inventories, and evidence lists.",
+      "props": {
+        "dataKey": "string",
+        "columns": "(string | { key, label? })[]?",
+        "caption": "string?"
+      },
+      "children": false,
+      "data": "data[dataKey] must be an array of row objects.",
+      "requiresData": true,
+      "example": {
+        "type": "data-table",
+        "props": {
+          "dataKey": "accounts",
+          "columns": [
+            {
+              "key": "name",
+              "label": "Account"
+            }
+          ]
+        }
+      }
+    },
+    "comparison-table": {
+      "description": "Dashboard comparison table with stronger first column and optional status chips. Use for options, risks, validations, runtimes, and parity checks.",
+      "props": {
+        "dataKey": "string",
+        "columns": "(string | { key, label? })[]?",
+        "statusKey": "string?",
+        "caption": "string?"
+      },
+      "children": false,
+      "data": "data[dataKey] must be an array of row objects. statusKey values are rendered as status chips.",
+      "requiresData": true,
+      "example": {
+        "type": "comparison-table",
+        "props": {
+          "dataKey": "checks",
+          "columns": [
+            "check",
+            "result",
+            "evidence"
+          ],
+          "statusKey": "result"
+        }
+      }
+    },
+    "chart": {
+      "description": "Line or bar chart backed by embedded data. Pair charts with table detail when exact values matter.",
+      "props": {
+        "dataKey": "string",
+        "xKey": "string",
+        "yKey": "string",
+        "kind": "line | bar?",
+        "label": "string?",
+        "color": "string?"
+      },
+      "children": false,
+      "data": "data[dataKey] must be an array of row objects containing xKey and yKey.",
+      "requiresData": true,
+      "example": {
+        "type": "chart",
+        "props": {
+          "dataKey": "revenueByMonth",
+          "xKey": "month",
+          "yKey": "revenue",
+          "kind": "line"
+        }
+      }
+    },
+    "mermaid": {
+      "description": "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
+      "props": {
+        "code": "string",
+        "title": "string?",
+        "caption": "string?",
+        "height": "number? 240-1600"
+      },
+      "children": false,
+      "example": {
+        "type": "mermaid",
+        "props": {
+          "title": "Request flow",
+          "code": "flowchart LR\n  Client --> API\n  API --> DB"
+        }
+      },
+      "limits": {
+        "code": 5000
+      }
+    },
+    "svg-diagram": {
+      "description": "Raw trusted SVG/HTML diagram embedded in a sandboxed iframe. Use for full-screen interactive SVG diagrams from the html-diagram style.",
+      "props": {
+        "html": "string",
+        "title": "string?",
+        "caption": "string?",
+        "height": "number? 240-1600"
+      },
+      "children": false,
+      "example": {
+        "type": "svg-diagram",
+        "props": {
+          "title": "Interactive architecture",
+          "height": 720,
+          "html": "<!doctype html><html><body><svg viewBox='0 0 100 40'><text x='5' y='24'>Architecture</text></svg></body></html>"
+        }
+      }
+    },
+    "flow": {
+      "description": "Inline architecture diagram for ordered handoffs, pipelines, request paths, and deployment chains.",
+      "props": {
+        "title": "string?",
+        "caption": "string?",
+        "items": "{ title, label?, description?, status? }[]"
+      },
+      "children": false,
+      "example": {
+        "type": "flow",
+        "props": {
+          "title": "Request path",
+          "items": [
+            {
+              "title": "Client",
+              "label": "POST /retrieve"
+            },
+            {
+              "title": "FastAPI"
+            },
+            {
+              "title": "ADK pipeline",
+              "status": "running"
+            }
+          ]
+        }
+      },
+      "limits": {
+        "items": 6,
+        "itemStatus": 16
+      }
+    },
+    "timeline": {
+      "description": "Data-backed vertical timeline for releases, lifecycle phases, runbooks, or migration sequences.",
+      "props": {
+        "dataKey": "string",
+        "titleKey": "string?",
+        "markerKey": "string?",
+        "descriptionKey": "string?",
+        "statusKey": "string?",
+        "caption": "string?"
+      },
+      "children": false,
+      "data": "data[dataKey] must be an array of row objects. Defaults: title, marker, description, status.",
+      "requiresData": true,
+      "example": {
+        "type": "timeline",
+        "props": {
+          "dataKey": "releasePhases",
+          "titleKey": "phase",
+          "markerKey": "step",
+          "descriptionKey": "action",
+          "statusKey": "status"
+        }
+      },
+      "limits": {
+        "status": 16
+      }
+    },
+    "code-block": {
+      "description": "Syntax-highlighted code block with a copy button. Use for commands, config snippets, env contracts, file maps, and ASCII trees. Set language for accurate highlighting (bash, typescript, python, yaml, json, etc.).",
+      "props": {
+        "title": "string?",
+        "language": "string?",
+        "code": "string",
+        "caption": "string?"
+      },
+      "children": false,
+      "example": {
+        "type": "code-block",
+        "props": {
+          "title": "Smoke release",
+          "language": "bash",
+          "code": "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1"
+        }
+      },
+      "limits": {
+        "code": 3000
+      }
+    },
+    "status-grid": {
+      "description": "Data-backed grid of operational states with status chips. Best for health, readiness, validation, component state, and risk boards.",
+      "props": {
+        "dataKey": "string",
+        "titleKey": "string?",
+        "statusKey": "string",
+        "descriptionKey": "string?",
+        "metaKey": "string?",
+        "columns": "1 | 2 | 3 | 4?",
+        "caption": "string?"
+      },
+      "children": false,
+      "data": "data[dataKey] must be an array of row objects. statusKey chooses chip tone from values like pass/ok/healthy/warn/fail/risk.",
+      "requiresData": true,
+      "example": {
+        "type": "status-grid",
+        "props": {
+          "dataKey": "runtimeStatus",
+          "titleKey": "component",
+          "statusKey": "status",
+          "descriptionKey": "notes",
+          "columns": 3
+        }
+      },
+      "limits": {
+        "status": 16
+      }
+    },
+    "grid": {
+      "description": "Responsive grid layout for child nodes. Use with stat-card, card, badge groups, and mixed dashboard sections.",
+      "props": {
+        "columns": "1 | 2 | 3 | 4?"
+      },
+      "children": "nodes",
+      "example": {
+        "type": "grid",
+        "props": {
+          "columns": 2
+        },
+        "children": [
+          {
+            "type": "card",
+            "props": {
+              "title": "A"
+            }
+          }
+        ]
+      },
+      "limits": {
+        "children": 12
+      }
+    },
+    "section": {
+      "description": "Named content section with optional description. Use sections to create scan rhythm before dense components.",
+      "props": {
+        "title": "string?",
+        "description": "string?"
+      },
+      "children": "nodes",
+      "example": {
+        "type": "section",
+        "props": {
+          "title": "Findings"
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "text": "One finding."
+            }
+          }
+        ]
+      },
+      "limits": {
+        "children": 10
+      }
+    },
+    "tabs": {
+      "description": "Tabbed organization for alternate views. Good for Pi/OpenCode/wrapper splits or monthly/segment detail.",
+      "props": {
+        "defaultValue": "string?",
+        "items": "{ value, label, nodes }[]"
+      },
+      "children": "items",
+      "example": {
+        "type": "tabs",
+        "props": {
+          "items": [
+            {
+              "value": "summary",
+              "label": "Summary",
+              "nodes": [
+                {
+                  "type": "text",
+                  "props": {
+                    "text": "Tab content."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "limits": {
+        "items": 5
+      }
+    },
+    "accordion": {
+      "description": "Expandable sections for details, FAQs, sharp edges, or lower-priority evidence. Do not hide primary conclusions here.",
+      "props": {
+        "items": "{ title, nodes }[]"
+      },
+      "children": "items",
+      "example": {
+        "type": "accordion",
+        "props": {
+          "items": [
+            {
+              "title": "Why?",
+              "nodes": [
+                {
+                  "type": "text",
+                  "props": {
+                    "text": "Because it is useful."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "limits": {
+        "items": 8
+      }
+    }
+  },
+  "dataNodes": [
+    "table",
+    "data-table",
+    "comparison-table",
+    "chart",
+    "timeline",
+    "status-grid"
+  ],
+  "compositionGuidance": [
+    "Open with a concise thesis and a stat-card summary band.",
+    "Use stat-card for KPI, count, health, and state summaries.",
+    "Use status-grid for component health, readiness, validation, and risk boards.",
+    "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
+    "For architecture pages, put a mermaid or svg-diagram near the top instead of describing topology in prose.",
+    "Use mermaid for lightweight zoomable/pannable text-defined architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.",
+    "Use svg-diagram for trusted full HTML/SVG diagrams when Mermaid is too constrained or layout needs custom control.",
+    "Use flow for request paths, build/deploy chains, data pipelines, and architecture handoffs.",
+    "Use timeline for release phases, lifecycle steps, migrations, and operator runbooks.",
+    "Use code-block for commands, config snippets, env contracts, and file/path maps.",
+    "Use tabs for alternate contexts; use accordion only for secondary detail.",
+    "Avoid generic card soup and avoid file:// links in shareable artifacts."
+  ],
+  "patternExamples": {
+    "architecture": {
+      "description": "Architecture brief: thesis + stat cards, then Mermaid topology, flow handoff, status-grid, and evidence table.",
+      "nodes": [
+        {
+          "type": "text",
+          "props": {
+            "text": "The runtime is a three-stage ADK pipeline with explicit retrieval and TTS boundaries.",
+            "size": "lg"
+          }
+        },
+        {
+          "type": "grid",
+          "props": {
+            "columns": 3
+          },
+          "children": [
+            {
+              "type": "stat-card",
+              "props": {
+                "label": "Agents",
+                "value": 3,
+                "caption": "ImageDescriptor → ContentGenerator → JsonFormatter",
+                "tone": "accent"
+              }
+            },
+            {
+              "type": "stat-card",
+              "props": {
+                "label": "Retrieval",
+                "value": "ChromaDB",
+                "caption": "Grounding through embedded docs",
+                "tone": "success"
+              }
+            },
+            {
+              "type": "stat-card",
+              "props": {
+                "label": "Output",
+                "value": "JSON + MP3",
+                "caption": "Validated response and narration",
+                "tone": "default"
+              }
+            }
+          ]
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "title": "Runtime topology",
+            "code": "flowchart LR\n  Client[Mobile client] --> API[FastAPI route]\n  API --> ADK[ADK sequential agent]\n  ADK --> Chroma[(ChromaDB)]\n  ADK --> TTS[Cloud TTS]"
+          }
+        },
+        {
+          "type": "flow",
+          "props": {
+            "title": "Request path",
+            "items": [
+              {
+                "title": "Client",
+                "label": "POST /retrieve"
+              },
+              {
+                "title": "FastAPI",
+                "description": "Validates request"
+              },
+              {
+                "title": "ADK pipeline",
+                "description": "Recognizes, retrieves, formats"
+              },
+              {
+                "title": "TTS",
+                "description": "Synthesizes MP3"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "runbook": {
+      "description": "Runbook: stat-card readiness band, timeline for phases, code-block for commands, comparison-table for checks.",
+      "nodes": [
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "releasePhases",
+            "titleKey": "phase",
+            "markerKey": "step",
+            "descriptionKey": "action",
+            "statusKey": "status"
+          }
+        },
+        {
+          "type": "code-block",
+          "props": {
+            "title": "Release smoke",
+            "language": "bash",
+            "code": "pnpm verify:artifacts\npnpm lint\npnpm build"
+          }
+        }
+      ]
+    },
+    "dataApi": {
+      "description": "Data/API brief: flow for ingestion or API path, code-block for contracts, comparison-table for route or schema evidence.",
+      "nodes": [
+        {
+          "type": "flow",
+          "props": {
+            "title": "Data path",
+            "items": [
+              {
+                "title": "Source docs"
+              },
+              {
+                "title": "Chunk + embed"
+              },
+              {
+                "title": "Chroma collection"
+              },
+              {
+                "title": "retrieve_documents"
+              }
+            ]
+          }
+        },
+        {
+          "type": "code-block",
+          "props": {
+            "title": "Env contract",
+            "language": "bash",
+            "code": "MODEL_NAME=...\nTEXT_EMBEDDING_MODEL=text-embedding-005\nTOP_K=5"
+          }
+        }
+      ]
+    }
+  },
+  "globalLimits": {
+    "dataRowsMax": 20,
+    "dataStringMax": 200
+  }
+}
