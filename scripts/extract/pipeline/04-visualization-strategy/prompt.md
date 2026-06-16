@@ -78,11 +78,13 @@ Loose notes on tables, status grids, metrics, captions, source references, and u
 Which components should dominate and which should be used sparingly.
 
 For diagrams specifically:
+
 - Default to mermaid for architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.
 - Use svg-diagram when mermaid's auto-layout is wrong, when request paths need to animate step-by-step, or when nodes need to be clickable with detail cards.
 - Do not use svg-diagram for simple charts that mermaid can express cleanly.
 
 When planning an svg-diagram, the final assembler must produce a complete self-contained HTML document with:
+
 - Hand-rolled CSS variables on :root (light) and html.dark (dark); never hard-code hex colors inside SVG elements.
 - An apply-before-paint script in <head> that reads localStorage key `visualizer-theme` or falls back to prefers-color-scheme, and toggles the `dark` class on <html>.
 - A small theme toggle button that persists the choice back to localStorage.
@@ -90,6 +92,15 @@ When planning an svg-diagram, the final assembler must produce a complete self-c
 - A high-quality SVG centerpiece: subtle zones, rounded-rect nodes, readable typography, and edges styled through CSS classes using the variables.
 - Optional but encouraged interactivity: clickable nodes with a detail card, and flow-selector chips that light up + animate request paths.
 - Minimal prose. The diagram itself should make the architecture click.
+
+Hard layout rules for the SVG itself (verify before finishing):
+
+- Pick a viewBox large enough for every node, zone, edge label, and the detail card overlay. If nodes feel cramped, increase the viewBox rather than squeezing.
+- Every node must be a rectangle with at least 30px of empty space between it and any adjacent node rectangle in both x and y directions.
+- Group related nodes inside dashed-zone rectangles. Keep at least 40px of empty space between adjacent zones.
+- Route edges through empty canvas. Edge labels must sit on blank space, never on top of a node or another label.
+- Reserve the bottom-right corner of the diagram for the detail card overlay; do not place nodes there.
+- After positioning every element, do a final overlap check: no two rectangles may intersect, and no text may be clipped by a rectangle edge.
 
 ## Assembly instructions for the final tool-calling LLM
 
@@ -108,3 +119,9 @@ Important style rules:
 In general, you should try to make this as a compelling visual artifact that one can parse and understand the idea. it is important that we pepper some text sections, you know, like a paragraph here and there, a visual call out for visual queue for for a topic, you know.
 
 If it makes sense.
+
+Sequence diagrams, data flows are important things to know about a project. Make sure that we have something like that.
+
+We want to know like maybe some public API surfaces, like some important classes, objects. These things would also be included here, like in a more detailed part of the of the of the visualization of the report.
+
+So the report could have could go like from a high level to more in-depth and then to you know like it could flow in multiple different ways.

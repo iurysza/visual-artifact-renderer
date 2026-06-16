@@ -152,7 +152,13 @@ export const visualizerPipelineDiagram = `<!doctype html>
 </div>
 
 <div class="stage" id="stage">
-  <svg class="diagram-desktop" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visualizer pipeline diagram">
+  <!-- Layout notes for generated diagrams:
+       - viewBox must fit all nodes, zones, edges, labels, and the bottom-right card overlay.
+       - Every node rectangle keeps >= 30px empty space to the next node in both x and y.
+       - Adjacent zones keep >= 40px empty space between them.
+       - Edges and labels travel through blank canvas, never across nodes or labels.
+       - Bottom-right corner is reserved for the detail card overlay. -->
+  <svg class="diagram-desktop" viewBox="0 0 1100 700" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Visualizer pipeline diagram">
       <defs>
         <marker id="a-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
@@ -162,80 +168,85 @@ export const visualizerPipelineDiagram = `<!doctype html>
         </marker>
       </defs>
 
+      <!-- Zones: 40px gap between zone rectangles. -->
       <g class="zone">
-        <rect x="40" y="80" width="280" height="380"/>
+        <rect x="40" y="80" width="280" height="440"/>
         <text class="ztitle" x="60" y="105">Sources</text>
       </g>
       <g class="zone">
-        <rect x="360" y="80" width="320" height="380"/>
+        <rect x="360" y="80" width="340" height="440"/>
         <text class="ztitle" x="380" y="105">Pipeline</text>
       </g>
       <g class="zone">
-        <rect x="720" y="80" width="240" height="380"/>
-        <text class="ztitle" x="740" y="105">Outputs</text>
+        <rect x="740" y="80" width="260" height="440"/>
+        <text class="ztitle" x="760" y="105">Outputs</text>
       </g>
 
+      <!-- Edges run through empty space, not across nodes. -->
       <path class="edge" id="e-repo"     d="M315,170 L365,170"/>
-      <path class="edge" id="e-packets"  d="M315,250 L365,250"/>
-      <path class="edge" id="e-direct"   d="M315,330 L365,330"/>
-      <path class="edge" id="e-extract"  d="M675,170 L725,170"/>
-      <path class="edge" id="e-report"   d="M675,290 L725,290"/>
-      <path class="edge" id="e-visual"   d="M675,370 L725,370"/>
-      <path class="edge" id="e-assemble" d="M840,240 L840,290"/>
-      <path class="edge" id="e-render"   d="M840,350 L840,410"/>
+      <path class="edge" id="e-packets"  d="M315,270 L365,270"/>
+      <path class="edge" id="e-direct"   d="M315,370 L340,370 L340,310 L365,310"/>
+      <path class="edge" id="e-extract"  d="M700,170 L745,170"/>
+      <path class="edge" id="e-report"   d="M700,300 L745,300"/>
+      <path class="edge" id="e-visual"   d="M700,400 L745,400"/>
+      <path class="edge" id="e-assemble" d="M890,240 L890,300"/>
+      <path class="edge" id="e-render"   d="M890,350 L890,410"/>
 
+      <!-- Source nodes: 30px vertical gap between rectangles (140->220->300, each h=60). -->
       <g class="node" data-k="repo">
         <rect x="70" y="140" width="220" height="60"/>
         <text class="t" x="90" y="165">Local repo</text>
         <text class="m" x="90" y="185">files, deps, structure</text>
       </g>
       <g class="node" data-k="packets">
-        <rect x="70" y="220" width="220" height="60"/>
-        <text class="t" x="90" y="245">Packet reports</text>
-        <text class="m" x="90" y="265">agentic findings</text>
+        <rect x="70" y="240" width="220" height="60"/>
+        <text class="t" x="90" y="265">Packet reports</text>
+        <text class="m" x="90" y="285">agentic findings</text>
       </g>
       <g class="node" data-k="context">
-        <rect x="70" y="300" width="220" height="60"/>
-        <text class="t" x="90" y="325">Source context</text>
-        <text class="m" x="90" y="345">north star, instructions</text>
+        <rect x="70" y="340" width="220" height="60"/>
+        <text class="t" x="90" y="365">Source context</text>
+        <text class="m" x="90" y="385">north star, instructions</text>
       </g>
 
+      <!-- Pipeline nodes: 50-60px vertical gaps. extract ends y=230, director starts y=280. -->
       <g class="node" data-k="extract">
-        <rect x="390" y="120" width="260" height="100"/>
+        <rect x="390" y="120" width="280" height="110"/>
         <text class="t" x="410" y="145">Deterministic extraction</text>
         <text class="m" x="410" y="165">repo profile · imports · deps</text>
         <text class="m" x="410" y="185">digest + evidence packets</text>
       </g>
       <g class="node" data-k="director">
-        <rect x="390" y="260" width="260" height="60"/>
-        <text class="t" x="410" y="285">Report director</text>
-        <text class="m" x="410" y="305">thesis · sections · audience</text>
+        <rect x="390" y="280" width="280" height="60"/>
+        <text class="t" x="410" y="305">Report director</text>
+        <text class="m" x="410" y="325">thesis · sections · audience</text>
       </g>
       <g class="node" data-k="visual">
-        <rect x="390" y="340" width="260" height="60"/>
-        <text class="t" x="410" y="365">Visualization strategy</text>
-        <text class="m" x="410" y="385">components · diagrams · flow</text>
+        <rect x="390" y="370" width="280" height="60"/>
+        <text class="t" x="410" y="395">Visualization strategy</text>
+        <text class="m" x="410" y="415">components · diagrams · flow</text>
       </g>
 
+      <!-- Output nodes: placed in upper-right; card overlay sits in empty bottom-right. -->
       <g class="node store" data-k="json">
-        <rect x="740" y="140" width="200" height="100"/>
-        <text class="t" x="760" y="165">Spec JSON</text>
-        <text class="m" x="760" y="185">validated schema</text>
-        <text class="m" x="760" y="205">~/.pi/artifacts/...</text>
+        <rect x="760" y="140" width="220" height="100"/>
+        <text class="t" x="780" y="165">Spec JSON</text>
+        <text class="m" x="780" y="185">validated schema</text>
+        <text class="m" x="780" y="205">~/.pi/artifacts/...</text>
       </g>
       <g class="node store" data-k="manifest">
-        <rect x="740" y="290" width="200" height="60"/>
-        <text class="t" x="760" y="315">Manifest</text>
-        <text class="m" x="760" y="335">node type guidance</text>
+        <rect x="760" y="300" width="220" height="60"/>
+        <text class="t" x="780" y="325">Manifest</text>
+        <text class="m" x="780" y="345">node type guidance</text>
       </g>
       <g class="node out" data-k="renderer">
-        <rect x="755" y="410" width="170" height="50"/>
-        <text class="t" x="775" y="435">Renderer</text>
-        <text class="m" x="775" y="452">React components</text>
+        <rect x="775" y="410" width="190" height="50"/>
+        <text class="t" x="795" y="435">Renderer</text>
+        <text class="m" x="795" y="452">React components</text>
       </g>
     </svg>
 
-    <svg class="diagram-mobile" viewBox="0 0 400 1100" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Visualizer pipeline diagram mobile">
+    <svg class="diagram-mobile" viewBox="0 0 420 1200" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Visualizer pipeline diagram mobile">
       <defs>
         <marker id="am-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
@@ -246,76 +257,75 @@ export const visualizerPipelineDiagram = `<!doctype html>
       </defs>
 
       <g class="zone">
-        <rect x="20" y="60" width="360" height="240"/>
+        <rect x="20" y="60" width="380" height="360"/>
         <text class="ztitle" x="40" y="85">Sources</text>
       </g>
       <g class="zone">
-        <rect x="20" y="330" width="360" height="270"/>
-        <text class="ztitle" x="40" y="355">Pipeline</text>
+        <rect x="20" y="460" width="380" height="320"/>
+        <text class="ztitle" x="40" y="485">Pipeline</text>
       </g>
       <g class="zone">
-        <rect x="20" y="630" width="360" height="250"/>
-        <text class="ztitle" x="40" y="655">Outputs</text>
+        <rect x="20" y="820" width="380" height="240"/>
+        <text class="ztitle" x="40" y="845">Outputs</text>
       </g>
 
-      <path class="edge" id="em-repo"     d="M200,170 L200,380"/>
-      <path class="edge" id="em-packets"  d="M200,240 L230,380"/>
-      <path class="edge" id="em-context"  d="M200,310 L200,470"/>
-      <path class="edge" id="em-extract"  d="M200,450 L200,670"/>
-      <path class="edge" id="em-direct"   d="M200,520 L200,540"/>
-      <path class="edge" id="em-dirvis"   d="M200,590 L200,670"/>
-      <path class="edge" id="em-visual"   d="M270,565 L270,705"/>
-      <path class="edge" id="em-json"     d="M200,740 L200,830"/>
-      <path class="edge" id="em-manifest" d="M200,810 L200,852"/>
+      <path class="edge" id="em-repo"     d="M210,170 L210,490"/>
+      <path class="edge" id="em-packets"  d="M210,270 L240,490"/>
+      <path class="edge" id="em-context"  d="M210,370 L210,590"/>
+      <path class="edge" id="em-extract"  d="M210,560 L210,850"/>
+      <path class="edge" id="em-direct"   d="M210,640 L210,670"/>
+      <path class="edge" id="em-visual"   d="M210,720 L210,850"/>
+      <path class="edge" id="em-json"     d="M210,920 L210,1035"/>
+      <path class="edge" id="em-manifest" d="M210,1000 L210,1035"/>
 
       <g class="node" data-k="repo">
-        <rect x="80" y="120" width="240" height="50"/>
+        <rect x="80" y="120" width="260" height="50"/>
         <text class="t" x="96" y="143">Local repo</text>
         <text class="m" x="96" y="160">files, deps, structure</text>
       </g>
       <g class="node" data-k="packets">
-        <rect x="80" y="190" width="240" height="50"/>
-        <text class="t" x="96" y="213">Packet reports</text>
-        <text class="m" x="96" y="230">agentic findings</text>
+        <rect x="80" y="220" width="260" height="50"/>
+        <text class="t" x="96" y="243">Packet reports</text>
+        <text class="m" x="96" y="260">agentic findings</text>
       </g>
       <g class="node" data-k="context">
-        <rect x="80" y="260" width="240" height="50"/>
-        <text class="t" x="96" y="283">Source context</text>
-        <text class="m" x="96" y="300">north star, instructions</text>
+        <rect x="80" y="320" width="260" height="50"/>
+        <text class="t" x="96" y="343">Source context</text>
+        <text class="m" x="96" y="360">north star, instructions</text>
       </g>
 
       <g class="node" data-k="extract">
-        <rect x="60" y="380" width="280" height="70"/>
-        <text class="t" x="76" y="405">Deterministic extraction</text>
-        <text class="m" x="76" y="423">repo profile · imports · deps</text>
-        <text class="m" x="76" y="438">digest + evidence packets</text>
+        <rect x="60" y="490" width="300" height="70"/>
+        <text class="t" x="76" y="515">Deterministic extraction</text>
+        <text class="m" x="76" y="533">repo profile · imports · deps</text>
+        <text class="m" x="76" y="548">digest + evidence packets</text>
       </g>
       <g class="node" data-k="director">
-        <rect x="60" y="470" width="280" height="50"/>
-        <text class="t" x="76" y="493">Report director</text>
-        <text class="m" x="76" y="510">thesis · sections · audience</text>
+        <rect x="60" y="590" width="300" height="50"/>
+        <text class="t" x="76" y="613">Report director</text>
+        <text class="m" x="76" y="630">thesis · sections · audience</text>
       </g>
       <g class="node" data-k="visual">
-        <rect x="60" y="540" width="280" height="50"/>
-        <text class="t" x="76" y="563">Visualization strategy</text>
-        <text class="m" x="76" y="580">components · diagrams · flow</text>
+        <rect x="60" y="670" width="300" height="50"/>
+        <text class="t" x="76" y="693">Visualization strategy</text>
+        <text class="m" x="76" y="710">components · diagrams · flow</text>
       </g>
 
       <g class="node store" data-k="json">
-        <rect x="70" y="670" width="260" height="70"/>
-        <text class="t" x="86" y="695">Spec JSON</text>
-        <text class="m" x="86" y="713">validated schema</text>
-        <text class="m" x="86" y="728">~/.pi/artifacts/...</text>
+        <rect x="70" y="850" width="280" height="70"/>
+        <text class="t" x="86" y="875">Spec JSON</text>
+        <text class="m" x="86" y="893">validated schema</text>
+        <text class="m" x="86" y="908">~/.pi/artifacts/...</text>
       </g>
       <g class="node store" data-k="manifest">
-        <rect x="70" y="760" width="260" height="50"/>
-        <text class="t" x="86" y="783">Manifest</text>
-        <text class="m" x="86" y="800">node type guidance</text>
+        <rect x="70" y="950" width="280" height="50"/>
+        <text class="t" x="86" y="973">Manifest</text>
+        <text class="m" x="86" y="990">node type guidance</text>
       </g>
       <g class="node out" data-k="renderer">
-        <rect x="85" y="830" width="230" height="45"/>
-        <text class="t" x="101" y="852">Renderer</text>
-        <text class="m" x="101" y="868">React components</text>
+        <rect x="85" y="1035" width="250" height="45"/>
+        <text class="t" x="101" y="1057">Renderer</text>
+        <text class="m" x="101" y="1073">React components</text>
       </g>
     </svg>
 
@@ -351,8 +361,8 @@ const FLOWS = {
 
 const FLOWS_MOBILE = {
   extract:  { edges:["em-repo","em-packets","em-extract"], nodes:["repo","packets","extract","json"] },
-  direct:   { edges:["em-context","em-direct"], nodes:["context","director"] },
-  assemble: { edges:["em-dirvis","em-visual"], nodes:["director","visual","json","manifest"] },
+  direct:   { edges:["em-context"], nodes:["context","director"] },
+  assemble: { edges:["em-direct","em-visual"], nodes:["director","visual","json","manifest"] },
   render:   { edges:["em-json","em-manifest"], nodes:["json","manifest","renderer"] },
 };
 
