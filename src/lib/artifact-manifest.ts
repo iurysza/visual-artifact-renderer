@@ -91,6 +91,14 @@ export const artifactManifest = {
     limits: { items: 20 },
     example: { type: "definition-list", props: { items: [{ term: "Term", description: "Description" }] } },
   },
+  "file-tree": {
+    type: "file-tree",
+    description: "A collapsible file explorer tree.",
+    props: { items: "{ name, type, children }[]" },
+    children: false,
+    limits: { items: 50 },
+    example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }] } },
+  },
   heading: {
     type: "heading",
     description: "Section or page heading. Use sparingly; renderer already supplies the page hero.",

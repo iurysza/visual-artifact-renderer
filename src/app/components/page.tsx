@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DefinitionList } from "@/components/ui/definition-list"
+import { FileTree } from "@/components/ui/file-tree"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
@@ -949,6 +950,23 @@ export default function ComponentsPage() {
                   items={[
                     { term: "Agent", description: "An autonomous entity." },
                     { term: "Prompt", description: "Instructions given to an LLM." },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Subheading>File Tree</Subheading>
+                <FileTree
+                  items={[
+                    {
+                      name: "src",
+                      type: "directory",
+                      children: [
+                        { name: "index.ts", type: "file" },
+                        { name: "utils.ts", type: "file" },
+                      ],
+                    },
+                    { name: "package.json", type: "file" },
                   ]}
                 />
               </div>

@@ -39,6 +39,20 @@ const FlowItemSchema = z
   })
   .strict()
 
+type FileTreeItem = {
+  name: string
+  type?: "file" | "directory"
+  children?: FileTreeItem[]
+}
+
+const FileTreeItemSchema: z.ZodType<FileTreeItem> = z.lazy(() =>
+  z.object({
+    name: z.string().min(1),
+    type: z.enum(["file", "directory"]).optional(),
+    children: z.array(FileTreeItemSchema).optional(),
+  })
+)
+
 const ColumnSchema = z.union([
   z.string().min(1),
   z
@@ -58,6 +72,10 @@ export type ArtifactNode =
   | {
       type: "definition-list"
       props: { items: { term: string; description: string }[] }
+    }
+  | {
+      type: "file-tree"
+      props: { items: FileTreeItem[] }
     }
   | {
       type: "prose"
@@ -175,6 +193,16 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
                 })
                 .strict()
             ).min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("file-tree"),
+        props: z
+          .object({
+            items: z.array(FileTreeItemSchema).min(1),
           })
           .strict(),
       })
@@ -550,6 +578,7 @@ export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>
 
 export const ARTIFACT_NODE_TYPES = [
   "definition-list",
+  "file-tree",
   "heading",
   "text",
   "card",

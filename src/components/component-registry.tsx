@@ -53,6 +53,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Prose } from "@/components/ui/prose"
 import { CodeBlock } from "@/components/ui/code-block"
 import { DefinitionList } from "@/components/ui/definition-list"
+import { FileTree } from "@/components/ui/file-tree"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -81,6 +82,7 @@ type RegistryAdapter = (args: {
 
 export const componentRegistry = {
   "definition-list": renderDefinitionList as RegistryAdapter,
+  "file-tree": renderFileTree as RegistryAdapter,
   heading: renderHeading as RegistryAdapter,
   prose: renderProse as RegistryAdapter,
   text: renderText as RegistryAdapter,
@@ -111,6 +113,11 @@ export type { ArtifactRenderContext, RenderNodes }
 function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {
   const { items } = node.props
   return <DefinitionList items={items} />
+}
+
+function renderFileTree({ node }: AdapterArgs<"file-tree">) {
+  const { items } = node.props
+  return <FileTree items={items} />
 }
 
 function renderHeading({ node }: AdapterArgs<"heading">) {
