@@ -45,6 +45,8 @@ import { PieChart } from "@/components/ui/pie-chart"
 import { AreaChart } from "@/components/ui/area-chart"
 import { RadarChart } from "@/components/ui/radar-chart"
 import { ScatterChart } from "@/components/ui/scatter-chart"
+import { Heatmap } from "@/components/ui/heatmap"
+import { Log } from "@/components/ui/log"
 import { Stepper } from "@/components/ui/stepper"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -1070,6 +1072,20 @@ export default function ComponentsPage() {
                       { x: 3, y: 3 },
                       { x: 4, y: 8 },
                       { x: 5, y: 7 },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Subheading>Heatmap</Subheading>
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                  <Heatmap
+                    data={[
+                      { x: "A", y: "1", value: 10 },
+                      { x: "A", y: "2", value: 50 },
+                      { x: "B", y: "1", value: 30 },
+                      { x: "B", y: "2", value: 80 },
                     ]}
                   />
                 </div>

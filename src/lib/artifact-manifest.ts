@@ -138,6 +138,14 @@ export const artifactManifest = {
     requiresData: true,
     example: { type: "scatter-chart", props: { dataKey: "experienceVsSalary", xKey: "years", yKey: "salary" } },
   },
+  "heatmap": {
+    type: "heatmap",
+    description: "A heatmap for matrix data and correlations.",
+    props: { dataKey: "string", xKey: "string?", yKey: "string?", valueKey: "string?", caption: "string?" },
+    children: false,
+    requiresData: true,
+    example: { type: "heatmap", props: { dataKey: "riskMatrix", xKey: "category", yKey: "quarter", valueKey: "score" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",
@@ -286,7 +294,7 @@ export const artifactManifest = {
   },
   "svg-diagram": {
     type: "svg-diagram",
-    description: "Full-screen interactive SVG/HTML architecture diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. The html value must be a complete self-contained document with hand-rolled CSS variables for light/dark themes, an apply-before-paint theme script, a theme toggle, and an SVG styled through CSS classes (no hard-coded hex inside SVG).",
+    description: "Full-screen interactive SVG/HTML architecture diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. The html value must be a complete self-contained document with hand-rolled CSS variables for light/dark themes, an apply-before-paint theme script, a theme toggle, and an SVG styled through CSS classes (no hard-coded hex inside SVG). Layout rules: pick a viewBox large enough for all nodes; keep at least 30px between node rectangles and 40px between zones; reserve the bottom-right corner for the detail card overlay; route edges and labels through empty space; verify by inspection that nothing overlaps.",
     props: { html: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
     children: false,
     example: { type: "svg-diagram", props: { title: "Interactive architecture", height: 720, html: "<!doctype html><html><head><script>(function(){try{const k='visualizer-theme',s=localStorage.getItem(k),d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}})();</script><style>:root{--bg:#FAF9F5;--ink:#141413;}html.dark{--bg:#141413;--ink:#FAF9F5;}body{background:var(--bg);}</style></head><body><svg viewBox='0 0 100 40'><text x='5' y='24' fill='var(--ink)'>Architecture</text></svg></body></html>" } },

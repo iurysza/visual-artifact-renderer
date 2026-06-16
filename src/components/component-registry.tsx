@@ -62,6 +62,7 @@ import { Stepper } from "@/components/ui/stepper"
 import { AreaChart } from "@/components/ui/area-chart"
 import { RadarChart } from "@/components/ui/radar-chart"
 import { ScatterChart } from "@/components/ui/scatter-chart"
+import { Heatmap } from "@/components/ui/heatmap"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -93,6 +94,7 @@ export const componentRegistry = {
   "area-chart": renderAreaChart as RegistryAdapter,
   "radar-chart": renderRadarChart as RegistryAdapter,
   "scatter-chart": renderScatterChart as RegistryAdapter,
+  heatmap: renderHeatmap as RegistryAdapter,
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "donut-chart": renderDonutChart as RegistryAdapter,
@@ -178,6 +180,21 @@ function renderScatterChart({ node, context }: AdapterArgs<"scatter-chart">) {
       yKey={yKey}
       label={label}
       color={color}
+    />
+  )
+}
+
+function renderHeatmap({ node, context }: AdapterArgs<"heatmap">) {
+  const { dataKey, xKey, yKey, valueKey, caption } = node.props
+  const data = getRows(context.data, dataKey)
+  if (!data.length) return <MissingData dataKey={dataKey} />
+  return (
+    <Heatmap
+      data={data as Record<string, unknown>[]}
+      xKey={xKey}
+      yKey={yKey}
+      valueKey={valueKey}
+      caption={caption}
     />
   )
 }

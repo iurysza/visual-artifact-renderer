@@ -114,6 +114,10 @@ export type ArtifactNode =
       props: { dataKey: string; xKey?: string; yKey?: string; label?: string; color?: string }
     }
   | {
+      type: "heatmap"
+      props: { dataKey: string; xKey?: string; yKey?: string; valueKey?: string; caption?: string }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -360,6 +364,20 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             yKey: z.string().min(1).optional(),
             label: z.string().min(1).optional(),
             color: z.string().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("heatmap"),
+        props: z
+          .object({
+            dataKey: z.string().min(1),
+            xKey: z.string().min(1).optional(),
+            yKey: z.string().min(1).optional(),
+            valueKey: z.string().min(1).optional(),
+            caption: z.string().min(1).optional(),
           })
           .strict(),
       })
@@ -748,6 +766,7 @@ export const ARTIFACT_NODE_TYPES = [
   "area-chart",
   "radar-chart",
   "scatter-chart",
+  "heatmap",
   "definition-list",
   "diff",
   "donut-chart",
