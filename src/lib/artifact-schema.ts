@@ -82,6 +82,10 @@ export type ArtifactNode =
       props: { before: string; after: string; language?: string }
     }
   | {
+      type: "stepper"
+      props: { items: { title: string; description?: string; status?: "complete" | "current" | "pending" }[] }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -219,6 +223,24 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             before: z.string(),
             after: z.string(),
             language: z.string().optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("stepper"),
+        props: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  title: z.string().min(1),
+                  description: z.string().optional(),
+                  status: z.enum(["complete", "current", "pending"]).optional(),
+                })
+                .strict()
+            ).min(1),
           })
           .strict(),
       })
@@ -597,6 +619,7 @@ export const ARTIFACT_NODE_TYPES = [
   "diff",
   "file-tree",
   "heading",
+  "stepper",
   "text",
   "card",
   "metric",

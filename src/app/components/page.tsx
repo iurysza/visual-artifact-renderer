@@ -40,6 +40,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
+import { Stepper } from "@/components/ui/stepper"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
@@ -977,6 +978,17 @@ export default function ComponentsPage() {
                       ],
                     },
                     { name: "package.json", type: "file" },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Subheading>Stepper</Subheading>
+                <Stepper
+                  items={[
+                    { title: "Initialize", status: "complete" },
+                    { title: "Build", status: "current" },
+                    { title: "Deploy", status: "pending" },
                   ]}
                 />
               </div>

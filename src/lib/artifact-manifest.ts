@@ -107,6 +107,14 @@ export const artifactManifest = {
     limits: { items: 50 },
     example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }] } },
   },
+  "stepper": {
+    type: "stepper",
+    description: "A step-by-step progress indicator.",
+    props: { items: "{ title, description?, status? }[]" },
+    children: false,
+    limits: { items: 10 },
+    example: { type: "stepper", props: { items: [{ title: "Step 1", status: "complete" }, { title: "Step 2", status: "current" }] } },
+  },
   heading: {
     type: "heading",
     description: "Section or page heading. Use sparingly; renderer already supplies the page hero.",

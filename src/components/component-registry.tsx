@@ -55,6 +55,7 @@ import { CodeBlock } from "@/components/ui/code-block"
 import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
+import { Stepper } from "@/components/ui/stepper"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -85,6 +86,7 @@ export const componentRegistry = {
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "file-tree": renderFileTree as RegistryAdapter,
+  stepper: renderStepper as RegistryAdapter,
   heading: renderHeading as RegistryAdapter,
   prose: renderProse as RegistryAdapter,
   text: renderText as RegistryAdapter,
@@ -125,6 +127,11 @@ function renderDiff({ node }: AdapterArgs<"diff">) {
 function renderFileTree({ node }: AdapterArgs<"file-tree">) {
   const { items } = node.props
   return <FileTree items={items} />
+}
+
+function renderStepper({ node }: AdapterArgs<"stepper">) {
+  const { items } = node.props
+  return <Stepper items={items} />
 }
 
 function renderHeading({ node }: AdapterArgs<"heading">) {
