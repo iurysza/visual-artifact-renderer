@@ -83,6 +83,13 @@ export const artifactPatternExamples = {
 } as const
 
 export const artifactManifest = {
+  "alert": {
+    type: "alert",
+    description: "An alert message to call out important information.",
+    props: { title: "string", description: "string?", variant: '"default" | "destructive"' },
+    children: false,
+    example: { type: "alert", props: { title: "Heads up", description: "This is important." } },
+  },
   "definition-list": {
     type: "definition-list",
     description: "A compact list of terms and descriptions.",

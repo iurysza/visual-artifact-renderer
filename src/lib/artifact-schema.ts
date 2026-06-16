@@ -90,6 +90,10 @@ export type ArtifactNode =
       props: { src: string; alt: string; caption?: string; aspect?: "auto" | "square" | "video" | "wide" }
     }
   | {
+      type: "alert"
+      props: { title: string; description?: string; variant?: "default" | "destructive" }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -258,6 +262,18 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             alt: z.string(),
             caption: z.string().optional(),
             aspect: z.enum(["auto", "square", "video", "wide"]).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("alert"),
+        props: z
+          .object({
+            title: z.string().min(1),
+            description: z.string().optional(),
+            variant: z.enum(["default", "destructive"]).optional(),
           })
           .strict(),
       })
@@ -632,6 +648,7 @@ export const VisualArtifactSpecSchema = z
 export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>
 
 export const ARTIFACT_NODE_TYPES = [
+  "alert",
   "definition-list",
   "diff",
   "file-tree",

@@ -23,6 +23,7 @@ import {
 } from "recharts"
 
 import type { ArtifactColumn, ArtifactFlowItem, ArtifactNode, ArtifactTone, VisualArtifactSpec } from "@/lib/artifact-schema"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -84,6 +85,7 @@ type RegistryAdapter = (args: {
 }) => ReactNode
 
 export const componentRegistry = {
+  alert: renderAlert as RegistryAdapter,
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "file-tree": renderFileTree as RegistryAdapter,
@@ -115,6 +117,16 @@ export const componentRegistry = {
 } satisfies Record<ArtifactNode["type"], RegistryAdapter>
 
 export type { ArtifactRenderContext, RenderNodes }
+
+function renderAlert({ node }: AdapterArgs<"alert">) {
+  const { title, description, variant } = node.props
+  return (
+    <Alert variant={variant}>
+      <AlertTitle>{title}</AlertTitle>
+      {description && <AlertDescription>{description}</AlertDescription>}
+    </Alert>
+  )
+}
 
 function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {
   const { items } = node.props
