@@ -1,3 +1,4 @@
+import { listProjects } from "@/lib/artifacts"
 import { ProjectIndexLoader } from "@/components/project-index-loader"
 
 export default async function ProjectArtifactsPage({
@@ -10,7 +11,6 @@ export default async function ProjectArtifactsPage({
 }
 
 export async function generateStaticParams() {
-  // Keep the project route shells in the static export so direct project URLs
-  // resolve without needing the live fallback.
-  return [{ project: "visualizer" }]
+  const projects = await listProjects()
+  return projects.map((project) => ({ project: project.name }))
 }

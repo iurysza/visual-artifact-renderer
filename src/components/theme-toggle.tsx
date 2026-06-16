@@ -1,19 +1,17 @@
 "use client"
 
+import { useTheme } from "next-themes"
+
 import { cn } from "@/lib/utils"
 
-const STORAGE_KEY = "visualizer-theme"
-
-function toggleTheme() {
-  const root = document.documentElement
-  const dark = !root.classList.contains("dark")
-
-  root.classList.toggle("dark", dark)
-  root.style.colorScheme = dark ? "dark" : "light"
-  localStorage.setItem(STORAGE_KEY, dark ? "dark" : "light")
-}
-
 export function ThemeToggle({ className }: { className?: string }) {
+  const { setTheme } = useTheme()
+
+  function toggleTheme() {
+    const dark = !document.documentElement.classList.contains("dark")
+    setTheme(dark ? "dark" : "light")
+  }
+
   return (
     <button
       type="button"
