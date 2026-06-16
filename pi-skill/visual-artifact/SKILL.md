@@ -54,3 +54,7 @@ Start here: [[references/direct-artifact/_index\|direct artifact]].
 - **Before calling `create_visual_artifact`, read `~/.pi/tools/visualizer/artifact-contract.json`** and only use supported node types and props.
 - **Keep the renderer running** with `vaz-serve` before calling `create_visual_artifact` if you want the artifact URL to resolve locally.
 - **Orientation-first for architecture docs:** answer "what is this project?" before recommendations.
+
+## Design guidelines (required reading)
+
+Read [[references/design-guidelines|design guidelines]] before building any artifact. It covers how to structure content, choose node types, avoid generic output, and keep every artifact focused on its topic.
