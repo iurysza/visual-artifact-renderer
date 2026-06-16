@@ -83,6 +83,14 @@ export const artifactPatternExamples = {
 } as const
 
 export const artifactManifest = {
+  "definition-list": {
+    type: "definition-list",
+    description: "A compact list of terms and descriptions.",
+    props: { items: "{ term, description }[]" },
+    children: false,
+    limits: { items: 20 },
+    example: { type: "definition-list", props: { items: [{ term: "Term", description: "Description" }] } },
+  },
   heading: {
     type: "heading",
     description: "Section or page heading. Use sparingly; renderer already supplies the page hero.",

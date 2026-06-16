@@ -52,6 +52,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Prose } from "@/components/ui/prose"
 import { CodeBlock } from "@/components/ui/code-block"
+import { DefinitionList } from "@/components/ui/definition-list"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -79,6 +80,7 @@ type RegistryAdapter = (args: {
 }) => ReactNode
 
 export const componentRegistry = {
+  "definition-list": renderDefinitionList as RegistryAdapter,
   heading: renderHeading as RegistryAdapter,
   prose: renderProse as RegistryAdapter,
   text: renderText as RegistryAdapter,
@@ -105,6 +107,11 @@ export const componentRegistry = {
 } satisfies Record<ArtifactNode["type"], RegistryAdapter>
 
 export type { ArtifactRenderContext, RenderNodes }
+
+function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {
+  const { items } = node.props
+  return <DefinitionList items={items} />
+}
 
 function renderHeading({ node }: AdapterArgs<"heading">) {
   const { text, level = 2, align = "left" } = node.props

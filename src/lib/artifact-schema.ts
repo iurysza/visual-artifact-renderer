@@ -56,6 +56,10 @@ export type ArtifactFlowItem = z.infer<typeof FlowItemSchema>
 
 export type ArtifactNode =
   | {
+      type: "definition-list"
+      props: { items: { term: string; description: string }[] }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -158,6 +162,23 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
   const requiredChildNodes = z.array(ArtifactNodeSchema).min(1)
 
   return z.discriminatedUnion("type", [
+    z
+      .object({
+        type: z.literal("definition-list"),
+        props: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  term: z.string().min(1),
+                  description: z.string().min(1),
+                })
+                .strict()
+            ).min(1),
+          })
+          .strict(),
+      })
+      .strict(),
     z
       .object({
         type: z.literal("heading"),
@@ -528,6 +549,7 @@ export const VisualArtifactSpecSchema = z
 export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>
 
 export const ARTIFACT_NODE_TYPES = [
+  "definition-list",
   "heading",
   "text",
   "card",

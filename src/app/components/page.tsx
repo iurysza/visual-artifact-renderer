@@ -37,6 +37,7 @@ import {
   SelectSeparator,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { DefinitionList } from "@/components/ui/definition-list"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
@@ -942,6 +943,16 @@ export default function ComponentsPage() {
             description="Use Tabs for switching views, Accordion for collapsible FAQ-like content, Pagination for long lists, DropdownMenu for action menus, and NavigationMenu for top-level site nav."
           >
             <div className="grid gap-6">
+              <div>
+                <Subheading>Definition List</Subheading>
+                <DefinitionList
+                  items={[
+                    { term: "Agent", description: "An autonomous entity." },
+                    { term: "Prompt", description: "Instructions given to an LLM." },
+                  ]}
+                />
+              </div>
+
               <div>
                 <Subheading>Tabs</Subheading>
                 <Tabs value={tabValue} onValueChange={setTabValue}>
