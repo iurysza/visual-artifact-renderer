@@ -1,7 +1,7 @@
 ---
 description: "Design principles for visual artifacts rendered by Visualizer. How to choose node types, structure information, and avoid generic output."
 date created: 2026-06-16
-date modified: 2026-06-16
+date modified: 2026-06-17
 tags: ["visual-artifact", "design", "ui", "guidelines"]
 ---
 
@@ -44,6 +44,14 @@ Match the content to the right renderer node.
 - Keep Mermaid diagrams under 10–12 nodes when possible. For larger topologies, use a simple Mermaid overview plus `card`/`grid` detail sections below.
 - Use `svg-diagram` when you need precise layout, clickable nodes, or a hand-rolled visual treatment.
 - If a Mermaid skill is available in your environment, load it before generating or validating Mermaid diagrams.
+
+## Content-type patterns
+
+For concrete patterns, see [[content-types/_index|content types]]:
+- [[content-types/architecture-diagrams|Architecture diagrams]] — topology, text-heavy overviews, hybrid layouts
+- [[content-types/dashboards|Dashboards & metrics]] — KPIs, status boards, hero numbers
+- [[content-types/timelines|Timelines & roadmaps]] — phases, milestones, chronological narratives
+- [[content-types/data-organization|Data organization]] — tables, comparisons, inventories
 
 ## Layout and hierarchy
 

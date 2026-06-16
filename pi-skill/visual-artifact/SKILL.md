@@ -58,3 +58,5 @@ Start here: [[references/direct-artifact/_index\|direct artifact]].
 ## Design guidelines (required reading)
 
 Read [[references/design-guidelines|design guidelines]] before building any artifact. It covers how to structure content, choose node types, avoid generic output, and keep every artifact focused on its topic.
+
+For concrete patterns by content type, see [[references/content-types/_index|content types]].

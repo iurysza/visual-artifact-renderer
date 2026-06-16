@@ -1,7 +1,7 @@
 ---
 description: "Use this route for component galleries, feature explainers, dashboards, quick diagrams, and visual summaries of a specific area. Build the artifact spec directly and call create_visual_artifact."
 date created: 2026-06-16T20:50:00
-date modified: 2026-06-16T20:50:00
+date modified: 2026-06-17T20:50:00
 tags: ["visual-artifact", "direct", "gallery", "dashboard"]
 ---
 
@@ -30,6 +30,14 @@ Good fits:
 ## Output location
 
 Artifacts are saved globally under `~/.pi/artifacts/<project>/<slug>.json`. The project name is derived from the caller's working directory.
+
+## Content-type patterns
+
+Pick a shape before building the spec:
+- [[references/content-types/architecture-diagrams|Architecture diagrams]]
+- [[references/content-types/dashboards|Dashboards & metrics]]
+- [[references/content-types/timelines|Timelines & roadmaps]]
+- [[references/content-types/data-organization|Data organization]]
 
 ## Next step
 

@@ -3,6 +3,45 @@
 # Run this from the visualizer repository root.
 set -e
 
+# Detect and update shell profile so ~/.pi/bin is on PATH.
+configure_path() {
+  local bin_dir="$1"
+  local shell_name="$(basename "$SHELL")"
+  local profile=""
+
+  if [ "$shell_name" = "zsh" ]; then
+    profile="$HOME/.zshrc"
+  elif [ "$shell_name" = "bash" ]; then
+    if [ -f "$HOME/.bash_profile" ]; then
+      profile="$HOME/.bash_profile"
+    elif [ -f "$HOME/.bashrc" ]; then
+      profile="$HOME/.bashrc"
+    else
+      profile="$HOME/.profile"
+    fi
+  else
+    profile="$HOME/.profile"
+  fi
+
+  if [[ ":$PATH:" == *":$bin_dir:"* ]]; then
+    echo "[vaz-install] $bin_dir is already in PATH."
+    return 0
+  fi
+
+  if [ -z "$profile" ] || [ ! -f "$profile" ]; then
+    echo "[vaz-install] Could not find a shell profile. Add this line manually:"
+    echo "  export PATH=\"$bin_dir:\$PATH\""
+    return 0
+  fi
+
+  echo "[vaz-install] Adding $bin_dir to PATH in $profile..."
+  cp "$profile" "$profile.vaz-backup.$(date +%s)"
+  echo "" >> "$profile"
+  echo "# Added by visual-artifact installer" >> "$profile"
+  echo "export PATH=\"$bin_dir:\$PATH\"" >> "$profile"
+  echo "[vaz-install] PATH updated. Run: source $profile"
+}
+
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 SKILL_SRC="$REPO_ROOT/pi-skill/visual-artifact"
 SKILL_DST="$HOME/.pi/skills/visual-artifact"
@@ -50,12 +89,8 @@ else
   echo "[vaz-install] node_modules already present; skipping pnpm install"
 fi
 
-# 6. Optional: add ~/.pi/bin to PATH in shell profile
-if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-  echo "[vaz-install] $BIN_DIR is not in your PATH."
-  echo "[vaz-install] Add this line to your shell profile:"
-  echo "  export PATH=\"$BIN_DIR:\$PATH\""
-fi
+# 6. Ensure ~/.pi/bin is in PATH
+configure_path "$BIN_DIR"
 
 echo ""
 echo "[vaz-install] Done."
