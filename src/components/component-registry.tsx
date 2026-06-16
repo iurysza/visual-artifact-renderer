@@ -63,6 +63,7 @@ import { AreaChart } from "@/components/ui/area-chart"
 import { RadarChart } from "@/components/ui/radar-chart"
 import { ScatterChart } from "@/components/ui/scatter-chart"
 import { Heatmap } from "@/components/ui/heatmap"
+import { Log } from "@/components/ui/log"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -95,6 +96,7 @@ export const componentRegistry = {
   "radar-chart": renderRadarChart as RegistryAdapter,
   "scatter-chart": renderScatterChart as RegistryAdapter,
   heatmap: renderHeatmap as RegistryAdapter,
+  log: renderLog as RegistryAdapter,
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "donut-chart": renderDonutChart as RegistryAdapter,
@@ -197,6 +199,17 @@ function renderHeatmap({ node, context }: AdapterArgs<"heatmap">) {
       caption={caption}
     />
   )
+}
+
+function renderLog({ node, context }: AdapterArgs<"log">) {
+  const { lines, dataKey } = node.props
+  if (lines) return <Log lines={lines} />
+  if (dataKey) {
+    const data = getRows(context.data, dataKey)
+    if (!data.length) return <MissingData dataKey={dataKey} />
+    return <Log data={context.data} dataKey={dataKey} />
+  }
+  return <Log lines={[]} />
 }
 
 function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {

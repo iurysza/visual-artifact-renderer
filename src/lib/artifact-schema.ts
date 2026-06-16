@@ -118,6 +118,10 @@ export type ArtifactNode =
       props: { dataKey: string; xKey?: string; yKey?: string; valueKey?: string; caption?: string }
     }
   | {
+      type: "log"
+      props: { lines?: string[]; dataKey?: string }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -378,6 +382,17 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             yKey: z.string().min(1).optional(),
             valueKey: z.string().min(1).optional(),
             caption: z.string().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("log"),
+        props: z
+          .object({
+            lines: z.array(z.string()).optional(),
+            dataKey: z.string().min(1).optional(),
           })
           .strict(),
       })
@@ -767,6 +782,7 @@ export const ARTIFACT_NODE_TYPES = [
   "radar-chart",
   "scatter-chart",
   "heatmap",
+  "log",
   "definition-list",
   "diff",
   "donut-chart",

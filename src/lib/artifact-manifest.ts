@@ -146,6 +146,14 @@ export const artifactManifest = {
     requiresData: true,
     example: { type: "heatmap", props: { dataKey: "riskMatrix", xKey: "category", yKey: "quarter", valueKey: "score" } },
   },
+  "log": {
+    type: "log",
+    description: "A scrollable terminal-like log output.",
+    props: { lines: "string[]?", dataKey: "string?" },
+    children: false,
+    requiresData: true,
+    example: { type: "log", props: { dataKey: "deploymentLogs" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",

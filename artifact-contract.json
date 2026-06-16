@@ -6,6 +6,7 @@
     "radar-chart",
     "scatter-chart",
     "heatmap",
+    "log",
     "definition-list",
     "diff",
     "donut-chart",
@@ -191,6 +192,21 @@
           "xKey": "category",
           "yKey": "quarter",
           "valueKey": "score"
+        }
+      }
+    },
+    "log": {
+      "description": "A scrollable terminal-like log output.",
+      "props": {
+        "lines": "string[]?",
+        "dataKey": "string?"
+      },
+      "children": false,
+      "requiresData": true,
+      "example": {
+        "type": "log",
+        "props": {
+          "dataKey": "deploymentLogs"
         }
       }
     },
@@ -810,6 +826,7 @@
     "radar-chart",
     "scatter-chart",
     "heatmap",
+    "log",
     "pie-chart",
     "table",
     "data-table",

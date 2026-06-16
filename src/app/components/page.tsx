@@ -1092,6 +1092,21 @@ export default function ComponentsPage() {
               </div>
 
               <div>
+                <Subheading>Log</Subheading>
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                  <Log
+                    lines={[
+                      "[INFO] Starting deployment...",
+                      "[INFO] Building assets...",
+                      "[SUCCESS] Build completed in 12s",
+                      "[INFO] Deploying to production...",
+                      "[SUCCESS] Deployment finished",
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div>
                 <Subheading>Tabs</Subheading>
                 <Tabs value={tabValue} onValueChange={setTabValue}>
                   <TabsList>
