@@ -107,6 +107,13 @@ export const artifactManifest = {
     limits: { items: 50 },
     example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }] } },
   },
+  "image": {
+    type: "image",
+    description: "An image with optional caption and aspect ratio.",
+    props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"' },
+    children: false,
+    example: { type: "image", props: { src: "/placeholder.png", alt: "Placeholder" } },
+  },
   "stepper": {
     type: "stepper",
     description: "A step-by-step progress indicator.",

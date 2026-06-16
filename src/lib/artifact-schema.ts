@@ -86,6 +86,10 @@ export type ArtifactNode =
       props: { items: { title: string; description?: string; status?: "complete" | "current" | "pending" }[] }
     }
   | {
+      type: "image"
+      props: { src: string; alt: string; caption?: string; aspect?: "auto" | "square" | "video" | "wide" }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -241,6 +245,19 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
                 })
                 .strict()
             ).min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("image"),
+        props: z
+          .object({
+            src: z.string(),
+            alt: z.string(),
+            caption: z.string().optional(),
+            aspect: z.enum(["auto", "square", "video", "wide"]).optional(),
           })
           .strict(),
       })
@@ -619,6 +636,7 @@ export const ARTIFACT_NODE_TYPES = [
   "diff",
   "file-tree",
   "heading",
+  "image",
   "stepper",
   "text",
   "card",

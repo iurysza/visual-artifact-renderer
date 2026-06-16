@@ -40,6 +40,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
+import { ArtifactImage } from "@/components/ui/artifact-image"
 import { Stepper } from "@/components/ui/stepper"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -990,6 +991,16 @@ export default function ComponentsPage() {
                     { title: "Build", status: "current" },
                     { title: "Deploy", status: "pending" },
                   ]}
+                />
+              </div>
+
+              <div>
+                <Subheading>Image</Subheading>
+                <ArtifactImage
+                  src="https://images.unsplash.com/photo-1506744626753-1fa28f67c9bf?auto=format&fit=crop&w=800&q=80"
+                  alt="Landscape"
+                  caption="A beautiful landscape"
+                  aspect="video"
                 />
               </div>
 

@@ -55,6 +55,7 @@ import { CodeBlock } from "@/components/ui/code-block"
 import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
+import { ArtifactImage } from "@/components/ui/artifact-image"
 import { Stepper } from "@/components/ui/stepper"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -86,6 +87,7 @@ export const componentRegistry = {
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "file-tree": renderFileTree as RegistryAdapter,
+  image: renderImage as RegistryAdapter,
   stepper: renderStepper as RegistryAdapter,
   heading: renderHeading as RegistryAdapter,
   prose: renderProse as RegistryAdapter,
@@ -127,6 +129,11 @@ function renderDiff({ node }: AdapterArgs<"diff">) {
 function renderFileTree({ node }: AdapterArgs<"file-tree">) {
   const { items } = node.props
   return <FileTree items={items} />
+}
+
+function renderImage({ node }: AdapterArgs<"image">) {
+  const { src, alt, caption, aspect } = node.props
+  return <ArtifactImage src={src} alt={alt} caption={caption} aspect={aspect} />
 }
 
 function renderStepper({ node }: AdapterArgs<"stepper">) {
