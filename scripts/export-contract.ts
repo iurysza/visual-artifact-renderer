@@ -2,7 +2,7 @@ import { promises as fs } from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
 
-import { artifactComponentManifest, artifactCompositionGuidance, artifactPatternExamples } from "../src/lib/artifact-manifest.js"
+import { artifactComponentManifest, artifactPatternExamples } from "../src/lib/artifact-manifest.js"
 import { ARTIFACT_NODE_TYPES } from "../src/lib/artifact-schema.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -25,7 +25,6 @@ const contract = {
     ])
   ),
   dataNodes: artifactComponentManifest.filter((e) => e.requiresData).map((e) => e.type),
-  compositionGuidance: artifactCompositionGuidance,
   patternExamples: artifactPatternExamples,
   globalLimits: {
     dataRowsMax: 20,

@@ -20,21 +20,6 @@ export type ArtifactManifestEntry = {
   }
 }
 
-export const artifactCompositionGuidance = [
-  "Open with a concise thesis and a stat-card summary band.",
-  "Use stat-card for KPI, count, health, and state summaries.",
-  "Use status-grid for component health, readiness, validation, and risk boards.",
-  "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
-  "For architecture pages, put a mermaid or svg-diagram near the top instead of describing topology in prose.",
-  "Use mermaid for lightweight zoomable/pannable text-defined architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.",
-  "Use svg-diagram for trusted full HTML/SVG diagrams when Mermaid is too constrained or layout needs custom control.",
-  "Use flow for request paths, build/deploy chains, data pipelines, and architecture handoffs.",
-  "Use timeline for release phases, lifecycle steps, migrations, and operator runbooks.",
-  "Use code-block for commands, config snippets, env contracts, and file/path maps.",
-  "Use tabs for alternate contexts; use accordion only for secondary detail.",
-  "Avoid generic card soup and avoid file:// links in shareable artifacts.",
-] as const
-
 export const artifactPatternExamples = {
   architecture: {
     description: "Architecture brief: thesis + stat cards, then Mermaid topology, flow handoff, status-grid, and evidence table.",

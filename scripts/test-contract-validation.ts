@@ -26,7 +26,6 @@ type ArtifactContract = {
     }
   }>
   dataNodes: readonly string[]
-  compositionGuidance: readonly string[]
   patternExamples: Record<string, { description: string; nodes: unknown[] }>
   globalLimits: {
     dataRowsMax: number

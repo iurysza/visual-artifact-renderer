@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs"
 import path from "node:path"
-import { artifactComponentManifest, artifactCompositionGuidance, artifactPatternExamples } from "../../../src/lib/artifact-manifest"
+import { artifactComponentManifest, artifactPatternExamples } from "../../../src/lib/artifact-manifest"
 import { ARTIFACT_NODE_TYPES } from "../../../src/lib/artifact-schema"
 
 export const SOURCE_INSTRUCTION_FILES = [
@@ -60,9 +60,6 @@ export function renderComponentPalette(): string {
     .join("\n")
 
   return [
-    "## Composition guidance",
-    artifactCompositionGuidance.map((item) => `- ${item}`).join("\n"),
-    "",
     "## Pattern examples",
     JSON.stringify(artifactPatternExamples, null, 2),
     "",
