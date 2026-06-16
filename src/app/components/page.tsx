@@ -191,6 +191,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { CodeBlock } from "@/components/ui/code-block"
 import { SvgDiagram } from "@/components/svg-diagram"
+import { MermaidDiagram } from "@/components/component-registry"
 import { visualizerPipelineDiagram } from "@/lib/svg-diagram-example"
 import { cn } from "@/lib/utils"
 
@@ -1425,6 +1426,13 @@ console.log(greeting);`}
                   language="json"
                   title="mermaid node"
                 />
+                <div className="mt-4">
+                  <MermaidDiagram
+                    title="Request flow"
+                    code="flowchart LR\n  Client --> API\n  API --> DB"
+                    height={320}
+                  />
+                </div>
               </div>
 
               <div>

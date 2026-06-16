@@ -487,7 +487,7 @@ type MermaidPinchState = {
   centerSvgPoint: { x: number; y: number }
 }
 
-function MermaidDiagram({
+export function MermaidDiagram({
   code,
   title,
   caption,
