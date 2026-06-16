@@ -47,6 +47,14 @@ Use for component galleries, feature explainers, dashboards, quick diagrams, vis
 
 Start here: [[references/direct-artifact/_index\|direct artifact]].
 
+## Slash commands
+
+When the visual-artifact extension is installed, these slash commands are available:
+
+| Command | Usage | What it does |
+|---|---|---|
+| `/project-recap` | `/project-recap [2w\|30d\|3m]` | Generates a visual project recap — current state, recent decisions, and cognitive debt hotspots. Defaults to `2w` when no argument is given. |
+
 ## Critical rules
 
 - **Never call `create_visual_artifact` from inside a `pi --print` subprocess.** The assembler writes JSON to disk; the parent agent calls the tool.
