@@ -7,8 +7,8 @@ import {
   fileExists,
   readJson,
   writePacket,
-} from "./lib/runner"
-import { VisualArtifactReportPacket } from "../../src/lib/report-packet"
+} from "../../../lib/runner"
+import { VisualArtifactReportPacket } from "../../../../../src/lib/report-packet"
 
 interface RepoProfileFacts extends Record<string, unknown> {
   packageManager: "pnpm" | "npm" | "yarn" | "bun" | "unknown"

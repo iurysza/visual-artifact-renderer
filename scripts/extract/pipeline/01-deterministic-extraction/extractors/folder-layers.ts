@@ -9,8 +9,8 @@ import {
   writePacket,
   writeText,
   assetPath,
-} from "./lib/runner"
-import type { VisualArtifactReportPacket } from "../../src/lib/report-packet"
+} from "../../../lib/runner"
+import type { VisualArtifactReportPacket } from "../../../../../src/lib/report-packet"
 
 const DEFAULT_IGNORE = new Set([
   ".git",

@@ -8,8 +8,8 @@ import {
   writePacket,
   writeJson,
   assetPath,
-} from "./lib/runner"
-import type { VisualArtifactReportPacket } from "../../src/lib/report-packet"
+} from "../../../lib/runner"
+import type { VisualArtifactReportPacket } from "../../../../../src/lib/report-packet"
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs"])
 

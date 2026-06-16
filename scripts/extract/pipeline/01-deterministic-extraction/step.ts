@@ -1,11 +1,11 @@
 #!/usr/bin/env tsx
 import path from "node:path"
-import type { VisualArtifactReportPacket } from "../../src/lib/report-packet"
-import { runRepoProfileExtractor } from "./repo-profile"
-import { runFolderLayersExtractor } from "./folder-layers"
-import { runInternalImportsExtractor } from "./internal-imports"
-import { runPackageDepsExtractor } from "./package-deps"
-import { createExtractorContext, ensureContextDirs, writeJson, writeText } from "./lib/runner"
+import type { VisualArtifactReportPacket } from "../../../../src/lib/report-packet"
+import { runRepoProfileExtractor } from "./extractors/repo-profile"
+import { runFolderLayersExtractor } from "./extractors/folder-layers"
+import { runInternalImportsExtractor } from "./extractors/internal-imports"
+import { runPackageDepsExtractor } from "./extractors/package-deps"
+import { createExtractorContext, ensureContextDirs, writeJson, writeText } from "../../lib/runner"
 
 type ProbeDefinition = {
   id: string
@@ -192,7 +192,7 @@ async function main() {
     outputDir: context.outputDir,
     generatedAt: new Date().toISOString(),
     invocation: {
-      script: "scripts/extract/index.ts",
+      script: "scripts/extract/pipeline/01-deterministic-extraction/step.ts",
       args: process.argv.slice(2),
     },
     probes: PROBES,

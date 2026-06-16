@@ -1,0 +1,78 @@
+Use the subagent tool to launch exactly one scout agent as a Visualization Art Director.
+
+This is a thinking/planning pass, not deterministic assembly.
+Do not write JSON. Do not emit a final VisualArtifactSpec. Do not call create_visual_artifact.
+Write one open-ended Markdown brief to:
+{{outputPath}}
+
+The brief should tell the final tool-calling assembler how to visualize the report direction.
+The assembler will later receive all packets, reports, the director brief, this visualization strategy, and the artifact manifest, then generate the actual component JSON.
+
+Core intent:
+- The final artifact should inform, not become a remediation backlog.
+- Explain what this project is, what matters, where to look, and how pieces relate.
+- Use visual structure to help the reader build a mental model quickly.
+- Attention areas should read as "places worth understanding", not "bad code".
+- Recommendations should be small and trailing, if present at all.
+
+Read these first:
+
+Report direction:
+- {{reportDirectionJsonPathRelative}}
+- {{reportDirectionMarkdownPathRelative}}
+
+Deterministic evidence:
+- {{digestPathRelative}}
+- {{extractorRunPathRelative}}
+
+Packet JSON files:
+{{packetPaths}}
+
+Free-flow reports:
+{{reportPaths}}
+
+Source instructions:
+{{sourceInstructionFiles}}
+
+Artifact component palette:
+{{componentPalette}}
+
+Source context / north star:
+{{sourceContext}}
+
+Write Markdown with this loose shape. Adapt if the evidence suggests a better structure:
+
+# Visualization Strategy
+
+## Visual thesis
+One paragraph on what the page should help the reader understand.
+
+## Composition approach
+How the artifact should feel and scan: orientation-first, evidence-backed, not a wall of prose, not card soup.
+
+## Opening section
+How to open the artifact: thesis, summary band, first diagram/table/card set. Explain why.
+
+## Section-by-section visual treatment
+For each Report Director section:
+- What the reader should learn
+- Best component ideas to use (examples: text, stat-card, status-grid, comparison-table, mermaid, flow, timeline, code-block, tabs, accordion)
+- What evidence/data should be surfaced
+- What should stay out of the main path
+- Any diagram idea in plain language if useful
+
+## Data and evidence to expose
+Loose notes on tables, status grids, metrics, captions, source references, and useful data keys. Do not force exact schemas.
+
+## Component palette guidance
+Which components should dominate and which should be used sparingly.
+
+## Assembly instructions for the final tool-calling LLM
+Direct instructions the assembler can follow when generating the final VisualArtifactSpec.
+
+Important style rules:
+- Prefer concrete visual decisions over generic advice.
+- Do not tell the reader what to fix first unless it belongs in a small final section.
+- Do not invent facts beyond the packets/reports.
+- Keep the brief useful to another LLM, not beautiful for humans.
+- If a visual idea is uncertain, say what evidence would resolve it.

@@ -10,16 +10,12 @@
     "lint": "eslint",
     "verify:artifacts": "tsx scripts/verify-artifacts.ts",
     "visual:qa": "node scripts/visual-qa.mjs",
-    "extract": "tsx scripts/extract/index.ts",
-    "extract:orchestrator": "tsx scripts/extract/orchestrator.ts",
-    "extract:all": "tsx scripts/extract/index.ts && tsx scripts/extract/run-agentic-workflows.ts",
-    "extract:agentic": "tsx scripts/extract/run-agentic-workflows.ts",
-    "extract:director": "tsx scripts/extract/run-report-director.ts",
-    "extract:visualization": "tsx scripts/extract/run-visualization-strategy.ts",
+    "extract": "tsx scripts/extract/pipeline/run.ts",
+    "extract:pipeline": "tsx scripts/extract/pipeline/run.ts",
+    "extract:from": "tsx scripts/extract/pipeline/run.ts",
+    "extract:only": "tsx scripts/extract/pipeline/run.ts",
     "validate:mermaid": "tsx scripts/validate-mermaid.ts",
-    "test:mermaid-validator": "tsx scripts/test-mermaid-validator.ts",
-    "extract:assembler": "tsx scripts/extract/run-final-assembler.ts",
-    "extract:pipeline": "tsx scripts/extract/run-pipeline.ts"
+    "test:mermaid-validator": "tsx scripts/test-mermaid-validator.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
