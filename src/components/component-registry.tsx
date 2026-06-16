@@ -60,6 +60,7 @@ import { ArtifactImage } from "@/components/ui/artifact-image"
 import { PieChart as PieChartComponent } from "@/components/ui/pie-chart"
 import { Stepper } from "@/components/ui/stepper"
 import { AreaChart } from "@/components/ui/area-chart"
+import { RadarChart } from "@/components/ui/radar-chart"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Maximize2Icon, Minimize2Icon } from "lucide-react"
@@ -89,6 +90,7 @@ type RegistryAdapter = (args: {
 export const componentRegistry = {
   alert: renderAlert as RegistryAdapter,
   "area-chart": renderAreaChart as RegistryAdapter,
+  "radar-chart": renderRadarChart as RegistryAdapter,
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
   "donut-chart": renderDonutChart as RegistryAdapter,
@@ -142,6 +144,21 @@ function renderAreaChart({ node, context }: AdapterArgs<"area-chart">) {
       data={data as Record<string, unknown>[]}
       xKey={xKey}
       yKey={yKey}
+      label={label}
+      color={color}
+    />
+  )
+}
+
+function renderRadarChart({ node, context }: AdapterArgs<"radar-chart">) {
+  const { dataKey, subjectKey, valueKey, label, color } = node.props
+  const data = getRows(context.data, dataKey)
+  if (!data.length) return <MissingData dataKey={dataKey} />
+  return (
+    <RadarChart
+      data={data as Record<string, unknown>[]}
+      subjectKey={subjectKey}
+      valueKey={valueKey}
       label={label}
       color={color}
     />

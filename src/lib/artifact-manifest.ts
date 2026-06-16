@@ -122,6 +122,14 @@ export const artifactManifest = {
     requiresData: true,
     example: { type: "area-chart", props: { dataKey: "monthlyRevenue", xKey: "month", yKey: "revenue" } },
   },
+  "radar-chart": {
+    type: "radar-chart",
+    description: "A radar chart for multi-dimensional comparisons.",
+    props: { dataKey: "string", subjectKey: "string?", valueKey: "string?", label: "string?", color: "string?" },
+    children: false,
+    requiresData: true,
+    example: { type: "radar-chart", props: { dataKey: "skillScores", subjectKey: "skill", valueKey: "score" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",

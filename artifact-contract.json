@@ -3,6 +3,7 @@
   "nodeTypes": [
     "alert",
     "area-chart",
+    "radar-chart",
     "definition-list",
     "diff",
     "donut-chart",
@@ -127,6 +128,26 @@
           "dataKey": "monthlyRevenue",
           "xKey": "month",
           "yKey": "revenue"
+        }
+      }
+    },
+    "radar-chart": {
+      "description": "A radar chart for multi-dimensional comparisons.",
+      "props": {
+        "dataKey": "string",
+        "subjectKey": "string?",
+        "valueKey": "string?",
+        "label": "string?",
+        "color": "string?"
+      },
+      "children": false,
+      "requiresData": true,
+      "example": {
+        "type": "radar-chart",
+        "props": {
+          "dataKey": "skillScores",
+          "subjectKey": "skill",
+          "valueKey": "score"
         }
       }
     },
@@ -743,6 +764,7 @@
   "dataNodes": [
     "donut-chart",
     "area-chart",
+    "radar-chart",
     "pie-chart",
     "table",
     "data-table",
