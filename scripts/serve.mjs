@@ -142,7 +142,7 @@ async function scanArtifacts() {
 async function serveIndexJson(reqPath, res) {
   if (reqPath !== "/data/artifacts/index.json") return false;
   const { projects, artifacts } = await scanArtifacts();
-  const recent = artifacts.slice(0, 12);
+  const recent = artifacts.slice(0, 3);
   const body = JSON.stringify({ projects, recent }, null, 2);
   send(res, 200, body, "application/json; charset=utf-8");
   return true;
