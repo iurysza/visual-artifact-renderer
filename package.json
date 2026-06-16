@@ -12,6 +12,7 @@
     "export:contract": "tsx scripts/export-contract.ts",
     "test:contract": "tsx scripts/test-contract-validation.ts",
     "visual:qa": "node scripts/visual-qa.mjs",
+    "health-check": "node scripts/health-check.mjs",
     "extract": "tsx scripts/extract/pipeline/run.ts",
     "extract:pipeline": "tsx scripts/extract/pipeline/run.ts",
     "extract:from": "tsx scripts/extract/pipeline/run.ts",

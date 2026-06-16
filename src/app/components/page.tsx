@@ -200,6 +200,76 @@ import {
   Users,
 } from "lucide-react"
 
+const markdownExample = `# Markdown
+
+Render long-form content with the **Prose** component. It is powered by \`react-markdown\` plus \`remark-gfm\`, so it supports GitHub-flavored Markdown.
+
+## Text formatting
+
+You can use **bold**, *italic*, ~~strikethrough~~, and \`inline code\`.
+
+## Blockquotes
+
+> Markdown is intended to be as easy-to-read and easy-to-write as is feasible.
+> — *John Gruber*
+
+## Lists
+
+Unordered lists:
+
+- Bullet one
+- Bullet two
+  - Nested bullet
+  - Another nested item
+- Bullet three
+
+Numbered lists:
+
+1. First item
+2. Second item
+   1. Nested numbered item
+   2. Another nested item
+3. Third item
+
+Task lists (via remark-gfm):
+
+- [x] Write the docs
+- [ ] Add tests
+- [ ] Ship it
+
+## Tables
+
+| Feature     | Supported | Notes                     |
+| ----------- | :-------: | ------------------------- |
+| Headings    |    ✅     | H1 through H6             |
+| Lists       |    ✅     | Ordered, unordered, tasks |
+| Tables      |    ✅     | GFM-style                 |
+| Code blocks |    ✅     | Fenced with language hint |
+| Strikethrough |  ✅     | GFM                       |
+
+## Code
+
+Inline code looks like \`const answer = 42\`. Fenced blocks preserve language hints:
+
+\`\`\`typescript
+function greet(name: string) {
+  return \`Hello, \${name}!\`
+}
+\`\`\`
+
+## Horizontal rule
+
+---
+
+## Links
+
+A [labeled link](https://example.com) and an autolink: https://example.com
+
+## Images
+
+![Placeholder](https://placehold.co/600x120/141413/f5f0e8?text=Markdown+Image)
+`
+
 const navSections = [
   { id: "buttons", title: "Buttons" },
   { id: "badges", title: "Badges" },
@@ -213,6 +283,7 @@ const navSections = [
   { id: "layout", title: "Layout" },
   { id: "toast", title: "Toast" },
   { id: "calendar", title: "Calendar" },
+  { id: "markdown", title: "Markdown" },
   { id: "code-block", title: "Code Block" },
 ]
 
@@ -1059,30 +1130,6 @@ export default function ComponentsPage() {
           >
             <div className="grid gap-6">
               <div>
-                <Subheading>Prose (Markdown)</Subheading>
-                <div className="rounded-xl border bg-card p-6 shadow-sm">
-                  <Prose>
-{`# Markdown Support
-
-This is the new **prose** component using \`react-markdown\`.
-
-## Features
-- Bold and *italic* text
-- Unordered lists
-- Ordered lists
-- [Links](https://example.com)
-
-> "It works perfectly with Tailwind Typography."
-
-\`\`\`javascript
-console.log("Code blocks too!");
-\`\`\`
-`}
-                  </Prose>
-                </div>
-              </div>
-
-              <div>
                 <Subheading>Separator</Subheading>
                 <div className="flex items-center gap-4">
                   <span className="text-sm">Left</span>
@@ -1166,6 +1213,17 @@ console.log("Code blocks too!");
                   onSelect={setCalendarDate}
                 />
               </div>
+            </div>
+          </Section>
+
+          {/* Markdown */}
+          <Section
+            id="markdown"
+            title="Markdown"
+            description="Use Prose for rich text, documentation, or any content authored in Markdown. It supports standard Markdown plus GitHub-flavored extras like tables, task lists, and strikethrough."
+          >
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+              <Prose>{markdownExample}</Prose>
             </div>
           </Section>
 
