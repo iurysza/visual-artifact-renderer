@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated / local artifacts
+.pi/handoffs/
+ai-artifacts/generated/
+report/
+tmp-jscpd.json/
