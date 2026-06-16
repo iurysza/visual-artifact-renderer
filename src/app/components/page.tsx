@@ -41,6 +41,7 @@ import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
 import { ArtifactImage } from "@/components/ui/artifact-image"
+import { PieChart } from "@/components/ui/pie-chart"
 import { Stepper } from "@/components/ui/stepper"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -1002,6 +1003,28 @@ export default function ComponentsPage() {
                   caption="A beautiful landscape"
                   aspect="video"
                 />
+              </div>
+
+              <div>
+                <Subheading>Pie Chart & Donut Chart</Subheading>
+                <div className="grid grid-cols-2 gap-4">
+                  <PieChart
+                    data={[
+                      { name: "Chrome", value: 100 },
+                      { name: "Safari", value: 50 },
+                      { name: "Firefox", value: 25 },
+                    ]}
+                    kind="pie"
+                  />
+                  <PieChart
+                    data={[
+                      { name: "Chrome", value: 100 },
+                      { name: "Safari", value: 50 },
+                      { name: "Firefox", value: 25 },
+                    ]}
+                    kind="donut"
+                  />
+                </div>
               </div>
 
               <div>

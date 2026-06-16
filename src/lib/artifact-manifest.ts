@@ -106,6 +106,14 @@ export const artifactManifest = {
     limits: { text: 5000 },
     example: { type: "diff", props: { before: "a", after: "b", language: "typescript" } },
   },
+  "donut-chart": {
+    type: "donut-chart",
+    description: "A donut chart for proportional data.",
+    props: { dataKey: "string", categoryKey: "string", valueKey: "string" },
+    children: false,
+    requiresData: true,
+    example: { type: "donut-chart", props: { dataKey: "browserStats", categoryKey: "browser", valueKey: "visitors" } },
+  },
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",
@@ -120,6 +128,14 @@ export const artifactManifest = {
     props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"' },
     children: false,
     example: { type: "image", props: { src: "/placeholder.png", alt: "Placeholder" } },
+  },
+  "pie-chart": {
+    type: "pie-chart",
+    description: "A pie chart for proportional data.",
+    props: { dataKey: "string", categoryKey: "string", valueKey: "string" },
+    children: false,
+    requiresData: true,
+    example: { type: "pie-chart", props: { dataKey: "browserStats", categoryKey: "browser", valueKey: "visitors" } },
   },
   "stepper": {
     type: "stepper",

@@ -57,6 +57,7 @@ import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
 import { ArtifactImage } from "@/components/ui/artifact-image"
+import { PieChart as PieChartComponent } from "@/components/ui/pie-chart"
 import { Stepper } from "@/components/ui/stepper"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -88,8 +89,10 @@ export const componentRegistry = {
   alert: renderAlert as RegistryAdapter,
   "definition-list": renderDefinitionList as RegistryAdapter,
   diff: renderDiff as RegistryAdapter,
+  "donut-chart": renderDonutChart as RegistryAdapter,
   "file-tree": renderFileTree as RegistryAdapter,
   image: renderImage as RegistryAdapter,
+  "pie-chart": renderPieChart as RegistryAdapter,
   stepper: renderStepper as RegistryAdapter,
   heading: renderHeading as RegistryAdapter,
   prose: renderProse as RegistryAdapter,
@@ -146,6 +149,20 @@ function renderFileTree({ node }: AdapterArgs<"file-tree">) {
 function renderImage({ node }: AdapterArgs<"image">) {
   const { src, alt, caption, aspect } = node.props
   return <ArtifactImage src={src} alt={alt} caption={caption} aspect={aspect} />
+}
+
+function renderPieChart({ node, context }: AdapterArgs<"pie-chart">) {
+  const { dataKey, categoryKey, valueKey } = node.props
+  const data = getRows(context.data, dataKey)
+  if (!data.length) return <MissingData dataKey={dataKey} />
+  return <PieChartComponent data={data as Record<string, unknown>[]} categoryKey={categoryKey} valueKey={valueKey} kind="pie" />
+}
+
+function renderDonutChart({ node, context }: AdapterArgs<"donut-chart">) {
+  const { dataKey, categoryKey, valueKey } = node.props
+  const data = getRows(context.data, dataKey)
+  if (!data.length) return <MissingData dataKey={dataKey} />
+  return <PieChartComponent data={data as Record<string, unknown>[]} categoryKey={categoryKey} valueKey={valueKey} kind="donut" />
 }
 
 function renderStepper({ node }: AdapterArgs<"stepper">) {

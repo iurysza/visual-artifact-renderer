@@ -94,6 +94,14 @@ export type ArtifactNode =
       props: { title: string; description?: string; variant?: "default" | "destructive" }
     }
   | {
+      type: "pie-chart"
+      props: { dataKey: string; categoryKey: string; valueKey: string }
+    }
+  | {
+      type: "donut-chart"
+      props: { dataKey: string; categoryKey: string; valueKey: string }
+    }
+  | {
       type: "prose"
       props: { content: string }
     }
@@ -274,6 +282,30 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             title: z.string().min(1),
             description: z.string().optional(),
             variant: z.enum(["default", "destructive"]).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("pie-chart"),
+        props: z
+          .object({
+            dataKey: z.string().min(1),
+            categoryKey: z.string().min(1),
+            valueKey: z.string().min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("donut-chart"),
+        props: z
+          .object({
+            dataKey: z.string().min(1),
+            categoryKey: z.string().min(1),
+            valueKey: z.string().min(1),
           })
           .strict(),
       })
@@ -651,9 +683,11 @@ export const ARTIFACT_NODE_TYPES = [
   "alert",
   "definition-list",
   "diff",
+  "donut-chart",
   "file-tree",
   "heading",
   "image",
+  "pie-chart",
   "stepper",
   "text",
   "card",
