@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Start the visualizer renderer server if it is not already running.
+# Usage: vaz-serve
+set -e
+source "${VAZ_SKILL_DIR:-$HOME/.pi/skills/visual-artifact}/lib/common.sh"
+
+ensure_runtime
+
+if server_running; then
+  echo "{\"running\": true, \"url\": \"$VAZ_SERVER_URL\"}"
+  exit 0
+fi
+
+echo "[vaz] Starting visualizer server..." >&2
+cd "$VAZ_DIR"
+
+# Kill any stale server on the same port if possible
+if command -v lsof >/dev/null 2>&1; then
+  stale_pid=$(lsof -ti tcp:9999 2>/dev/null || true)
+  if [ -n "$stale_pid" ]; then
+    echo "[vaz] Killing stale server pid $stale_pid" >&2
+    kill "$stale_pid" 2>/dev/null || true
+    sleep 1
+  fi
+fi
+
+nohup pnpm dev > "$VAZ_SERVER_LOG" 2>&1 &
+sleep 4
+
+if server_running; then
+  echo "{\"running\": true, \"url\": \"$VAZ_SERVER_URL\"}"
+else
+  echo "{\"running\": false, \"error\": \"server failed to start\", \"log\": \"$VAZ_SERVER_LOG\"}" >&2
+  exit 1
+fi

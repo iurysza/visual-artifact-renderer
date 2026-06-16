@@ -30,20 +30,21 @@ function parseArgs(): RunOptions {
   return { repoRoot, slug, from, only }
 }
 
-function resolveScriptPath(repoRoot: string, script: string): string {
-  return path.join(repoRoot, "scripts/extract", script)
+function resolveScriptPath(script: string): string {
+  return path.join(process.cwd(), "scripts/extract", script)
 }
 
 function runStep(repoRoot: string, slug: string, step: PipelineStep): void {
-  const scriptPath = resolveScriptPath(repoRoot, step.script)
+  const scriptPath = resolveScriptPath(step.script)
+  const outputBase = path.join(repoRoot, "ai-artifacts", "generated")
   console.log(`\n${"=".repeat(60)}`)
   console.log(`STEP: ${step.order}. ${step.id}`)
   console.log(`DESC: ${step.description}`)
   console.log(`${"=".repeat(60)}`)
 
   try {
-    execSync(`npx tsx ${scriptPath} ${repoRoot} ${slug}`, {
-      cwd: repoRoot,
+    execSync(`npx tsx ${scriptPath} ${repoRoot} ${slug} ${outputBase}`, {
+      cwd: process.cwd(),
       stdio: "inherit",
       timeout: 30 * 60 * 1000,
     })
