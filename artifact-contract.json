@@ -1,7 +1,15 @@
 {
   "version": "1.0.0",
   "nodeTypes": [
+    "alert",
+    "definition-list",
+    "diff",
+    "donut-chart",
+    "file-tree",
     "heading",
+    "image",
+    "pie-chart",
+    "stepper",
     "text",
     "card",
     "metric",
@@ -22,9 +30,172 @@
     "grid",
     "section",
     "tabs",
-    "accordion"
+    "accordion",
+    "prose"
   ],
   "nodes": {
+    "alert": {
+      "description": "An alert message to call out important information.",
+      "props": {
+        "title": "string",
+        "description": "string?",
+        "variant": "\"default\" | \"destructive\""
+      },
+      "children": false,
+      "example": {
+        "type": "alert",
+        "props": {
+          "title": "Heads up",
+          "description": "This is important."
+        }
+      }
+    },
+    "definition-list": {
+      "description": "A compact list of terms and descriptions.",
+      "props": {
+        "items": "{ term, description }[]"
+      },
+      "children": false,
+      "example": {
+        "type": "definition-list",
+        "props": {
+          "items": [
+            {
+              "term": "Term",
+              "description": "Description"
+            }
+          ]
+        }
+      },
+      "limits": {
+        "items": 20
+      }
+    },
+    "diff": {
+      "description": "Code or text difference visualization.",
+      "props": {
+        "before": "string",
+        "after": "string",
+        "language": "string?"
+      },
+      "children": false,
+      "example": {
+        "type": "diff",
+        "props": {
+          "before": "a",
+          "after": "b",
+          "language": "typescript"
+        }
+      },
+      "limits": {
+        "text": 5000
+      }
+    },
+    "donut-chart": {
+      "description": "A donut chart for proportional data.",
+      "props": {
+        "dataKey": "string",
+        "categoryKey": "string",
+        "valueKey": "string"
+      },
+      "children": false,
+      "requiresData": true,
+      "example": {
+        "type": "donut-chart",
+        "props": {
+          "dataKey": "browserStats",
+          "categoryKey": "browser",
+          "valueKey": "visitors"
+        }
+      }
+    },
+    "file-tree": {
+      "description": "A collapsible file explorer tree.",
+      "props": {
+        "items": "{ name, type, children }[]"
+      },
+      "children": false,
+      "example": {
+        "type": "file-tree",
+        "props": {
+          "items": [
+            {
+              "name": "src",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "limits": {
+        "items": 50
+      }
+    },
+    "image": {
+      "description": "An image with optional caption and aspect ratio.",
+      "props": {
+        "src": "string",
+        "alt": "string",
+        "caption": "string?",
+        "aspect": "\"auto\" | \"square\" | \"video\" | \"wide\""
+      },
+      "children": false,
+      "example": {
+        "type": "image",
+        "props": {
+          "src": "/placeholder.png",
+          "alt": "Placeholder"
+        }
+      }
+    },
+    "pie-chart": {
+      "description": "A pie chart for proportional data.",
+      "props": {
+        "dataKey": "string",
+        "categoryKey": "string",
+        "valueKey": "string"
+      },
+      "children": false,
+      "requiresData": true,
+      "example": {
+        "type": "pie-chart",
+        "props": {
+          "dataKey": "browserStats",
+          "categoryKey": "browser",
+          "valueKey": "visitors"
+        }
+      }
+    },
+    "stepper": {
+      "description": "A step-by-step progress indicator.",
+      "props": {
+        "items": "{ title, description?, status? }[]"
+      },
+      "children": false,
+      "example": {
+        "type": "stepper",
+        "props": {
+          "items": [
+            {
+              "title": "Step 1",
+              "status": "complete"
+            },
+            {
+              "title": "Step 2",
+              "status": "current"
+            }
+          ]
+        }
+      },
+      "limits": {
+        "items": 10
+      }
+    },
     "heading": {
       "description": "Section or page heading. Use sparingly; renderer already supplies the page hero.",
       "props": {
@@ -295,7 +466,7 @@
       }
     },
     "mermaid": {
-      "description": "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text. Prefer mermaid first; escalate to svg-diagram only when layout, animation, or interactivity needs custom control.",
+      "description": "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
       "props": {
         "code": "string",
         "title": "string?",
@@ -315,7 +486,7 @@
       }
     },
     "svg-diagram": {
-      "description": "Full-screen interactive SVG/HTML diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. Higher authoring cost than mermaid, so only use it when the diagram benefits from it.",
+      "description": "Full-screen interactive SVG/HTML architecture diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. The html value must be a complete self-contained document with hand-rolled CSS variables for light/dark themes, an apply-before-paint theme script, a theme toggle, and an SVG styled through CSS classes (no hard-coded hex inside SVG).",
       "props": {
         "html": "string",
         "title": "string?",
@@ -328,7 +499,7 @@
         "props": {
           "title": "Interactive architecture",
           "height": 720,
-          "html": "<!doctype html><html><body><svg viewBox='0 0 100 40'><text x='5' y='24'>Architecture</text></svg></body></html>"
+          "html": "<!doctype html><html><head><script>(function(){try{const k='visualizer-theme',s=localStorage.getItem(k),d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}})();</script><style>:root{--bg:#FAF9F5;--ink:#141413;}html.dark{--bg:#141413;--ink:#FAF9F5;}body{background:var(--bg);}</style></head><body><svg viewBox='0 0 100 40'><text x='5' y='24' fill='var(--ink)'>Architecture</text></svg></body></html>"
         }
       }
     },
@@ -549,6 +720,8 @@
     }
   },
   "dataNodes": [
+    "donut-chart",
+    "pie-chart",
     "table",
     "data-table",
     "comparison-table",
@@ -692,20 +865,6 @@
       ]
     }
   },
-  "compositionGuidance": [
-    "Open with a concise thesis and a stat-card summary band.",
-    "Use stat-card for KPI, count, health, and state summaries.",
-    "Use status-grid for component health, readiness, validation, and risk boards.",
-    "Use comparison-table for evidence, options, risks, checks, and runtime matrices.",
-    "For architecture pages, put a mermaid or svg-diagram near the top instead of describing topology in prose.",
-    "Use mermaid for lightweight zoomable/pannable text-defined architecture, sequence, flowchart, ERD, state, class, and C4 diagrams.",
-    "Use svg-diagram when Mermaid's auto-layout is wrong, when the diagram needs animated request paths, or when nodes must be clickable with detail cards.",
-    "Use flow for request paths, build/deploy chains, data pipelines, and architecture handoffs.",
-    "Use timeline for release phases, lifecycle steps, migrations, and operator runbooks.",
-    "Use code-block for commands, config snippets, env contracts, and file/path maps.",
-    "Use tabs for alternate contexts; use accordion only for secondary detail.",
-    "Avoid generic card soup and avoid file:// links in shareable artifacts."
-  ],
   "globalLimits": {
     "dataRowsMax": 20,
     "dataStringMax": 200

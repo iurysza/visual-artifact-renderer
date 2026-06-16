@@ -312,6 +312,16 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       .strict(),
     z
       .object({
+        type: z.literal("prose"),
+        props: z
+          .object({
+            content: z.string().min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    z
+      .object({
         type: z.literal("heading"),
         props: z
           .object({
@@ -710,4 +720,5 @@ export const ARTIFACT_NODE_TYPES = [
   "section",
   "tabs",
   "accordion",
+  "prose",
 ] as const satisfies readonly ArtifactNode["type"][]
