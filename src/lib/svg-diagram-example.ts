@@ -81,6 +81,30 @@ export const visualizerPipelineDiagram = `<!doctype html>
   .stage { flex: 1; position: relative; min-width: 0; overflow: hidden; }
   .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   
+  .zone rect { fill: var(--zone); stroke: var(--line); stroke-width: 1; stroke-dasharray: 5 5; rx: 16; }
+  .zone .ztitle { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; fill: var(--muted); }
+
+  .node { cursor: pointer; }
+  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; rx: 10; transition: stroke .15s ease, filter .15s ease; }
+  .node:hover rect { stroke: var(--muted); }
+  .node.sel rect { stroke: var(--clay) !important; stroke-width: 2; }
+  .node .t { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; }
+  .node .m { font-family: var(--mono); font-size: 10px; fill: var(--muted); pointer-events: none; }
+  .node.store rect { fill: var(--surface2); }
+  .node.out rect { stroke-dasharray: 6 3; }
+
+  .edge { stroke: var(--muted); stroke-width: 1.6; fill: none; marker-end: url(#a-mut); transition: opacity .2s ease, stroke .2s ease; }
+  .edge.dash { stroke-dasharray: 5 4; }
+
+  .stage.flowing .edge { opacity: 0.12; }
+  .stage.flowing .node { opacity: 0.35; }
+  .stage.flowing .zone { opacity: 0.45; }
+  .stage.flowing .edge.lit { opacity: 1; stroke: var(--clay); marker-end: url(#a-clay); stroke-dasharray: 7 5; animation: march 0.9s linear infinite; }
+  .stage.flowing .node.lit { opacity: 1; }
+  .stage.flowing .node.lit rect { stroke: var(--clay); }
+  @keyframes march { to { stroke-dashoffset: -12; } }
+  @media (prefers-reduced-motion: reduce) { .stage.flowing .edge.lit { animation: none; } }
+
   .card {
     position: absolute; right: 24px; bottom: 24px; width: 280px;
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
