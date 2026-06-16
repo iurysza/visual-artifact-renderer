@@ -21,7 +21,7 @@ import { Figure, PanelCard, columnsClass, tonePanelClass } from "@/components/ar
 import { cn } from "@/lib/utils"
 import { StatusChip, statusIsVisible } from "@/lib/status"
 
-import type { AdapterArgs } from "@/components/component-registry"
+import type { AdapterArgs } from "@/components/artifact-types"
 import type { ArtifactFlowItem } from "@/lib/artifact-schema"
 
 export function renderCard({ node, children }: AdapterArgs<"card">) {

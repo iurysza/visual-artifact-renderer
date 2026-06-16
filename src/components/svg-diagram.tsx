@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useSyncExternalStore } from "react"
 
-import { cn } from "@/lib/utils"
+import { Figure } from "@/components/artifact-primitives"
 
 const THEME_BRIDGE = `
 <script>
@@ -41,28 +41,16 @@ export function SvgDiagram({
   height?: number
   className?: string
 }) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 
   const srcDoc = useMemo(() => injectThemeBridge(html), [html])
 
   return (
-    <figure className={cn("flex flex-col gap-3", className)}>
-      {(title || caption) && (
-        <figcaption className="flex flex-col gap-1">
-          {title && (
-            <h3 className="font-serif text-2xl font-medium tracking-[-0.02em] text-foreground">
-              {title}
-            </h3>
-          )}
-          {caption && (
-            <p className="text-sm leading-6 text-muted-foreground">{caption}</p>
-          )}
-        </figcaption>
-      )}
+    <Figure title={title} caption={caption} className={className}>
       {mounted ? (
         <iframe
           title={title ?? "Interactive SVG diagram"}
@@ -78,6 +66,6 @@ export function SvgDiagram({
           aria-label="Loading diagram"
         />
       )}
-    </figure>
+    </Figure>
   )
 }

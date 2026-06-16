@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { containerSchema, leafSchema, optionalPropsSchema } from "./schema-helpers"
+
 export const ArtifactSlugSchema = z
   .string()
   .min(1)
@@ -224,486 +226,242 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
   const requiredChildNodes = z.array(ArtifactNodeSchema).min(1)
 
   return z.discriminatedUnion("type", [
-    z
-      .object({
-        type: z.literal("definition-list"),
-        props: z
+    leafSchema("definition-list", {
+      items: z.array(
+        z
           .object({
-            items: z.array(
-              z
-                .object({
-                  term: z.string().min(1),
-                  description: z.string().min(1),
-                })
-                .strict()
-            ).min(1),
+            term: z.string().min(1),
+            description: z.string().min(1),
           })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("file-tree"),
-        props: z
-          .object({
-            items: z.array(FileTreeItemSchema).min(1),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("diff"),
-        props: z
-          .object({
-            before: z.string(),
-            after: z.string(),
-            language: z.string().optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("stepper"),
-        props: z
-          .object({
-            items: z.array(
-              z
-                .object({
-                  title: z.string().min(1),
-                  description: z.string().optional(),
-                  status: z.enum(["complete", "current", "pending"]).optional(),
-                })
-                .strict()
-            ).min(1),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("image"),
-        props: z
-          .object({
-            src: z.string(),
-            alt: z.string(),
-            caption: z.string().optional(),
-            aspect: z.enum(["auto", "square", "video", "wide"]).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("alert"),
-        props: z
+          .strict()
+      ).min(1),
+    }),
+    leafSchema("file-tree", {
+      items: z.array(FileTreeItemSchema).min(1),
+    }),
+    leafSchema("diff", {
+      before: z.string(),
+      after: z.string(),
+      language: z.string().optional(),
+    }),
+    leafSchema("stepper", {
+      items: z.array(
+        z
           .object({
             title: z.string().min(1),
             description: z.string().optional(),
-            variant: z.enum(["default", "destructive"]).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("pie-chart"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            categoryKey: z.string().min(1),
-            valueKey: z.string().min(1),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("donut-chart"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            categoryKey: z.string().min(1),
-            valueKey: z.string().min(1),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("area-chart"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            xKey: z.string().min(1).optional(),
-            yKey: z.string().min(1).optional(),
-            label: z.string().min(1).optional(),
-            color: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("radar-chart"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            subjectKey: z.string().min(1).optional(),
-            valueKey: z.string().min(1).optional(),
-            label: z.string().min(1).optional(),
-            color: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("scatter-chart"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            xKey: z.string().min(1).optional(),
-            yKey: z.string().min(1).optional(),
-            label: z.string().min(1).optional(),
-            color: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("heatmap"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            xKey: z.string().min(1).optional(),
-            yKey: z.string().min(1).optional(),
-            valueKey: z.string().min(1).optional(),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("log"),
-        props: z
-          .object({
-            lines: z.array(z.string()).optional(),
-            dataKey: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("prose"),
-        props: z
-          .object({
-            content: z.string().min(1),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("heading"),
-        props: z
-          .object({
-            text: z.string().min(1),
-            level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
-            align: TextAlignSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("text"),
-        props: z
-          .object({
-            text: z.string().min(1),
-            tone: z.enum(["default", "muted"]).optional(),
-            size: z.enum(["sm", "base", "lg"]).optional(),
-            align: TextAlignSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("card"),
-        props: z
-          .object({
-            title: z.string().min(1).optional(),
-            description: z.string().min(1).optional(),
-            size: z.enum(["default", "sm"]).optional(),
-            tone: ToneSchema.optional(),
+            status: z.enum(["complete", "current", "pending"]).optional(),
           })
           .strict()
-          .optional(),
-        children: childNodes,
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("metric"),
-        props: z
-          .object({
-            label: z.string().min(1),
-            value: z.union([z.string(), z.number()]),
-            delta: z.string().min(1).optional(),
-            trend: TrendSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("stat-card"),
-        props: z
-          .object({
-            label: z.string().min(1),
-            value: z.union([z.string(), z.number()]),
-            delta: z.string().min(1).optional(),
-            trend: TrendSchema.optional(),
-            caption: z.string().min(1).optional(),
-            tone: ToneSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("badge"),
-        props: z
-          .object({
-            label: z.string().min(1),
-            variant: BadgeVariantSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("button"),
-        props: z
-          .object({
-            label: z.string().min(1),
-            href: z.string().min(1).optional(),
-            variant: ButtonVariantSchema.optional(),
-            size: ButtonSizeSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("separator"),
-        props: z.object({}).strict().optional(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("table"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            columns: z.array(ColumnSchema).min(1).optional(),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("data-table"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            columns: z.array(ColumnSchema).min(1).optional(),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("comparison-table"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            columns: z.array(ColumnSchema).min(1).optional(),
-            statusKey: z.string().min(1).optional(),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("chart"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            xKey: z.string().min(1),
-            yKey: z.string().min(1),
-            kind: ChartKindSchema.optional(),
-            label: z.string().min(1).optional(),
-            color: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("mermaid"),
-        props: z
-          .object({
-            code: z.string().min(1),
-            title: z.string().min(1).optional(),
-            caption: z.string().min(1).optional(),
-            height: DiagramHeightSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("svg-diagram"),
-        props: z
-          .object({
-            html: z.string().min(1),
-            title: z.string().min(1).optional(),
-            caption: z.string().min(1).optional(),
-            height: DiagramHeightSchema.optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("flow"),
-        props: z
-          .object({
-            title: z.string().min(1).optional(),
-            caption: z.string().min(1).optional(),
-            items: z.array(FlowItemSchema).min(2),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("timeline"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            titleKey: z.string().min(1).optional(),
-            markerKey: z.string().min(1).optional(),
-            descriptionKey: z.string().min(1).optional(),
-            statusKey: z.string().min(1).optional(),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("code-block"),
-        props: z
-          .object({
-            title: z.string().min(1).optional(),
-            language: z.string().min(1).optional(),
-            code: z.string().min(1),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("status-grid"),
-        props: z
-          .object({
-            dataKey: z.string().min(1),
-            titleKey: z.string().min(1).optional(),
-            statusKey: z.string().min(1),
-            descriptionKey: z.string().min(1).optional(),
-            metaKey: z.string().min(1).optional(),
-            columns: GridColumnsSchema.optional(),
-            caption: z.string().min(1).optional(),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("grid"),
-        props: z
-          .object({
-            columns: GridColumnsSchema.optional(),
-          })
-          .strict()
-          .optional(),
-        children: childNodes,
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("section"),
-        props: z
-          .object({
-            title: z.string().min(1).optional(),
-            description: z.string().min(1).optional(),
-          })
-          .strict()
-          .optional(),
-        children: childNodes,
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("tabs"),
-        props: z
-          .object({
-            defaultValue: z.string().min(1).optional(),
-            items: z
-              .array(
-                z
-                  .object({
-                    value: z.string().min(1),
-                    label: z.string().min(1),
-                    nodes: requiredChildNodes,
-                  })
-                  .strict()
-              )
-              .min(1),
-          })
-          .strict(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal("accordion"),
-        props: z
-          .object({
-            items: z
-              .array(
-                z
-                  .object({
-                    title: z.string().min(1),
-                    nodes: requiredChildNodes,
-                  })
-                  .strict()
-              )
-              .min(1),
-          })
-          .strict(),
-      })
-      .strict(),
+      ).min(1),
+    }),
+    leafSchema("image", {
+      src: z.string(),
+      alt: z.string(),
+      caption: z.string().optional(),
+      aspect: z.enum(["auto", "square", "video", "wide"]).optional(),
+    }),
+    leafSchema("alert", {
+      title: z.string().min(1),
+      description: z.string().optional(),
+      variant: z.enum(["default", "destructive"]).optional(),
+    }),
+    leafSchema("pie-chart", {
+      dataKey: z.string().min(1),
+      categoryKey: z.string().min(1),
+      valueKey: z.string().min(1),
+    }),
+    leafSchema("donut-chart", {
+      dataKey: z.string().min(1),
+      categoryKey: z.string().min(1),
+      valueKey: z.string().min(1),
+    }),
+    leafSchema("area-chart", {
+      dataKey: z.string().min(1),
+      xKey: z.string().min(1).optional(),
+      yKey: z.string().min(1).optional(),
+      label: z.string().min(1).optional(),
+      color: z.string().min(1).optional(),
+    }),
+    leafSchema("radar-chart", {
+      dataKey: z.string().min(1),
+      subjectKey: z.string().min(1).optional(),
+      valueKey: z.string().min(1).optional(),
+      label: z.string().min(1).optional(),
+      color: z.string().min(1).optional(),
+    }),
+    leafSchema("scatter-chart", {
+      dataKey: z.string().min(1),
+      xKey: z.string().min(1).optional(),
+      yKey: z.string().min(1).optional(),
+      label: z.string().min(1).optional(),
+      color: z.string().min(1).optional(),
+    }),
+    leafSchema("heatmap", {
+      dataKey: z.string().min(1),
+      xKey: z.string().min(1).optional(),
+      yKey: z.string().min(1).optional(),
+      valueKey: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+    }),
+    leafSchema("log", {
+      lines: z.array(z.string()).optional(),
+      dataKey: z.string().min(1).optional(),
+    }),
+    leafSchema("prose", {
+      content: z.string().min(1),
+    }),
+    leafSchema("heading", {
+      text: z.string().min(1),
+      level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
+      align: TextAlignSchema.optional(),
+    }),
+    leafSchema("text", {
+      text: z.string().min(1),
+      tone: z.enum(["default", "muted"]).optional(),
+      size: z.enum(["sm", "base", "lg"]).optional(),
+      align: TextAlignSchema.optional(),
+    }),
+    containerSchema(
+      "card",
+      {
+        title: z.string().min(1).optional(),
+        description: z.string().min(1).optional(),
+        size: z.enum(["default", "sm"]).optional(),
+        tone: ToneSchema.optional(),
+      },
+      childNodes
+    ),
+    leafSchema("metric", {
+      label: z.string().min(1),
+      value: z.union([z.string(), z.number()]),
+      delta: z.string().min(1).optional(),
+      trend: TrendSchema.optional(),
+    }),
+    leafSchema("stat-card", {
+      label: z.string().min(1),
+      value: z.union([z.string(), z.number()]),
+      delta: z.string().min(1).optional(),
+      trend: TrendSchema.optional(),
+      caption: z.string().min(1).optional(),
+      tone: ToneSchema.optional(),
+    }),
+    leafSchema("badge", {
+      label: z.string().min(1),
+      variant: BadgeVariantSchema.optional(),
+    }),
+    leafSchema("button", {
+      label: z.string().min(1),
+      href: z.string().min(1).optional(),
+      variant: ButtonVariantSchema.optional(),
+      size: ButtonSizeSchema.optional(),
+    }),
+    optionalPropsSchema("separator", {}),
+    leafSchema("table", {
+      dataKey: z.string().min(1),
+      columns: z.array(ColumnSchema).min(1).optional(),
+      caption: z.string().min(1).optional(),
+    }),
+    leafSchema("data-table", {
+      dataKey: z.string().min(1),
+      columns: z.array(ColumnSchema).min(1).optional(),
+      caption: z.string().min(1).optional(),
+    }),
+    leafSchema("comparison-table", {
+      dataKey: z.string().min(1),
+      columns: z.array(ColumnSchema).min(1).optional(),
+      statusKey: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+    }),
+    leafSchema("chart", {
+      dataKey: z.string().min(1),
+      xKey: z.string().min(1),
+      yKey: z.string().min(1),
+      kind: ChartKindSchema.optional(),
+      label: z.string().min(1).optional(),
+      color: z.string().min(1).optional(),
+    }),
+    leafSchema("mermaid", {
+      code: z.string().min(1),
+      title: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+      height: DiagramHeightSchema.optional(),
+    }),
+    leafSchema("svg-diagram", {
+      html: z.string().min(1),
+      title: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+      height: DiagramHeightSchema.optional(),
+    }),
+    leafSchema("flow", {
+      title: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+      items: z.array(FlowItemSchema).min(2),
+    }),
+    leafSchema("timeline", {
+      dataKey: z.string().min(1),
+      titleKey: z.string().min(1).optional(),
+      markerKey: z.string().min(1).optional(),
+      descriptionKey: z.string().min(1).optional(),
+      statusKey: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+    }),
+    leafSchema("code-block", {
+      title: z.string().min(1).optional(),
+      language: z.string().min(1).optional(),
+      code: z.string().min(1),
+      caption: z.string().min(1).optional(),
+    }),
+    leafSchema("status-grid", {
+      dataKey: z.string().min(1),
+      titleKey: z.string().min(1).optional(),
+      statusKey: z.string().min(1),
+      descriptionKey: z.string().min(1).optional(),
+      metaKey: z.string().min(1).optional(),
+      columns: GridColumnsSchema.optional(),
+      caption: z.string().min(1).optional(),
+    }),
+    containerSchema(
+      "grid",
+      {
+        columns: GridColumnsSchema.optional(),
+      },
+      childNodes
+    ),
+    containerSchema(
+      "section",
+      {
+        title: z.string().min(1).optional(),
+        description: z.string().min(1).optional(),
+      },
+      childNodes
+    ),
+    leafSchema("tabs", {
+      defaultValue: z.string().min(1).optional(),
+      items: z
+        .array(
+          z
+            .object({
+              value: z.string().min(1),
+              label: z.string().min(1),
+              nodes: requiredChildNodes,
+            })
+            .strict()
+        )
+        .min(1),
+    }),
+    leafSchema("accordion", {
+      items: z
+        .array(
+          z
+            .object({
+              title: z.string().min(1),
+              nodes: requiredChildNodes,
+            })
+            .strict()
+        )
+        .min(1),
+    }),
   ])
 })
 

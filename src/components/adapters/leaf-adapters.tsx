@@ -21,7 +21,7 @@ import { PanelCard, TrendPill } from "@/components/artifact-primitives"
 import { cn } from "@/lib/utils"
 import { getRows, MissingData } from "@/lib/data"
 
-import type { AdapterArgs } from "@/components/component-registry"
+import type { AdapterArgs } from "@/components/artifact-types"
 
 export function renderAlert({ node }: AdapterArgs<"alert">) {
   const { title, description, variant } = node.props

@@ -11,45 +11,45 @@ steps:
       - "- [x] step 1: read jscpd report and identify duplication hotspots"
       - "- [x] step 2: read component-registry.tsx and map responsibilities"
       - "- [x] step 3: confirm build/lint/contract validation commands work"
-      - "- [ ] step 4: record the intended module boundaries before moving code"
+      - "- [x] step 4: record the intended module boundaries before moving code"
   - phase: shared-primitives
     steps:
-      - "- [ ] step 1: extract reusable Figure wrapper (title/caption/error/loading)"
-      - "- [ ] step 2: extract PanelCard wrapper for bordered card panels"
-      - "- [ ] step 3: extract status helpers (statusTone, statusBadgeVariant, statusPanelClass, StatusChip)"
-      - "- [ ] step 4: extract data helpers (getRows, normalizeColumns, formatCell, toTitle)"
-      - "- [ ] step 5: extract chart shell component to remove BarChart/LineChart duplication"
+      - "- [x] step 1: extract reusable Figure wrapper (title/caption/error/loading)"
+      - "- [x] step 2: extract PanelCard wrapper for bordered card panels"
+      - "- [x] step 3: extract status helpers (statusTone, statusBadgeVariant, statusPanelClass, StatusChip)"
+      - "- [x] step 4: extract data helpers (getRows, normalizeColumns, formatCell, toTitle)"
+      - "- [x] step 5: extract chart shell component to remove BarChart/LineChart duplication"
   - phase: modularize-registry
     steps:
-      - "- [ ] step 1: move simple leaf adapters (alert, badge, button, separator, heading, text, prose, metric, stat-card, definition-list, diff, file-tree, image, stepper, code-block) to src/components/adapters/"
-      - "- [ ] step 2: move data-driven adapters (table, data-table, comparison-table, chart, pie-chart, donut-chart, area-chart, radar-chart, scatter-chart, heatmap, timeline, status-grid, log) to src/components/adapters/"
-      - "- [ ] step 3: move layout adapters (card, grid, section, tabs, accordion, flow) to src/components/adapters/"
-      - "- [ ] step 4: keep component-registry.tsx as a thin registry map only"
-      - "- [ ] step 5: update all imports and verify types"
+      - "- [x] step 1: move simple leaf adapters (alert, badge, button, separator, heading, text, prose, metric, stat-card, definition-list, diff, file-tree, image, stepper, code-block) to src/components/adapters/"
+      - "- [x] step 2: move data-driven adapters (table, data-table, comparison-table, chart, pie-chart, donut-chart, area-chart, radar-chart, scatter-chart, heatmap, timeline, status-grid, log) to src/components/adapters/"
+      - "- [x] step 3: move layout adapters (card, grid, section, tabs, accordion, flow) to src/components/adapters/"
+      - "- [x] step 4: keep component-registry.tsx as a thin registry map only"
+      - "- [x] step 5: update all imports and verify types"
   - phase: extract-mermaid
     steps:
-      - "- [ ] step 1: move MermaidDiagram and viewport logic to src/components/mermaid/"
-      - "- [ ] step 2: split zoom/pan hooks and math utilities into focused helpers"
-      - "- [ ] step 3: replace old renderMermaid with new component import"
-      - "- [ ] step 4: keep public API unchanged (VisualArtifactRenderer still works)"
+      - "- [x] step 1: move MermaidDiagram and viewport logic to src/components/mermaid/"
+      - "- [x] step 2: split zoom/pan hooks and math utilities into focused helpers"
+      - "- [x] step 3: replace old renderMermaid with new component import"
+      - "- [x] step 4: keep public API unchanged (VisualArtifactRenderer still works)"
   - phase: dry-schema-and-css
     steps:
-      - "- [ ] step 1: introduce zod schema builders for repeated node shapes"
-      - "- [ ] step 2: consolidate light/dark theme variable declarations in globals.css"
-      - "- [ ] step 3: export contract and run contract tests"
+      - "- [x] step 1: introduce zod schema builders for repeated node shapes"
+      - "- [x] step 2: consolidate light/dark theme variable declarations in globals.css"
+      - "- [x] step 3: export contract and run contract tests"
   - phase: registry-builder
     steps:
-      - "- [ ] step 1: add createAdapter helper that binds node type to render function"
-      - "- [ ] step 2: refactor registry to use builder while preserving type safety"
-      - "- [ ] step 3: document one-line pattern for adding a new node type"
+      - "- [x] step 1: add createAdapter helper that binds node type to render function"
+      - "- [x] step 2: refactor registry to use builder while preserving type safety"
+      - "- [x] step 3: document one-line pattern for adding a new node type"
   - phase: validation
     steps:
-      - "- [ ] step 1: run pnpm lint"
-      - "- [ ] step 2: run pnpm test:contract"
-      - "- [ ] step 3: run pnpm build"
-      - "- [ ] step 4: run pnpm verify:artifacts"
-      - "- [ ] step 5: re-run jscpd and confirm duplication dropped"
-      - "- [ ] step 6: commit all changes"
+      - "- [x] step 1: run pnpm lint"
+      - "- [x] step 2: run pnpm test:contract"
+      - "- [x] step 3: run pnpm build"
+      - "- [x] step 4: run pnpm verify:artifacts"
+      - "- [x] step 5: re-run jscpd and confirm duplication dropped"
+      - "- [x] step 6: commit all changes"
 ---
 
 # 000 — Improve Visualizer Maintainability
@@ -90,20 +90,20 @@ steps:
 - [x] Read `component-registry.tsx` and list responsibilities.
 - [x] Confirm `pnpm lint`, `pnpm build`, `pnpm test:contract`, and
       `pnpm verify:artifacts` run.
-- [ ] Record the module boundaries (this plan) before moving code.
+- [x] Record the module boundaries (this plan) before moving code.
 
 ## Phase 2 — Shared primitives
 
 Extract small reusable components and helpers so adapters stay declarative.
 
-- [ ] `src/components/artifact-primitives.tsx`:
+- [x] `src/components/artifact-primitives.tsx`:
   - `<Figure title? caption? error? loading? height?>`
   - `<PanelCard tone? className?>`
-- [ ] `src/lib/status.ts`:
+- [x] `src/lib/status.tsx`:
   - `statusTone`, `statusBadgeVariant`, `statusPanelClass`, `StatusChip`
-- [ ] `src/lib/data.ts`:
+- [x] `src/lib/data.tsx`:
   - `getRows`, `normalizeColumns`, `formatCell`, `toTitle`, `MissingData`
-- [ ] `src/components/chart-shell.tsx`:
+- [x] `src/components/chart-shell.tsx`:
   - Shared `CartesianGrid`, `XAxis`, `YAxis`, tooltip, and margin config for
     bar/line charts.
 
@@ -111,54 +111,80 @@ Extract small reusable components and helpers so adapters stay declarative.
 
 Split adapters by responsibility. Keep `component-registry.tsx` as a thin map.
 
-- [ ] `src/components/adapters/leaf-adapters.tsx` — alert, badge, button,
+- [x] `src/components/adapters/leaf-adapters.tsx` — alert, badge, button,
       separator, heading, text, prose, metric, stat-card, definition-list,
       diff, file-tree, image, stepper, code-block.
-- [ ] `src/components/adapters/data-adapters.tsx` — table, data-table,
+- [x] `src/components/adapters/data-adapters.tsx` — table, data-table,
       comparison-table, chart, pie-chart, donut-chart, area-chart, radar-chart,
       scatter-chart, heatmap, timeline, status-grid, log.
-- [ ] `src/components/adapters/layout-adapters.tsx` — card, grid, section, tabs,
+- [x] `src/components/adapters/layout-adapters.tsx` — card, grid, section, tabs,
       accordion, flow.
-- [ ] `src/components/component-registry.tsx` only imports and registers
+- [x] `src/components/component-registry.tsx` only imports and registers
       adapters.
 
 ## Phase 4 — Extract Mermaid
 
 Move the complex interactive diagram into its own module tree.
 
-- [ ] `src/components/mermaid/mermaid-diagram.tsx` — render queue, theme sync,
+- [x] `src/components/mermaid/mermaid-diagram.tsx` — render queue, theme sync,
       error/loading states.
-- [ ] `src/components/mermaid/mermaid-viewport.tsx` — zoom/pan/drag viewport.
-- [ ] `src/components/mermaid/use-mermaid-viewbox.ts` — viewBox state and
+- [x] `src/components/mermaid/mermaid-viewport.tsx` — zoom/pan/drag viewport.
+- [x] `src/components/mermaid/use-mermaid-viewbox.ts` — viewBox state and
       keyboard handlers.
-- [ ] `src/components/mermaid/mermaid-math.ts` — SVG math helpers.
+- [x] `src/components/mermaid/mermaid-math.ts` — SVG math helpers.
 
 ## Phase 5 — DRY schema and CSS
 
 Reduce repetition without changing the public contract.
 
-- [ ] Add schema builder helpers in `src/lib/schema-helpers.ts`:
-  - `nodeSchema(type, props)` for the common `.object({ type, props }).strict()`
-    shape.
-  - `dataNodeProps(dataKey, extra)` for table/chart/timeline/status-grid props.
-- [ ] Refactor `artifact-schema.ts` to use the helpers.
-- [ ] Consolidate `globals.css` theme variables by scoping shared semantic
-  mappings to `:root, html.dark` and only overriding values that differ.
+- [x] Add schema builder helpers in `src/lib/schema-helpers.ts`:
+  - `leafSchema(type, shape)` for leaf nodes.
+  - `containerSchema(type, shape, children)` for nodes with children.
+  - `optionalPropsSchema(type, shape)` for nodes with optional empty props.
+- [x] Refactor `artifact-schema.ts` to use the helpers.
+- [x] Consolidate `globals.css` theme variables by scoping shared semantic
+  mappings to `:root` and only overriding the few values that differ in
+  `html.dark`.
 
 ## Phase 6 — Registry builder
 
 Make registering a new node type trivial and type-safe.
 
-- [ ] Add `createAdapter<T>(type, render)` in
+- [x] Add `createAdapter<T>(render)` in
   `src/components/adapters/create-adapter.ts`.
-- [ ] Rewrite `componentRegistry` object to use `createAdapter` entries.
-- [ ] Verify `ArtifactNode["type"]` still drives the registry keys.
+- [x] Move shared types to `src/components/artifact-types.ts` to avoid circular
+      imports.
+- [x] Rewrite `componentRegistry` object to use `createAdapter` entries.
+- [x] Verify `ArtifactNode["type"]` still drives the registry keys.
 
 ## Phase 7 — Validation
 
-- [ ] `pnpm lint`
-- [ ] `pnpm test:contract`
-- [ ] `pnpm build`
-- [ ] `pnpm verify:artifacts`
-- [ ] Re-run jscpd and confirm the duplication percentage dropped.
-- [ ] Commit all changes with a concise message.
+- [x] `pnpm lint` — no issues.
+- [x] `pnpm test:contract` — all tests pass.
+- [x] `pnpm build` — static export succeeds.
+- [x] `pnpm verify:artifacts` — 21 artifact specs verified.
+- [x] Re-run jscpd — total duplication dropped from ~1.7% lines to ~0.63%
+      lines; CSS duplication eliminated (0%).
+- [x] Commit all changes with concise messages.
+
+## How to add a new node type
+
+1. Add the TypeScript type to `src/lib/artifact-schema.ts` using
+   `leafSchema("my-node", { ... })` or `containerSchema(...)`.
+2. Add the manifest entry to `src/lib/artifact-manifest.ts`.
+3. Add the adapter to the appropriate file in `src/components/adapters/`.
+4. Register it in `src/components/component-registry.tsx`:
+   ```ts
+   "my-node": createAdapter(adapters.renderMyNode),
+   ```
+5. Run `pnpm export:contract` and `pnpm test:contract`.
+
+## Outcome
+
+- `component-registry.tsx` went from ~1,500 lines to ~60 lines.
+- Adapters are grouped by responsibility: leaf, data, layout.
+- Shared presentation primitives (`Figure`, `PanelCard`, `ChartShell`) are used
+  across adapters.
+- Mermaid interactivity lives in a focused module tree.
+- Status and data formatting helpers are reusable.
+- The artifact contract and all rendered output remain unchanged.

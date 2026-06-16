@@ -3,7 +3,8 @@
 import type { ReactNode } from "react"
 
 import type { ArtifactNode, VisualArtifactSpec } from "@/lib/artifact-schema"
-import { componentRegistry, type ArtifactRenderContext } from "@/components/component-registry"
+import { componentRegistry } from "@/components/component-registry"
+import type { ArtifactRenderContext } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
 
 export function VisualArtifactRenderer({ spec }: { spec: VisualArtifactSpec }) {

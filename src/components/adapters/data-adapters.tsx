@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import { formatCell, getRows, MissingData, normalizeColumns } from "@/lib/data"
 import { StatusChip, statusIsVisible } from "@/lib/status"
 
-import type { AdapterArgs } from "@/components/component-registry"
+import type { AdapterArgs } from "@/components/artifact-types"
 import type { ArtifactColumn } from "@/lib/artifact-schema"
 
 export function renderTable({ node, context }: AdapterArgs<"table">) {
