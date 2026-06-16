@@ -110,8 +110,16 @@ export function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {
 }
 
 export function renderDiff({ node }: AdapterArgs<"diff">) {
-  const { before, after, language } = node.props
-  return <Diff before={before} after={after} language={language} />
+  const { before, after, language, title, defaultOpen } = node.props
+  return (
+    <Diff
+      before={before}
+      after={after}
+      language={language}
+      title={title}
+      defaultOpen={defaultOpen}
+    />
+  )
 }
 
 export function renderFileTree({ node }: AdapterArgs<"file-tree">) {

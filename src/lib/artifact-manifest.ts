@@ -101,7 +101,7 @@ export const artifactManifest = {
   "diff": {
     type: "diff",
     description: "Code or text difference visualization.",
-    props: { before: "string", after: "string", language: "string?" },
+    props: { before: "string", after: "string", language: "string?", title: "string?", defaultOpen: "boolean?" },
     children: false,
     limits: { text: 5000 },
     example: { type: "diff", props: { before: "a", after: "b", language: "typescript" } },

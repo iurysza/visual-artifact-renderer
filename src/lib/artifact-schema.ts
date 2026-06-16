@@ -81,7 +81,13 @@ export type ArtifactNode =
     }
   | {
       type: "diff"
-      props: { before: string; after: string; language?: string }
+      props: {
+        before: string
+        after: string
+        language?: string
+        title?: string
+        defaultOpen?: boolean
+      }
     }
   | {
       type: "stepper"
@@ -243,6 +249,8 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       before: z.string(),
       after: z.string(),
       language: z.string().optional(),
+      title: z.string().optional(),
+      defaultOpen: z.boolean().optional(),
     }),
     leafSchema("stepper", {
       items: z.array(
