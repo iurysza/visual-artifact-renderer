@@ -56,6 +56,10 @@ export type ArtifactFlowItem = z.infer<typeof FlowItemSchema>
 
 export type ArtifactNode =
   | {
+      type: "prose"
+      props: { content: string }
+    }
+  | {
       type: "heading"
       props: { text: string; level?: 1 | 2 | 3 | 4; align?: "left" | "center" | "right" }
     }

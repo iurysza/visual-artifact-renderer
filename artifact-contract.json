@@ -44,6 +44,22 @@
         "text": 120
       }
     },
+    "prose": {
+      "description": "Markdown text for prose, lists, links, and long-form narrative. Use this instead of 'text' when you need multiple paragraphs or basic markdown formatting.",
+      "props": {
+        "content": "string"
+      },
+      "children": false,
+      "example": {
+        "type": "prose",
+        "props": {
+          "content": "Here is a list of items:\n\n- First item\n- Second item\n\n[Learn more](https://example.com)"
+        }
+      },
+      "limits": {
+        "content": 3000
+      }
+    },
     "text": {
       "description": "Paragraph text for narrative. Keep copy compact; use tables/status grids for structured facts.",
       "props": {

@@ -10,6 +10,7 @@ export type ArtifactManifestEntry = {
   example: unknown
   limits?: {
     text?: number
+    content?: number
     label?: number
     code?: number
     items?: number
@@ -104,6 +105,14 @@ export const artifactManifest = {
     children: false,
     limits: { text: 120 },
     example: { type: "heading", props: { text: "Quarterly Revenue", level: 2 } },
+  },
+  prose: {
+    type: "prose",
+    description: "Markdown text for prose, lists, links, and long-form narrative. Use this instead of 'text' when you need multiple paragraphs or basic markdown formatting.",
+    props: { content: "string" },
+    children: false,
+    limits: { content: 3000 },
+    example: { type: "prose", props: { content: "Here is a list of items:\n\n- First item\n- Second item\n\n[Learn more](https://example.com)" } },
   },
   text: {
     type: "text",

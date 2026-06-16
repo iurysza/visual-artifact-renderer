@@ -50,6 +50,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Prose } from "@/components/ui/prose"
 import { CodeBlock } from "@/components/ui/code-block"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -77,6 +78,7 @@ type RegistryAdapter = (args: {
 
 export const componentRegistry = {
   heading: renderHeading as RegistryAdapter,
+  prose: renderProse as RegistryAdapter,
   text: renderText as RegistryAdapter,
   card: renderCard as RegistryAdapter,
   metric: renderMetric as RegistryAdapter,
@@ -138,6 +140,10 @@ function renderText({ node }: AdapterArgs<"text">) {
       {text}
     </p>
   )
+}
+
+function renderProse({ node }: AdapterArgs<"prose">) {
+  return <Prose>{node.props.content}</Prose>
 }
 
 function renderCard({ node, children }: AdapterArgs<"card">) {
@@ -1002,7 +1008,7 @@ function FlowStep({ item, index }: { item: ArtifactFlowItem; index: number }) {
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full border bg-card font-mono text-xs font-medium text-muted-foreground">
             {index + 1}
           </span>
-          {showStatus && <StatusChip value={item.status} />}
+          {showStatus && <StatusChip value={item.status} className="max-w-[50%] justify-start" />}
         </div>
         {item.label && <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--clay)]">{item.label}</p>}
         <p className="mt-1 truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{item.title}</p>
@@ -1042,7 +1048,7 @@ function renderTimeline({ node, context }: AdapterArgs<"timeline">) {
               <div className={cn("rounded-xl border bg-background/70 p-4", statusPanelClass(row[statusKey]))}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <p className="truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(row[titleKey])}</p>
-                  {showStatus && <StatusChip value={row[statusKey]} />}
+                  {showStatus && <StatusChip value={row[statusKey]} className="max-w-[50%] justify-start" />}
                 </div>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatCell(row[descriptionKey])}</p>
               </div>
@@ -1092,7 +1098,7 @@ function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) {
                   <p className="truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(title)}</p>
                   {meta !== undefined && <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{formatCell(meta)}</p>}
                 </div>
-                {showStatus && <StatusChip value={statusVal} />}
+                {showStatus && <StatusChip value={statusVal} className="max-w-[50%] justify-start" />}
               </div>
               {description !== undefined && <p className="mt-3 text-sm leading-6 text-muted-foreground">{formatCell(description)}</p>}
             </div>
@@ -1244,7 +1250,7 @@ function MobileRecord({ row, columns, statusKey }: { row: Record<string, unknown
           {primary && <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">{formatCell(primaryValue)}</p>}
           {primary && <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{primary.label}</p>}
         </div>
-        {statusKey && row[statusKey] !== undefined && <StatusChip value={row[statusKey]} />}
+        {statusKey && row[statusKey] !== undefined && <StatusChip value={row[statusKey]} className="max-w-[50%] justify-start" />}
       </div>
       <dl className="mt-4 flex flex-col gap-3">
         {rest
@@ -1268,11 +1274,11 @@ function TrendPill({ trend, children }: { trend: "up" | "down" | "neutral"; chil
   return <Badge variant={trend === "down" ? "destructive" : trend === "neutral" ? "outline" : "secondary"}>{children}</Badge>
 }
 
-function StatusChip({ value }: { value: unknown }) {
+function StatusChip({ value, className }: { value: unknown; className?: string }) {
   const text = formatCell(value)
   const tone = statusTone(text)
 
-  return <Badge variant={statusBadgeVariant(tone)} className="max-w-[50%] justify-start">{text}</Badge>
+  return <Badge variant={statusBadgeVariant(tone)} className={cn("justify-start", className)}>{text}</Badge>
 }
 
 function statusBadgeVariant(tone: ReturnType<typeof statusTone>) {

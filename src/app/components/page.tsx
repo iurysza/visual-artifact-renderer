@@ -48,6 +48,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs"
+import { Prose } from "@/components/ui/prose"
 import {
   Accordion,
   AccordionItem,
@@ -1057,6 +1058,30 @@ export default function ComponentsPage() {
             description="Use Separator for visual breaks, ScrollArea for custom scrollbars, and Collapsible for hide/show sections without modal behavior."
           >
             <div className="grid gap-6">
+              <div>
+                <Subheading>Prose (Markdown)</Subheading>
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                  <Prose>
+{`# Markdown Support
+
+This is the new **prose** component using \`react-markdown\`.
+
+## Features
+- Bold and *italic* text
+- Unordered lists
+- Ordered lists
+- [Links](https://example.com)
+
+> "It works perfectly with Tailwind Typography."
+
+\`\`\`javascript
+console.log("Code blocks too!");
+\`\`\`
+`}
+                  </Prose>
+                </div>
+              </div>
+
               <div>
                 <Subheading>Separator</Subheading>
                 <div className="flex items-center gap-4">
