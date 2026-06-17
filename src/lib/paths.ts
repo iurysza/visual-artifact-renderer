@@ -28,19 +28,24 @@ export function projectPagePath(project: string): string {
   return `/${project}/`
 }
 
+/** Join the base path and data segment for an absolute public artifact JSON path. */
+function publicDataPath(segments: string[]): string {
+  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${segments.join("/")}`
+}
+
 /** Absolute public path to an artifact JSON payload. */
 export function artifactDataPath(project: string, slug: string): string {
-  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}.json`
+  return publicDataPath([project, `${slug}.json`])
 }
 
 /** Absolute public path to the live home index JSON. */
 export function artifactIndexPath(): string {
-  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/index.json`
+  return publicDataPath(["index.json"])
 }
 
 /** Absolute public path to the live project index JSON. */
 export function projectIndexPath(project: string): string {
-  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/index.json`
+  return publicDataPath([project, "index.json"])
 }
 
 /**
