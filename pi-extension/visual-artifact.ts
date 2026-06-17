@@ -333,7 +333,7 @@ function getTailscaleBaseUrl(): string | null {
   return null
 }
 
-// --- Project Recap Command ---
+// --- Visual Recap Command ---
 
 interface ProjectIdentity {
   name?: string
@@ -344,7 +344,7 @@ interface ProjectIdentity {
   topLevelFiles?: string[]
 }
 
-interface ProjectRecapData {
+interface VisualRecapData {
   projectName: string
   projectPath: string
   window: string
@@ -449,11 +449,11 @@ async function readProjectIdentity(projectPath: string): Promise<ProjectIdentity
   return identity
 }
 
-async function gatherProjectRecap(
+async function gatherVisualRecap(
   pi: ExtensionAPI,
   projectPath: string,
   window: { since: string; label: string },
-): Promise<ProjectRecapData> {
+): Promise<VisualRecapData> {
   const errors: string[] = []
   const projectName = deriveProjectName(projectPath)
 
@@ -475,7 +475,12 @@ async function gatherProjectRecap(
   }
 
   const recentCommits = isGitRepo
-    ? await execGit(pi, projectPath, ["log", "--oneline", `--since=${window.since}`])
+    ? await execGit(pi, projectPath, [
+        "log",
+        "--pretty=format:%h %ad %s",
+        "--date=short",
+        `--since=${window.since}`,
+      ])
     : ""
 
   const fileChanges = isGitRepo
@@ -510,7 +515,7 @@ async function gatherProjectRecap(
     : []
 
   let todoComments = ""
-  if (recentlyChangedFiles.length > 0 && process.env.PI_RECAP_TODOS !== "0") {
+  if (recentlyChangedFiles.length > 0 && process.env.PI_VISUAL_RECAP_TODOS !== "0") {
     try {
       const result = await pi.exec(
         "rg",
@@ -543,7 +548,7 @@ async function gatherProjectRecap(
   }
 }
 
-function renderRecapPrompt(data: ProjectRecapData): string {
+function renderVisualRecapPrompt(data: VisualRecapData): string {
   const sections: string[] = []
 
   sections.push(
@@ -609,14 +614,175 @@ function renderRecapPrompt(data: ProjectRecapData): string {
     "Map sections to contract nodes: project identity (text/definition-list/card), architecture snapshot (mermaid), recent activity (timeline), decision log (accordion/table), state of things (stat-card/status-grid), mental model essentials (card/prose), cognitive debt hotspots (grid of cards with status), next steps (flow/timeline).",
   )
   sections.push(
+    "For the recent activity timeline, use the commit date shown in the 'Recent commits' section as each row's marker. Use the ISO date (YYYY-MM-DD) from the log; the renderer will format it. Do not default markers to today's date.",
+  )
+  sections.push(
     "Use a warm editorial palette with muted blues and greens. Vary fonts from previous diagrams.",
   )
   sections.push(
-    `Call create_visual_artifact with slug "${data.projectName}-recap" (or "project-recap" if that is not kebab-case), title "${data.projectName} recap", and the spec nodes.`,
+    `Call create_visual_artifact with slug "${data.projectName}-visual-recap" (or "visual-recap" if that is not kebab-case), title "${data.projectName} visual recap", and the spec nodes.`,
   )
   sections.push("Return the artifact URL.")
 
   return sections.join("\n")
+}
+
+type AutocompleteItem = { value: string; label: string }
+
+type DiffScope = {
+  kind: "branch" | "commit" | "range" | "pr" | "uncommitted"
+  ref: string
+  description: string
+  statCommand: string[]
+  nameStatusCommand: string[]
+  diffCommand: string[]
+  showCommand?: string[]
+}
+
+function resolveDiffScope(args: string): DiffScope {
+  const trimmed = args.trim()
+  if (trimmed === "" || trimmed.toLowerCase() === "main") {
+    return {
+      kind: "branch",
+      ref: "main",
+      description: "working tree vs main",
+      statCommand: ["git", "diff", "--stat", "main"],
+      nameStatusCommand: ["git", "diff", "--name-status", "main", "--"],
+      diffCommand: ["git", "diff", "main"],
+    }
+  }
+  if (trimmed.toUpperCase() === "HEAD") {
+    return {
+      kind: "uncommitted",
+      ref: "HEAD",
+      description: "uncommitted changes (working tree + staged)",
+      statCommand: ["git", "diff", "--stat", "HEAD"],
+      nameStatusCommand: ["git", "diff", "--name-status", "HEAD", "--"],
+      diffCommand: ["git", "diff", "HEAD"],
+    }
+  }
+  if (/^#\d+$/.test(trimmed)) {
+    const pr = trimmed.slice(1)
+    return {
+      kind: "pr",
+      ref: pr,
+      description: `PR #${pr}`,
+      statCommand: ["gh", "pr", "view", pr, "--json", "files"],
+      nameStatusCommand: ["gh", "pr", "view", pr, "--json", "files"],
+      diffCommand: ["gh", "pr", "diff", pr],
+    }
+  }
+  if (/^[0-9a-f]{7,40}\.\.[0-9a-f]{7,40}$/i.test(trimmed)) {
+    return {
+      kind: "range",
+      ref: trimmed,
+      description: `commit range ${trimmed}`,
+      statCommand: ["git", "diff", "--stat", trimmed],
+      nameStatusCommand: ["git", "diff", "--name-status", trimmed, "--"],
+      diffCommand: ["git", "diff", trimmed],
+    }
+  }
+  if (/^[0-9a-f]{7,40}$/i.test(trimmed)) {
+    return {
+      kind: "commit",
+      ref: trimmed,
+      description: `commit ${trimmed}`,
+      statCommand: ["git", "diff", "--stat", `${trimmed}^..${trimmed}`],
+      nameStatusCommand: ["git", "diff", "--name-status", `${trimmed}^..${trimmed}`, "--"],
+      diffCommand: ["git", "show", trimmed],
+      showCommand: ["git", "show", trimmed],
+    }
+  }
+  return {
+    kind: "branch",
+    ref: trimmed,
+    description: `working tree vs ${trimmed}`,
+    statCommand: ["git", "diff", "--stat", trimmed],
+    nameStatusCommand: ["git", "diff", "--name-status", trimmed, "--"],
+    diffCommand: ["git", "diff", trimmed],
+  }
+}
+
+function getBranchCompletions(prefix: string): AutocompleteItem[] | null {
+  try {
+    const output = execSync("git branch -a --format='%(refname:short)'", {
+      encoding: "utf8",
+      timeout: 2000,
+    })
+    const branches = output
+      .split("\n")
+      .map((b) => b.trim())
+      .filter(Boolean)
+    const seen = new Set<string>()
+    const items: AutocompleteItem[] = []
+    const add = (value: string, label: string) => {
+      if (seen.has(value)) return
+      seen.add(value)
+      items.push({ value, label })
+    }
+    add("HEAD", "HEAD (uncommitted changes)")
+    add("main", "main")
+    branches.forEach((b) => add(b, b))
+    const filtered = items.filter((i) => i.value.startsWith(prefix))
+    return filtered.length > 0 ? filtered : null
+  } catch {
+    return null
+  }
+}
+
+function buildDiffReviewPrompt(scope: DiffScope, cwd: string): string {
+  const commandList = [
+    `stat overview: ${scope.statCommand.join(" ")}`,
+    `name/status: ${scope.nameStatusCommand.join(" ")}`,
+    `full diff: ${scope.diffCommand.join(" ")}`,
+  ]
+  if (scope.showCommand) {
+    commandList.push(`commit show: ${scope.showCommand.join(" ")}`)
+  }
+  if (scope.kind === "uncommitted") {
+    commandList.push("also run: git diff --staged")
+  }
+
+  return `Run a visual diff review for this repo.
+
+Scope: ${scope.description}
+Working directory: ${cwd}
+
+Use the visual-artifact skill (direct artifact route). Read references/design-guidelines.md and references/content-types/_index.md before building. For each section, use the matching content-type guide: architecture-diagrams.md for section 3/5, dashboards.md for section 2, data-organization.md for tables and comparisons, timelines.md if any roadmap or sequence appears.
+
+Data gathering — run these commands to understand the full scope:
+${commandList.map((c) => `- ${c}`).join("\n")}
+
+Also:
+- Compare line counts for changed files.
+- Detect new public API surface by grepping added lines for exported symbols (export/function/class/interface for TS/JS; adapt to the project's language).
+- Inventory new features: actions, keybindings, config fields, event types.
+- Read all changed files in full, including surrounding code paths needed to validate behavior.
+- Check whether CHANGELOG.md has an entry for these changes.
+- Check whether README.md or docs/*.md need updates.
+- Reconstruct decision rationale from the current conversation, progress docs (~/.agent/memory/<project>/progress.md, ~/.pi/agent/memory/<project>/progress.md), plan files, commit messages, or PR descriptions.
+
+Verification checkpoint — before generating the artifact, build an internal fact sheet of every claim you will present (counts, names, behavior descriptions). Cite the source command or file:line for each. Mark uncertain claims as uncertain. Keep the fact sheet internal; do not show it unless I ask.
+
+Build a visual artifact via create_visual_artifact with these sections:
+1. Executive summary — lead with the intuition (why these changes exist, what problem they solve), then factual scope.
+2. KPI dashboard — lines added/removed, files changed, new modules, test counts. Include CHANGELOG updated? and docs need updates? indicators.
+3. Module architecture — current file structure and a Mermaid dependency graph.
+4. Major feature comparisons — before/after panels for each significant area.
+5. Flow diagrams — new lifecycle/pipeline/interaction patterns as Mermaid diagrams.
+6. File map — full tree with new/modified/deleted indicators.
+7. Test coverage — before/after test file counts and coverage notes.
+8. Code review — Good/Bad/Ugly/Questions cards, each referencing files and line ranges.
+9. Decision log — decision, rationale, alternatives considered, confidence (high/medium/low).
+10. Re-entry context — invariants, non-obvious coupling, gotchas, follow-up work.
+
+Aesthetic: GitHub-diff-inspired (red for removed/before, green for added/after, yellow for modified, blue for neutral context), but vary fonts and palette from recent artifacts. No CSS details; the renderer handles styling.
+
+If surf CLI is available, optionally generate a hero illustration; otherwise skip.
+
+If there are no changes, tell me so and do not create an artifact.
+
+Use a slug like "<project>-diff-review-<ref>" (e.g., "visualizer-diff-review-main"). Call create_visual_artifact and return the URL.`
 }
 
 const CreateVisualArtifactParams = Type.Object({
@@ -648,16 +814,36 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     return { skillPaths: [SKILL_PATH] }
   })
 
-  pi.registerCommand("project-recap", {
+  pi.registerCommand("visual-diff", {
+    description: "Generate a visual diff review as a visual artifact. Args: branch, commit, range, #PR, HEAD, or empty (defaults to main).",
+    argumentHint: "[branch|commit|range|#PR|HEAD]",
+    getArgumentCompletions: getBranchCompletions,
+    handler: async (args, ctx) => {
+      try {
+        execSync("git rev-parse --git-dir", { cwd: ctx.cwd, encoding: "utf8", timeout: 2000 })
+      } catch {
+        ctx.ui.notify("visual-diff must be run inside a git repository", "error")
+        return
+      }
+
+      const scope = resolveDiffScope(args)
+      if (ctx.mode === "tui") {
+        ctx.ui.notify(`Generating visual diff review for ${scope.description}...`, "info")
+      }
+      await pi.sendUserMessage(buildDiffReviewPrompt(scope, ctx.cwd))
+    },
+  })
+
+  pi.registerCommand("visual-recap", {
     description: "Generate a visual project recap — current state, recent decisions, and cognitive debt hotspots",
     argumentHint: "[time-window-or-context]",
     handler: async (args, ctx) => {
       const window = parseRecapWindow(args)
       if (ctx.mode === "tui") {
-        ctx.ui.notify(`Gathering project recap data for the last ${window.label}...`, "info")
+        ctx.ui.notify(`Gathering visual recap data for the last ${window.label}...`, "info")
       }
-      const data = await gatherProjectRecap(pi, ctx.cwd, window)
-      await pi.sendUserMessage(renderRecapPrompt(data))
+      const data = await gatherVisualRecap(pi, ctx.cwd, window)
+      await pi.sendUserMessage(renderVisualRecapPrompt(data))
     },
   })
 

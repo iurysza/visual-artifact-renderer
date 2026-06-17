@@ -215,8 +215,10 @@ pnpm serve
    ├──► Static files served from out/ under /artifacts/
    ├──► /artifacts/data/artifacts/<project>/<slug>.json served from ~/.pi/artifacts/
    ├──► /artifacts/data/artifacts/index.json and /<project>/index.json built live
-   └──► Any unknown /artifacts/<project>/<slug>/ falls through to live-artifact shell,
-        which fetches the JSON client-side
+   ├──► Any unknown /artifacts/<project>/<slug>/ falls through to live-artifact shell,
+   │    which fetches the JSON client-side
+   └──► Any unknown /artifacts/<project>/ falls through to live-project shell,
+        which resolves the project slug and fetches its live index JSON
 ```
 
 This design means new artifacts are instantly viewable without rebuilding, while known artifacts are still prerendered for fast first loads.

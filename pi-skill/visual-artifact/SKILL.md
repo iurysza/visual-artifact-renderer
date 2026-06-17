@@ -53,7 +53,8 @@ When the visual-artifact extension is installed, these slash commands are availa
 
 | Command | Usage | What it does |
 |---|---|---|
-| `/project-recap` | `/project-recap [2w\|30d\|3m]` | Generates a visual project recap — current state, recent decisions, and cognitive debt hotspots. Defaults to `2w` when no argument is given. |
+| `/visual-diff` | `/visual-diff [branch\|commit\|range\|#PR\|HEAD]` | Generates a visual diff review as a visual artifact. Defaults to `main` when no argument is given. |
+| `/visual-recap` | `/visual-recap [2w\|30d\|3m]` | Generates a visual project recap — current state, recent decisions, and cognitive debt hotspots. Defaults to `2w` when no argument is given. |
 
 ## Critical rules
 

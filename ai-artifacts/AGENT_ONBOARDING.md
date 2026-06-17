@@ -189,7 +189,7 @@ pnpm build
 pnpm serve              # http://localhost:9999/artifacts
 ```
 
-New artifacts created after the build are served via a generic `live-artifact` shell that fetches JSON client-side, so tool URLs work without rebuilding.
+New artifacts and projects created after the build are served via generic `live-artifact` and `live-project` shells that fetch JSON client-side, so tool URLs work without rebuilding.
 
 ### Visual QA
 

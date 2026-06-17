@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { projectIndexPath, artifactPagePath } from "@/lib/paths"
+import { projectIndexPath, artifactPagePath, projectParamsFromPath } from "@/lib/paths"
 import { formatDateTime } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
@@ -18,16 +18,24 @@ interface ProjectIndex {
   artifacts: ArtifactListing[]
 }
 
-export function ProjectIndexLoader({ project }: { project: string }) {
+export function ProjectIndexLoader({ project: projectProp }: { project?: string }) {
+  const project = useMemo<string | null>(() => {
+    if (projectProp) return projectProp
+    if (typeof window === "undefined") return null
+    return projectParamsFromPath(window.location.pathname)?.project ?? null
+  }, [projectProp])
+
   const [index, setIndex] = useState<ProjectIndex | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!project) return
+    const projectName = project
     let cancelled = false
 
     async function load() {
       try {
-        const res = await fetch(projectIndexPath(project))
+        const res = await fetch(projectIndexPath(projectName))
         if (!res.ok) throw new Error(`Project index not found (${res.status})`)
         const data = (await res.json()) as ProjectIndex
         if (!cancelled) {
@@ -48,6 +56,17 @@ export function ProjectIndexLoader({ project }: { project: string }) {
       clearInterval(id)
     }
   }, [project])
+
+  if (!project) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full items-center justify-center">
+        <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]" />
+          Loading project index...
+        </div>
+      </main>
+    )
+  }
 
   if (error) {
     return (

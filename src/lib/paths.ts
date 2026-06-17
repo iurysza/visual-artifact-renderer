@@ -85,9 +85,34 @@ export function artifactParamsFromPath(pathname: string): ArtifactRouteParams | 
 
   const [project, slug] = segments
   if (!SLUG_RE.test(project) || !SLUG_RE.test(slug)) return null
-  if (project === "data" || project === "_next" || project === "live-artifact") return null
+  if (project === "data" || project === "_next" || project === "live-artifact" || project === "live-project") return null
 
   return { project, slug }
+}
+
+/**
+ * Extract a project slug from the current browser path.
+ *
+ * Used by the static server's live project-index fallback shell: when a new
+ * project was created after the last `pnpm build`, serve.mjs can serve a
+ * generic shell at the canonical URL and the client resolves the project name
+ * from the URL.
+ */
+export function projectParamsFromPath(pathname: string): { project: string } | null {
+  let normalized = pathname.split("?")[0]?.split("#")[0] ?? pathname
+
+  if (normalized === BASE_PATH || normalized.startsWith(`${BASE_PATH}/`)) {
+    normalized = normalized.slice(BASE_PATH.length) || "/"
+  }
+
+  const segments = normalized.split("/").filter(Boolean).map(decodeURIComponent)
+  if (segments.length !== 1) return null
+
+  const [project] = segments
+  if (!SLUG_RE.test(project)) return null
+  if (project === "data" || project === "_next" || project === "live-artifact" || project === "live-project") return null
+
+  return { project }
 }
 
 /**

@@ -1,3 +1,4 @@
+import { format, parseISO, isValid } from "date-fns"
 import type { ArtifactColumn, VisualArtifactSpec } from "@/lib/artifact-schema"
 
 export function getRows(
@@ -34,7 +35,14 @@ export function normalizeColumns(
 export function formatCell(value: unknown) {
   if (value === null || value === undefined) return "—"
   if (typeof value === "number") return value.toLocaleString()
-  if (typeof value === "string") return value
+  if (value instanceof Date && isValid(value)) return format(value, "MMM d")
+  if (typeof value === "string") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const parsed = parseISO(value)
+      if (isValid(parsed)) return format(parsed, "MMM d")
+    }
+    return value
+  }
   if (typeof value === "boolean") return value ? "Yes" : "No"
 
   return JSON.stringify(value)

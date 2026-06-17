@@ -76,23 +76,23 @@ export function renderTimeline({ node, context }: AdapterArgs<"timeline">) {
 
   return (
     <Figure caption={caption}>
-      <div className="relative flex flex-col gap-4 before:absolute before:bottom-4 before:left-4 before:top-4 before:w-px before:bg-border">
+      <div className="relative flex flex-col gap-4 before:absolute before:bottom-4 before:left-[1.125rem] before:top-4 before:w-px before:bg-border">
         {data.map((row, index) => {
           const statusVal = row[statusKey]
           const description = row[descriptionKey]
 
           return (
-            <article key={index} className="relative grid grid-cols-[2rem_1fr] gap-3">
-              <div className="relative z-10 flex size-8 items-center justify-center rounded-full border bg-card font-mono text-[10px] font-medium text-muted-foreground">
+            <article key={index} className="relative grid grid-cols-[3.5rem_1fr] gap-3">
+              <div className="relative z-10 flex h-10 w-14 items-center justify-center rounded-full border bg-card px-2 font-mono text-[10px] font-medium leading-tight text-muted-foreground">
                 {formatCell(row[markerKey] ?? index + 1)}
               </div>
               <PanelCard tone={statusVal}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <p className="truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
+                <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-start sm:gap-3">
+                  <p className="min-w-0 flex-1 truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
                     {formatCell(row[titleKey])}
                   </p>
                   {statusIsVisible(statusVal, description) && (
-                    <StatusChip value={statusVal} className="max-w-[50%] justify-start" />
+                    <StatusChip value={statusVal} className="shrink-0 justify-start" />
                   )}
                 </div>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">

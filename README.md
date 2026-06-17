@@ -150,7 +150,7 @@ http://localhost:9999/artifacts/
 
 This same `/artifacts/` path is used everywhere — local dev, the static server, Tailscale, and the blog — only the base URL changes.
 
-Fresh artifact JSON is read from `~/.pi/artifacts/` at `/artifacts/data/artifacts/<project>/<slug>.json`. The home page and project index pages also load live from `~/.pi/artifacts/`, so new artifacts appear immediately without rebuilding. If a new artifact was created after the last build, `pnpm serve` serves a generic live shell at `/artifacts/<project>/<slug>/` and loads that JSON client-side.
+Fresh artifact JSON is read from `~/.pi/artifacts/` at `/artifacts/data/artifacts/<project>/<slug>.json`. The home page and project index pages also load live from `~/.pi/artifacts/`, so new artifacts appear immediately without rebuilding. If a new artifact was created after the last build, `pnpm serve` serves a generic live shell at `/artifacts/<project>/<slug>/` and loads that JSON client-side. New projects created after the build are similarly served by a `/artifacts/<project>/` live shell.
 
 ### Tailscale Serve
 

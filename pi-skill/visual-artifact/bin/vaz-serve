@@ -24,7 +24,14 @@ if command -v lsof >/dev/null 2>&1; then
   fi
 fi
 
-nohup pnpm dev > "$VAZ_SERVER_LOG" 2>&1 &
+# The static export server serves both the HTML shells and the live artifact JSON
+# endpoints. Build first if the export directory is missing.
+if [ ! -d "$VAZ_DIR/out" ]; then
+  echo "[vaz] Static export missing; building..." >&2
+  pnpm build
+fi
+
+nohup pnpm serve > "$VAZ_SERVER_LOG" 2>&1 &
 sleep 4
 
 if server_running; then

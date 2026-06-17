@@ -11,13 +11,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 const PORT = parseInt(process.env.VISUALIZER_PORT ?? "9999", 10);
-const HOST = process.env.VISUALIZER_HOST ?? "127.0.0.1";
+const HOST = process.env.VISUALIZER_HOST ?? "0.0.0.0";
 const OUT_DIR = path.resolve(process.env.VISUALIZER_OUT_DIR ?? path.join(ROOT, "out"));
 const ARTIFACTS_DIR = path.resolve((process.env.VISUALIZER_ARTIFACTS_DIR ?? "~/.pi/artifacts").replace(/^~/, os.homedir()));
 const MOUNT_PATH = normalizeMountPath(process.env.VISUALIZER_MOUNT_PATH ?? "/artifacts");
 const DATA_PATH = normalizeDataPath(process.env.VISUALIZER_DATA_PATH ?? "/data/artifacts");
 const OPEN_BROWSER = (process.env.VISUALIZER_OPEN ?? "1") === "1";
 const LIVE_ARTIFACT_SHELL = "/live-artifact";
+const LIVE_PROJECT_SHELL = "/live-project";
 const ROUTE_SEGMENT_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function isLoopbackHost(host) {
@@ -274,7 +275,7 @@ function artifactRouteFromPath(reqPath) {
 
   const [project, slug] = segments;
   if (!ROUTE_SEGMENT_RE.test(project) || !ROUTE_SEGMENT_RE.test(slug)) return null;
-  if (project === "data" || project === "_next" || project === LIVE_ARTIFACT_SHELL.slice(1)) return null;
+  if (project === "data" || project === "_next" || project === LIVE_ARTIFACT_SHELL.slice(1) || project === LIVE_PROJECT_SHELL.slice(1)) return null;
 
   return { project, slug };
 }
@@ -288,6 +289,32 @@ async function serveLiveArtifactShell(reqPath, res) {
   if (!(await fileExists(jsonPath))) return false;
 
   const shellPath = path.join(OUT_DIR, LIVE_ARTIFACT_SHELL, "index.html");
+  if (!(await fileExists(shellPath))) return false;
+
+  streamFile(res, shellPath);
+  return true;
+}
+
+function projectIndexRouteFromPath(reqPath) {
+  const segments = reqPath.split("/").filter(Boolean);
+  if (segments.length !== 1) return null;
+
+  const [project] = segments;
+  if (!ROUTE_SEGMENT_RE.test(project)) return null;
+  if (project === "data" || project === "_next" || project === LIVE_ARTIFACT_SHELL.slice(1) || project === LIVE_PROJECT_SHELL.slice(1)) return null;
+
+  return { project };
+}
+
+async function serveLiveProjectIndexShell(reqPath, res) {
+  const route = projectIndexRouteFromPath(reqPath);
+  if (!route) return false;
+
+  const projectDir = path.resolve(ARTIFACTS_DIR, route.project);
+  if (!projectDir.startsWith(ARTIFACTS_DIR + path.sep)) return false;
+  if (!(await dirExists(projectDir))) return false;
+
+  const shellPath = path.join(OUT_DIR, LIVE_PROJECT_SHELL, "index.html");
   if (!(await fileExists(shellPath))) return false;
 
   streamFile(res, shellPath);
@@ -339,6 +366,11 @@ const server = createServer(async (req, res) => {
   // the latest artifact payload from the live JSON endpoint.
   if (await serveLiveArtifactShell(stripped, res)) return;
 
+  // New projects may be created after the last static export too. If the
+  // project directory exists, serve the live project-index shell so the client
+  // resolves the project slug from the URL and fetches the live JSON.
+  if (await serveLiveProjectIndexShell(stripped, res)) return;
+
   // SPA fallback: let Next.js handle the route client-side.
   if (await serveFallback(res)) return;
 
@@ -367,14 +399,20 @@ async function startupChecks() {
 await startupChecks();
 
 server.listen(PORT, HOST, async () => {
-  const localUrl = `http://${HOST}:${PORT}${MOUNT_PATH}/`;
+  // When binding to 0.0.0.0 we still advertise 127.0.0.1 for local browser use;
+  // the server is reachable on every interface, including the loopback address
+  // used by the Tailscale proxy.
+  const displayHost = isLoopbackHost(HOST) ? HOST : "127.0.0.1";
+  const localUrl = `http://${displayHost}:${PORT}${MOUNT_PATH}/`;
   console.log(`Visualizer server running at ${localUrl}`);
+  console.log(`Listening on: ${HOST}:${PORT}`);
   console.log(`Serving static export: ${OUT_DIR}`);
   console.log(`Serving artifacts JSON: ${ARTIFACTS_DIR}`);
   console.log(`Artifact JSON endpoint: ${MOUNT_PATH}${DATA_PATH}/<project>/<slug>.json`);
   console.log(`Live index endpoint: ${MOUNT_PATH}${DATA_PATH}/index.json`);
   console.log(`Live project index endpoint: ${MOUNT_PATH}${DATA_PATH}/<project>/index.json`);
   console.log(`Live artifact fallback: ${MOUNT_PATH}/<project>/<slug>/ -> ${LIVE_ARTIFACT_SHELL}/`);
+  console.log(`Live project fallback: ${MOUNT_PATH}/<project>/ -> ${LIVE_PROJECT_SHELL}/`);
 
   const tailscaleIp = await getTailscaleIp();
   if (tailscaleIp) {
@@ -387,7 +425,7 @@ server.listen(PORT, HOST, async () => {
     }
   }
 
-  if (OPEN_BROWSER && HOST === "127.0.0.1") {
+  if (OPEN_BROWSER) {
     openBrowser(localUrl);
   }
 });
