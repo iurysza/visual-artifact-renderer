@@ -131,7 +131,7 @@ Highlights:
 pnpm dev
 ```
 
-Runs on `http://localhost:9999`. All routes are under `basePath: "/artifacts"`.
+Runs on `http://localhost:9999/artifacts/`. All routes are under `basePath: "/artifacts"`.
 
 ### Static export + live server
 
@@ -187,7 +187,7 @@ After `./install.sh`, these are available in `~/.pi/bin/` (add it to your PATH):
 | Command | Purpose |
 | --- | --- |
 | `vaz-doctor` | Verify runtime, deps, wrappers, tools, and renderer health |
-| `vaz-serve` | Start the renderer on `http://localhost:9999` if not running |
+| `vaz-serve` | Start the renderer on `http://localhost:9999/artifacts/` if not running |
 | `vaz-status` | Check if the renderer is running. Returns JSON |
 | `vaz-pipeline <repoRoot> [slug]` | Run the full codebase extraction + assembly pipeline |
 | `vaz-tailscale url [project] [slug]` | Return the shareable tailnet URL |
