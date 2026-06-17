@@ -8,14 +8,18 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 
 | Need | Read |
 |---|---|
-| Senior-engineer handoff (repo map, tasks, pitfalls) | [`ai-artifacts/AGENT_ONBOARDING.md`](./ai-artifacts/AGENT_ONBOARDING.md) |
+| Map of all docs | [`ai-artifacts/docs/index.md`](./ai-artifacts/docs/index.md) |
+| Agent-first principles | [`ai-artifacts/docs/CORE_BELIEFS.md`](./ai-artifacts/docs/CORE_BELIEFS.md) |
+| Senior-engineer handoff | [`ai-artifacts/AGENT_ONBOARDING.md`](./ai-artifacts/AGENT_ONBOARDING.md) |
 | System architecture and tradeoffs | [`ai-artifacts/ARCHITECTURE.md`](./ai-artifacts/ARCHITECTURE.md) |
-| Domain concepts, layers, and data flow | [`ai-artifacts/SEMANTIC_MAP.md`](./ai-artifacts/SEMANTIC_MAP.md) |
+| Domain concepts, layers, data flow | [`ai-artifacts/SEMANTIC_MAP.md`](./ai-artifacts/SEMANTIC_MAP.md) |
+| Design system and node philosophy | [`ai-artifacts/docs/DESIGN.md`](./ai-artifacts/docs/DESIGN.md) |
+| Frontend/renderer guide | [`ai-artifacts/docs/FRONTEND.md`](./ai-artifacts/docs/FRONTEND.md) |
+| Testing and verification | [`ai-artifacts/docs/RELIABILITY.md`](./ai-artifacts/docs/RELIABILITY.md) |
 | Why this knowledge layout exists | [`ai-artifacts/agent-md-creation.md`](./ai-artifacts/agent-md-creation.md) |
 | User-facing setup and usage | [`README.md`](./README.md) |
 | Model-facing routing and tool usage | [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md) |
 | Node type reference | [`docs/nodes.md`](./docs/nodes.md) |
-| Historical review / fix reports | `ai-artifacts/review-report-v4.md`, `ai-artifacts/subagent-artifact-fix-report.md` |
 
 ## Core principles
 
@@ -49,7 +53,8 @@ The pipeline and skill are global-install friendly; `./install.sh` syncs wrapper
 
 ## Decision defaults
 
-- **Adding a node type?** Update schema, manifest, adapter, registry, then regenerate the contract.
+- **Adding a node type?** Follow [`ai-artifacts/docs/design-docs/node-design-principles.md`](./ai-artifacts/docs/design-docs/node-design-principles.md), then update schema, manifest, adapter, registry, and contract.
 - **Changing paths?** Update `src/lib/paths.ts` and check both dev and static-server modes.
-- **Adding diagram logic?** Respect the `svg-diagram` theme contract and test Mermaid separately.
-- **Unsure where something belongs?** Read [`ai-artifacts/ARCHITECTURE.md`](./ai-artifacts/ARCHITECTURE.md) §2 first.
+- **Changing styles/theme?** Read [`ai-artifacts/docs/DESIGN.md`](./ai-artifacts/docs/DESIGN.md) and [`ai-artifacts/docs/design-docs/theme-system.md`](./ai-artifacts/docs/design-docs/theme-system.md).
+- **Adding diagram logic?** Respect [`ai-artifacts/docs/design-docs/diagram-sandboxing.md`](./ai-artifacts/docs/design-docs/diagram-sandboxing.md) and test Mermaid separately.
+- **Unsure where something belongs?** Read [`ai-artifacts/docs/index.md`](./ai-artifacts/docs/index.md) first.
