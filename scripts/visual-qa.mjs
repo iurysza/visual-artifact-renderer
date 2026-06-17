@@ -4,8 +4,12 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { spawn } from "node:child_process"
 
-// Canonical artifact URL shape; keep in sync with src/lib/paths.ts artifactPageUrl().
-const url = process.argv[2] ?? "http://localhost:9999/artifacts/visualizer/agent-stack-report/"
+// Canonical artifact URL shape. The default URL is the local static server.
+// Keep in sync with src/lib/paths.ts artifactPageUrl(baseUrl, project, slug).
+const DEFAULT_QA_BASE_URL = process.env.VISUAL_QA_BASE_URL ?? "http://localhost:9999"
+const DEFAULT_PROJECT = process.env.VISUAL_QA_PROJECT ?? "visualizer"
+const DEFAULT_SLUG = process.env.VISUAL_QA_SLUG ?? "agent-stack-report"
+const url = process.argv[2] ?? `${DEFAULT_QA_BASE_URL.replace(/\/+$/, "")}/artifacts/${DEFAULT_PROJECT}/${DEFAULT_SLUG}/`
 const outDir = process.argv[3] ?? "ai-artifacts/visual-qa"
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 const port = Number(process.env.VISUAL_QA_PORT ?? 9333)
