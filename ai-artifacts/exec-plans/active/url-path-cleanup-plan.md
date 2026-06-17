@@ -18,9 +18,9 @@
 | # | Task | Owner | Status | Commit |
 |---|---|---|---|---|
 | 1 | Fix Pi extension `DEFAULT_BASE_URL` and URL shape | verified | already correct | - |
-| 2 | Clean up visualizer paths (`src/lib/paths.ts`) and use everywhere | subagent | pending | - |
-| 3 | Update thought-box sync to env-driven paths and optional legacy copy | subagent | pending | - |
-| 4 | Verify full flow: build, serve, curl, thought-box dev | subagent | pending | - |
+| 2 | Clean up visualizer paths (`src/lib/paths.ts`) and use everywhere | done | committed | a9b6169, c0c0e95, 69ce2ac, cbf7a6e, a585fd3 |
+| 3 | Update thought-box sync to env-driven paths and optional legacy copy | pending | out of scope for this subagent | - |
+| 4 | Verify full flow: build, serve, curl, thought-box dev | partially done | visualizer build/serve/curl pass; thought-box pending | - |
 
 ## Validation
 
