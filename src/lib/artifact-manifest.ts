@@ -164,10 +164,10 @@ export const artifactManifest = {
   },
   "image": {
     type: "image",
-    description: "An image with optional caption and aspect ratio.",
+    description: "An image with optional caption and aspect ratio. Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path like \"hero.png\". Use absolute HTTPS URLs for external images. Never use file:// URLs.",
     props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"' },
     children: false,
-    example: { type: "image", props: { src: "/placeholder.png", alt: "Placeholder" } },
+    example: { type: "image", props: { src: "hero.png", alt: "Placeholder" } },
   },
   "pie-chart": {
     type: "pie-chart",

@@ -245,6 +245,21 @@ function validateNode(
   if (limits.code && typeof props.code === "string" && props.code.length > limits.code) {
     throw new Error(`${path}.props.code is ${props.code.length} chars, max allowed is ${limits.code}`)
   }
+
+  if (type === "image" && typeof props.src === "string" && /^file:\/\//i.test(props.src)) {
+    throw new Error(
+      `${path}.props.src must not use a file:// URL. ` +
+        `Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path, ` +
+        `or use an absolute HTTPS URL.`,
+    )
+  }
+
+  if (type === "button" && typeof props.href === "string" && /^file:\/\//i.test(props.href)) {
+    throw new Error(
+      `${path}.props.href must not use a file:// URL. ` +
+        `Use an app route or an absolute HTTPS URL.`,
+    )
+  }
 }
 
 interface ValidatedSpec {

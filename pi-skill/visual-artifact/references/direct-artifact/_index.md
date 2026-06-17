@@ -31,6 +31,14 @@ Good fits:
 
 Artifacts are saved globally under `~/.pi/artifacts/<project>/<slug>.json`. The project name is derived from the caller's working directory.
 
+## Sidecar image assets
+
+Image nodes support three `src` forms:
+
+- **Relative path** (recommended for local assets): place the image file next to the artifact JSON under `~/.pi/artifacts/<project>/`, then use `"src": "hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
+- **Absolute HTTPS URL**: use for external or CDN images.
+- **`file://` URLs are forbidden**: they are not portable and will be rejected by the renderer and the Pi extension.
+
 ## Content-type patterns
 
 Pick a shape before building the spec:

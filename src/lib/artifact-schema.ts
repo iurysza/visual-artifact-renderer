@@ -523,6 +523,22 @@ export const VisualArtifactSpecSchema = z
           visit(node.children, [...nodePath, "children"])
         }
 
+        if (node.type === "image" && /^file:\/\//i.test(node.props.src)) {
+          context.addIssue({
+            code: "custom",
+            message: "image src must not use file:// URLs; use a relative sidecar path or an HTTPS URL",
+            path: [...nodePath, "props", "src"],
+          })
+        }
+
+        if (node.type === "button" && node.props.href && /^file:\/\//i.test(node.props.href)) {
+          context.addIssue({
+            code: "custom",
+            message: "button href must not use file:// URLs; use an app route or HTTPS URL",
+            path: [...nodePath, "props", "href"],
+          })
+        }
+
         if (node.type === "tabs") {
           node.props.items.forEach((item, itemIndex) => {
             visit(item.nodes, [...nodePath, "props", "items", itemIndex, "nodes"])

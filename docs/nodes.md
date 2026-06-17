@@ -78,6 +78,7 @@ Prefer dashboard components over generic card soup:
 - Use `alert` for important callouts, not for routine status.
 - Pair `chart` with table detail when exact values matter.
 - Avoid `file://` links in artifacts; link to app routes or public URLs.
+- For local image assets, place the image file next to the artifact JSON under `~/.pi/artifacts/<project>/` and use a relative `src` like `"hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
 
 ## Copyable patterns
 

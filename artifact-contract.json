@@ -240,7 +240,7 @@
       }
     },
     "image": {
-      "description": "An image with optional caption and aspect ratio.",
+      "description": "An image with optional caption and aspect ratio. Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path like \"hero.png\". Use absolute HTTPS URLs for external images. Never use file:// URLs.",
       "props": {
         "src": "string",
         "alt": "string",
@@ -251,7 +251,7 @@
       "example": {
         "type": "image",
         "props": {
-          "src": "/placeholder.png",
+          "src": "hero.png",
           "alt": "Placeholder"
         }
       }
