@@ -17,7 +17,7 @@
 
 | # | Task | Owner | Status | Commit |
 |---|---|---|---|---|
-| 1 | Fix Pi extension `DEFAULT_BASE_URL` and URL shape | subagent | pending | - |
+| 1 | Fix Pi extension `DEFAULT_BASE_URL` and URL shape | verified | already correct | - |
 | 2 | Clean up visualizer paths (`src/lib/paths.ts`) and use everywhere | subagent | pending | - |
 | 3 | Update thought-box sync to env-driven paths and optional legacy copy | subagent | pending | - |
 | 4 | Verify full flow: build, serve, curl, thought-box dev | subagent | pending | - |
