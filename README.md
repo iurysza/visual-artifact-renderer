@@ -1,31 +1,18 @@
 # Visualizer
 
-Visualizer turns AI-generated JSON into polished, shareable visual pages — reports, dashboards, architecture briefs, runbooks, and explainers. It gives agents a safe presentation layer: pick known nodes, embed data, call one tool, get a local URL.
+Visualizer turns JSON into polished, shareable pages — reports, dashboards, architecture briefs, runbooks, and explainers. Agents describe what they want with a constrained spec; the renderer maps each node to a trusted UI adapter.
 
-The important trick: **the LLM never writes React, routes, JSX, imports, or CSS.** It emits a constrained artifact spec; the renderer maps each node to trusted UI adapters. That containment is the point — agents get rich output without generating arbitrary code.
+The key constraint: **agents emit JSON, never React, routes, JSX, imports, or CSS.** That containment gives agents rich output without arbitrary code.
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-- **JSON-first**: agents emit specs, not source code
+- **JSON-first**: specs, not source code
 - **36 node types**: stat cards, tables, charts, mermaid diagrams, timelines, status grids, and more
-- **Local-first**: artifacts live in `~/.pi/artifacts`, served from your machine
+- **Local-first**: artifacts live in `~/.pi/artifacts` and run on your machine
 - **Instant sharing**: built-in Tailscale support for tailnet URLs
-- **Static + live**: build once, then keep loading new artifacts without rebuilding
+- **Static + live**: build once, then load new artifacts without rebuilding
 
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <img src="./assets/home-light.png" alt="Visualizer home in light mode" />
-      <br />
-      <sub>Visualizer home in light mode</sub>
-    </td>
-    <td width="50%" align="center">
-      <img src="./assets/home-dark.png" alt="Visualizer home in dark mode" />
-      <br />
-      <sub>Visualizer home in dark mode</sub>
-    </td>
-  </tr>
-</table>
+![Visualizer home in light and dark mode](./assets/home-light.png)
 
 ## Install
 
@@ -35,18 +22,13 @@ From the repo root:
 ./install.sh
 ```
 
-This copies the Pi skill to `~/.pi/skills/visual-artifact`, the extension to `~/.pi/agent/extensions/visual-artifact.ts`, links the runtime to `~/.pi/tools/visualizer`, installs `vaz-*` wrapper scripts to `~/.pi/bin`, and runs `pnpm install`.
+This installs the Pi skill, extension, runtime wrappers, and dependencies.
 
-Requirements:
-
-- Node.js 20+
-- pnpm
-- macOS, Linux, or Windows
-- Pi coding agent (for the extension and skill)
+Requirements: Node.js 20+, pnpm, macOS/Linux/Windows, and the Pi coding agent.
 
 ## Quick start
 
-### 1. Run the renderer locally
+Run the renderer:
 
 ```bash
 pnpm dev
@@ -54,11 +36,11 @@ pnpm dev
 
 Open `http://localhost:9999/artifacts/`.
 
-### 2. Create an artifact from data
+Create an artifact:
 
 ```bash
 export PATH="$HOME/.pi/bin:$PATH"
-vaz-serve   # ensures the renderer is running
+vaz-serve
 ```
 
 Then ask your agent to call:
@@ -67,21 +49,19 @@ Then ask your agent to call:
 create_visual_artifact with title "Q2 Revenue", slug "q2-revenue", and a few stat-card nodes.
 ```
 
-The tool writes `~/.pi/artifacts/<project>/<slug>.json` and returns a URL like:
+The tool writes `~/.pi/artifacts/<project>/<slug>.json` and returns:
 
 ```txt
 http://localhost:9999/artifacts/my-project/q2-revenue/
 ```
 
-### 3. Generate a codebase artifact
-
-For repo overviews or architecture diagrams, use the pipeline instead of hand-writing the spec:
+For repo overviews or architecture diagrams, use the pipeline:
 
 ```bash
 vaz-pipeline /path/to/repo [slug]
 ```
 
-It writes `visual-artifact-spec.json` under `<repoRoot>/ai-artifacts/generated/<slug>/`. Read that file and call `create_visual_artifact` with its payload. See [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md) for the full routing logic.
+It writes `visual-artifact-spec.json` under `<repoRoot>/ai-artifacts/generated/<slug>/`. Read it and call `create_visual_artifact` with its payload. See [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md) for routing details.
 
 ## How it works
 
@@ -94,25 +74,9 @@ LLM reads artifact-contract.json
   → VisualArtifactRenderer maps nodes to UI adapters
 ```
 
-The LLM creates JSON specs, not React files or routes.
-
-## Why Visualizer?
-
-| Capability | Visualizer | Hand-rolled React/Next.js | Streamlit / Gradio | Static site + Mermaid | Jupyter |
-| --- | :---: | :---: | :---: | :---: | :---: |
-| Agent emits JSON, not code | ✅ | ❌ | ❌ | ❌ | ❌ |
-| No arbitrary code execution risk | ✅ | ❌ | ⚠️ | ✅ | ❌ |
-| 36 purpose-built report nodes | ✅ | ❌ | partial | ❌ | partial |
-| Works from any agent session | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Static export + live reload | ✅ | build it | ❌ | rebuild | ❌ |
-| Built-in Tailscale sharing | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Local-first, no cloud upload | ✅ | ✅ | ❌ | ✅ | ❌ |
-
-Visualizer is optimized for agents that need to produce rich, readable pages without touching the frontend.
-
 ## Supported nodes
 
-Visualizer ships **36** node types. See the full reference in [`docs/nodes.md`](./docs/nodes.md).
+Visualizer ships 36 node types. See the full reference in [`docs/nodes.md`](./docs/nodes.md).
 
 Highlights:
 
@@ -131,30 +95,20 @@ Highlights:
 pnpm dev
 ```
 
-Runs on `http://localhost:9999/artifacts/`. All routes are under `basePath: "/artifacts"`.
+Runs on `http://localhost:9999/artifacts/`. All routes use `basePath: "/artifacts"`.
 
 ### Static export + live server
-
-Build once, then run the tiny static server (no Next.js dev overhead):
 
 ```bash
 pnpm build
 pnpm serve
 ```
 
-The server binds to `127.0.0.1:9999` by default and serves the built `out/` directory under `/artifacts/`:
-
-```txt
-http://localhost:9999/artifacts/
-```
-
-This same `/artifacts/` path is used everywhere — local dev, the static server, Tailscale, and the blog — only the base URL changes.
-
-Fresh artifact JSON is read from `~/.pi/artifacts/` at `/artifacts/data/artifacts/<project>/<slug>.json`. The home page and project index pages also load live from `~/.pi/artifacts/`, so new artifacts appear immediately without rebuilding. If a new artifact was created after the last build, `pnpm serve` serves a generic live shell at `/artifacts/<project>/<slug>/` and loads that JSON client-side. New projects created after the build are similarly served by a `/artifacts/<project>/` live shell.
+The server binds to `127.0.0.1:9999` by default and serves the built `out/` directory under `/artifacts/`. Artifact JSON loads live from `~/.pi/artifacts/`, so new artifacts appear without rebuilding.
 
 ### Tailscale Serve
 
-Expose it on your tailnet using the same `/artifacts/` path:
+Expose the same path on your tailnet:
 
 ```bash
 vaz-tailscale setup
@@ -166,13 +120,13 @@ Or manually:
 tailscale serve --yes --bg --https 443 --set-path /artifacts/ http://127.0.0.1:9999/artifacts
 ```
 
-Then open the tailnet URL returned by:
+Open the tailnet URL from:
 
 ```bash
 vaz-tailscale url <project> <slug>
 ```
 
-If you want `create_visual_artifact` to return tailnet URLs by default, set:
+To return tailnet URLs by default:
 
 ```bash
 export VISUAL_ARTIFACT_BASE_URL="$(vaz-tailscale url)"
@@ -182,16 +136,14 @@ export VISUAL_ARTIFACT_BASE_URL="$(vaz-tailscale url)"
 
 ### Wrapper commands
 
-After `./install.sh`, these are available in `~/.pi/bin/` (add it to your PATH):
+After `./install.sh`, add `~/.pi/bin` to your PATH:
 
-| Command | Purpose |
-| --- | --- |
-| `vaz-doctor` | Verify runtime, deps, wrappers, tools, and renderer health |
-| `vaz-serve` | Start the renderer on `http://localhost:9999/artifacts/` if not running |
-| `vaz-status` | Check if the renderer is running. Returns JSON |
-| `vaz-pipeline <repoRoot> [slug]` | Run the full codebase extraction + assembly pipeline |
-| `vaz-tailscale url [project] [slug]` | Return the shareable tailnet URL |
-| `vaz-tailscale setup` | Configure Tailscale Serve proxy |
+- `vaz-doctor` — verify runtime, deps, wrappers, tools, and renderer health
+- `vaz-serve` — start the renderer on `http://localhost:9999/artifacts/` if not running
+- `vaz-status` — check renderer status, returns JSON
+- `vaz-pipeline <repoRoot> [slug]` — run the codebase extraction + assembly pipeline
+- `vaz-tailscale url [project] [slug]` — return the shareable tailnet URL
+- `vaz-tailscale setup` — configure Tailscale Serve proxy
 
 ### Environment variables
 
@@ -230,7 +182,7 @@ pnpm health-check
 
 ## Examples
 
-Sample artifacts created from this repo:
+Sample artifacts from this repo:
 
 ```txt
 http://localhost:9999/artifacts/visualizer/revenue-dashboard/
@@ -244,7 +196,7 @@ For copyable JSON patterns, see [`docs/nodes.md`](./docs/nodes.md).
 
 For the engineering handoff — repo map, architecture, common tasks, and pitfalls — read [`ai-artifacts/AGENT_ONBOARDING.md`](./ai-artifacts/AGENT_ONBOARDING.md).
 
-For the model-facing usage router, read [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md).
+For model-facing usage, read [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md).
 
 ## License
 

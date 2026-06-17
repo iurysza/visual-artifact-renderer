@@ -1,5 +1,5 @@
 {
-  "url": "http://localhost:9999/artifacts/agent-stack-report",
+  "url": "http://localhost:9999/artifacts/visualizer/agent-stack-report/",
   "results": [
     {
       "name": "light",
@@ -12,7 +12,7 @@
       "page": {
         "scrollWidth": 1440,
         "clientWidth": 1440,
-        "scrollHeight": 5925
+        "scrollHeight": 6180
       },
       "documentDark": false,
       "offenders": [],
@@ -65,7 +65,7 @@
       "page": {
         "scrollWidth": 1440,
         "clientWidth": 1440,
-        "scrollHeight": 5925
+        "scrollHeight": 6180
       },
       "documentDark": true,
       "offenders": [],
@@ -118,7 +118,7 @@
       "page": {
         "scrollWidth": 390,
         "clientWidth": 390,
-        "scrollHeight": 16874
+        "scrollHeight": 17228
       },
       "documentDark": false,
       "offenders": [],
