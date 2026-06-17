@@ -65,10 +65,12 @@ function stripMountPath(urlPath) {
   if (urlPath === MOUNT_PATH || urlPath.startsWith(`${MOUNT_PATH}/`)) {
     return urlPath.slice(MOUNT_PATH.length) || "/";
   }
-  // The app is mounted under a single base path everywhere (local, Tailscale,
-  // blog). Requests outside that mount are 404; Tailscale should be configured
-  // to proxy /artifacts/ to /artifacts/ on the backend so the prefix is preserved.
-  return null;
+  // The visualizer is canonically mounted under MOUNT_PATH. Some deployment
+  // targets (e.g. direct Tailscale IP access when VISUALIZER_HOST=0.0.0.0) hit
+  // the server without the prefix, so we also serve requests at the root as if
+  // they were at MOUNT_PATH. Proxied deployments should still proxy /artifacts/
+  // to /artifacts/ so the canonical URL is preserved.
+  return urlPath;
 }
 
 async function readArtifactMeta(filePath) {
@@ -241,9 +243,10 @@ function redirect(res, location) {
 async function serveArtifactJson(reqPath, res) {
   const prefix = `${DATA_PATH}/`;
   if (!reqPath.startsWith(prefix)) return false;
-  const relative = reqPath.slice(prefix.length);
+  const relative = reqPath.slice(prefix.length).replace(/^(\.\.(/|$))+/, "");
   const filePath = path.resolve(ARTIFACTS_DIR, relative);
-  if (!filePath.startsWith(ARTIFACTS_DIR + path.sep)) {
+  const resolvedArtifactsDir = path.resolve(ARTIFACTS_DIR);
+  if (!filePath.startsWith(resolvedArtifactsDir + path.sep) && filePath !== resolvedArtifactsDir) {
     return false;
   }
   if (!(await fileExists(filePath))) return false;
@@ -404,15 +407,21 @@ server.listen(PORT, HOST, async () => {
   // used by the Tailscale proxy.
   const displayHost = isLoopbackHost(HOST) ? HOST : "127.0.0.1";
   const localUrl = `http://${displayHost}:${PORT}${MOUNT_PATH}/`;
+  const rootUrl = `http://${displayHost}:${PORT}/`;
   console.log(`Visualizer server running at ${localUrl}`);
   console.log(`Listening on: ${HOST}:${PORT}`);
   console.log(`Serving static export: ${OUT_DIR}`);
   console.log(`Serving artifacts JSON: ${ARTIFACTS_DIR}`);
-  console.log(`Artifact JSON endpoint: ${MOUNT_PATH}${DATA_PATH}/<project>/<slug>.json`);
-  console.log(`Live index endpoint: ${MOUNT_PATH}${DATA_PATH}/index.json`);
-  console.log(`Live project index endpoint: ${MOUNT_PATH}${DATA_PATH}/<project>/index.json`);
+  console.log(`Canonical artifact page: ${localUrl}<project>/<slug>/`);
+  console.log(`Canonical artifact JSON: ${MOUNT_PATH}${DATA_PATH}/<project>/<slug>.json`);
+  console.log(`Canonical live index: ${MOUNT_PATH}${DATA_PATH}/index.json`);
+  console.log(`Canonical live project index: ${MOUNT_PATH}${DATA_PATH}/<project>/index.json`);
   console.log(`Live artifact fallback: ${MOUNT_PATH}/<project>/<slug>/ -> ${LIVE_ARTIFACT_SHELL}/`);
   console.log(`Live project fallback: ${MOUNT_PATH}/<project>/ -> ${LIVE_PROJECT_SHELL}/`);
+  if (MOUNT_PATH) {
+    console.log(`Root-serving fallback (for direct Tailscale IP): ${rootUrl}<project>/<slug>/`);
+    console.log(`Root-serving JSON fallback: ${DATA_PATH}/<project>/<slug>.json`);
+  }
 
   const tailscaleIp = await getTailscaleIp();
   if (tailscaleIp) {
