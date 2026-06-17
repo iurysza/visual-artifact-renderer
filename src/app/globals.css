@@ -142,6 +142,11 @@ html.dark {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+  /* Prevent flex children of body from expanding past the viewport when their
+     intrinsic content (tables, charts, long words) is wider than the screen. */
+  body > * {
+    @apply min-w-0;
+  }
   ::selection {
     background: color-mix(in oklch, var(--clay), transparent 65%);
   }

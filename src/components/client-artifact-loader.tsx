@@ -80,5 +80,5 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
     )
   }
 
-  return <VisualArtifactRenderer spec={spec} />
+  return <VisualArtifactRenderer spec={spec} project={project ?? params!.project} />
 }

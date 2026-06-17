@@ -33,10 +33,10 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <Breadcrumb className="min-w-0 flex-1">
+          <BreadcrumbList className="min-w-0">
+            <BreadcrumbItem className="shrink-0">
               {segments.length === 0 ? (
                 <BreadcrumbPage className="flex items-center gap-1.5">
                   <Home data-icon="inline-start" />
@@ -57,12 +57,14 @@ export function SiteHeader() {
 
               return (
                 <React.Fragment key={`${segment}-${index}`}>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
+                  <BreadcrumbSeparator className="shrink-0" />
+                  <BreadcrumbItem className="min-w-0">
                     {isLast ? (
-                      <BreadcrumbPage>{label}</BreadcrumbPage>
+                      <BreadcrumbPage className="block truncate">{label}</BreadcrumbPage>
                     ) : (
-                      <BreadcrumbLink render={<Link href={href} />}>{label}</BreadcrumbLink>
+                      <BreadcrumbLink render={<Link href={href} />} className="block truncate">
+                        {label}
+                      </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
                 </React.Fragment>

@@ -26,15 +26,9 @@ export default async function ArtifactPage({
   const initialSpec = await getVisualArtifactSpec(project, slug)
   
   if (initialSpec) {
-    // If we have it at build time, render it natively!
-    // But we still wrap it in ClientArtifactLoader? No, if we have it at build time we can just render.
-    // The instruction: "load artifact JSON client-side (or at build time for shell/SEO + client for full data)"
-    // If we just render VisualArtifactRenderer, it will be fully static, but what if JSON changes on disk?
-    // Let's pass the initialSpec to ClientArtifactLoader so it renders immediately but can re-fetch?
-    // Actually, if we use ClientArtifactLoader with initial data, it can update itself.
+    // Render from the build-time spec immediately, then re-fetch client-side for live updates.
     return <ClientArtifactLoader project={project} slug={slug} initialSpec={initialSpec} />
   }
 
-  // If not available at build time (e.g. fallback), load purely on client.
   return <ClientArtifactLoader project={project} slug={slug} />
 }

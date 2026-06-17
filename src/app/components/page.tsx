@@ -405,7 +405,7 @@ export default function ComponentsPage() {
         </aside>
 
         {/* Main content */}
-        <main className="mx-auto w-full max-w-4xl p-6 sm:p-8 lg:p-10">
+        <main className="mx-auto min-w-0 w-full max-w-4xl p-6 sm:p-8 lg:p-10">
           <div className="mb-10">
             <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground">
               Component Library
