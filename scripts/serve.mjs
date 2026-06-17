@@ -243,7 +243,7 @@ function redirect(res, location) {
 async function serveArtifactJson(reqPath, res) {
   const prefix = `${DATA_PATH}/`;
   if (!reqPath.startsWith(prefix)) return false;
-  const relative = reqPath.slice(prefix.length).replace(/^(\.\.(/|$))+/, "");
+  const relative = reqPath.slice(prefix.length).replace(/^(\.\.\/)+/, "").replace(/^\.\.$/, "");
   const filePath = path.resolve(ARTIFACTS_DIR, relative);
   const resolvedArtifactsDir = path.resolve(ARTIFACTS_DIR);
   if (!filePath.startsWith(resolvedArtifactsDir + path.sep) && filePath !== resolvedArtifactsDir) {
