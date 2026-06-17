@@ -21,6 +21,7 @@
 | 2 | Clean up visualizer paths (`src/lib/paths.ts`) and use everywhere | done | committed | a9b6169, c0c0e95, 69ce2ac, cbf7a6e, a585fd3 |
 | 3 | Update thought-box sync to env-driven paths and optional legacy copy | done | committed 564c851 | 564c851 |
 | 4 | Verify full flow: build, serve, curl, thought-box dev | done | visualizer build/serve/curl pass; thought-box `npm run visualizer:sync` + `npm run dev` + curl pass | - |
+| 5 | Remove legacy `/visualizer/artifacts/` alias | done | committed 7c7b260 | 7c7b260 |
 
 ## Validation
 
