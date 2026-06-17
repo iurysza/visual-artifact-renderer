@@ -62,17 +62,17 @@ function Stepper({ className, items, ...props }: StepperProps) {
                   <span>{index + 1}</span>
                 )}
               </div>
-              <div className="mt-3 space-y-1 text-center">
+              <div className="mt-3 w-full space-y-1 px-2 text-center">
                 <p
                   className={cn(
-                    "font-serif text-base font-medium tracking-[-0.02em]",
+                    "min-w-0 break-words font-serif text-base font-medium tracking-[-0.02em]",
                     isPending && "text-muted-foreground"
                   )}
                 >
                   {item.title}
                 </p>
                 {item.description && (
-                  <p className="text-sm leading-6 text-muted-foreground">
+                  <p className="min-w-0 break-words text-sm leading-6 text-muted-foreground">
                     {item.description}
                   </p>
                 )}

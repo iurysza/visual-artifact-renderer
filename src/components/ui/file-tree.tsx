@@ -28,7 +28,7 @@ function FileTreeNode({ item, depth = 0 }: { item: FileTreeItem; depth?: number 
   if (!isDirectory) {
     return (
       <div
-        className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-foreground hover:bg-muted"
+        className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm text-foreground hover:bg-muted"
         style={{ paddingLeft: `${depth * 1.25 + 0.5}rem` }}
       >
         <File className="size-4 shrink-0 text-muted-foreground" />
@@ -40,7 +40,7 @@ function FileTreeNode({ item, depth = 0 }: { item: FileTreeItem; depth?: number 
   return (
     <Collapsible defaultOpen>
       <CollapsibleTrigger
-        className="group flex w-full items-center gap-2 rounded-md px-2 py-1 text-sm text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+        className="group flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         style={{ paddingLeft: `${depth * 1.25 + 0.5}rem` }}
       >
         <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />

@@ -36,12 +36,12 @@ export function Figure({
       {(title || caption) && (
         <figcaption className="flex flex-col gap-1">
           {title && (
-            <h3 className="font-serif text-2xl font-medium tracking-[-0.02em] text-foreground">
+            <h3 className="break-words font-serif text-2xl font-medium tracking-[-0.02em] text-foreground">
               {title}
             </h3>
           )}
           {caption && (
-            <p className="text-sm leading-6 text-muted-foreground">{caption}</p>
+            <p className="break-words text-sm leading-6 text-muted-foreground">{caption}</p>
           )}
         </figcaption>
       )}

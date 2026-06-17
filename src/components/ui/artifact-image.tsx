@@ -50,7 +50,7 @@ export function ArtifactImage({
         />
       </div>
       {caption && (
-        <figcaption className="border-t bg-muted px-4 py-2 text-sm leading-6 text-muted-foreground">
+        <figcaption className="break-words border-t bg-muted px-4 py-2 text-sm leading-6 text-muted-foreground">
           {caption}
         </figcaption>
       )}

@@ -126,7 +126,7 @@ export function Diff({
         <CollapsibleTrigger
           render={
             <CardHeader className="flex cursor-pointer flex-row items-center justify-between gap-3 px-(--card-spacing) py-3 hover:bg-muted/30">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=closed]:-rotate-90" />
                 <CardTitle className="text-base font-medium">
                   {title ?? "Diff"}

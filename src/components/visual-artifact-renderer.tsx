@@ -7,8 +7,8 @@ import { componentRegistry } from "@/components/component-registry"
 import type { ArtifactRenderContext } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
 
-export function VisualArtifactRenderer({ spec }: { spec: VisualArtifactSpec }) {
-  const context: ArtifactRenderContext = { data: spec.data }
+export function VisualArtifactRenderer({ spec, project }: { spec: VisualArtifactSpec; project: string }) {
+  const context: ArtifactRenderContext = { project, data: spec.data }
   const datasetCount = Object.keys(spec.data ?? {}).length
   const nodeCount = countNodes(spec.nodes)
   const componentCount = collectNodeTypes(spec.nodes).size
@@ -28,10 +28,10 @@ export function VisualArtifactRenderer({ spec }: { spec: VisualArtifactSpec }) {
             <p className="flex items-center gap-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground before:h-px before:w-7 before:bg-[var(--clay)]">
               Visual Artifact
             </p>
-            <h1 className="max-w-5xl font-serif text-4xl font-medium leading-[1.03] tracking-[-0.04em] text-foreground sm:text-6xl">
+            <h1 className="max-w-5xl break-words font-serif text-4xl font-medium leading-[1.03] tracking-[-0.04em] text-foreground sm:text-6xl">
               {spec.title}
             </h1>
-            {spec.description && <p className="max-w-3xl text-lg leading-8 text-muted-foreground">{spec.description}</p>}
+            {spec.description && <p className="max-w-3xl break-words text-lg leading-8 text-muted-foreground">{spec.description}</p>}
           </div>
 
           <aside className="rounded-2xl border bg-background/45 p-4">

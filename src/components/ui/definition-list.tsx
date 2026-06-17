@@ -21,8 +21,8 @@ function DefinitionList({ items, className, ...props }: DefinitionListProps) {
             <React.Fragment key={index}>
               {index > 0 && <Separator />}
               <div className="flex items-baseline justify-between gap-4 px-(--card-spacing) py-3">
-                <dt className="text-sm text-muted-foreground">{item.term}</dt>
-                <dd className="break-all text-right text-sm font-medium font-mono text-foreground">
+                <dt className="shrink-0 text-sm text-muted-foreground">{item.term}</dt>
+                <dd className="min-w-0 break-all text-right text-sm font-medium font-mono text-foreground">
                   {item.description}
                 </dd>
               </div>

@@ -82,20 +82,20 @@ export function renderTimeline({ node, context }: AdapterArgs<"timeline">) {
           const description = row[descriptionKey]
 
           return (
-            <article key={index} className="relative grid grid-cols-[3.5rem_1fr] gap-3">
+            <article key={index} className="relative grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3">
               <div className="relative z-10 flex h-10 w-14 items-center justify-center rounded-full border bg-card px-2 font-mono text-[10px] font-medium leading-tight text-muted-foreground">
                 {formatCell(row[markerKey] ?? index + 1)}
               </div>
-              <PanelCard tone={statusVal}>
+              <PanelCard tone={statusVal} className="min-w-0">
                 <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-start sm:gap-3">
-                  <p className="min-w-0 flex-1 truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
+                  <p className="min-w-0 flex-1 break-words font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
                     {formatCell(row[titleKey])}
                   </p>
                   {statusIsVisible(statusVal, description) && (
                     <StatusChip value={statusVal} className="shrink-0 justify-start" />
                   )}
                 </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                <p className="mt-2 min-w-0 break-words text-sm leading-6 text-muted-foreground">
                   {formatCell(description)}
                 </p>
               </PanelCard>
@@ -140,7 +140,7 @@ export function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) 
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
+                  <p className="break-words font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
                     {formatCell(title)}
                   </p>
                   {meta !== undefined && (
@@ -265,7 +265,7 @@ function MobileRecord({
         <div>
           {primary && (
             <>
-              <p className="font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
+              <p className="break-words font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
                 {formatCell(primaryValue)}
               </p>
               <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -286,7 +286,7 @@ function MobileRecord({
               <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {column.label}
               </dt>
-              <dd className="text-sm leading-6 text-muted-foreground">
+              <dd className="break-words text-sm leading-6 text-muted-foreground">
                 {formatCell(row[column.key])}
               </dd>
             </div>

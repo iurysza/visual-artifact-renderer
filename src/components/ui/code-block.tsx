@@ -125,7 +125,7 @@ export function CodeBlock({
           id={titleId}
           className="flex items-center justify-between gap-3 border-b bg-muted px-4 py-2"
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          <span className="min-w-0 flex-1 break-words font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
             {title ?? "Snippet"}
           </span>
           <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export function CodeBlock({
         )}
       </div>
       {caption && (
-        <p className="border-t bg-muted px-4 py-2 text-sm leading-6 text-muted-foreground">
+        <p className="break-words border-t bg-muted px-4 py-2 text-sm leading-6 text-muted-foreground">
           {caption}
         </p>
       )}

@@ -20,6 +20,7 @@ import { Log } from "@/components/ui/log"
 import { PanelCard, TrendPill } from "@/components/artifact-primitives"
 import { cn } from "@/lib/utils"
 import { getRows, MissingData } from "@/lib/data"
+import { resolveArtifactImageSrc } from "@/lib/image-src"
 
 import type { AdapterArgs } from "@/components/artifact-types"
 
@@ -127,9 +128,9 @@ export function renderFileTree({ node }: AdapterArgs<"file-tree">) {
   return <FileTree items={items} />
 }
 
-export function renderImage({ node }: AdapterArgs<"image">) {
+export function renderImage({ node, context }: AdapterArgs<"image">) {
   const { src, alt, caption, aspect } = node.props
-  return <ArtifactImage src={src} alt={alt} caption={caption} aspect={aspect} />
+  return <ArtifactImage src={resolveArtifactImageSrc(src, context.project)} alt={alt} caption={caption} aspect={aspect} />
 }
 
 export function renderPieChart({ node, context }: AdapterArgs<"pie-chart">) {
@@ -168,7 +169,7 @@ export function renderStepper({ node }: AdapterArgs<"stepper">) {
 export function renderHeading({ node }: AdapterArgs<"heading">) {
   const { text, level = 2, align = "left" } = node.props
   const className = cn(
-    "font-serif font-medium tracking-[-0.025em] text-foreground",
+    "break-words font-serif font-medium tracking-[-0.025em] text-foreground",
     level === 1 && "text-4xl leading-tight sm:text-5xl",
     level === 2 && "text-3xl leading-tight",
     level === 3 && "text-2xl leading-snug",
@@ -190,7 +191,7 @@ export function renderText({ node }: AdapterArgs<"text">) {
   return (
     <p
       className={cn(
-        "max-w-4xl leading-7",
+        "max-w-4xl break-words leading-7",
         tone === "muted" && "text-muted-foreground",
         size === "sm" && "text-sm leading-6",
         size === "lg" && "text-lg leading-8",

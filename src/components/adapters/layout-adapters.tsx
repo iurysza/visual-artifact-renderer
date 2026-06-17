@@ -55,12 +55,12 @@ export function renderSection({ node, children }: AdapterArgs<"section">) {
       {(props.title || props.description) && (
         <div className="pb-1">
           {props.title && (
-            <h2 className="font-serif text-3xl font-medium tracking-[-0.025em] text-foreground">
+            <h2 className="break-words font-serif text-3xl font-medium tracking-[-0.025em] text-foreground">
               {props.title}
             </h2>
           )}
           {props.description && (
-            <p className="mt-2 max-w-3xl text-muted-foreground">{props.description}</p>
+            <p className="mt-2 max-w-3xl break-words text-muted-foreground">{props.description}</p>
           )}
         </div>
       )}
@@ -137,15 +137,15 @@ function FlowStep({ item, index }: { item: ArtifactFlowItem; index: number }) {
           )}
         </div>
         {item.label && (
-          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--clay)]">
+          <p className="mt-3 break-words font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--clay)]">
             {item.label}
           </p>
         )}
-        <p className="mt-1 truncate font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
+        <p className="mt-1 break-words font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
           {item.title}
         </p>
         {description && (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+          <p className="mt-2 break-words text-sm leading-6 text-muted-foreground">{description}</p>
         )}
       </PanelCard>
     </div>
