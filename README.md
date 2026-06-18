@@ -1,101 +1,90 @@
 # Visualizer
 
-Visualizer turns JSON into polished, shareable pages — reports, dashboards, architecture briefs, runbooks, and explainers. Agents describe what they want with a constrained spec; the renderer maps each node to a trusted UI adapter.
+Visualizer lets agents return polished visual pages instead of plain markdown: reports, code reviews, explainers, dashboards, or any structured output. The agent calls one tool with JSON data; Visualizer validates it, renders known components, stores it under `~/.pi/artifacts`, and gives each page its own `/artifacts/...` route.
 
-The key constraint: **agents emit JSON, never React, routes, JSX, imports, or CSS.** That containment gives agents rich output without arbitrary code.
+The rule: **agents emit JSON, not React, routes, JSX, imports, CSS, or full HTML.** That saves tokens, keeps pages consistent, and leaves rendering to trusted code. Skills can steer which components agents use, which layouts work best, and which patterns to avoid.
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-- **JSON-first**: specs, not source code
-- **36 node types**: stat cards, tables, charts, mermaid diagrams, timelines, status grids, and more
-- **Local-first**: artifacts live in `~/.pi/artifacts` and run on your machine
-- **Instant sharing**: built-in Tailscale support for tailnet URLs
-- **Static + live**: build once, then load new artifacts without rebuilding
+- **Visual output**: structured pages instead of long markdown dumps
+- **JSON-first**: agents provide data; the renderer owns the UI
+- **Local-first**: artifacts stay on your machine
+- **Extensible**: add new components without changing how agents call the tool
+- **Static + live**: build once, load new artifacts later
 
-![Visualizer home in light and dark mode](./assets/home-light.png)
+![Visualizer home](./assets/home-light.png)
 
 ## Install
-
-From the repo root:
 
 ```bash
 ./install.sh
 ```
 
-This installs the Pi skill, extension, runtime wrappers, and dependencies.
+This installs dependencies, the Pi extension, the visual-artifact skill, and `vaz-*` helper commands.
 
-Requirements: Node.js 20+, pnpm, macOS/Linux/Windows, and the Pi coding agent.
+Requirements: Node.js 20+, pnpm, Pi, and macOS/Linux/Windows.
 
 ## Quick start
 
-Run the renderer:
-
-```bash
-pnpm dev
-```
-
-Open `http://localhost:9999/artifacts/`.
-
-Create an artifact:
+### 1. Start the live server
 
 ```bash
 export PATH="$HOME/.pi/bin:$PATH"
 vaz-serve
 ```
 
-Then ask your agent to call:
+Open `http://localhost:9999/artifacts/`.
+
+This is the viewer. It keeps serving fresh artifact JSON from `~/.pi/artifacts`, so new artifacts show up without rebuilding.
+
+### 2. Create an artifact
+
+Ask Pi to create a visual artifact:
 
 ```text
-create_visual_artifact with title "Q2 Revenue", slug "q2-revenue", and a few stat-card nodes.
+Create a visual artifact called "Q2 Revenue" with a few stat cards.
 ```
 
-The tool writes `~/.pi/artifacts/<project>/<slug>.json` and returns:
+Pi calls `create_visual_artifact`, which validates the spec, writes:
+
+```txt
+~/.pi/artifacts/<project>/<slug>.json
+```
+
+and returns a URL like:
 
 ```txt
 http://localhost:9999/artifacts/my-project/q2-revenue/
 ```
 
-For repo overviews or architecture diagrams, use the pipeline:
+## What developers need to know
 
-```bash
-vaz-pipeline /path/to/repo [slug]
-```
+Visualizer has four moving parts:
 
-It writes `visual-artifact-spec.json` under `<repoRoot>/ai-artifacts/generated/<slug>/`. Read it and call `create_visual_artifact` with its payload. See [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md) for routing details.
+- **Renderer**: the Next.js app that displays artifacts.
+- **Artifact store**: JSON files in `~/.pi/artifacts/<project>/`.
+- **Pi extension**: exposes `create_visual_artifact`, validates specs, and writes artifacts.
+- **Contract**: `artifact-contract.json`, generated from the schema and manifest.
 
-## How it works
-
-```txt
-LLM reads artifact-contract.json
-  → calls create_visual_artifact(JSON)
-  → Pi extension validates the spec
-  → writes ~/.pi/artifacts/<project>/<slug>.json
-  → /artifacts/<project>/<slug>/ renders the spec
-  → VisualArtifactRenderer maps nodes to UI adapters
-```
-
-## Supported nodes
-
-Visualizer ships 36 node types. See the full reference in [`docs/nodes.md`](./docs/nodes.md).
-
-Highlights:
-
-- **Dashboard tiles**: `stat-card`, `metric`, `status-grid`
-- **Data**: `table`, `data-table`, `comparison-table`, `chart`, `heatmap`
-- **Diagrams**: `mermaid`, `svg-diagram`, `flow`
-- **Narrative**: `heading`, `text`, `prose`, `card`, `section`, `tabs`, `accordion`
-- **Code**: `code-block`, `diff`, `file-tree`
-- **Other**: `alert`, `badge`, `button`, `image`, `log`, `pie-chart`, `donut-chart`, `area-chart`, `radar-chart`, `scatter-chart`, `stepper`, `timeline`, `separator`
+For normal use, run `vaz-serve`. For renderer development, use `pnpm dev`. The wrappers exist so Pi and scripts can start the renderer, inspect health, and build share URLs without knowing repo internals.
 
 ## Running locally
 
-### Dev server
+### Live artifact server
+
+```bash
+vaz-serve
+```
+
+Starts the renderer if needed and serves live artifact updates from `~/.pi/artifacts`.
+
+### Frontend dev server
 
 ```bash
 pnpm dev
 ```
 
-Runs on `http://localhost:9999/artifacts/`. All routes use `basePath: "/artifacts"`.
+Use this when changing the renderer itself. It runs on `http://localhost:9999/artifacts/`.
 
 ### Static export + live server
 
@@ -104,48 +93,34 @@ pnpm build
 pnpm serve
 ```
 
-The server binds to `127.0.0.1:9999` by default and serves the built `out/` directory under `/artifacts/`. Artifact JSON loads live from `~/.pi/artifacts/`, so new artifacts appear without rebuilding.
+The static server serves `out/` under `/artifacts/` and still reads fresh artifact JSON from `~/.pi/artifacts`, so new artifacts appear without rebuilding.
 
-### Tailscale Serve
-
-Expose the same path on your tailnet:
+### Tailscale sharing
 
 ```bash
 vaz-tailscale setup
-```
-
-Or manually:
-
-```bash
-tailscale serve --yes --bg --https 443 --set-path /artifacts/ http://127.0.0.1:9999/artifacts
-```
-
-Open the tailnet URL from:
-
-```bash
 vaz-tailscale url <project> <slug>
 ```
 
-To return tailnet URLs by default:
+Set this if you want generated artifacts to return tailnet URLs:
 
 ```bash
 export VISUAL_ARTIFACT_BASE_URL="$(vaz-tailscale url)"
 ```
 
-## Advanced
+## Helper commands
 
-### Wrapper commands
+Installed by `./install.sh` into `~/.pi/bin`.
 
-After `./install.sh`, add `~/.pi/bin` to your PATH:
+You do not need these for normal frontend work. They are for Pi sessions, scripts, sharing, and troubleshooting.
 
-- `vaz-doctor` — verify runtime, deps, wrappers, tools, and renderer health
-- `vaz-serve` — start the renderer on `http://localhost:9999/artifacts/` if not running
-- `vaz-status` — check renderer status, returns JSON
-- `vaz-pipeline <repoRoot> [slug]` — run the codebase extraction + assembly pipeline
-- `vaz-tailscale url [project] [slug]` — return the shareable tailnet URL
-- `vaz-tailscale setup` — configure Tailscale Serve proxy
+- `vaz-serve` — start the renderer if it is not running
+- `vaz-status` — check whether the renderer is alive; returns JSON
+- `vaz-doctor` — diagnose install, runtime, wrapper, and renderer issues
+- `vaz-tailscale setup` — expose `/artifacts/` on your tailnet
+- `vaz-tailscale url [project] [slug]` — print the share URL
 
-### Environment variables
+## Configuration
 
 ```bash
 VISUALIZER_PORT=9999
@@ -158,7 +133,7 @@ VISUAL_ARTIFACT_BASE_URL=http://localhost:9999/artifacts
 VISUALIZER_CONTRACT_PATH=/path/to/visualizer
 ```
 
-## Verify & QA
+## Verify
 
 ```bash
 pnpm lint
@@ -168,35 +143,12 @@ pnpm verify:artifacts
 pnpm build
 ```
 
-Visual QA (requires a running dev server):
+Optional checks:
 
 ```bash
 pnpm visual:qa
-```
-
-Health check (requires a running server):
-
-```bash
 pnpm health-check
 ```
-
-## Examples
-
-Sample artifacts from this repo:
-
-```txt
-http://localhost:9999/artifacts/visualizer/revenue-dashboard/
-http://localhost:9999/artifacts/visualizer/implementation-plan/
-http://localhost:9999/artifacts/visualizer/agent-stack-report/
-```
-
-For copyable JSON patterns, see [`docs/nodes.md`](./docs/nodes.md).
-
-## Contributing
-
-For the engineering handoff — repo map, architecture, common tasks, and pitfalls — read [`ai-artifacts/AGENT_ONBOARDING.md`](./ai-artifacts/AGENT_ONBOARDING.md).
-
-For model-facing usage, read [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md).
 
 ## License
 
