@@ -16,7 +16,10 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Visualizer",
+  title: {
+    default: "Visualizer",
+    template: "%s | Visualizer",
+  },
   description: "Data-driven visual artifacts",
 }
 
