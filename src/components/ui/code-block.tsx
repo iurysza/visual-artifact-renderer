@@ -150,18 +150,18 @@ export function CodeBlock({
           </div>
         </figcaption>
       )}
-      <div className="relative">
+      <div className="relative overflow-x-auto bg-zinc-950">
         {error ? (
-          <pre className="overflow-x-auto bg-zinc-950 p-4 text-sm leading-6 text-red-400">
+          <pre className="min-w-full p-4 text-sm leading-6 text-red-400">
             <code>{code}</code>
           </pre>
         ) : html ? (
           <div
-            className="overflow-x-auto text-sm leading-6 [&_code]:font-mono [&_pre]:m-0 [&_pre]:p-4 [&_pre]:font-mono"
+            className="min-w-full text-sm leading-6 [&_code]:font-mono [&_pre]:m-0 [&_pre]:p-4 [&_pre]:font-mono"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
-          <pre className="overflow-x-auto bg-muted p-4 text-sm leading-6 text-muted-foreground">
+          <pre className="min-w-full bg-muted p-4 text-sm leading-6 text-muted-foreground">
             <code>{code}</code>
           </pre>
         )}

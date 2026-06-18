@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
+import { ScrollActiveProvider } from "@/components/scroll-active-provider"
 import { SiteHeader } from "@/components/site-header"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
@@ -44,8 +45,10 @@ export default function RootLayout({
           storageKey="visualizer-theme"
           enableColorScheme
         >
-          <SiteHeader />
-          {children}
+          <ScrollActiveProvider>
+            <SiteHeader />
+            {children}
+          </ScrollActiveProvider>
         </ThemeProvider>
       </body>
     </html>

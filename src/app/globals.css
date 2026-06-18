@@ -153,4 +153,37 @@ html.dark {
   code {
     @apply font-mono;
   }
+
+  /* Subtle, auto-hiding native scrollbars */
+  ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    transition: background-color 150ms ease;
+  }
+  .is-scrolling::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--border), transparent 25%);
+  }
+  .is-scrolling::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--border), transparent 10%);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  * {
+    scrollbar-width: auto;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 150ms ease;
+  }
+  .is-scrolling {
+    scrollbar-color: color-mix(in oklch, var(--border), transparent 25%) transparent;
+  }
 }
