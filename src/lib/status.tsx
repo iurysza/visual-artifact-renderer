@@ -65,15 +65,25 @@ export function statusBadgeVariant(tone: ReturnType<typeof statusTone>) {
   return "secondary"
 }
 
+export function toneSurfaceClass(
+  tone: "accent" | "success" | "warning" | "danger" | "neutral" | "default" | undefined
+) {
+  return cn(
+    tone === "accent" &&
+      "bg-[color-mix(in_oklch,var(--clay),transparent_92%)] border-[color-mix(in_oklch,var(--clay),transparent_65%)]",
+    tone === "warning" &&
+      "bg-[color-mix(in_oklch,var(--clay),transparent_88%)] border-[color-mix(in_oklch,var(--clay),transparent_55%)]",
+    tone === "success" &&
+      "bg-[color-mix(in_oklch,var(--olive),transparent_92%)] border-[color-mix(in_oklch,var(--olive),transparent_65%)]",
+    tone === "danger" &&
+      "bg-[color-mix(in_oklch,var(--rust),transparent_92%)] border-[color-mix(in_oklch,var(--rust),transparent_65%)]"
+  )
+}
+
 export function statusPanelClass(value: unknown) {
   const tone = statusTone(formatCell(value))
 
-  return cn(
-    tone === "success" && "border-l-4 border-l-[var(--olive)]",
-    tone === "warning" && "border-l-4 border-l-[var(--clay)]",
-    tone === "danger" && "border-l-4 border-l-[var(--rust)]",
-    tone === "accent" && "border-l-4 border-l-[var(--clay)]"
-  )
+  return toneSurfaceClass(tone)
 }
 
 export function statusIsVisible(value: unknown, description?: unknown) {

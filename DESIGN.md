@@ -198,6 +198,7 @@ Surfaces are flat at rest. Depth is conveyed through tonal contrast (ivory vs. p
 - **Corner Style:** Rounded-2xl (~21.6px radius).
 - **Background:** Paper at 95% opacity.
 - **Border:** 1.5px solid border color (gray-300).
+- **Tone surfaces:** Optional `accent` (clay), `success` (olive), `warning` (clay), and `danger` (rust) tones are rendered with a subtle tinted background and a matching low-opacity border — never a side stripe.
 - **Shadow:** Card rest shadow.
 - **Internal Padding:** 1rem default, 0.75rem for `size="sm"`.
 - **Title:** Sans title style by default; card titles specifically use serif with tight tracking.

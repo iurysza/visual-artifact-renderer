@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { statusPanelClass } from "@/lib/status"
+import { statusPanelClass, toneSurfaceClass } from "@/lib/status"
 import type { ArtifactTone } from "@/lib/artifact-schema"
 
 export function Figure({
@@ -106,13 +106,7 @@ export function TrendPill({
 }
 
 export function tonePanelClass(tone: ArtifactTone | undefined) {
-  return cn(
-    tone && tone !== "default" && "border-l-4",
-    tone === "accent" && "border-l-[var(--clay)]",
-    tone === "success" && "border-l-[var(--olive)]",
-    tone === "warning" && "border-l-[var(--clay)]",
-    tone === "danger" && "border-l-[var(--rust)]"
-  )
+  return toneSurfaceClass(tone)
 }
 
 export function columnsClass(columns: 1 | 2 | 3 | 4) {
