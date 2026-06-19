@@ -32,13 +32,13 @@ export function SvgDiagram({
   html,
   title,
   caption,
-  height = 720,
+  height = "min(720px, 70vh)",
   className,
 }: {
   html: string
   title?: string
   caption?: string
-  height?: number
+  height?: number | string
   className?: string
 }) {
   const mounted = useSyncExternalStore(
