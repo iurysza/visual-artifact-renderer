@@ -187,3 +187,31 @@ html.dark {
     scrollbar-color: color-mix(in oklch, var(--border), transparent 25%) transparent;
   }
 }
+
+/*
+ * Reduced-motion guard.
+ *
+ * Neutralizes infinite/looping animations and long transitions for users who
+ * request reduced motion. Loading indicators must still communicate loading,
+ * so we never hide them — we freeze them in a visible resting state.
+ *
+ * Tailwind's `animate-ping` keyframes end at opacity:0 / scale:2, which would
+ * make a frozen loader dot disappear. The targeted `.animate-ping` override
+ * below keeps the dot visible at rest instead of relying on the end-state.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Keep ping loader dots visible at rest instead of fading them out. */
+  .animate-ping {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

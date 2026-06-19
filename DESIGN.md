@@ -225,7 +225,7 @@ Artifact cards are the central container. They combine the card vocabulary with 
 - **Do** use clay as the single accent for focus, selection, and hover borders.
 - **Do** keep body text within 65–75ch.
 - **Do** use serif display for page headings and card titles, sans for UI and body, mono for labels.
-- **Do** respect `prefers-reduced-motion` with instant or crossfade fallbacks.
+- **Do** respect `prefers-reduced-motion` as a hard requirement: neutralize infinite/looping animations and long transitions, but keep loading indicators visible in a static resting state so the loading state is still communicated.
 - **Do** use ivory as the light-mode canvas and paper for elevated surfaces.
 - **Do** maintain tactile feedback: active buttons press, focus rings glow, hover states lift subtly.
 - **Do** use solid tokens (`--muted-foreground`, `--gray-700`) for secondary text hierarchy so contrast stays predictable across ivory, paper, and dark surfaces.

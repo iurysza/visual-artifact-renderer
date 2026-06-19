@@ -13,10 +13,21 @@ const proseComponents: Components = {
       {children}
     </pre>
   ),
-  img: (props) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img {...props} className="h-auto max-w-full" alt={props.alt ?? ""} />
-  ),
+  img: (props) => {
+    // Surface missing alt in dev so it isn't silently swallowed. An empty
+    // alt is valid for decorative images, so we only warn when alt is absent
+    // (undefined) — the `?? ""` fallback still keeps rendering safe.
+    if (process.env.NODE_ENV !== "production" && props.alt === undefined) {
+      console.warn(
+        '[Prose] <img> rendered without an alt attribute. Pass alt="" for decorative images.',
+        `src: ${props.src ?? ""}`,
+      )
+    }
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img {...props} className="h-auto max-w-full" alt={props.alt ?? ""} />
+    )
+  },
 }
 
 export function Prose({ children, className }: { children: string; className?: string }) {
