@@ -192,37 +192,32 @@ html.dark {
     @apply font-mono;
   }
 
-  /* Subtle, auto-hiding native scrollbars */
-  ::-webkit-scrollbar {
+  /* Subtle, auto-hiding native scrollbars — scoped to the .is-scrolling
+     utility applied by ScrollActiveProvider so we never override the
+     browser defaults globally. */
+  .is-scrolling {
+    scrollbar-width: auto;
+    scrollbar-color: color-mix(in oklch, var(--border), transparent 25%) transparent;
+  }
+  .is-scrolling::-webkit-scrollbar {
     width: 14px;
     height: 14px;
   }
-  ::-webkit-scrollbar-track {
+  .is-scrolling::-webkit-scrollbar-track {
     background: transparent;
   }
-  ::-webkit-scrollbar-thumb {
-    background: transparent;
+  .is-scrolling::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--border), transparent 25%);
     border: 3px solid transparent;
     border-radius: var(--radius-full);
     background-clip: padding-box;
     transition: background-color 150ms ease;
   }
-  .is-scrolling::-webkit-scrollbar-thumb {
-    background: color-mix(in oklch, var(--border), transparent 25%);
-  }
   .is-scrolling::-webkit-scrollbar-thumb:hover {
     background: color-mix(in oklch, var(--border), transparent 10%);
   }
-  ::-webkit-scrollbar-corner {
+  .is-scrolling::-webkit-scrollbar-corner {
     background: transparent;
-  }
-  * {
-    scrollbar-width: auto;
-    scrollbar-color: transparent transparent;
-    transition: scrollbar-color 150ms ease;
-  }
-  .is-scrolling {
-    scrollbar-color: color-mix(in oklch, var(--border), transparent 25%) transparent;
   }
 }
 
