@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { artifactIndexPath, artifactPagePath, projectPagePath } from "@/lib/paths"
 import { formatDate } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
 interface ProjectListing {
@@ -85,78 +86,68 @@ export function ArtifactIndexLoader() {
   const lastUpdated = recent[0]?.modifiedAt ?? projects[0]?.lastModifiedAt
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-12 sm:px-8 lg:py-16">
-      <section className="mb-12 space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="max-w-3xl font-serif text-4xl font-medium tracking-[-0.03em] text-foreground sm:text-5xl">
-              Your visual workspace.
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
-              Browse reports, dashboards, and explainers generated from your local artifacts.
-            </p>
-          </div>
-          <Link
-            href="/components"
-            className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-card-foreground shadow-sm transition hover:border-clay hover:text-clay"
-          >
-            <span>View Components</span>
-            <span className="font-mono text-xs">→</span>
-          </Link>
+    <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-serif text-3xl font-medium tracking-[-0.03em] text-foreground sm:text-4xl">
+            Your visual workspace.
+          </h1>
+          <p className="mt-2 max-w-2xl text-base text-muted-foreground">
+            Browse reports, dashboards, and explainers generated from your local artifacts.
+          </p>
         </div>
-      </section>
+        <Link
+          href="/components"
+          className="inline-flex w-fit items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-card-foreground shadow-sm transition hover:border-clay hover:text-clay"
+        >
+          <span>View Components</span>
+          <span className="font-mono text-xs">→</span>
+        </Link>
+      </header>
 
-      <section className="mb-12 border-b pb-10">
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-          <div className="flex items-baseline gap-2">
-            <span className="font-serif text-2xl font-medium tracking-[-0.03em] text-foreground">
-              {projects.length}
-            </span>
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              project{projects.length === 1 ? "" : "s"}
-            </span>
-          </div>
-          <span className="text-border" aria-hidden="true">·</span>
-          <div className="flex items-baseline gap-2">
-            <span className="font-serif text-2xl font-medium tracking-[-0.03em] text-foreground">
-              {totalArtifacts}
-            </span>
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              artifact{totalArtifacts === 1 ? "" : "s"}
-            </span>
-          </div>
-          <span className="text-border" aria-hidden="true">·</span>
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Last updated
-            </span>
-            <span className="font-serif text-lg font-medium tracking-[-0.02em] text-foreground">
-              {lastUpdated ? formatDate(new Date(lastUpdated)) : "—"}
-            </span>
-          </div>
-        </div>
+      <section className="mb-12 flex flex-wrap items-center gap-3 border-b pb-8">
+        <Badge variant="secondary" className="font-mono text-[11px] uppercase tracking-[0.12em]">
+          {projects.length} project{projects.length === 1 ? "" : "s"}
+        </Badge>
+        <Badge variant="secondary" className="font-mono text-[11px] uppercase tracking-[0.12em]">
+          {totalArtifacts} artifact{totalArtifacts === 1 ? "" : "s"}
+        </Badge>
+        {lastUpdated && (
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            Updated {formatDate(new Date(lastUpdated))}
+          </span>
+        )}
       </section>
 
       {recent.length > 0 && (
         <section className="mb-16">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-serif text-2xl font-medium tracking-[-0.02em]">Recent</h2>
-            <Badge variant="secondary">Last {recent.length}</Badge>
-          </div>
+          <h2 className="mb-5 font-serif text-xl font-medium tracking-[-0.02em]">Recent</h2>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recent.map((artifact) => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {recent.map((artifact, i) => (
               <Link
                 key={`${artifact.project}-${artifact.slug}`}
                 href={artifactPagePath(artifact.project, artifact.slug)}
-                className="group flex flex-col rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                className={cn(
+                  "group flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md",
+                  i === 0 && recent.length >= 2 && "lg:col-span-2 lg:min-h-[280px]"
+                )}
               >
                 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   {artifact.project}
                 </p>
-                <h3 className="mt-2 font-serif text-xl font-medium tracking-[-0.02em]">{artifact.title}</h3>
+                <h3
+                  className={cn(
+                    "mt-2 font-serif font-medium tracking-[-0.02em]",
+                    i === 0 ? "text-2xl" : "text-xl"
+                  )}
+                >
+                  {artifact.title}
+                </h3>
                 {artifact.description && (
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{artifact.description}</p>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {artifact.description}
+                  </p>
                 )}
                 <p className="mt-auto pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   {formatDate(new Date(artifact.modifiedAt))}
@@ -168,18 +159,18 @@ export function ArtifactIndexLoader() {
       )}
 
       <section>
-        <h2 className="mb-6 font-serif text-2xl font-medium tracking-[-0.02em]">Projects</h2>
+        <h2 className="mb-5 font-serif text-xl font-medium tracking-[-0.02em]">Projects</h2>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {projects.map((project) => (
             <Link
               key={project.name}
               href={projectPagePath(project.name)}
-              className="group flex items-center justify-between rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+              className="group flex items-center justify-between rounded-xl border bg-card p-4 transition hover:border-primary hover:bg-muted/30"
             >
               <div>
-                <h3 className="font-serif text-xl font-medium tracking-[-0.02em]">{project.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 className="font-serif text-lg font-medium tracking-[-0.02em]">{project.name}</h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">
                   {project.artifactCount} artifact{project.artifactCount === 1 ? "" : "s"}
                 </p>
               </div>
