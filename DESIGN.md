@@ -60,6 +60,7 @@ rounded:
   2xl: "1.35rem"
   3xl: "1.65rem"
   4xl: "1.95rem"
+  full: "9999px"
 spacing:
   xs: "0.25rem"
   sm: "0.5rem"
@@ -180,8 +181,14 @@ The palette is anchored by warm neutrals and a single terracotta accent. It read
 Surfaces are flat at rest. Depth is conveyed through tonal contrast (ivory vs. paper vs. gray-100) rather than heavy shadow. Shadows appear only as a response to state or elevation.
 
 ### Shadow Vocabulary
-- **Card rest** (`box-shadow: 0 10px 34px rgba(20, 20, 19, 0.06)`): Subtle ambient shadow under cards, making them read as separate sheets without lifting them off the page.
-- **Theme toggle** (`box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`): Small border-adjacent shadow for compact controls.
+Shadows are tokenized as CSS custom properties in `globals.css` so components reference `var(--shadow-card)` / `var(--shadow-card-sm)` instead of literal values. Dark mode overrides the same tokens with a deeper black tint (`rgba(0, 0, 0, 0.2)`).
+
+- **Card rest** (`--shadow-card: 0 10px 34px rgba(20, 20, 19, 0.06)`): Subtle ambient shadow under cards, making them read as separate sheets without lifting them off the page.
+- **Card rest small** (`--shadow-card-sm: 0 8px 26px rgba(20, 20, 19, 0.05)`): Lighter ambient shadow for card-like control surfaces such as tab lists.
+- **Theme toggle** (`box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`): Small border-adjacent shadow for compact controls; applied via the Tailwind `shadow-sm` utility, not a token.
+
+### Radius Scale
+The rounded scale (`--radius-sm` … `--radius-4xl`) is derived from `--radius` (0.75rem). `--radius-full: 9999px` covers pill/circle shapes (scrollbar thumbs, chips, toggles) and is the single source for fully-rounded corners.
 
 ### Named Rules
 **The Flat-By-Default Rule.** Surfaces sit flat. Shadows are earned by elevation, hover, or focus — never used as decoration.

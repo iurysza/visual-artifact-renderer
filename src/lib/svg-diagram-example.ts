@@ -66,14 +66,14 @@ export const visualizerPipelineDiagram = `<!doctype html>
   .chips { display: flex; gap: 6px; flex-wrap: wrap; }
   .chip {
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
-    padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 11px; border: 1px solid var(--line); border-radius: 9999px;
     background: transparent; color: var(--muted); cursor: pointer; transition: all .15s ease; flex: none;
   }
   .chip:hover { color: var(--ink); border-color: var(--muted); }
   .chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
   #themeToggle {
     font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px;
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 0.45rem;
     background: transparent; color: var(--muted); cursor: pointer; flex: none;
   }
   #themeToggle:hover { color: var(--ink); border-color: var(--muted); }

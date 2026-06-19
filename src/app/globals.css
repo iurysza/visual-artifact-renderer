@@ -48,6 +48,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-full: 9999px;
 }
 
 :root {
@@ -87,6 +88,9 @@
   --border: var(--gray-300);
   --input: var(--gray-300);
   --ring: var(--clay);
+  /* Elevation tokens — see DESIGN.md §4. Flat by default; shadows are earned. */
+  --shadow-card: 0 10px 34px rgba(20, 20, 19, 0.06);
+  --shadow-card-sm: 0 8px 26px rgba(20, 20, 19, 0.05);
   --chart-1: var(--clay);
   --chart-2: var(--olive);
   --chart-3: var(--oat);
@@ -124,6 +128,9 @@ html.dark {
   --chart-3: #c9ad83;
   --chart-4: #f5f0e8;
   --sidebar-primary-foreground: #151412;
+  /* Dark shadows use a deeper black tint so elevated surfaces still read. */
+  --shadow-card: 0 10px 34px rgba(0, 0, 0, 0.2);
+  --shadow-card-sm: 0 8px 26px rgba(0, 0, 0, 0.2);
 }
 
 @layer base {
@@ -165,7 +172,7 @@ html.dark {
   ::-webkit-scrollbar-thumb {
     background: transparent;
     border: 3px solid transparent;
-    border-radius: 9999px;
+    border-radius: var(--radius-full);
     background-clip: padding-box;
     transition: background-color 150ms ease;
   }
