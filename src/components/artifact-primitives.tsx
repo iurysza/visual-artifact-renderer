@@ -29,7 +29,7 @@ export function Figure({
   return (
     <figure
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border bg-card/80 p-4 shadow-sm",
+        "flex flex-col gap-3 rounded-2xl border bg-card/80 p-4 shadow-[var(--shadow-card-sm)]",
         className
       )}
     >

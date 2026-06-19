@@ -69,14 +69,10 @@ export function toneSurfaceClass(
   tone: "accent" | "success" | "warning" | "danger" | "neutral" | "default" | undefined
 ) {
   return cn(
-    tone === "accent" &&
-      "bg-[color-mix(in_oklch,var(--clay),transparent_92%)] border-[color-mix(in_oklch,var(--clay),transparent_65%)]",
-    tone === "warning" &&
-      "bg-[color-mix(in_oklch,var(--clay),transparent_88%)] border-[color-mix(in_oklch,var(--clay),transparent_55%)]",
-    tone === "success" &&
-      "bg-[color-mix(in_oklch,var(--olive),transparent_92%)] border-[color-mix(in_oklch,var(--olive),transparent_65%)]",
-    tone === "danger" &&
-      "bg-[color-mix(in_oklch,var(--rust),transparent_92%)] border-[color-mix(in_oklch,var(--rust),transparent_65%)]"
+    tone === "accent" && "bg-clay/8 border-clay/35",
+    tone === "warning" && "bg-clay/12 border-clay/45",
+    tone === "success" && "bg-olive/8 border-olive/35",
+    tone === "danger" && "bg-rust/8 border-rust/35"
   )
 }
 
