@@ -5,7 +5,6 @@ import Link from "next/link"
 import { artifactIndexPath, artifactPagePath, projectPagePath } from "@/lib/paths"
 import { formatDate } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ProjectListing {
   name: string
@@ -107,41 +106,35 @@ export function ArtifactIndexLoader() {
         </div>
       </section>
 
-      <section className="mb-12 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Projects
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-serif text-3xl font-medium tracking-[-0.04em]">{projects.length}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Artifacts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-serif text-3xl font-medium tracking-[-0.04em]">{totalArtifacts}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+      <section className="mb-12 border-b pb-10">
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif text-2xl font-medium tracking-[-0.03em] text-foreground">
+              {projects.length}
+            </span>
+            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              project{projects.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <span className="text-border" aria-hidden="true">·</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif text-2xl font-medium tracking-[-0.03em] text-foreground">
+              {totalArtifacts}
+            </span>
+            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              artifact{totalArtifacts === 1 ? "" : "s"}
+            </span>
+          </div>
+          <span className="text-border" aria-hidden="true">·</span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Last updated
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-serif text-3xl font-medium tracking-[-0.04em]">
+            </span>
+            <span className="font-serif text-lg font-medium tracking-[-0.02em] text-foreground">
               {lastUpdated ? formatDate(new Date(lastUpdated)) : "—"}
-            </p>
-          </CardContent>
-        </Card>
+            </span>
+          </div>
+        </div>
       </section>
 
       {recent.length > 0 && (
