@@ -50,10 +50,15 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
     }
 
     load()
-    const id = setInterval(load, 5000)
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") load()
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange)
     return () => {
       cancelled = true
-      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
     }
   }, [project])
 
