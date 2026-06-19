@@ -65,6 +65,12 @@ export function MermaidDiagram({
   const [svg, setSvg] = useState("")
   const [error, setError] = useState<string | null>(null)
 
+  const normalizedCode = useMemo(
+    () =>
+      code.replace(/\\n/g, "\n").replace(/\\t/g, "\t").replace(/\\\\/g, "\\"),
+    [code]
+  )
+
   useEffect(() => {
     const syncTheme = () =>
       setTheme(
@@ -100,7 +106,7 @@ export function MermaidDiagram({
             fontFamily: "var(--font-geist-sans)",
           })
 
-          return mermaid.render(`${diagramId}-${theme}`, code)
+          return mermaid.render(`${diagramId}-${theme}`, normalizedCode)
         })
 
         if (!cancelled) {
@@ -122,7 +128,7 @@ export function MermaidDiagram({
     return () => {
       cancelled = true
     }
-  }, [code, diagramId, theme])
+  }, [normalizedCode, diagramId, theme])
 
   return (
     <Figure
