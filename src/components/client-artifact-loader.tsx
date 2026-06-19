@@ -54,7 +54,7 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
     return (
       <main className="mx-auto flex min-h-screen w-full items-center justify-center">
         <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]"></span>
+          <span className="h-2 w-2 animate-ping rounded-full bg-clay"></span>
           Loading artifact...
         </div>
       </main>
@@ -73,7 +73,7 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
     return (
       <main className="mx-auto flex min-h-screen w-full items-center justify-center">
         <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]"></span>
+          <span className="h-2 w-2 animate-ping rounded-full bg-clay"></span>
           Loading artifact...
         </div>
       </main>

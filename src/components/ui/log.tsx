@@ -63,7 +63,7 @@ export function Log({
       ref={rootRef}
       data-slot="log"
       className={cn(
-        "flex h-80 flex-col overflow-hidden rounded-2xl border-[1.5px] shadow-[0_10px_34px_rgba(20,20,19,0.06)] dark:shadow-black/20",
+        "flex h-80 flex-col overflow-hidden rounded-2xl border-[1.5px] shadow-[var(--shadow-card)]",
         isDark
           ? "border-slate-800 bg-slate-950 text-slate-50"
           : "border-border bg-card/95 text-card-foreground",

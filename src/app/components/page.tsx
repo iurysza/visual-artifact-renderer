@@ -325,7 +325,7 @@ function Section({
           {description}
         </p>
       </div>
-      <div className="rounded-2xl border-[1.5px] bg-card/95 p-6 shadow-[0_10px_34px_rgba(20,20,19,0.06)] dark:shadow-black/20">
+      <div className="rounded-2xl border-[1.5px] bg-card/95 p-6 shadow-[var(--shadow-card)]">
         {children}
       </div>
       <Separator className="my-10" />

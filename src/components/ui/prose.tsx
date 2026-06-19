@@ -32,7 +32,7 @@ const proseComponents: Components = {
 
 export function Prose({ children, className }: { children: string; className?: string }) {
   return (
-    <div className={`prose prose-slate dark:prose-invert max-w-none break-words ${className || ""}`}>
+    <div className={`prose max-w-none break-words ${className || ""}`}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={proseComponents}>
         {children}
       </ReactMarkdown>

@@ -69,7 +69,7 @@ export function ArtifactIndexLoader() {
     return (
       <main className="mx-auto flex min-h-screen w-full items-center justify-center">
         <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]" />
+          <span className="h-2 w-2 animate-ping rounded-full bg-clay" />
           Loading index...
         </div>
       </main>
@@ -94,7 +94,7 @@ export function ArtifactIndexLoader() {
           </div>
           <Link
             href="/components"
-            className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-card-foreground shadow-sm transition hover:border-[var(--clay)] hover:text-[var(--clay)]"
+            className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-card-foreground shadow-sm transition hover:border-clay hover:text-clay"
           >
             <span>View Components</span>
             <span className="font-mono text-xs">→</span>
@@ -185,7 +185,7 @@ export function ArtifactIndexLoader() {
                   {project.artifactCount} artifact{project.artifactCount === 1 ? "" : "s"}
                 </p>
               </div>
-              <span className="text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[var(--clay)]">
+              <span className="text-muted-foreground transition group-hover:translate-x-1 group-hover:text-clay">
                 →
               </span>
             </Link>

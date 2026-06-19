@@ -135,7 +135,7 @@ export function Diff({
                   {added > 0 && (
                     <Badge
                       variant="outline"
-                      className="border-[var(--olive)]/30 bg-[var(--olive)]/10 text-[var(--olive)]"
+                      className="border-olive/30 bg-olive/10 text-olive"
                     >
                       +{added}
                     </Badge>
@@ -176,7 +176,7 @@ export function Diff({
                           line.type === "remove" &&
                             "bg-destructive/10 text-destructive",
                           line.type === "add" &&
-                            "bg-[var(--olive)]/10 text-[var(--olive)]",
+                            "bg-olive/10 text-olive",
                           line.type === "equal" && "text-card-foreground"
                         )}
                       >

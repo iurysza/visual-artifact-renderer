@@ -61,7 +61,7 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
     return (
       <main className="mx-auto flex min-h-screen w-full items-center justify-center">
         <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]" />
+          <span className="h-2 w-2 animate-ping rounded-full bg-clay" />
           Loading project index...
         </div>
       </main>
@@ -80,7 +80,7 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
     return (
       <main className="mx-auto flex min-h-screen w-full items-center justify-center">
         <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          <span className="h-2 w-2 animate-ping rounded-full bg-[var(--clay)]" />
+          <span className="h-2 w-2 animate-ping rounded-full bg-clay" />
           Loading project index...
         </div>
       </main>
@@ -122,7 +122,7 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
                   {formatDateTime(new Date(artifact.modifiedAt))}
                 </p>
               </div>
-              <span className="mt-1 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[var(--clay)]">
+              <span className="mt-1 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-clay">
                 →
               </span>
             </div>

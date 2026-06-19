@@ -137,7 +137,7 @@ function FlowStep({ item, index }: { item: ArtifactFlowItem; index: number }) {
           )}
         </div>
         {item.label && (
-          <p className="mt-3 break-words font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--clay)]">
+          <p className="mt-3 break-words font-mono text-[10px] uppercase tracking-[0.14em] text-clay-dark">
             {item.label}
           </p>
         )}

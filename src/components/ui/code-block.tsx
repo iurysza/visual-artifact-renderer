@@ -150,9 +150,9 @@ export function CodeBlock({
           </div>
         </figcaption>
       )}
-      <div className="relative overflow-x-auto bg-zinc-950">
+      <div className="relative overflow-x-auto bg-slate">
         {error ? (
-          <pre className="min-w-full p-4 text-sm leading-6 text-red-400">
+          <pre className="min-w-full p-4 text-sm leading-6 text-destructive">
             <code>{code}</code>
           </pre>
         ) : html ? (

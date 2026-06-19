@@ -239,7 +239,7 @@ export function renderStatCard({ node }: AdapterArgs<"stat-card">) {
   return (
     <PanelCard
       tone={tone}
-      className="min-h-full rounded-2xl border-[1.5px] bg-card/95 p-5 text-card-foreground shadow-[0_10px_34px_rgba(20,20,19,0.06)] dark:shadow-black/20"
+      className="min-h-full rounded-2xl border-[1.5px] bg-card/95 p-5 text-card-foreground shadow-[var(--shadow-card)]"
     >
       <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {label}
