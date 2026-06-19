@@ -1,16 +1,33 @@
 "use client"
 
+import { useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
 
 import { cn } from "@/lib/utils"
 
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
+}
+
 export function ThemeToggle({ className }: { className?: string }) {
-  const { setTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
+  const mounted = useMounted()
 
   function toggleTheme() {
-    const dark = !document.documentElement.classList.contains("dark")
-    setTheme(dark ? "dark" : "light")
+    setTheme(resolvedTheme === "dark" ? "light" : "dark")
   }
+
+  // Render a stable label during SSR/hydration to avoid a mismatch, then
+  // switch to the action label once the theme has resolved on the client.
+  const label = mounted
+    ? resolvedTheme === "dark"
+      ? "Light"
+      : "Dark"
+    : "Theme"
 
   return (
     <button
@@ -22,8 +39,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       )}
       onClick={toggleTheme}
     >
-      <span className="dark:hidden">Dark</span>
-      <span className="hidden dark:inline">Light</span>
+      {label}
     </button>
   )
 }
