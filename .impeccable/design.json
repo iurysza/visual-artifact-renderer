@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-18T15:55:00Z",
+  "title": "Design System: Visualizer",
+  "extensions": {
+    "colorMeta": {
+      "ivory": {
+        "role": "neutral",
+        "displayName": "Ivory",
+        "canonical": "oklch(98% 0.005 85)",
+        "tonalRamp": [
+          "oklch(15% 0.005 85)",
+          "oklch(30% 0.005 85)",
+          "oklch(45% 0.005 85)",
+          "oklch(58% 0.005 85)",
+          "oklch(72% 0.005 85)",
+          "oklch(85% 0.005 85)",
+          "oklch(94% 0.005 85)",
+          "oklch(98% 0.005 85)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(100% 0 0)",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(30% 0 0)",
+          "oklch(45% 0 0)",
+          "oklch(58% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(85% 0 0)",
+          "oklch(94% 0 0)",
+          "oklch(100% 0 0)"
+        ]
+      },
+      "slate": {
+        "role": "primary",
+        "displayName": "Slate",
+        "canonical": "oklch(18% 0.005 85)",
+        "tonalRamp": [
+          "oklch(5% 0.005 85)",
+          "oklch(12% 0.005 85)",
+          "oklch(18% 0.005 85)",
+          "oklch(28% 0.005 85)",
+          "oklch(42% 0.005 85)",
+          "oklch(56% 0.005 85)",
+          "oklch(72% 0.005 85)",
+          "oklch(88% 0.005 85)"
+        ]
+      },
+      "clay": {
+        "role": "primary",
+        "displayName": "Clay",
+        "canonical": "oklch(67% 0.15 45)",
+        "tonalRamp": [
+          "oklch(25% 0.08 45)",
+          "oklch(35% 0.11 45)",
+          "oklch(45% 0.13 45)",
+          "oklch(55% 0.14 45)",
+          "oklch(67% 0.15 45)",
+          "oklch(75% 0.13 45)",
+          "oklch(85% 0.09 45)",
+          "oklch(94% 0.04 45)"
+        ]
+      },
+      "oat": {
+        "role": "secondary",
+        "displayName": "Oat",
+        "canonical": "oklch(88% 0.03 85)",
+        "tonalRamp": [
+          "oklch(20% 0.02 85)",
+          "oklch(35% 0.025 85)",
+          "oklch(48% 0.03 85)",
+          "oklch(60% 0.035 85)",
+          "oklch(72% 0.035 85)",
+          "oklch(82% 0.03 85)",
+          "oklch(90% 0.025 85)",
+          "oklch(96% 0.015 85)"
+        ]
+      },
+      "olive": {
+        "role": "secondary",
+        "displayName": "Olive",
+        "canonical": "oklch(60% 0.1 130)",
+        "tonalRamp": [
+          "oklch(20% 0.05 130)",
+          "oklch(30% 0.07 130)",
+          "oklch(40% 0.09 130)",
+          "oklch(50% 0.1 130)",
+          "oklch(60% 0.1 130)",
+          "oklch(70% 0.09 130)",
+          "oklch(82% 0.06 130)",
+          "oklch(93% 0.03 130)"
+        ]
+      },
+      "rust": {
+        "role": "destructive",
+        "displayName": "Rust",
+        "canonical": "oklch(54% 0.15 35)",
+        "tonalRamp": [
+          "oklch(20% 0.08 35)",
+          "oklch(30% 0.11 35)",
+          "oklch(40% 0.13 35)",
+          "oklch(48% 0.15 35)",
+          "oklch(54% 0.15 35)",
+          "oklch(65% 0.13 35)",
+          "oklch(78% 0.09 35)",
+          "oklch(92% 0.04 35)"
+        ]
+      },
+      "gray-500": {
+        "role": "neutral",
+        "displayName": "Gray 500",
+        "canonical": "oklch(58% 0.02 90)",
+        "tonalRamp": [
+          "oklch(12% 0.01 90)",
+          "oklch(22% 0.012 90)",
+          "oklch(35% 0.015 90)",
+          "oklch(46% 0.018 90)",
+          "oklch(58% 0.02 90)",
+          "oklch(70% 0.018 90)",
+          "oklch(82% 0.015 90)",
+          "oklch(94% 0.01 90)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headings and major page titles. Editorial serif with tight tracking."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles and important artifact headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, sub-section headers, and UI headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prose, descriptions, and long-form content. Capped at 65–75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase micro-labels, metrics, badges, and instrumentation."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code, filenames, timestamps, and technical metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-rest",
+        "value": "0 10px 34px rgba(20, 20, 19, 0.06)",
+        "purpose": "Subtle ambient shadow under cards; keeps them reading as separate sheets without lifting them off the page."
+      },
+      {
+        "name": "control-sm",
+        "value": "0 1px 3px rgba(0, 0, 0, 0.1)",
+        "purpose": "Small border-adjacent shadow for compact controls like the theme toggle."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions and hover feedback."
+      },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Decisive exits and reveal animations."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default action button. Slate background, ivory text, tactile press feedback.",
+      "html": "<button class=\"ds-btn-primary\">Save changes</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2rem; padding: 0 0.625rem; border: 1px solid transparent; border-radius: 0.6rem; background: #141413; color: #faf9f5; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: rgba(20, 20, 19, 0.8); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; border-color: #d97757; box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.5); } .ds-btn-primary:disabled { pointer-events: none; opacity: 0.5; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action. Paper background, gray border, muted hover fill.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2rem; padding: 0 0.625rem; border: 1px solid #d1cfc5; border-radius: 0.6rem; background: #ffffff; color: #141413; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-outline:hover { background: #f0eee6; } .ds-btn-outline:active { transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: none; border-color: #d97757; box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.5); } .ds-btn-outline:disabled { pointer-events: none; opacity: 0.5; }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Dangerous or destructive action. Rust text on a tinted background.",
+      "html": "<button class=\"ds-btn-destructive\">Delete</button>",
+      "css": ".ds-btn-destructive { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2rem; padding: 0 0.625rem; border: 1px solid transparent; border-radius: 0.6rem; background: rgba(176, 74, 63, 0.1); color: #b04a3f; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-destructive:hover { background: rgba(176, 74, 63, 0.2); } .ds-btn-destructive:active { transform: translateY(1px); } .ds-btn-destructive:focus-visible { outline: none; border-color: rgba(176, 74, 63, 0.4); box-shadow: 0 0 0 3px rgba(176, 74, 63, 0.2); } .ds-btn-destructive:disabled { pointer-events: none; opacity: 0.5; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Primary content container. Rounded corners, subtle shadow, optional header/content/footer slots.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><span class=\"ds-card-kicker\">Projects</span><h3 class=\"ds-card-title\">42</h3></div><div class=\"ds-card-content\"><p class=\"ds-card-text\">Active artifact projects in your workspace.</p></div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; border: 1.5px solid #d1cfc5; border-radius: 1.35rem; background: rgba(255, 255, 255, 0.95); color: #141413; box-shadow: 0 10px 34px rgba(20, 20, 19, 0.06); font-family: var(--font-geist-sans, system-ui, sans-serif); } .ds-card-header { display: flex; flex-direction: column; gap: 0.375rem; } .ds-card-kicker { font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #87867f; } .ds-card-title { margin: 0; font-family: var(--font-editorial, Georgia, serif); font-size: 1.875rem; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; color: #141413; } .ds-card-content { font-size: 0.875rem; line-height: 1.6; color: #87867f; } .ds-card-text { margin: 0; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Single-line text field. Transparent background, gray border, clay focus ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search artifacts\" />",
+      "css": ".ds-input { width: 100%; height: 2rem; padding: 0.25rem 0.625rem; border: 1px solid #d1cfc5; border-radius: 0.6rem; background: transparent; color: #141413; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.875rem; line-height: 1.5; outline: none; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input::placeholder { color: #87867f; } .ds-input:focus-visible { border-color: #d97757; box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.5); } .ds-input:disabled { background: rgba(209, 207, 197, 0.5); cursor: not-allowed; opacity: 0.5; } .ds-input[aria-invalid='true'] { border-color: #b04a3f; box-shadow: 0 0 0 3px rgba(176, 74, 63, 0.2); }"
+    },
+    {
+      "name": "Theme Toggle",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Compact rounded control for switching light/dark mode. Mono label, subtle lift on hover.",
+      "html": "<button class=\"ds-theme-toggle\" aria-label=\"Toggle dark mode\"><span>Dark</span></button>",
+      "css": ".ds-theme-toggle { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 0.75rem; border: 1px solid #d1cfc5; border-radius: 9999px; background: rgba(255, 255, 255, 0.9); color: #87867f; font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-theme-toggle:hover { border-color: #d97757; color: #141413; transform: translateY(-2px); } .ds-theme-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px #d97757; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Small status or category label. Tonal background, rounded full.",
+      "html": "<span class=\"ds-badge\">Beta</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; justify-content: center; padding: 0.25rem 0.5rem; border-radius: 9999px; background: #f0eee6; color: #3d3d3a; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.75rem; font-weight: 500; line-height: 1; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Drafting Table",
+    "overview": "A craftsman's surface: warm paper, precise tools, ink and terracotta accents. Visualizer's interface should feel like a clean, well-lit workspace where structured data is laid out for inspection. The aesthetic sits between editorial print and modern dev tool — warm enough to feel human, precise enough to trust. The system rejects visual noise. It is not a dashboard, not a marketing site, and not a generic SaaS template. Every surface serves the artifact being rendered; chrome recedes, content dominates. Motion is stateful, not decorative. Color is restrained, not ornamental.",
+    "keyCharacteristics": [
+      "Warm ivory canvas with clay terracotta as the single accent voice.",
+      "Serif display type (editorial) paired with geometric sans body and mono labels.",
+      "Flat-by-default surfaces; shadows appear only as state responses.",
+      "Tactile, responsive components with immediate press and focus feedback.",
+      "Full light/dark mode support with hue-preserving palette shifts."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Clay is the only accent color on UI chrome. If a second accent is needed, it should be data-driven (olive for success, rust for error), not decorative.", "section": "colors" },
+      { "name": "The Tinted Neutral Rule", "body": "Backgrounds carry a faint warm hue; text and borders are never pure gray. Every neutral leans toward the clay/oat family to keep the palette coherent.", "section": "colors" },
+      { "name": "The One Display Rule", "body": "Serif display type is reserved for page-level headings and card titles. UI labels, buttons, and data never use display serif.", "section": "typography" },
+      { "name": "The Measure Rule", "body": "Body text never exceeds 75ch. Data-dense tables and compact UI may run wider; prose never does.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces sit flat. Shadows are earned by elevation, hover, or focus — never used as decoration.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use clay as the single accent for focus, selection, and hover borders.",
+      "Do keep body text within 65–75ch.",
+      "Do use serif display for page headings and card titles, sans for UI and body, mono for labels.",
+      "Do respect prefers-reduced-motion with instant or crossfade fallbacks.",
+      "Do use ivory as the light-mode canvas and paper for elevated surfaces.",
+      "Do maintain tactile feedback: active buttons press, focus rings glow, hover states lift subtly."
+    ],
+    "donts": [
+      "Don't use dense dashboard noise: avoid cluttered widget grids and competing chart widgets.",
+      "Don't use generic SaaS gradients or purple-blue accent palettes.",
+      "Don't use overly decorative motion (bounce, elastic, purely ornamental animations).",
+      "Don't nest cards inside cards as a default scaffold.",
+      "Don't use side-stripe borders greater than 1px as a colored accent.",
+      "Don't use gradient text or glassmorphism as a default.",
+      "Don't use tiny uppercase tracked eyebrows above every section."
+    ]
+  }
+}
