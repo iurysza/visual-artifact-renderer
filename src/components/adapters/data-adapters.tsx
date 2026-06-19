@@ -286,7 +286,7 @@ function MobileRecord({
               <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {column.label}
               </dt>
-              <dd className="break-words text-sm leading-6 text-muted-foreground">
+              <dd className="break-words text-sm leading-6 text-foreground">
                 {formatCell(row[column.key])}
               </dd>
             </div>
