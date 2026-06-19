@@ -65,7 +65,7 @@
   --gray-100: #f0eee6;
   --gray-200: #e6e3da;
   --gray-300: #d1cfc5;
-  --gray-500: #87867f;
+  --gray-500: #6b6a63;
   --gray-700: #3d3d3a;
 
   /* Semantic theme tokens */
@@ -116,7 +116,7 @@ html.dark {
   --gray-100: #25231f;
   --gray-200: #302d27;
   --gray-300: #454038;
-  --gray-500: #a29d92;
+  --gray-500: #b8b2a6;
   --gray-700: #d8d0c3;
 
   /* Semantic overrides that differ from light */

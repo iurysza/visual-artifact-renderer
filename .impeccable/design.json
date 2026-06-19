@@ -112,16 +112,16 @@
       "gray-500": {
         "role": "neutral",
         "displayName": "Gray 500",
-        "canonical": "oklch(58% 0.02 90)",
+        "canonical": "oklch(52% 0.011 90)",
         "tonalRamp": [
-          "oklch(12% 0.01 90)",
-          "oklch(22% 0.012 90)",
-          "oklch(35% 0.015 90)",
-          "oklch(46% 0.018 90)",
-          "oklch(58% 0.02 90)",
-          "oklch(70% 0.018 90)",
-          "oklch(82% 0.015 90)",
-          "oklch(94% 0.01 90)"
+          "oklch(6% 0.01 90)",
+          "oklch(16% 0.012 90)",
+          "oklch(29% 0.015 90)",
+          "oklch(40% 0.018 90)",
+          "oklch(52% 0.011 90)",
+          "oklch(64% 0.018 90)",
+          "oklch(76% 0.015 90)",
+          "oklch(88% 0.01 90)"
         ]
       }
     },
@@ -213,7 +213,7 @@
       "refersTo": "card",
       "description": "Primary content container. Rounded corners, subtle shadow, optional header/content/footer slots. Optional tone surfaces use a tinted background and matching low-opacity border for accent, success, warning, or danger states — never a side stripe.",
       "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><span class=\"ds-card-kicker\">Projects</span><h3 class=\"ds-card-title\">42</h3></div><div class=\"ds-card-content\"><p class=\"ds-card-text\">Active artifact projects in your workspace.</p></div></div>",
-      "css": ".ds-card { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; border: 1.5px solid #d1cfc5; border-radius: 1.35rem; background: rgba(255, 255, 255, 0.95); color: #141413; box-shadow: 0 10px 34px rgba(20, 20, 19, 0.06); font-family: var(--font-geist-sans, system-ui, sans-serif); } .ds-card-header { display: flex; flex-direction: column; gap: 0.375rem; } .ds-card-kicker { font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #87867f; } .ds-card-title { margin: 0; font-family: var(--font-editorial, Georgia, serif); font-size: 1.875rem; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; color: #141413; } .ds-card-content { font-size: 0.875rem; line-height: 1.6; color: #87867f; } .ds-card-text { margin: 0; }"
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; border: 1.5px solid #d1cfc5; border-radius: 1.35rem; background: rgba(255, 255, 255, 0.95); color: #141413; box-shadow: 0 10px 34px rgba(20, 20, 19, 0.06); font-family: var(--font-geist-sans, system-ui, sans-serif); } .ds-card-header { display: flex; flex-direction: column; gap: 0.375rem; } .ds-card-kicker { font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #6b6a63; } .ds-card-title { margin: 0; font-family: var(--font-editorial, Georgia, serif); font-size: 1.875rem; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; color: #141413; } .ds-card-content { font-size: 0.875rem; line-height: 1.6; color: #6b6a63; } .ds-card-text { margin: 0; }"
     },
     {
       "name": "Input",
@@ -221,7 +221,7 @@
       "refersTo": "input",
       "description": "Single-line text field. Transparent background, gray border, clay focus ring.",
       "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search artifacts\" />",
-      "css": ".ds-input { width: 100%; height: 2rem; padding: 0.25rem 0.625rem; border: 1px solid #d1cfc5; border-radius: 0.6rem; background: transparent; color: #141413; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.875rem; line-height: 1.5; outline: none; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input::placeholder { color: #87867f; } .ds-input:focus-visible { border-color: #d97757; box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.5); } .ds-input:disabled { background: rgba(209, 207, 197, 0.5); cursor: not-allowed; opacity: 0.5; } .ds-input[aria-invalid='true'] { border-color: #b04a3f; box-shadow: 0 0 0 3px rgba(176, 74, 63, 0.2); }"
+      "css": ".ds-input { width: 100%; height: 2rem; padding: 0.25rem 0.625rem; border: 1px solid #d1cfc5; border-radius: 0.6rem; background: transparent; color: #141413; font-family: var(--font-geist-sans, system-ui, sans-serif); font-size: 0.875rem; line-height: 1.5; outline: none; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input::placeholder { color: #6b6a63; } .ds-input:focus-visible { border-color: #d97757; box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.5); } .ds-input:disabled { background: rgba(209, 207, 197, 0.5); cursor: not-allowed; opacity: 0.5; } .ds-input[aria-invalid='true'] { border-color: #b04a3f; box-shadow: 0 0 0 3px rgba(176, 74, 63, 0.2); }"
     },
     {
       "name": "Theme Toggle",
@@ -229,7 +229,7 @@
       "refersTo": "button-ghost",
       "description": "Compact rounded control for switching light/dark mode. Mono label, subtle lift on hover.",
       "html": "<button class=\"ds-theme-toggle\" aria-label=\"Toggle dark mode\"><span>Dark</span></button>",
-      "css": ".ds-theme-toggle { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 0.75rem; border: 1px solid #d1cfc5; border-radius: 9999px; background: rgba(255, 255, 255, 0.9); color: #87867f; font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-theme-toggle:hover { border-color: #d97757; color: #141413; transform: translateY(-2px); } .ds-theme-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px #d97757; }"
+      "css": ".ds-theme-toggle { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 0.75rem; border: 1px solid #d1cfc5; border-radius: 9999px; background: rgba(255, 255, 255, 0.9); color: #6b6a63; font-family: var(--font-geist-mono, ui-monospace, monospace); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-theme-toggle:hover { border-color: #d97757; color: #141413; transform: translateY(-2px); } .ds-theme-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px #d97757; }"
     },
     {
       "name": "Badge",

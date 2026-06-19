@@ -13,7 +13,7 @@ colors:
   gray-100: "#f0eee6"
   gray-200: "#e6e3da"
   gray-300: "#d1cfc5"
-  gray-500: "#87867f"
+  gray-500: "#6b6a63"
   gray-700: "#3d3d3a"
 typography:
   display:
@@ -140,7 +140,7 @@ The palette is anchored by warm neutrals and a single terracotta accent. It read
 - **Paper (#ffffff)**: Card, popover, and elevated surface backgrounds.
 - **Gray-100 (#f0eee6)**: Muted backgrounds, secondary surfaces, hover states.
 - **Gray-300 (#d1cfc5)**: Borders, dividers, input strokes.
-- **Gray-500 (#87867f)**: Muted foreground text, placeholders, secondary labels.
+- **Gray-500 (#6b6a63)**: Muted foreground text, placeholders, secondary labels.
 - **Gray-700 (#3d3d3a)**: Strong secondary text, captions.
 
 ### State
@@ -172,6 +172,8 @@ The palette is anchored by warm neutrals and a single terracotta accent. It read
 **The One Display Rule.** Serif display type is reserved for page-level headings and card titles. UI labels, buttons, and data never use display serif.
 
 **The Measure Rule.** Body text never exceeds 75ch. Data-dense tables and compact UI may run wider; prose never does.
+
+**The Hierarchy Rule.** Build text hierarchy with weight, size, and solid color tokens (`--foreground`, `--muted-foreground`, `--gray-700`). Avoid opacity-based color mixing for readable text; it degrades contrast unpredictably across surfaces and breaks WCAG AA compliance.
 
 ## 4. Elevation
 
@@ -226,6 +228,7 @@ Artifact cards are the central container. They combine the card vocabulary with 
 - **Do** respect `prefers-reduced-motion` with instant or crossfade fallbacks.
 - **Do** use ivory as the light-mode canvas and paper for elevated surfaces.
 - **Do** maintain tactile feedback: active buttons press, focus rings glow, hover states lift subtly.
+- **Do** use solid tokens (`--muted-foreground`, `--gray-700`) for secondary text hierarchy so contrast stays predictable across ivory, paper, and dark surfaces.
 
 ### Don't:
 - **Don't** use dense dashboard noise: avoid cluttered widget grids and competing chart widgets.
@@ -235,3 +238,4 @@ Artifact cards are the central container. They combine the card vocabulary with 
 - **Don't** use side-stripe borders greater than 1px as a colored accent.
 - **Don't** use gradient text or glassmorphism as a default.
 - **Don't** use tiny uppercase tracked eyebrows above every section.
+- **Don't** use opacity-only text colors (e.g., `text-foreground/60`) for readable or interactive labels; they fail contrast on some surfaces and cannot be guaranteed to meet WCAG AA.

@@ -118,7 +118,7 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
                 {artifact.description && (
                   <p className="mt-2 text-sm text-muted-foreground">{artifact.description}</p>
                 )}
-                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                   {formatDateTime(new Date(artifact.modifiedAt))}
                 </p>
               </div>

@@ -160,7 +160,7 @@ export function ArtifactIndexLoader() {
                 {artifact.description && (
                   <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{artifact.description}</p>
                 )}
-                <p className="mt-auto pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                <p className="mt-auto pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   {formatDate(new Date(artifact.modifiedAt))}
                 </p>
               </Link>
