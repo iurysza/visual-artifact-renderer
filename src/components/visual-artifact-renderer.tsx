@@ -15,7 +15,7 @@ export function VisualArtifactRenderer({ spec, project }: { spec: VisualArtifact
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14">
-      <header className="overflow-hidden rounded-[1.35rem] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
+      <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
         <div className="border-b bg-muted/45 px-5 py-3 sm:px-7">
           <div className="flex flex-wrap items-center justify-end gap-2">
             <HeroPill>{datasetCount} dataset{datasetCount === 1 ? "" : "s"}</HeroPill>
