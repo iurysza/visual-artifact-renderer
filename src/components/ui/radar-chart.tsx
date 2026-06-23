@@ -104,12 +104,12 @@ export function RadarChart({
         <PolarGrid className="stroke-border/50" />
         <PolarAngleAxis
           dataKey="subject"
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+          tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
         />
         <PolarRadiusAxis
           angle={90}
           domain={[0, "auto"]}
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+          tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
           axisLine={false}
         />
         <ChartTooltip
