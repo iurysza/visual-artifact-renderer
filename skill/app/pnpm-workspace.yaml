@@ -1,4 +1,5 @@
 allowBuilds:
   esbuild: true
+  koffi: true
   sharp: true
   unrs-resolver: true
