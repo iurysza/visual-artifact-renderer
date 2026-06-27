@@ -1,2 +1,6 @@
-*.json
+# Runtime output from `visual-artifact create`.
+# Keep this directory in the repo, but do not ship generated projects,
+# JSON specs, or sidecar assets.
+*
+!.gitignore
 !.gitkeep

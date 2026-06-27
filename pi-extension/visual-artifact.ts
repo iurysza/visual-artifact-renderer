@@ -20,7 +20,7 @@ function findCli(): string | null {
 }
 
 function runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {
-  const result = spawnSync(cli, ["create", "--project", projectPath, "--json"], {
+  const result = spawnSync(cli, ["create", "-", "--project", projectPath, "--json"], {
     input: `${JSON.stringify(spec)}\n`,
     encoding: "utf8",
     timeout: 30000,

@@ -1,161 +1,160 @@
 # Visualizer
 
-Visualizer lets agents return polished visual pages instead of plain markdown: reports, code reviews, explainers, dashboards, or any structured output. The agent calls one tool with JSON data; Visualizer validates it, renders known components, stores it under `~/.pi/artifacts`, and gives each page its own `/artifacts/...` route.
+Visualizer lets agents return polished visual pages instead of markdown walls: reports, code reviews, explainers, dashboards, and structured summaries.
 
-The rule: **agents emit JSON, not React, routes, JSX, imports, CSS, or full HTML.** That saves tokens, keeps pages consistent, and leaves rendering to trusted code. Skills can steer which components agents use, which layouts work best, and which patterns to avoid.
+The rule: **agents emit JSON, not React, routes, JSX, imports, CSS, or full HTML.** The `visual-artifact` CLI validates that JSON, writes it under the skill, and serves it with the bundled Next.js renderer.
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-
-- **Visual output**: structured pages instead of long markdown dumps
-- **JSON-first**: agents provide data; the renderer owns the UI
+- **JSON-first**: agents provide a constrained artifact spec
 - **Local-first**: artifacts stay on your machine
-- **Extensible**: add new components without changing how agents call the tool
-- **Static + live**: build once, load new artifacts later
+- **Self-contained skill**: CLI, renderer, contract, and artifact store live under `skill/`
+- **Static + live**: the renderer is built once but reads fresh artifact JSON at request time
 
 ![Visualizer home](./assets/home-light.png)
 
-## Dashboard showcase
+## Layout
 
-A live showcase artifact with mobile and desktop screenshots of representative dashboards is included:
-
-![Revenue Dashboard](./assets/dashboard-showcase.png)
-
-Run `vaz-serve` and open `/artifacts/visualizer/dashboard-showcase/` to browse all screenshots.
-
-## Install
-
-```bash
-./install.sh
+```text
+skill/
+  SKILL.md
+  artifact-contract.json
+  app/                 # Next.js renderer; static export lands in app/out
+  artifacts/           # generated JSON: <project>/<slug>.json
+  cli/                 # Bun CLI source and compiled binary
+pi-extension/
+  visual-artifact.ts   # Pi tool wrapper for create_visual_artifact
 ```
 
-This installs dependencies, the Pi extension, the visual-artifact skill, and `vaz-*` helper commands.
+## Install / bootstrap
 
-Requirements: Node.js 20+, pnpm, Pi, and macOS/Linux/Windows.
+Requirements: Bun, pnpm, Pi, Node.js 20+.
+
+From this repo:
+
+```bash
+cd skill/cli
+bun install
+bun run src/main.ts bootstrap
+export PATH="$HOME/.pi/bin:$PATH"
+visual-artifact doctor
+```
+
+`bootstrap` installs renderer dependencies, builds `skill/app/out`, compiles the Bun CLI, and symlinks `visual-artifact` into `~/.pi/bin/`.
+
+If the binary is already installed, rerun bootstrap with:
+
+```bash
+visual-artifact bootstrap
+```
 
 ## Quick start
 
-### 1. Start the live server
+Create and serve an artifact from a file:
 
 ```bash
-export PATH="$HOME/.pi/bin:$PATH"
-vaz-serve
+visual-artifact create my-spec.json
 ```
 
-Open `http://localhost:9999/artifacts/`.
+Create from stdin:
 
-This is the viewer. It keeps serving fresh artifact JSON from `~/.pi/artifacts`, so new artifacts show up without rebuilding.
+```bash
+cat my-spec.json | visual-artifact create
+# or
+visual-artifact create - < my-spec.json
+```
 
-### 2. Create an artifact
-
-Ask Pi to create a visual artifact:
+The CLI writes runtime output inside the installed skill:
 
 ```text
-Create a visual artifact called "Q2 Revenue" with a few stat cards.
+skill/artifacts/<project>/<slug>.json
 ```
 
-Pi calls `create_visual_artifact`, which validates the spec, writes:
+In this repository, `skill/artifacts/` is intentionally gitignored except for placeholder files, so local generated projects/specs/assets are not shipped.
 
-```txt
-~/.pi/artifacts/<project>/<slug>.json
+It returns a URL like:
+
+```text
+http://127.0.0.1:9999/artifacts/my-project/my-slug/
 ```
 
-and returns a URL like:
+The Pi extension exposes the `create_visual_artifact` tool, which calls the same CLI path.
 
-```txt
-http://localhost:9999/artifacts/my-project/q2-revenue/
+## Commands
+
+```text
+visual-artifact [global flags] <command>
 ```
 
-## What developers need to know
+Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-input`.
 
-Visualizer has four moving parts:
+| Command | Purpose |
+|---|---|
+| `visual-artifact bootstrap [--dry-run]` | Build renderer, compile CLI, install symlink. |
+| `visual-artifact create [spec.json|-] [--project path] [--no-serve]` | Validate, write artifact JSON, and auto-start renderer unless disabled. |
+| `visual-artifact validate [spec.json|-]` | Validate without writing. |
+| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve `skill/app/out` plus live artifact JSON. |
+| `visual-artifact serve status` | Check server health. |
+| `visual-artifact serve stop` | Stop a tracked server when available; manually stop detached/tmux servers. |
+| `visual-artifact list [project]` | List projects or artifacts. |
+| `visual-artifact open [project/slug]` | Open the index or one artifact. |
+| `visual-artifact doctor` | Diagnose install/runtime state. |
 
-- **Renderer**: the Next.js app that displays artifacts.
-- **Artifact store**: JSON files in `~/.pi/artifacts/<project>/`.
-- **Pi extension**: exposes `create_visual_artifact`, validates specs, and writes artifacts.
-- **Contract**: `artifact-contract.json`, generated from the schema and manifest.
-
-For normal use, run `vaz-serve`. For renderer development, use `pnpm dev`. The wrappers exist so Pi and scripts can start the renderer, inspect health, and build share URLs without knowing repo internals.
-
-## Running locally
-
-### Live artifact server
+Machine-readable create output:
 
 ```bash
-vaz-serve
+visual-artifact --json create my-spec.json --no-serve
+visual-artifact --plain create my-spec.json --no-serve
 ```
-
-Starts the renderer if needed and serves live artifact updates from `~/.pi/artifacts`.
-
-### Frontend dev server
-
-```bash
-pnpm dev
-```
-
-Use this when changing the renderer itself. It runs on `http://localhost:9999/artifacts/`.
-
-### Static export + live server
-
-```bash
-pnpm build
-pnpm serve
-```
-
-The static server serves `out/` under `/artifacts/` and still reads fresh artifact JSON from `~/.pi/artifacts`, so new artifacts appear without rebuilding.
-
-### Tailscale sharing
-
-```bash
-vaz-tailscale setup
-vaz-tailscale url <project> <slug>
-```
-
-Set this if you want generated artifacts to return tailnet URLs:
-
-```bash
-export VISUAL_ARTIFACT_BASE_URL="$(vaz-tailscale url)"
-```
-
-## Helper commands
-
-Installed by `./install.sh` into `~/.pi/bin`.
-
-You do not need these for normal frontend work. They are for Pi sessions, scripts, sharing, and troubleshooting.
-
-- `vaz-serve` — start the renderer if it is not running
-- `vaz-status` — check whether the renderer is alive; returns JSON
-- `vaz-doctor` — diagnose install, runtime, wrapper, and renderer issues
-- `vaz-tailscale setup` — expose `/artifacts/` on your tailnet
-- `vaz-tailscale url [project] [slug]` — print the share URL
 
 ## Configuration
 
-```bash
-VISUALIZER_PORT=9999
-VISUALIZER_HOST=127.0.0.1
-VISUALIZER_OUT_DIR=./out
-VISUALIZER_ARTIFACTS_DIR=~/.pi/artifacts
-VISUALIZER_MOUNT_PATH=/artifacts
-VISUALIZER_OPEN=1
-VISUAL_ARTIFACT_BASE_URL=http://localhost:9999/artifacts
-VISUALIZER_CONTRACT_PATH=/path/to/visualizer
-```
+| Variable | Default | Description |
+|---|---|---|
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill>/artifacts` | Runtime artifact JSON store; generated contents are local output and gitignored in this repo. |
+| `VISUAL_ARTIFACT_OUT_DIR` | `<skill>/app/out` | Static renderer export. |
+| `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
+| `VISUAL_ARTIFACT_HOST` | `0.0.0.0` | Server bind host. |
+| `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
+| `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint prefix. |
+| `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
+| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create`/`open`, useful for tunnels or tailnet sharing. Include the mount path, e.g. `https://host.example/artifacts`. |
+| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<skill>/artifact-contract.json` | Override contract path. |
 
-## Verify
+## Renderer development
 
 ```bash
+cd skill/app
+pnpm install
+pnpm dev              # http://localhost:9999/artifacts/
+pnpm build            # static export to skill/app/out
 pnpm lint
 pnpm export:contract
-pnpm test:contract
 pnpm verify:artifacts
-pnpm build
+pnpm visual:qa        # optional adapter/styling QA
 ```
 
-Optional checks:
+CLI development:
 
 ```bash
-pnpm visual:qa
-pnpm health-check
+cd skill/cli
+bun install
+bun run typecheck
+bun run build
+bun run install:binary
+```
+
+## Contract
+
+The contract is generated from renderer schema/manifest code:
+
+- `skill/app/src/lib/artifact-schema.ts`
+- `skill/app/src/lib/artifact-manifest.ts`
+- `skill/artifact-contract.json`
+
+After schema or manifest changes:
+
+```bash
+cd skill/app
+pnpm export:contract
 ```
 
 ## License

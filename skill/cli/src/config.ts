@@ -22,30 +22,53 @@ function getEntryPath(): string {
   return arg0 || process.execPath
 }
 
+function isSkillRoot(path: string): boolean {
+  return (
+    existsSync(resolve(path, "SKILL.md")) &&
+    existsSync(resolve(path, "app")) &&
+    existsSync(resolve(path, "cli")) &&
+    existsSync(resolve(path, "artifact-contract.json"))
+  )
+}
+
 export function findSkillRoot(): string | null {
   try {
     const binaryPath = realpathSync(getEntryPath())
     let dir = dirname(binaryPath)
     for (let i = 0; i < 5; i++) {
-      if (existsSync(resolve(dir, "SKILL.md"))) return dir
+      if (isSkillRoot(dir)) return dir
       const parent = dirname(dir)
       if (parent === dir) break
       dir = parent
     }
   } catch {}
+
+  const home = homedir()
+  const candidates = [
+    process.env.VISUAL_ARTIFACT_SKILL_ROOT,
+    resolve(home, ".agents", "skills", "visual-artifact"),
+    resolve(home, ".pi", "skills", "visual-artifact"),
+  ].filter((path): path is string => Boolean(path))
+
+  for (const candidate of candidates) {
+    try {
+      if (isSkillRoot(candidate)) return realpathSync(candidate)
+    } catch {}
+  }
+
   return null
 }
 
 export function defaultArtifactsDir(): string {
   const skillRoot = findSkillRoot()
   if (skillRoot) return resolve(skillRoot, "artifacts")
-  return resolve(homedir(), ".pi", "artifacts")
+  return resolve(homedir(), ".pi", "skills", "visual-artifact", "artifacts")
 }
 
 export function defaultOutDir(): string {
   const skillRoot = findSkillRoot()
   if (skillRoot) return resolve(skillRoot, "app", "out")
-  return resolve(homedir(), ".pi", "tools", "visual-artifact", "out")
+  return resolve(homedir(), ".pi", "skills", "visual-artifact", "app", "out")
 }
 
 export function defaultContractPath(): string | undefined {
@@ -76,4 +99,10 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
 
 export function localBaseUrl(config: Config): string {
   return `http://${config.host === "0.0.0.0" ? "127.0.0.1" : config.host}:${config.port}${config.mountPath}`
+}
+
+export function artifactBaseUrl(config: Config): string {
+  const baseUrl = config.baseUrl?.trim()
+  if (baseUrl) return baseUrl.replace(/\/+$/, "")
+  return localBaseUrl(config)
 }

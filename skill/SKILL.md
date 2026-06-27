@@ -57,7 +57,7 @@ This skill is self-contained: it ships a fast, compiled Bun CLI and a Next.js re
   artifact-contract.json
   cli/                # Bun CLI source
   app/                # Next.js renderer (source + out/ after build)
-  artifacts/          # generated artifact JSON files
+  artifacts/          # local runtime output: generated projects/specs/assets
   references/         # usage guides
 ```
 
@@ -77,6 +77,7 @@ You can also bootstrap directly from the skill directory:
 
 ```sh
 cd ~/.agents/skills/visual-artifact/cli
+bun install
 bun run src/main.ts bootstrap
 ```
 
@@ -105,8 +106,8 @@ global flags:
 | Command | Usage | What it does |
 |---|---|---|
 | `bootstrap` | `visual-artifact bootstrap [--dry-run]` | Build the renderer, compile the CLI, and install the binary. |
-| `create` | `visual-artifact create [spec.json]` | Validate, save, and auto-start the renderer if needed. Reads from file or stdin. |
-| `validate` | `visual-artifact validate [spec.json]` | Validate a spec without writing it. |
+| `create` | `visual-artifact create [spec.json|-] [--no-serve]` | Validate, save, and auto-start the renderer if needed. Reads from file or stdin. |
+| `validate` | `visual-artifact validate [spec.json|-]` | Validate a spec without writing it. |
 | `serve` | `visual-artifact serve [--port] [--host] [--no-open]` | Start the renderer server. Default host is `0.0.0.0`. |
 | `serve status` | `visual-artifact serve status` | Check whether the renderer server is running. |
 | `serve stop` | `visual-artifact serve stop` | Stop the renderer server if it is tracked. If the server was started outside the CLI (e.g. tmux), stop it manually or via the tmux session. |
@@ -122,6 +123,10 @@ visual-artifact create my-spec.json
 
 # Create from stdin
 cat my-spec.json | visual-artifact create
+visual-artifact create - < my-spec.json
+
+# Create machine-readable output without starting the renderer
+visual-artifact --json create my-spec.json --no-serve
 
 # Validate a spec
 visual-artifact validate my-spec.json
@@ -143,13 +148,13 @@ visual-artifact doctor
 
 | Variable | Default | Description |
 |---|---|---|
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill>/artifacts` | Where artifact JSON files are stored. |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill>/artifacts` | Runtime artifact JSON store. In this source repo, generated contents are gitignored. |
 | `VISUAL_ARTIFACT_OUT_DIR` | `<skill>/app/out` | Static renderer assets. |
 | `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
 | `VISUAL_ARTIFACT_HOST` | `0.0.0.0` | Server host. Binds on all interfaces so the server is reachable on both localhost and the LAN IP. |
 | `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | URL mount path. |
 | `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | Data API path. |
-| `VISUAL_ARTIFACT_BASE_URL` | — | Preferred base URL for artifact links. |
+| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create`/`open`. Include the mount path, e.g. `https://host.example/artifacts`. |
 
 ## Slash commands
 
@@ -167,7 +172,7 @@ When the visual-artifact extension is installed, these slash commands are availa
 - **The CLI validates specs for you.** If the JSON is malformed, misses required fields (`slug`, `title`, `nodes`), uses an unsupported node type, or breaks size limits, `visual-artifact create`/`validate` exits with code 2 and prints a clear error.
 - **Before calling `create_visual_artifact`, read `~/.agents/skills/visual-artifact/artifact-contract.json`** and only use supported node types and props.
 - **The CLI auto-manages the renderer.** `visual-artifact create` starts the renderer in the background if it is not already running. You can also start it explicitly with `visual-artifact serve`.
-- **Artifacts live in the skill folder.** `visual-artifact create` writes to `<skill>/artifacts/<project>/<slug>.json`. Do not write `~/.pi/artifacts/<project>/<slug>.json` directly unless you are bypassing the CLI.
+- **Artifacts live in the skill folder.** `visual-artifact create` writes runtime output to `<skill>/artifacts/<project>/<slug>.json`. In the Visualizer source repo, that directory is intentionally gitignored except placeholders, so generated projects/specs/assets are local output, not shipped. Do not write artifact JSON directly unless you are deliberately bypassing the CLI.
 - **Use the CLI to create artifacts.** Prefer `visual-artifact create <spec.json>` (or pipe JSON to stdin) over writing JSON directly, because the CLI validates against the contract and derives the project name automatically.
 - **Orientation-first for architecture docs:** answer "what is this project?" before recommendations.
 

@@ -1,12 +1,12 @@
 import { spawn } from "node:child_process"
-import { loadConfig, localBaseUrl } from "../config.ts"
+import { artifactBaseUrl, loadConfig } from "../config.ts"
 import type { Logger } from "../logger.ts"
 
 export async function openArtifact(target: string | undefined, log: Logger): Promise<number> {
   const config = loadConfig()
 
   if (!target) {
-    const url = localBaseUrl(config)
+    const url = artifactBaseUrl(config)
     openBrowser(url)
     log.outputText(url)
     return 0
@@ -19,7 +19,7 @@ export async function openArtifact(target: string | undefined, log: Logger): Pro
   }
 
   const [project, slug] = parts
-  const url = `${localBaseUrl(config)}/${project}/${slug}/`
+  const url = `${artifactBaseUrl(config)}/${project}/${slug}/`
   openBrowser(url)
   log.outputText(url)
   return 0

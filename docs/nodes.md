@@ -6,13 +6,14 @@ Visualizer artifacts are built from a constrained set of node types. The LLM nev
 
 The single source of truth for the contract is:
 
-- [`artifact-contract.json`](../artifact-contract.json) — consumed by the Pi extension at runtime
-- [`src/lib/artifact-schema.ts`](../src/lib/artifact-schema.ts) — Zod schema and TypeScript types
-- [`src/lib/artifact-manifest.ts`](../src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, and limits
+- [`skill/artifact-contract.json`](../skill/artifact-contract.json) — consumed by the CLI and Pi extension at runtime
+- [`skill/app/src/lib/artifact-schema.ts`](../skill/app/src/lib/artifact-schema.ts) — Zod schema and TypeScript types
+- [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, and limits
 
 Regenerate `artifact-contract.json` after any schema or manifest change:
 
 ```bash
+cd skill/app
 pnpm export:contract
 ```
 
@@ -78,7 +79,7 @@ Prefer dashboard components over generic card soup:
 - Use `alert` for important callouts, not for routine status.
 - Pair `chart` with table detail when exact values matter.
 - Avoid `file://` links in artifacts; link to app routes or public URLs.
-- For local image assets, place the image file next to the artifact JSON under `~/.pi/artifacts/<project>/` and use a relative `src` like `"hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
+- For local image assets, place the image file next to the artifact JSON under `skill/artifacts/<project>/` and use a relative `src` like `"hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
 
 ## Copyable patterns
 

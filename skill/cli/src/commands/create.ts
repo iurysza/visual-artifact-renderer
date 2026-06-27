@@ -1,7 +1,7 @@
 import { dirname, resolve } from "node:path"
 import { writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
-import { loadConfig, localBaseUrl } from "../config.ts"
+import { artifactBaseUrl, loadConfig, localBaseUrl } from "../config.ts"
 import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
@@ -12,7 +12,7 @@ interface CreateOpts extends GlobalOpts {
   project?: string
   contract?: string
   dryRun?: boolean
-  noServe?: boolean
+  serve?: boolean
 }
 
 async function serverIsRunning(url: string): Promise<boolean> {
@@ -105,11 +105,11 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     await ensureDir(dirname(filePath))
     await writeFile(filePath, `${JSON.stringify(spec, null, 2)}\n`, "utf8")
 
-    if (!opts.noServe) {
+    if (opts.serve !== false) {
       await ensureServer(log)
     }
 
-    const url = `${localBaseUrl(config)}/${projectName}/${spec.slug}/`
+    const url = `${artifactBaseUrl(config)}/${projectName}/${spec.slug}/`
 
     if (opts.json) {
       log.output({

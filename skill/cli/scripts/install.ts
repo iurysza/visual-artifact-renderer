@@ -1,4 +1,4 @@
-import { mkdir, rm, symlink, access, chmod, cp } from "node:fs/promises"
+import { mkdir, rm, symlink, access, chmod } from "node:fs/promises"
 import { constants } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -44,8 +44,11 @@ async function main(): Promise<void> {
   await rm(BIN_LINK, { force: true })
   try {
     await symlink(BINARY, BIN_LINK)
-  } catch {
-    await cp(BINARY, BIN_LINK, { force: true })
+  } catch (error) {
+    console.error(`[install] Could not create binary symlink: ${BIN_LINK} -> ${BINARY}`)
+    console.error("          visual-artifact must be symlinked so it can locate the skill app, artifacts, and contract.")
+    console.error(error instanceof Error ? `          ${error.message}` : String(error))
+    process.exit(1)
   }
   await ensureExecutable(BIN_LINK)
 

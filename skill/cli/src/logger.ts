@@ -14,9 +14,14 @@ export class Logger {
     return `\x1b[${code}m${text}\x1b[0m`
   }
 
+  private human(message: string): void {
+    const stream = this.opts.json || this.opts.plain ? process.stderr : process.stdout
+    stream.write(`${message}\n`)
+  }
+
   log(message: string): void {
     if (this.opts.quiet) return
-    console.log(message)
+    this.human(message)
   }
 
   info(message: string): void {
@@ -35,7 +40,7 @@ export class Logger {
 
   success(message: string): void {
     if (this.opts.quiet) return
-    console.log(this.color("32", message))
+    this.human(this.color("32", message))
   }
 
   output(data: unknown): void {
@@ -51,7 +56,7 @@ export class Logger {
   }
 
   outputText(text: string): void {
-    if (this.opts.quiet) return
+    if (this.opts.quiet && !this.opts.plain) return
     console.log(text)
   }
 }
