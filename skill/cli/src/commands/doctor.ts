@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process"
+import { homedir } from "node:os"
+import { resolve } from "node:path"
 import { loadConfig, localBaseUrl } from "../config.ts"
 import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
@@ -39,6 +41,19 @@ export async function doctor(log: Logger): Promise<number> {
     results.push({ check: "bun", ok: false, message: "bun not found in PATH" })
     fail = true
   }
+
+  try {
+    execSync("pnpm --version", { encoding: "utf8", timeout: 3000 })
+    results.push({ check: "pnpm", ok: true })
+  } catch {
+    results.push({ check: "pnpm", ok: false, message: "pnpm not found in PATH" })
+    fail = true
+  }
+
+  const binaryPath = resolve(homedir(), ".pi", "bin", "visual-artifact")
+  const binaryOk = await fileExists(binaryPath)
+  results.push({ check: "binary", ok: binaryOk, message: binaryOk ? binaryPath : `missing: ${binaryPath}` })
+  if (!binaryOk) fail = true
 
   log.output({ ok: !fail, checks: results })
   return fail ? 1 : 0

@@ -1,13 +1,57 @@
+import { existsSync, realpathSync } from "node:fs"
 import { homedir } from "node:os"
-import { resolve } from "node:path"
+import { dirname, resolve } from "node:path"
 import type { Config } from "./types.ts"
 
 export const DEFAULT_PORT = 9999
 export const DEFAULT_HOST = "0.0.0.0"
 export const DEFAULT_MOUNT_PATH = "/artifacts"
 export const DEFAULT_DATA_PATH = "/data/artifacts"
-export const DEFAULT_ARTIFACTS_DIR = resolve(homedir(), ".pi", "artifacts")
-export const DEFAULT_OUT_DIR = resolve(homedir(), ".pi", "tools", "visual-artifact", "out")
+
+function getEntryPath(): string {
+  const arg0 = process.argv[0] ?? ""
+  const arg1 = process.argv[1]
+  // Compiled binaries report argv[0] as the literal string "bun" and the real
+  // executable path in process.execPath. `bun run` reports the full bun path.
+  if (arg0 === "bun" || (arg1 && arg1.startsWith("/$bunfs/root/"))) {
+    return process.execPath
+  }
+  if (arg1 && (arg1.endsWith(".ts") || arg1.endsWith(".js") || arg1.endsWith(".mjs"))) {
+    return arg1
+  }
+  return arg0 || process.execPath
+}
+
+export function findSkillRoot(): string | null {
+  try {
+    const binaryPath = realpathSync(getEntryPath())
+    let dir = dirname(binaryPath)
+    for (let i = 0; i < 5; i++) {
+      if (existsSync(resolve(dir, "SKILL.md"))) return dir
+      const parent = dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+  } catch {}
+  return null
+}
+
+export function defaultArtifactsDir(): string {
+  const skillRoot = findSkillRoot()
+  if (skillRoot) return resolve(skillRoot, "artifacts")
+  return resolve(homedir(), ".pi", "artifacts")
+}
+
+export function defaultOutDir(): string {
+  const skillRoot = findSkillRoot()
+  if (skillRoot) return resolve(skillRoot, "app", "out")
+  return resolve(homedir(), ".pi", "tools", "visual-artifact", "out")
+}
+
+export function defaultContractPath(): string | undefined {
+  const skillRoot = findSkillRoot()
+  return skillRoot ? resolve(skillRoot, "artifact-contract.json") : undefined
+}
 
 export function expandHome(path: string): string {
   if (path.startsWith("~/")) {
@@ -18,8 +62,8 @@ export function expandHome(path: string): string {
 
 export function loadConfig(overrides: Partial<Config> = {}): Config {
   return {
-    artifactsDir: expandHome(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR ?? DEFAULT_ARTIFACTS_DIR),
-    outDir: expandHome(process.env.VISUAL_ARTIFACT_OUT_DIR ?? DEFAULT_OUT_DIR),
+    artifactsDir: expandHome(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR ?? defaultArtifactsDir()),
+    outDir: expandHome(process.env.VISUAL_ARTIFACT_OUT_DIR ?? defaultOutDir()),
     port: parseInt(process.env.VISUAL_ARTIFACT_PORT ?? String(DEFAULT_PORT), 10),
     host: process.env.VISUAL_ARTIFACT_HOST ?? DEFAULT_HOST,
     mountPath: process.env.VISUAL_ARTIFACT_MOUNT_PATH ?? DEFAULT_MOUNT_PATH,

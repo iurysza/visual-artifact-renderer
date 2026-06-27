@@ -10,7 +10,7 @@ import { serveStop } from "./commands/serve-stop.ts"
 import { list } from "./commands/list.ts"
 import { openArtifact } from "./commands/open.ts"
 import { doctor } from "./commands/doctor.ts"
-import { shareStatus, shareUrl, shareSetup } from "./commands/share.ts"
+import { bootstrap } from "./commands/bootstrap.ts"
 
 const VERSION = "1.0.0"
 
@@ -33,10 +33,11 @@ program
 
 program
   .command("create [spec]")
-  .description("Validate and save an artifact spec. Reads from file or stdin.")
+  .description("Validate and save an artifact spec. Reads from file or stdin. Starts the renderer if it is not running.")
   .option("-p, --project <path>", "Project directory (default: current directory)")
   .option("-c, --contract <path>", "Path to artifact-contract.json")
   .option("--dry-run", "Validate only; do not write the artifact")
+  .option("--no-serve", "Do not auto-start the renderer")
   .action(async (spec, opts) => {
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)
@@ -114,48 +115,23 @@ program
   })
 
 program
+  .command("bootstrap")
+  .description("Build the renderer, compile the CLI, and install the binary.")
+  .option("--dry-run", "Show what would be done without making changes")
+  .action(async (opts) => {
+    const globalOpts = program.opts() as GlobalOpts
+    const log = buildLogger(globalOpts)
+    const exitCode = await bootstrap({ dryRun: opts.dryRun ?? false }, log)
+    process.exit(exitCode)
+  })
+
+program
   .command("doctor")
   .description("Run health checks for the visual-artifact setup.")
   .action(async () => {
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)
     const exitCode = await doctor(log)
-    process.exit(exitCode)
-  })
-
-const shareCmd = program
-  .command("share")
-  .description("Tailscale sharing helpers (optional).")
-
-shareCmd
-  .command("status")
-  .description("Show Tailscale + renderer status.")
-  .action(async () => {
-    const globalOpts = program.opts() as GlobalOpts
-    const log = buildLogger(globalOpts)
-    const exitCode = await shareStatus(log)
-    process.exit(exitCode)
-  })
-
-shareCmd
-  .command("url [project] [slug]")
-  .description("Print the tailnet URL for artifacts or a specific artifact.")
-  .action(async (project, slug) => {
-    const globalOpts = program.opts() as GlobalOpts
-    const log = buildLogger(globalOpts)
-    const exitCode = await shareUrl(project, slug, log)
-    process.exit(exitCode)
-  })
-
-shareCmd
-  .command("setup")
-  .description("Print or run the tailscale serve command.")
-  .option("-n, --dry-run", "Print the command without running it")
-  .option("-f, --force", "Run the command without prompting")
-  .action(async (opts) => {
-    const globalOpts = program.opts() as GlobalOpts
-    const log = buildLogger(globalOpts)
-    const exitCode = await shareSetup(opts.dryRun ?? false, opts.force ?? false, log)
     process.exit(exitCode)
   })
 

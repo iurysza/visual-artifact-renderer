@@ -49,7 +49,19 @@ Start here: [[references/direct-artifact/_index\|direct artifact]].
 
 ## The `visual-artifact` CLI
 
-This skill ships a fast, compiled Bun CLI. After the skill is installed, the binary is available globally as `visual-artifact`.
+This skill is self-contained: it ships a fast, compiled Bun CLI and a Next.js renderer app, all under the skill directory.
+
+```text
+~/.agents/skills/visual-artifact/
+  SKILL.md            # this file
+  artifact-contract.json
+  cli/                # Bun CLI source
+  app/                # Next.js renderer (source + out/ after build)
+  artifacts/          # generated artifact JSON files
+  references/         # usage guides
+```
+
+After the skill is installed, the binary is available globally as `visual-artifact`.
 
 ### Installation
 
@@ -59,7 +71,20 @@ From the agents repo root:
 ./install.sh --apply
 ```
 
-This builds the CLI and links it into `~/.pi/bin/visual-artifact`.
+The installer symlinks the skill directory into `~/.agents/skills/visual-artifact` and runs `visual-artifact bootstrap`, which installs dependencies, builds the renderer app, compiles the CLI, and symlinks `visual-artifact` into `~/.pi/bin/`.
+
+You can also bootstrap directly from the skill directory:
+
+```sh
+cd ~/.agents/skills/visual-artifact/cli
+bun run src/main.ts bootstrap
+```
+
+Or, once the binary is installed:
+
+```sh
+visual-artifact bootstrap
+```
 
 ### Commands
 
@@ -79,22 +104,20 @@ global flags:
 
 | Command | Usage | What it does |
 |---|---|---|
-| `create` | `visual-artifact create [spec.json]` | Validate and save an artifact spec. Reads from file or stdin. |
+| `bootstrap` | `visual-artifact bootstrap [--dry-run]` | Build the renderer, compile the CLI, and install the binary. |
+| `create` | `visual-artifact create [spec.json]` | Validate, save, and auto-start the renderer if needed. Reads from file or stdin. |
 | `validate` | `visual-artifact validate [spec.json]` | Validate a spec without writing it. |
 | `serve` | `visual-artifact serve [--port] [--host] [--no-open]` | Start the renderer server. Default host is `0.0.0.0`. |
 | `serve status` | `visual-artifact serve status` | Check whether the renderer server is running. |
-| `serve stop` | `visual-artifact serve stop` | Stop the renderer server if it is tracked. If the server was started outside the CLI (e.g. tmux), stop it manually or via the tmux session.
+| `serve stop` | `visual-artifact serve stop` | Stop the renderer server if it is tracked. If the server was started outside the CLI (e.g. tmux), stop it manually or via the tmux session. |
 | `list` | `visual-artifact list [project]` | List projects or artifacts in a project. |
 | `open` | `visual-artifact open <project>/<slug>` | Open an artifact in the browser. |
 | `doctor` | `visual-artifact doctor` | Run health checks. |
-| `share status` | `visual-artifact share status` | Show Tailscale + renderer status (Tailscale optional). |
-| `share url` | `visual-artifact share url [project] [slug]` | Print the tailnet URL if Tailscale is available. |
-| `share setup` | `visual-artifact share setup --dry-run` | Print the `tailscale serve` command; run with `--force`. |
 
 ### Examples
 
 ```sh
-# Create from a file
+# Create from a file. The renderer starts automatically in the background if it is not running.
 visual-artifact create my-spec.json
 
 # Create from stdin
@@ -120,8 +143,8 @@ visual-artifact doctor
 
 | Variable | Default | Description |
 |---|---|---|
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `~/.pi/artifacts` | Where artifact JSON files are stored. |
-| `VISUAL_ARTIFACT_OUT_DIR` | `~/.pi/tools/visual-artifact/out` | Static renderer assets. |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill>/artifacts` | Where artifact JSON files are stored. |
+| `VISUAL_ARTIFACT_OUT_DIR` | `<skill>/app/out` | Static renderer assets. |
 | `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
 | `VISUAL_ARTIFACT_HOST` | `0.0.0.0` | Server host. Binds on all interfaces so the server is reachable on both localhost and the LAN IP. |
 | `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | URL mount path. |
@@ -142,9 +165,10 @@ When the visual-artifact extension is installed, these slash commands are availa
 - **Never call `create_visual_artifact` from inside a `pi --print` subprocess.** The assembler writes JSON to disk; the parent agent calls the tool.
 - **Always pass the `data` object** when calling `create_visual_artifact`.
 - **The CLI validates specs for you.** If the JSON is malformed, misses required fields (`slug`, `title`, `nodes`), uses an unsupported node type, or breaks size limits, `visual-artifact create`/`validate` exits with code 2 and prints a clear error.
-- **Before calling `create_visual_artifact`, read `~/.pi/tools/visualizer/artifact-contract.json`** and only use supported node types and props.
-- **Keep the renderer running** with `visual-artifact serve` before calling `create_visual_artifact` if you want the artifact URL to resolve locally. The default server binds to `0.0.0.0:9999`, so it is reachable on `http://127.0.0.1:9999/artifacts` and on the machine's LAN IP.
-- **Use the CLI to create artifacts.** Prefer `visual-artifact create <spec.json>` (or pipe JSON to stdin) over writing `~/.pi/artifacts/<project>/<slug>.json` directly, because the CLI validates against the embedded contract and derives the project name automatically.
+- **Before calling `create_visual_artifact`, read `~/.agents/skills/visual-artifact/artifact-contract.json`** and only use supported node types and props.
+- **The CLI auto-manages the renderer.** `visual-artifact create` starts the renderer in the background if it is not already running. You can also start it explicitly with `visual-artifact serve`.
+- **Artifacts live in the skill folder.** `visual-artifact create` writes to `<skill>/artifacts/<project>/<slug>.json`. Do not write `~/.pi/artifacts/<project>/<slug>.json` directly unless you are bypassing the CLI.
+- **Use the CLI to create artifacts.** Prefer `visual-artifact create <spec.json>` (or pipe JSON to stdin) over writing JSON directly, because the CLI validates against the contract and derives the project name automatically.
 - **Orientation-first for architecture docs:** answer "what is this project?" before recommendations.
 
 ## Design guidelines (required reading)
