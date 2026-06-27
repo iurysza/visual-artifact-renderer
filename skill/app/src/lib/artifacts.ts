@@ -1,10 +1,11 @@
 import { promises as fs } from "fs"
-import os from "os"
 import path from "path"
 
 import { ArtifactSlugSchema, VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/artifact-schema"
 
-const ARTIFACTS_DIR = path.join(os.homedir(), ".pi", "artifacts")
+const ARTIFACTS_DIR = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
+  ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
+  : path.resolve(process.cwd(), "..", "artifacts")
 
 export interface ProjectListing {
   name: string

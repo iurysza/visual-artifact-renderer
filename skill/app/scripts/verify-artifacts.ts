@@ -1,5 +1,4 @@
 import { promises as fs } from "fs"
-import os from "os"
 import path from "path"
 
 import { artifactComponentManifest, artifactManifest } from "../src/lib/artifact-manifest"

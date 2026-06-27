@@ -33,10 +33,10 @@ export default async function ArtifactPage({
   params: Promise<{ project: string; slug: string }>
 }) {
   const { project, slug } = await params
-  
+
   // Try to load at build time for SSR
   const initialSpec = await getVisualArtifactSpec(project, slug)
-  
+
   if (initialSpec) {
     // Render from the build-time spec immediately, then re-fetch client-side for live updates.
     return <ClientArtifactLoader project={project} slug={slug} initialSpec={initialSpec} />

@@ -1,6 +1,11 @@
 import { listProjects } from "@/lib/artifacts"
 import { ProjectIndexLoader } from "@/components/project-index-loader"
 
+export async function generateStaticParams() {
+  const projects = await listProjects()
+  return projects.map((project) => ({ project: project.name }))
+}
+
 export default async function ProjectArtifactsPage({
   params,
 }: {
@@ -8,9 +13,4 @@ export default async function ProjectArtifactsPage({
 }) {
   const { project } = await params
   return <ProjectIndexLoader project={project} />
-}
-
-export async function generateStaticParams() {
-  const projects = await listProjects()
-  return projects.map((project) => ({ project: project.name }))
 }

@@ -205,7 +205,8 @@ export function renderText({ node }: AdapterArgs<"text">) {
 }
 
 export function renderProse({ node }: AdapterArgs<"prose">) {
-  return <Prose>{node.props.content}</Prose>
+  const className = node.props.tone === "muted" ? "text-muted-foreground" : undefined
+  return <Prose className={className}>{node.props.content}</Prose>
 }
 
 export function renderMetric({ node }: AdapterArgs<"metric">) {

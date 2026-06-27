@@ -131,7 +131,7 @@ export type ArtifactNode =
     }
   | {
       type: "prose"
-      props: { content: string }
+      props: { content: string; tone?: "default" | "muted" }
     }
   | {
       type: "heading"
@@ -318,6 +318,7 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
     }),
     leafSchema("prose", {
       content: z.string().min(1),
+      tone: z.enum(["default", "muted"]).optional(),
     }),
     leafSchema("heading", {
       text: z.string().min(1),

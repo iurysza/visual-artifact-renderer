@@ -321,7 +321,8 @@
     "prose": {
       "description": "Markdown text for prose, lists, links, and long-form narrative. Use this instead of 'text' when you need multiple paragraphs or basic markdown formatting.",
       "props": {
-        "content": "string"
+        "content": "string",
+        "tone": "default | muted?"
       },
       "children": false,
       "example": {
