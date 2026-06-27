@@ -1,18 +1,25 @@
 import { cp, mkdir, exists } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const assetsDir = resolve(root, "assets");
 
-// Try the canonical visualizer repo path first; allow override via env.
-const visualizerRoot = process.env.VISUALIZER_ROOT
-  ? resolve(process.env.VISUALIZER_ROOT)
-  : "/Users/iurysouza/projects/my-repos/vibe-coded/visualizer";
+// Find the skill root relative to this script (skill/cli/scripts/copy-assets.ts)
+function findSkillRoot(): string {
+  let dir = resolve(root, "..");
+  for (let i = 0; i < 3; i++) {
+    if (existsSync(resolve(dir, "SKILL.md"))) return dir;
+    dir = resolve(dir, "..");
+  }
+  throw new Error("Could not find skill root (SKILL.md).");
+}
 
-const outDir = resolve(visualizerRoot, "out");
-const contractPath = resolve(visualizerRoot, "artifact-contract.json");
+const skillRoot = findSkillRoot();
+const outDir = resolve(skillRoot, "app", "out");
+const contractPath = resolve(skillRoot, "artifact-contract.json");
 
 async function main() {
   const targetOut = resolve(assetsDir, "out");
@@ -24,7 +31,7 @@ async function main() {
     await cp(outDir, targetOut, { recursive: true, force: true });
     console.error(`[copy-assets] copied ${outDir} -> ${targetOut}`);
   } else {
-    console.error(`[copy-assets] WARNING: visualizer out/ not found at ${outDir}; serving will fail without static assets`);
+    console.error(`[copy-assets] WARNING: app out/ not found at ${outDir}; build the app first`);
   }
 
   if (await exists(contractPath)) {

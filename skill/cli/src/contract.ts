@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
+import { defaultContractPath } from "./config.ts"
 import type { ArtifactContract } from "./types.ts"
 
 import bundledContract from "./assets/contract.json" assert { type: "json" }
@@ -20,6 +21,17 @@ export async function loadContract(contractPath?: string): Promise<ArtifactContr
     const raw = await readFile(resolve(envPath), "utf8")
     contractCache = JSON.parse(raw) as ArtifactContract
     return contractCache
+  }
+
+  const skillContract = defaultContractPath()
+  if (skillContract) {
+    try {
+      const raw = await readFile(skillContract, "utf8")
+      contractCache = JSON.parse(raw) as ArtifactContract
+      return contractCache
+    } catch {
+      // fall through to bundled contract
+    }
   }
 
   contractCache = (bundledContract as unknown) as ArtifactContract

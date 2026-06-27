@@ -151,7 +151,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
 
   if (!(await dirExists(outDir))) {
     log.error(`Static export directory missing: ${outDir}`)
-    log.error("Run the install step that copies the renderer assets, or set VISUAL_ARTIFACT_OUT_DIR.")
+    log.error("Build the renderer app with `pnpm build` in skill/app, or set VISUAL_ARTIFACT_OUT_DIR.")
     return 1
   }
 

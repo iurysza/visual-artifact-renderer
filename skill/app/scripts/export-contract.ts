@@ -33,7 +33,7 @@ const contract = {
 }
 
 async function main() {
-  const outPath = path.resolve(__dirname, "..", "artifact-contract.json")
+  const outPath = path.resolve(__dirname, "..", "..", "artifact-contract.json")
   await fs.writeFile(outPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8")
   console.log(`Wrote contract to ${outPath}`)
 }

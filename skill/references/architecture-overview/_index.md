@@ -30,7 +30,7 @@ Follow these steps in order. Do not skip ahead.
 5. Run the [[references/architecture-overview/final-assembler|final assembler]] to generate the spec JSON.
 6. Read the generated `visual-artifact-spec.json` and either:
    - call `create_visual_artifact` with the spec, or
-   - run `visual-artifact create visual-artifact-spec.json --project <repoRoot>` to validate and save it via the CLI.
+   - run `visual-artifact create visual-artifact-spec.json --project <repoRoot>` to validate, save, and auto-start the renderer via the CLI.
 
 ## Output location
 

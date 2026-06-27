@@ -25,7 +25,10 @@ async function findArtifactFiles(dir: string): Promise<string[]> {
 }
 
 async function main() {
-  const artifactsDir = path.join(os.homedir(), ".pi", "artifacts")
+  const skillRoot = path.resolve(__dirname, "..")
+  const artifactsDir = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
+    ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
+    : path.join(skillRoot, "..", "artifacts")
   const files = await findArtifactFiles(artifactsDir)
 
   for (const filePath of files) {
@@ -74,7 +77,7 @@ async function main() {
     throw new Error(`Code block node should pass validation: ${codeBlock.error.message}`)
   }
 
-  const contractPath = path.resolve(__dirname, "..", "artifact-contract.json")
+  const contractPath = path.resolve(__dirname, "..", "..", "artifact-contract.json")
   const contractRaw = await fs.readFile(contractPath, "utf8")
   const contract = JSON.parse(contractRaw)
 

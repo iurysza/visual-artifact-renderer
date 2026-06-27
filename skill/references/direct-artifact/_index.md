@@ -21,21 +21,20 @@ Good fits:
 ## How to build
 
 1. Inspect the relevant code or data to understand what to visualize.
-2. Read `~/.pi/tools/visualizer/artifact-contract.json` to confirm supported node types and props.
+2. Read `~/.agents/skills/visual-artifact/artifact-contract.json` to confirm supported node types and props.
 3. Build a `VisualArtifactSpec` directly, valid against the schema.
-4. Optionally start the renderer with `visual-artifact serve --no-open` if you want a local URL. The default server binds to `0.0.0.0:9999`, so it is reachable on both localhost and the machine's LAN IP.
-5. Call `create_visual_artifact` with the spec, or run `visual-artifact create <spec.json>` to validate and save it via the CLI.
+4. Call `create_visual_artifact` with the spec, or run `visual-artifact create <spec.json>` to validate, save, and auto-start the renderer via the CLI. The default server binds to `0.0.0.0:9999`, so it is reachable on both localhost and the machine's LAN IP.
 6. Return the artifact URL.
 
 ## Output location
 
-Artifacts are saved globally under `~/.pi/artifacts/<project>/<slug>.json`. The project name is derived from the caller's working directory.
+Artifacts are saved under `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>.json`. The project name is derived from the caller's working directory.
 
 ## Sidecar image assets
 
 Image nodes support three `src` forms:
 
-- **Relative path** (recommended for local assets): place the image file next to the artifact JSON under `~/.pi/artifacts/<project>/`, then use `"src": "hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
+- **Relative path** (recommended for local assets): place the image file next to the artifact JSON under `~/.agents/skills/visual-artifact/artifacts/<project>/`, then use `"src": "hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
 - **Absolute HTTPS URL**: use for external or CDN images.
 - **`file://` URLs are forbidden**: they are not portable and will be rejected by the renderer and the Pi extension.
 

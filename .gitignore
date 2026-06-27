@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/skill/app/node_modules
+/skill/cli/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -16,9 +18,12 @@
 # next.js
 /.next/
 /out/
+/skill/app/.next/
+/skill/app/out/
 
 # production
 /build
+/skill/app/build
 
 # misc
 .DS_Store
@@ -38,6 +43,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+/skill/app/next-env.d.ts
 next-env.d.ts
 
 # generated / local artifacts
