@@ -1,0 +1,62 @@
+export interface ArtifactContract {
+  version: string
+  nodeTypes: readonly string[]
+  nodes: Record<string, NodeDef>
+  dataNodes: readonly string[]
+  compositionGuidance: readonly string[]
+  patternExamples: Record<string, { description: string; nodes: unknown[] }>
+  globalLimits: {
+    dataRowsMax: number
+    dataStringMax: number
+  }
+}
+
+export interface NodeDef {
+  description: string
+  props: Record<string, string>
+  children: false | "nodes" | "items"
+  data?: string
+  requiresData?: boolean
+  example: unknown
+  limits?: {
+    text?: number
+    label?: number
+    code?: number
+    items?: number
+    itemStatus?: number
+    children?: number
+    status?: number
+  }
+}
+
+export interface ArtifactSpec {
+  slug: string
+  title: string
+  description?: string
+  layout?: {
+    type?: "default" | "grid"
+    columns?: number
+  }
+  data?: Record<string, unknown>
+  nodes: unknown[]
+}
+
+export interface GlobalOpts {
+  json: boolean
+  plain: boolean
+  quiet: boolean
+  verbose: boolean
+  noColor: boolean
+  noInput: boolean
+}
+
+export interface Config {
+  artifactsDir: string
+  outDir: string
+  port: number
+  host: string
+  mountPath: string
+  dataPath: string
+  open: boolean
+  baseUrl?: string
+}

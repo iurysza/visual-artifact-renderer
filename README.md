@@ -14,6 +14,14 @@ The rule: **agents emit JSON, not React, routes, JSX, imports, CSS, or full HTML
 
 ![Visualizer home](./assets/home-light.png)
 
+## Dashboard showcase
+
+A live showcase artifact with mobile and desktop screenshots of representative dashboards is included:
+
+![Revenue Dashboard](./assets/dashboard-showcase.png)
+
+Run `vaz-serve` and open `/artifacts/visualizer/dashboard-showcase/` to browse all screenshots.
+
 ## Install
 
 ```bash

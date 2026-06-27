@@ -89,9 +89,11 @@ export function ArtifactIndexLoader() {
     <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
+
           <h1 className="font-serif text-3xl font-medium tracking-[-0.03em] text-foreground sm:text-4xl">
             Your visual workspace.
           </h1>
+
           <p className="mt-2 max-w-2xl text-base text-muted-foreground">
             Browse reports, dashboards, and explainers generated from your local artifacts.
           </p>

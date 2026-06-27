@@ -245,21 +245,6 @@ function validateNode(
   if (limits.code && typeof props.code === "string" && props.code.length > limits.code) {
     throw new Error(`${path}.props.code is ${props.code.length} chars, max allowed is ${limits.code}`)
   }
-
-  if (type === "image" && typeof props.src === "string" && /^file:\/\//i.test(props.src)) {
-    throw new Error(
-      `${path}.props.src must not use a file:// URL. ` +
-        `Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path, ` +
-        `or use an absolute HTTPS URL.`,
-    )
-  }
-
-  if (type === "button" && typeof props.href === "string" && /^file:\/\//i.test(props.href)) {
-    throw new Error(
-      `${path}.props.href must not use a file:// URL. ` +
-        `Use an app route or an absolute HTTPS URL.`,
-    )
-  }
 }
 
 interface ValidatedSpec {
@@ -311,7 +296,7 @@ function validateSpec(spec: unknown, contract: ArtifactContract): ValidatedSpec 
   return { slug, title, description, layout, data, nodes }
 }
 
-// --- Extension Implementation ---
+// --- Shared helpers ---
 
 function sanitizeProjectName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)
@@ -346,6 +331,51 @@ function getTailscaleBaseUrl(): string | null {
     // Tailscale not installed or not running.
   }
   return null
+}
+
+interface CreateArtifactResult {
+  slug: string
+  title: string
+  projectName: string
+  projectPath: string
+  filePath: string
+  url: string
+  localUrl: string
+  tailnetUrl: string | undefined
+}
+
+async function createArtifact(
+  params: Record<string, unknown>,
+  projectPath: string,
+): Promise<CreateArtifactResult> {
+  const contract = await loadContract()
+  const spec = validateSpec(params, contract)
+  const projectName = deriveProjectName(projectPath)
+  const filePath = resolve(GLOBAL_ARTIFACTS_DIR, projectName, `${spec.slug}.json`)
+
+  const localBaseUrl = DEFAULT_BASE_URL
+  const tailscaleBaseUrl = getTailscaleBaseUrl()
+  const preferredBaseUrl = process.env.VISUAL_ARTIFACT_BASE_URL ?? tailscaleBaseUrl ?? localBaseUrl
+
+  const localUrl = `${localBaseUrl}/${projectName}/${spec.slug}/`
+  const tailnetUrl = tailscaleBaseUrl ? `${tailscaleBaseUrl}/${projectName}/${spec.slug}/` : undefined
+  const url = `${preferredBaseUrl}/${projectName}/${spec.slug}/`
+
+  await withFileMutationQueue(filePath, async () => {
+    await mkdir(dirname(filePath), { recursive: true })
+    await writeFile(filePath, `${JSON.stringify(spec, null, 2)}\n`, "utf8")
+  })
+
+  return {
+    slug: spec.slug,
+    title: spec.title,
+    projectName,
+    projectPath,
+    filePath,
+    url,
+    localUrl,
+    tailnetUrl,
+  }
 }
 
 // --- Visual Recap Command ---
@@ -523,10 +553,10 @@ async function gatherVisualRecap(
           `--since=${window.since}`,
         ])
       )
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line, index, self) => line.length > 0 && self.indexOf(line) === index)
-      .slice(0, 30)
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line, index, self) => line.length > 0 && self.indexOf(line) === index)
+        .slice(0, 30)
     : []
 
   let todoComments = ""
@@ -641,6 +671,8 @@ function renderVisualRecapPrompt(data: VisualRecapData): string {
 
   return sections.join("\n")
 }
+
+// --- Visual Diff Command ---
 
 type AutocompleteItem = { value: string; label: string }
 
@@ -800,6 +832,8 @@ If there are no changes, tell me so and do not create an artifact.
 Use a slug like "<project>-diff-review-<ref>" (e.g., "visualizer-diff-review-main"). Call create_visual_artifact and return the URL.`
 }
 
+// --- Extension Implementation ---
+
 const CreateVisualArtifactParams = Type.Object({
   slug: Type.String({ maxLength: 80, description: "kebab-case artifact slug. Example: revenue-dashboard" }),
   title: Type.String({ maxLength: 120, description: "Artifact title" }),
@@ -883,33 +917,25 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
       _onUpdate: (update: { type: string; text: string }) => void,
       ctx: { cwd?: string },
     ) {
-      const contract = await loadContract()
-      const spec = validateSpec(params, contract)
       const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? ".")
-      const projectName = deriveProjectName(projectPath)
-      const filePath = resolve(GLOBAL_ARTIFACTS_DIR, projectName, `${spec.slug}.json`)
+      const result = await createArtifact(params, projectPath)
 
-      const localBaseUrl = DEFAULT_BASE_URL
-      const tailscaleBaseUrl = getTailscaleBaseUrl()
-      const preferredBaseUrl = process.env.VISUAL_ARTIFACT_BASE_URL ?? tailscaleBaseUrl ?? localBaseUrl
-
-      const localUrl = `${localBaseUrl}/${projectName}/${spec.slug}/`
-      const tailnetUrl = tailscaleBaseUrl ? `${tailscaleBaseUrl}/${projectName}/${spec.slug}/` : undefined
-      const url = `${preferredBaseUrl}/${projectName}/${spec.slug}/`
-
-      await withFileMutationQueue(filePath, async () => {
-        await mkdir(dirname(filePath), { recursive: true })
-        await writeFile(filePath, `${JSON.stringify(spec, null, 2)}\n`, "utf8")
-      })
-
-      let text = `Created visual artifact ${spec.slug} in project ${projectName} at ${filePath}. Open ${url}`
-      if (tailnetUrl && url !== tailnetUrl) {
-        text += ` (tailnet: ${tailnetUrl})`
+      let text = `Created visual artifact ${result.slug} in project ${result.projectName} at ${result.filePath}. Open ${result.url}`
+      if (result.tailnetUrl && result.url !== result.tailnetUrl) {
+        text += ` (tailnet: ${result.tailnetUrl})`
       }
 
       return {
         content: [{ type: "text", text }],
-        details: { slug: spec.slug, projectName, projectPath, path: filePath, url, localUrl, tailnetUrl },
+        details: {
+          slug: result.slug,
+          projectName: result.projectName,
+          projectPath: result.projectPath,
+          path: result.filePath,
+          url: result.url,
+          localUrl: result.localUrl,
+          tailnetUrl: result.tailnetUrl,
+        },
       }
     },
   })

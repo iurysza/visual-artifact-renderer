@@ -51,6 +51,66 @@ pnpm serve        # static export + live JSON
 
 The pipeline and skill are global-install friendly; `./install.sh` syncs wrappers, extension, and skill.
 
+## Live visual iteration with Impeccable
+
+Use the Impeccable `live` command to iterate on UI in the browser. The helper runs in the background and injects a global bar into the page so the user can pick an element, request a design action, and get generated variants without leaving the browser.
+
+### Critical rule
+
+**The agent must be actively polling before the user clicks Go.** The browser queues events on the helper server; if no agent pulls them, the spinner spins forever. Start `live-poll.mjs` first, tell the user "ready", and only then let them use the bar.
+
+### Start a live session
+
+1. Ensure the dev server is running:
+   ```bash
+   # if not already running
+   tmux new-session -d -s visualizer-dev 'pnpm dev'
+   ```
+2. Start the Impeccable live helper in the background:
+   ```bash
+   tmux new-session -d -s live-server 'node .pi/skills/impeccable/scripts/live-server.mjs start'
+   ```
+3. Verify it is running:
+   ```bash
+   node .pi/skills/impeccable/scripts/live-status.mjs
+   curl -s http://localhost:9999/artifacts/ | rg 'http://localhost:8400/live\.js'
+   ```
+4. Open the site in Zen (or the user's browser of choice):
+   ```bash
+   open -a Zen 'http://localhost:9999/artifacts/'
+   ```
+5. **Run the poll loop in the foreground** and keep it running. This is the active listener:
+   ```bash
+   node .pi/skills/impeccable/scripts/live-poll.mjs
+   ```
+6. Tell the user: "Live mode is ready. Pick an element and click Go."
+
+### User workflow in the browser
+
+1. The Impeccable bar appears at the top of the page.
+2. Click the target/crosshair icon, then click an element to edit.
+3. Choose an action: `bolder`, `quieter`, `layout`, `typeset`, `colorize`, `polish`, etc., or `impeccable` for freeform.
+4. Optionally annotate with comments/drawings or type a short prompt.
+5. Click **Go**. The agent receives the event immediately, generates 3 variants in source, and the browser swaps them via HMR.
+6. Cycle variants, tune parameters, accept (✓) or discard (✗).
+
+### Agent workflow per event
+
+After each event, `live-poll.mjs` exits with a JSON event. Handle it, then run `live-poll.mjs` again right away. Do not leave a gap where no poll is running.
+
+### Stop / cleanup
+
+```bash
+node .pi/skills/impeccable/scripts/live-server.mjs stop
+tmux kill-session -t live-server
+```
+
+Also remove leftover live markers from `src/app/layout.tsx` if needed:
+
+```bash
+node .pi/skills/impeccable/scripts/live-inject.mjs --remove
+```
+
 ## Decision defaults
 
 - **Adding a node type?** Follow [`ai-artifacts/docs/design-docs/node-design-principles.md`](./ai-artifacts/docs/design-docs/node-design-principles.md), then update schema, manifest, adapter, registry, and contract.

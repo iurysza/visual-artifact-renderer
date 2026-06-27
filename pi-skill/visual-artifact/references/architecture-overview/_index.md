@@ -28,7 +28,9 @@ Follow these steps in order. Do not skip ahead.
 3. Run the [[references/architecture-overview/report-director|report director]] to decide what the artifact should say.
 4. Run the [[references/architecture-overview/visualization-strategy|visualization strategy]] pass to decide how to say it.
 5. Run the [[references/architecture-overview/final-assembler|final assembler]] to generate the spec JSON.
-6. Read the generated `visual-artifact-spec.json` and call `create_visual_artifact`.
+6. Read the generated `visual-artifact-spec.json` and either:
+   - call `create_visual_artifact` with the spec, or
+   - run `visual-artifact create visual-artifact-spec.json --project <repoRoot>` to validate and save it via the CLI.
 
 ## Output location
 

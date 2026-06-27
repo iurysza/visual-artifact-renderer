@@ -23,8 +23,8 @@ Good fits:
 1. Inspect the relevant code or data to understand what to visualize.
 2. Read `~/.pi/tools/visualizer/artifact-contract.json` to confirm supported node types and props.
 3. Build a `VisualArtifactSpec` directly, valid against the schema.
-4. Optionally start the renderer with `vaz-serve` if you want a local URL.
-5. Call `create_visual_artifact` with the spec.
+4. Optionally start the renderer with `visual-artifact serve --no-open` if you want a local URL. The default server binds to `0.0.0.0:9999`, so it is reachable on both localhost and the machine's LAN IP.
+5. Call `create_visual_artifact` with the spec, or run `visual-artifact create <spec.json>` to validate and save it via the CLI.
 6. Return the artifact URL.
 
 ## Output location

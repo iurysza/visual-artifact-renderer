@@ -11,16 +11,16 @@ Use for system topology, module relationships, runtime flows, and container diag
 
 ## Three sizes
 
-| Size | Element count | Approach |
-|---|---|---|
-| Simple topology | < 10 | `mermaid` flowchart |
-| Text-heavy overview | < 15 | `grid` of `card` nodes with explicit flow |
-| Complex architecture | 15+ | Hybrid: small `mermaid` overview + detailed `grid` cards |
+| Size                 | Element count | Approach                                                 |
+| -------------------- | ------------- | -------------------------------------------------------- |
+| Simple topology      | < 10          | `mermaid` flowchart                                      |
+| Text-heavy overview  | < 15          | `grid` of `card` nodes with explicit flow                |
+| Complex architecture | 15+           | Hybrid: small `mermaid` overview + detailed `grid` cards |
 
 ## Simple topology
 
-- Use `mermaid` with `flowchart TD`.
-- Keep LR only for 3–4 node linear flows.
+- Use `mermaid` with `flowchart LR`.
+- Keep TD only for 3–4 node linear flows.
 - Label edges for protocols, data shapes, or ownership.
 - Let the renderer handle edge routing.
 
@@ -40,16 +40,16 @@ Use for system topology, module relationships, runtime flows, and container diag
 
 ## C4-style diagrams
 
-- Use `mermaid` `flowchart TD` with `subgraph` blocks.
+- Use `mermaid` `flowchart LR` with `subgraph` blocks.
 - Represent persons, systems, databases, and boundaries as distinct node shapes.
 - Label relationships with protocols or data contracts.
 
 ## Node selection
 
-| Content | Node |
-|---|---|
-| Topology / connections | `mermaid` |
-| Module descriptions | `card` |
-| Layered layout | `grid` + `section` |
-| Runtime flow | `flow` |
+| Content                             | Node                   |
+| ----------------------------------- | ---------------------- |
+| Topology / connections              | `mermaid`              |
+| Module descriptions                 | `card`                 |
+| Layered layout                      | `grid` + `section`     |
+| Runtime flow                        | `flow`                 |
 | File/function lists inside a module | `file-tree` or `table` |

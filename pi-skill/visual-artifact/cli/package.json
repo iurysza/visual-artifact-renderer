@@ -1,0 +1,26 @@
+{
+  "name": "@agents/visual-artifact-cli",
+  "version": "1.0.0",
+  "description": "Fast self-contained CLI for creating and serving visual artifacts.",
+  "type": "module",
+  "bin": {
+    "visual-artifact": "./dist/visual-artifact"
+  },
+  "scripts": {
+    "dev": "bun run src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "bun run scripts/build.ts",
+    "install:binary": "bun run scripts/install.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
