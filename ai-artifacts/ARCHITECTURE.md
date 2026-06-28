@@ -11,7 +11,7 @@ flowchart LR
   Agent[Agent / LLM] --> Spec[VisualArtifactSpec JSON]
   Spec --> Tool[Pi tool: create_visual_artifact]
   Tool --> CLI[visual-artifact CLI]
-  CLI --> Contract[artifact-contract.json]
+  CLI --> Contract[contract]
   CLI --> Store[skill artifacts store]
   Store --> Server[CLI static + live JSON server]
   Server --> App[Next.js renderer]
@@ -72,7 +72,7 @@ The extension registers:
 
 | Artifact | Source/writer | Reader |
 |---|---|---|
-| `skill/artifact-contract.json` | `skill/app/scripts/export-contract.ts` | CLI, Pi extension through CLI, agents, docs |
+| `skill/artifact-contract.json` | `skill/app/scripts/export-contract.ts` | CLI, Pi extension through CLI, agents via `visual-artifact contract`, docs |
 | `skill/cli/src/assets/contract.json` | CLI build copies contract | Compiled CLI fallback |
 | `VisualArtifactSpecSchema` | `skill/app/src/lib/artifact-schema.ts` | Renderer and `verify-artifacts` |
 | `artifactManifest` | `skill/app/src/lib/artifact-manifest.ts` | Contract exporter and docs |

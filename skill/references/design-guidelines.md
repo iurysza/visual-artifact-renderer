@@ -19,6 +19,8 @@ Every artifact must be about its topic. Avoid meta-statistics such as node count
 
 Match the content to the right renderer node.
 
+Get the current node catalog from the CLI with `visual-artifact contract`, or read the source manifest in `skill/app/src/lib/artifact-manifest.ts`.
+
 | Content | Preferred node | Why |
 |---|---|---|
 | Dashboard KPIs | `stat-card` inside `grid` | Hero numbers with labels and captions |

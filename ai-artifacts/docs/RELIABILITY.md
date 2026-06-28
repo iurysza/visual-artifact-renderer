@@ -4,7 +4,7 @@
 
 ## Validation layers
 
-1. **CLI pre-write** — `skill/cli/src/validate.ts` validates against `skill/artifact-contract.json` before writing.
+1. **CLI pre-write** — `skill/cli/src/validate.ts` validates against the exported contract before writing.
 2. **Renderer post-read** — `skill/app/src/lib/artifact-schema.ts` parses with Zod before render.
 3. **Contract sync** — `skill/app/scripts/verify-artifacts.ts` checks schema, manifest, saved artifacts, and exported contract.
 4. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates to the CLI instead of duplicating validation.

@@ -6,7 +6,8 @@ Visualizer artifacts are built from a constrained node catalog. Agents never wri
 
 ## Sources of truth
 
-- [`skill/artifact-contract.json`](../skill/artifact-contract.json) — exported runtime contract used by CLI and agents.
+- `visual-artifact contract` — get the exported runtime contract used by the CLI and agents.
+- [`skill/artifact-contract.json`](../skill/artifact-contract.json) — exported runtime contract (source of truth on disk).
 - [`skill/app/src/lib/artifact-schema.ts`](../skill/app/src/lib/artifact-schema.ts) — Zod schema and TypeScript types.
 - [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, limits.
 
@@ -20,7 +21,7 @@ pnpm verify:artifacts
 
 ## Node set
 
-Visualizer ships **36** node types:
+Visualizer ships **30+** node types:
 
 ```txt
 alert, area-chart, radar-chart, scatter-chart, heatmap, log,

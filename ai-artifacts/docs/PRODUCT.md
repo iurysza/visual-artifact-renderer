@@ -2,7 +2,7 @@
 
 ## Product register
 
-Visualizer is a **generative UI runtime for agent output**.
+Visualizer is a **generative-UI, server-driven runtime for agent output**.
 
 ## Users
 

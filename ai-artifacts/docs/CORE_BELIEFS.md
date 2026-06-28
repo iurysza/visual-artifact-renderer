@@ -10,7 +10,7 @@ Why: containment. Rich output without arbitrary code execution, repeated boilerp
 
 ## 2. The contract is the handshake
 
-`skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` export to `skill/artifact-contract.json`. The CLI, Pi extension, skill docs, and renderer all meet at that file.
+`skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` export to `skill/artifact-contract.json`. The CLI, Pi extension, skill docs, and renderer all meet at that file. Inspect the live contract with `visual-artifact contract`.
 
 Regenerate after schema or manifest changes:
 

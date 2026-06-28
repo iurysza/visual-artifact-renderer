@@ -4,10 +4,10 @@
 
 ## Direct creation
 
-1. Agent reads the visual-artifact contract.
+1. Agent runs `visual-artifact contract` to see the available node types.
 2. Agent builds a `VisualArtifactSpec`: `slug`, `title`, optional `description`, optional `data`, and `nodes`.
 3. Agent calls `create_visual_artifact` or runs `visual-artifact create`.
-4. CLI validates the spec against `artifact-contract.json`.
+4. CLI validates the spec against the exported contract.
 5. CLI writes `<skill-root>/artifacts/<project>/<slug>.json`.
 6. CLI starts the renderer if needed.
 7. User opens `/artifacts/<project>/<slug>/`.

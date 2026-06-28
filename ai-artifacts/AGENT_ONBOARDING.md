@@ -15,7 +15,7 @@ The agent emits a constrained `VisualArtifactSpec`. The Pi extension calls the `
 Key surfaces:
 
 - **Renderer** — `skill/app`, Next.js static export under `basePath: "/artifacts"`.
-- **Contract system** — `skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` → `skill/artifact-contract.json`.
+- **Contract system** — `skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` → `skill/artifact-contract.json`. Inspect it with `visual-artifact contract`.
 - **CLI** — `skill/cli`, Bun binary for create/validate/serve/list/open/doctor/bootstrap.
 - **Pi extension** — `pi-extension/visual-artifact.ts`, registers `create_visual_artifact` and delegates to the CLI.
 - **Skill docs** — `skill/SKILL.md` and `skill/references/*`, model-facing instructions.
@@ -168,7 +168,7 @@ pnpm validate:mermaid path/to/diagram.mmd
 
 ## 7. Pitfalls
 
-- **Contract drift.** Schema and manifest changes are not done until `skill/artifact-contract.json` is regenerated.
+- **Contract drift.** Schema and manifest changes are not done until `skill/artifact-contract.json` is regenerated and `visual-artifact contract` reflects them.
 - **Wrong working directory.** Renderer commands run in `skill/app`; CLI commands run in `skill/cli`.
 - **Storage location confusion.** Current default is `<skill-root>/artifacts`, not a repo under the caller project. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
 - **Base path.** App routes live under `/artifacts`; data routes live under `/artifacts/data/artifacts/...`.

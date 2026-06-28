@@ -18,7 +18,7 @@ Read:
 3. `report-direction.md`
 4. `visualization-strategy.md`
 5. source evidence as needed
-6. `artifact-contract.json`
+6. `visual-artifact contract` (current node catalog and limits)
 
 ## Build rules
 

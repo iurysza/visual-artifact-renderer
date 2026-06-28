@@ -29,15 +29,12 @@ Do not use for plain text answers or code changes that do not need rendering.
 ## Workflow
 
 1. Inspect the relevant source/data.
-2. Read the artifact contract before choosing nodes.
+2. Get the artifact contract with `visual-artifact contract` before choosing nodes.
 3. Build a focused `VisualArtifactSpec`.
 4. Validate/create with the CLI or call `create_visual_artifact`.
 5. Return the artifact URL.
 
-Contract locations:
-
-- Source repo: `skill/artifact-contract.json`
-- Installed skill: `<skill-root>/artifact-contract.json`
+Use `visual-artifact contract` to print the full contract, `visual-artifact contract --format summary` for a quick overview, or `visual-artifact contract --node <type>` to inspect one node.
 
 ## Spec shape
 
@@ -83,6 +80,7 @@ visual-artifact [global flags] <command>
 | `list [project]` | List projects or artifacts. |
 | `open [project/slug]` | Open index or artifact page. |
 | `doctor` | Diagnose install/runtime state. |
+| `contract` | Print the artifact contract used for validation. |
 
 Examples:
 
@@ -94,6 +92,7 @@ visual-artifact --json create spec.json --no-serve
 visual-artifact serve --no-open
 visual-artifact open my-project/my-slug
 visual-artifact doctor
+visual-artifact contract --format summary
 ```
 
 ## Storage and URLs
@@ -131,7 +130,7 @@ Prefer semantic nodes over generic containers:
 | Secondary detail | `accordion` |
 | Alternate views | `tabs` |
 
-Full reference: `docs/nodes.md` in the source repo, or the installed `artifact-contract.json`.
+Full reference: `docs/nodes.md` in the source repo, or `visual-artifact contract`.
 
 ## Design rules
 

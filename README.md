@@ -1,45 +1,44 @@
-# Visualizer
+# Visualizer — war-room dashboards for agent output
 
 ![Visualizer home](./assets/home-light.png)
 
 Visualizer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
 
-The trick is small but load-bearing: **agents emit JSON, not HTML or React.**
+The idea is simple: **agents emit JSON, not HTML or React.**
 
-HTML articles are already a pretty effective format for agent output, but asking an LLM to generate full HTML is inconsistent, hard to constrain, and token-hungry. Visualizer gives agents a smaller surface: choose known UI nodes, provide data, and let a trusted renderer handle the page.
+HTML articles are a good way to explain complex work, but generating full HTML from an LLM is inconsistent, awkward to constrain, and burns tokens. Visualizer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page.
 
 ## What problem this solves
 
-LLMs are good at assembling information. They are less reliable at hand-writing complete UI documents every time.
+LLMs can assemble information, but they struggle to produce consistent UI documents. Raw HTML drifts: layout breaks, CSS repeats, tokens burn, and there is no shared contract between the model and the renderer.
 
-Raw HTML from an agent tends to drift:
-
-- inconsistent layout and visual hierarchy
-- repeated CSS and boilerplate burning tokens
-- fragile links, scripts, and assets
-- no shared contract between the agent and the renderer
-- hard-to-review output when something breaks
-
-Visualizer is a generative-UI runtime for that gap. The model describes **what** to show; the app owns **how** it looks.
+Visualizer is a generative-UI, server-driven runtime for that gap. The model describes **what** to show; the renderer owns **how** it looks.
 
 ## How it works
 
 ```mermaid
-flowchart LR
-  A[Agent / LLM] -->|VisualArtifactSpec JSON| B[create_visual_artifact]
-  B -->|delegates| C[visual-artifact CLI]
-  C -->|validates against contract| D[artifact-contract.json]
-  C -->|writes| E[skill artifacts store]
-  E -->|served as JSON| F[Next.js renderer]
-  F -->|node adapters| G[Polished artifact page]
-  G --> H[Browser / shareable URL]
+sequenceDiagram
+    participant Agent as Agent / LLM
+    participant Pi as create_visual_artifact
+    participant CLI as visual-artifact CLI
+    participant Contract as contract
+    participant Store as artifacts store
+    participant App as Next.js renderer
+    Agent->>Agent: build VisualArtifactSpec JSON
+    Agent->>Pi: send spec
+    Pi->>CLI: delegate
+    CLI->>Contract: validate
+    CLI->>Store: write JSON
+    CLI->>App: start server if needed
+    App->>Store: fetch JSON
+    App->>Agent: render in browser
 ```
 
 The core flow:
 
-1. Agent reads the contract and builds a `VisualArtifactSpec`.
+1. Agent runs `visual-artifact contract` to see the available node types, then builds a `VisualArtifactSpec`.
 2. Pi tool `create_visual_artifact` delegates to the `visual-artifact` CLI.
-3. CLI validates the spec against `artifact-contract.json`.
+3. CLI validates the spec against the exported contract.
 4. CLI writes `<skill-root>/artifacts/<project>/<slug>.json`.
 5. CLI starts the renderer if needed.
 6. Browser opens `/artifacts/<project>/<slug>/`.
@@ -50,7 +49,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 ## Features
 
 - **Constrained JSON contract** — `slug`, `title`, optional `data`, and typed `nodes`.
-- **36 node types** — prose, stat cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, diffs, and more.
+- **30+ node types** — prose, stat cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, diffs, and more.
 - **Data-backed components** — tables, charts, status grids, and timelines reference datasets by `dataKey`.
 - **Local-first storage** — generated artifacts stay under the installed skill root unless overridden.
 - **CLI + Pi tool** — use `visual-artifact` directly or call `create_visual_artifact` from Pi.
@@ -140,6 +139,7 @@ Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-i
 | `visual-artifact bootstrap [--dry-run]` | Build renderer, compile CLI, install binary symlink. |
 | `visual-artifact create [spec.json|-] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled. |
 | `visual-artifact validate [spec.json|-]` | Validate without writing. |
+| `visual-artifact contract` | Print the current artifact contract to stdout. |
 | `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve static renderer plus live artifact JSON. |
 | `visual-artifact serve status` | Check server health. |
 | `visual-artifact serve stop` | Best-effort stop; manually kill externally started servers. |
@@ -186,6 +186,12 @@ The contract is generated from renderer source:
 - `skill/app/src/lib/artifact-schema.ts`
 - `skill/app/src/lib/artifact-manifest.ts`
 - `skill/artifact-contract.json`
+
+Inspect the current contract from the CLI:
+
+```bash
+visual-artifact contract
+```
 
 After schema or manifest changes:
 

@@ -22,7 +22,7 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 
 ## Core principles
 
-1. **JSON, not code.** The agent surface is `skill/artifact-contract.json`. Never generate React, routes, JSX, imports, CSS, or full HTML for the renderer.
+1. **JSON, not code.** The agent surface is the exported contract. Run `visual-artifact contract` to see it. Never generate React, routes, JSX, imports, CSS, or full HTML for the renderer.
 2. **The contract is the handshake.** `skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` → `skill/artifact-contract.json`. Run `pnpm export:contract` after schema or manifest changes.
 3. **Validate at boundaries.** CLI/Pi tool validates before writing; renderer parses with Zod before rendering.
 4. **Single sources of truth.** URL/path math lives in `skill/app/src/lib/paths.ts`. Default artifact storage is `<skill-root>/artifacts/<project>/<slug>.json`.

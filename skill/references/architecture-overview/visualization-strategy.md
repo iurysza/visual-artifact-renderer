@@ -14,7 +14,7 @@ Turn the report direction into a visual plan before writing JSON.
 - `facts.md`
 - `analysis.md`
 - `report-direction.md`
-- `artifact-contract.json`
+- `visual-artifact contract` (current contract)
 
 ## Plan
 

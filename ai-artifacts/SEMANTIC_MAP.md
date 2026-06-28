@@ -52,7 +52,7 @@
 Agent JSON
   → create_visual_artifact
   → visual-artifact create - --project <cwd> --json
-  → validate against artifact-contract.json
+  → validate against the exported contract
   → write <skill-root>/artifacts/<project>/<slug>.json
   → return /artifacts/<project>/<slug>/
 ```

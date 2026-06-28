@@ -16,7 +16,7 @@ Read:
 - `<repoRoot>/ai-artifacts/generated/<slug>/facts.md`
 - `<repoRoot>/ai-artifacts/generated/<slug>/analysis.md`
 - relevant source files and project docs
-- the Visualizer contract for available node types
+- `visual-artifact contract` for available node types
 
 ## Decide
 

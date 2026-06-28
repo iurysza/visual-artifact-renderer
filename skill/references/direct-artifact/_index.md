@@ -22,9 +22,7 @@ Good fits:
 ## How to build
 
 1. Inspect the relevant code/data.
-2. Read the artifact contract:
-   - source repo: `skill/artifact-contract.json`
-   - installed skill: `<skill-root>/artifact-contract.json`
+2. Get the current contract by running `visual-artifact contract`.
 3. Choose node types that match the content.
 4. Build a valid `VisualArtifactSpec`.
 5. Call `create_visual_artifact`, or run:

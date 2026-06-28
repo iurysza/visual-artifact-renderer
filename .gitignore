@@ -51,3 +51,4 @@ next-env.d.ts
 ai-artifacts/generated/
 report/
 tmp-jscpd.json/
+example-artifact.json

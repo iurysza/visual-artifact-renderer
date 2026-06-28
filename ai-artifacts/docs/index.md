@@ -22,7 +22,7 @@
 | [`design-docs/`](./design-docs/index.md) | Deep-dives on nodes, themes, diagrams. | schema, adapters, CSS |
 | [`product-specs/`](./product-specs/index.md) | User journey and node catalog rationale. | README, contract, skill |
 | [`references/`](./references/) | LLM-facing extracts and historical notes. | contract, scripts |
-| [`../../docs/nodes.md`](../../docs/nodes.md) | Public node reference and composition patterns. | `skill/artifact-contract.json` |
+| [`../../docs/nodes.md`](../../docs/nodes.md) | Public node reference and composition patterns. | `visual-artifact contract` / `skill/artifact-contract.json` |
 
 ## Current architecture facts
 
@@ -30,7 +30,7 @@
 - CLI lives under `skill/cli` and is the runtime boundary for create/validate/serve.
 - Default artifact storage is `<skill-root>/artifacts/<project>/<slug>.json`.
 - Public pages are under `/artifacts`; public JSON is under `/artifacts/data/artifacts`.
-- The contract is `skill/artifact-contract.json`, generated from schema + manifest.
+- The contract is `skill/artifact-contract.json`, generated from schema + manifest. Inspect it with `visual-artifact contract`.
 
 ## Verification status
 
@@ -39,6 +39,6 @@
 | Contract sync | `cd skill/app && pnpm export:contract && pnpm verify:artifacts` | current command |
 | Renderer build | `cd skill/app && pnpm build` | current command |
 | CLI build | `cd skill/cli && bun run typecheck && bun run build` | current command |
-| Node count | `jq '.["nodeTypes"] | length' skill/artifact-contract.json` | 36 |
+| Node count | `visual-artifact contract` (or `jq '.["nodeTypes"] | length' skill/artifact-contract.json`) | 30+ |
 
 When updating docs, update this index if paths, commands, storage, or architecture responsibilities change.
