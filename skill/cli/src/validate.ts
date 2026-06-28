@@ -9,9 +9,42 @@ export class ValidationError extends Error {
   }
 }
 
+function describeValue(value: unknown): string {
+  if (value === undefined) return "undefined"
+  if (value === null) return "null"
+  if (typeof value === "string") {
+    if (value.length === 0) return "empty string"
+    if (value.length > 40) return `string "${value.slice(0, 40)}..."`
+    return `string "${value}"`
+  }
+  if (typeof value === "number") return `number ${value}`
+  if (typeof value === "boolean") return `boolean ${value}`
+  if (Array.isArray(value)) return `array with ${value.length} items`
+  return "object"
+}
+
+function humanPath(label: string): string {
+  const match = label.match(/^nodes\[(\d+)\](?:<([\w-]+)>)?(.*\.props\.)([\w\[\].]+)$/)
+  if (!match) return label
+  const [, index, type, rest, prop] = match
+  const node = type ? `${type} at nodes[${index}]` : `node at nodes[${index}]`
+  const nested = rest
+    ? rest
+        .slice(0, -".props.".length)
+        .replace(/^\./, "")
+        .replace(/\./g, " → ")
+    : ""
+  const itemIndex = prop.match(/items\[(\d+)\]\.(\w+)/)
+  if (itemIndex) {
+    const [, itemIdx, itemProp] = itemIndex
+    return `${node}${nested ? ` → ${nested}` : ""} → items[${itemIdx}] → ${itemProp}`
+  }
+  return `${node}${nested ? ` → ${nested}` : ""} → ${prop}`
+}
+
 function assertString(value: unknown, label: string): string {
   if (typeof value !== "string" || value.length === 0) {
-    throw new ValidationError(`${label} must be a non-empty string`)
+    throw new ValidationError(`${humanPath(label)} must be a non-empty string (got ${describeValue(value)})`)
   }
   return value
 }
@@ -23,7 +56,7 @@ function assertOptionalString(value: unknown, label: string): string | undefined
 
 function assertPlainObject(value: unknown, label: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ValidationError(`${label} must be an object`)
+    throw new ValidationError(`${label} must be an object (got ${describeValue(value)})`)
   }
   return value as Record<string, unknown>
 }
@@ -36,6 +69,7 @@ function validateNode(
 ): void {
   const obj = assertPlainObject(node, path)
   const type = assertString(obj.type as unknown as string, `${path}.type`)
+  const nodeLabel = `${path}<${type}>`
 
   if (!contract.nodeTypes.includes(type)) {
     throw new ValidationError(
@@ -49,7 +83,7 @@ function validateNode(
   const limits = nodeDef.limits ?? {}
 
   if (nodeDef.requiresData) {
-    const dataKey = assertString(props.dataKey, `${path}.props.dataKey`)
+    const dataKey = assertString(props.dataKey, `${path}<${type}>.props.dataKey`)
     const dataset = data?.[dataKey]
     if (!Array.isArray(dataset)) {
       throw new ValidationError(`data.${dataKey} must be an array (required by ${path})`)
@@ -129,8 +163,8 @@ function validateNode(
     }
     items.forEach((item: unknown, index: number) => {
       const itemObj = assertPlainObject(item, `${path}.props.items[${index}]`)
-      assertString(itemObj.value, `${path}.props.items[${index}].value`)
-      assertString(itemObj.label, `${path}.props.items[${index}].label`)
+      assertString(itemObj.value, `${path}<tabs>.props.items[${index}].value`)
+      assertString(itemObj.label, `${path}<tabs>.props.items[${index}].label`)
       const nodes = itemObj.nodes
       if (!Array.isArray(nodes) || nodes.length === 0) {
         throw new ValidationError(`${path}.props.items[${index}].nodes must be a non-empty array`)
@@ -161,13 +195,13 @@ function validateNode(
   }
 
   if (limits.text && typeof props.text === "string" && props.text.length > limits.text) {
-    throw new ValidationError(`${path}.props.text is ${props.text.length} chars, max allowed is ${limits.text}`)
+    throw new ValidationError(`${nodeLabel} → text is ${props.text.length} chars, max allowed is ${limits.text}`)
   }
   if (limits.label && typeof props.label === "string" && props.label.length > limits.label) {
-    throw new ValidationError(`${path}.props.label is ${props.label.length} chars, max allowed is ${limits.label}`)
+    throw new ValidationError(`${nodeLabel} → label is ${props.label.length} chars, max allowed is ${limits.label}`)
   }
   if (limits.code && typeof props.code === "string" && props.code.length > limits.code) {
-    throw new ValidationError(`${path}.props.code is ${props.code.length} chars, max allowed is ${limits.code}`)
+    throw new ValidationError(`${nodeLabel} → code is ${props.code.length} chars, max allowed is ${limits.code}`)
   }
 }
 
