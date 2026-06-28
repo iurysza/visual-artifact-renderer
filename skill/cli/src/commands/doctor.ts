@@ -50,7 +50,7 @@ export async function doctor(log: Logger): Promise<number> {
     fail = true
   }
 
-  const binaryPath = resolve(homedir(), ".pi", "bin", "visual-artifact")
+  const binaryPath = resolve(homedir(), ".local", "bin", "visual-artifact")
   const binaryOk = await fileExists(binaryPath)
   results.push({ check: "binary", ok: binaryOk, message: binaryOk ? binaryPath : `missing: ${binaryPath}` })
   if (!binaryOk) fail = true
