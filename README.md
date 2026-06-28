@@ -17,21 +17,36 @@ Visualizer is a generative-UI, server-driven runtime for that gap. The model des
 ## How it works
 
 ```mermaid
-sequenceDiagram
-    participant Agent as Agent / LLM
-    participant Pi as create_visual_artifact
-    participant CLI as visual-artifact CLI
-    participant Contract as contract
-    participant Store as artifacts store
-    participant App as Next.js renderer
-    Agent->>Agent: build VisualArtifactSpec JSON
-    Agent->>Pi: send spec
-    Pi->>CLI: delegate
-    CLI->>Contract: validate
-    CLI->>Store: write JSON
-    CLI->>App: start server if needed
-    App->>Store: fetch JSON
-    App->>Agent: render in browser
+flowchart LR
+  subgraph Agent["Agent / LLM"]
+    A1["Inspect source/data"]
+    A2["Get node catalog<br/>visual-artifact contract"]
+    A3["Build VisualArtifactSpec JSON"]
+  end
+
+  subgraph Pi["Pi boundary"]
+    P1["create_visual_artifact"]
+  end
+
+  subgraph CLI["visual-artifact CLI"]
+    C1["Read spec"]
+    C2["Validate"]
+    C3["Write artifact JSON"]
+    C4["Start server if needed"]
+  end
+
+  subgraph Store["Artifact store"]
+    S1["artifact JSON<br/>project / slug"]
+  end
+
+  subgraph Renderer["Next.js renderer"]
+    R1["Fetch JSON"]
+    R2["Render trusted adapters"]
+    R3["Open browser URL"]
+  end
+
+  A1 --> A2 --> A3 --> P1 --> C1 --> C2 --> C3 --> S1 --> R1 --> R2 --> R3
+  C3 --> C4 --> R1
 ```
 
 The core flow:
