@@ -1,18 +1,16 @@
-# Visualizer — war-room dashboards for agent output
+# Visual Artifact Renderer
 
-![Visualizer home](./assets/home-light.png)
+![Visual Artifact Renderer home](./assets/home-light.png)
 
-Visualizer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
+Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
 
 The idea is simple: **agents emit JSON, not HTML or React.**
 
-HTML articles are a good way to explain complex work, but generating full HTML from an LLM is inconsistent, awkward to constrain, and burns tokens. Visualizer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page.
-
 ## What problem this solves
 
-LLMs can assemble information, but they struggle to produce consistent UI documents. Raw HTML drifts: layout breaks, CSS repeats, tokens burn, and there is no shared contract between the model and the renderer.
+HTML articles are a good way to explain complex work, but generating full HTML from an LLM is inconsistent, awkward to constrain, and burns tokens. Visual Artifact Renderer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page.
 
-Visualizer is a generative-UI, server-driven runtime for that gap. The model describes **what** to show; the renderer owns **how** it looks.
+Visual Artifact Renderer is a generative-UI, server-driven runtime for that gap. The model describes **what** to show; the renderer owns **how** it looks.
 
 ## How it works
 
@@ -114,7 +112,7 @@ Minimal spec:
 {
   "slug": "demo-report",
   "title": "Demo Report",
-  "description": "A tiny Visualizer artifact.",
+  "description": "A tiny Visual Artifact Renderer artifact.",
   "nodes": [
     {
       "type": "text",
