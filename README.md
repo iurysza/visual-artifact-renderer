@@ -1,30 +1,63 @@
 # Visualizer
 
-Visualizer lets agents return polished visual pages instead of markdown walls: reports, code reviews, explainers, dashboards, and structured summaries.
-
-The rule: **agents emit JSON, not React, routes, JSX, imports, CSS, or full HTML.** The `visual-artifact` CLI validates that JSON, writes it under the skill, and serves it with the bundled Next.js renderer.
-
-- **JSON-first**: agents provide a constrained artifact spec
-- **Local-first**: artifacts stay on your machine
-- **Self-contained skill**: CLI, renderer, contract, and artifact store live under `skill/`
-- **Static + live**: the renderer is built once but reads fresh artifact JSON at request time
-
 ![Visualizer home](./assets/home-light.png)
 
-## Layout
+Visualizer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
 
-```text
-skill/
-  SKILL.md
-  artifact-contract.json
-  app/                 # Next.js renderer; static export lands in app/out
-  artifacts/           # generated JSON: <project>/<slug>.json
-  cli/                 # Bun CLI source and compiled binary
-pi-extension/
-  visual-artifact.ts   # Pi tool wrapper for create_visual_artifact
+The trick is small but load-bearing: **agents emit JSON, not HTML or React.**
+
+HTML articles are already a pretty effective format for agent output, but asking an LLM to generate full HTML is inconsistent, hard to constrain, and token-hungry. Visualizer gives agents a smaller surface: choose known UI nodes, provide data, and let a trusted renderer handle the page.
+
+## What problem this solves
+
+LLMs are good at assembling information. They are less reliable at hand-writing complete UI documents every time.
+
+Raw HTML from an agent tends to drift:
+
+- inconsistent layout and visual hierarchy
+- repeated CSS and boilerplate burning tokens
+- fragile links, scripts, and assets
+- no shared contract between the agent and the renderer
+- hard-to-review output when something breaks
+
+Visualizer is a generative-UI runtime for that gap. The model describes **what** to show; the app owns **how** it looks.
+
+## How it works
+
+```mermaid
+flowchart LR
+  A[Agent / LLM] -->|VisualArtifactSpec JSON| B[create_visual_artifact]
+  B -->|delegates| C[visual-artifact CLI]
+  C -->|validates against contract| D[artifact-contract.json]
+  C -->|writes| E[skill artifacts store]
+  E -->|served as JSON| F[Next.js renderer]
+  F -->|node adapters| G[Polished artifact page]
+  G --> H[Browser / shareable URL]
 ```
 
-## Install / bootstrap
+The core flow:
+
+1. Agent reads the contract and builds a `VisualArtifactSpec`.
+2. Pi tool `create_visual_artifact` delegates to the `visual-artifact` CLI.
+3. CLI validates the spec against `artifact-contract.json`.
+4. CLI writes `<skill-root>/artifacts/<project>/<slug>.json`.
+5. CLI starts the renderer if needed.
+6. Browser opens `/artifacts/<project>/<slug>/`.
+7. The Next.js app fetches JSON and renders trusted adapters.
+
+The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
+
+## Features
+
+- **Constrained JSON contract** — `slug`, `title`, optional `data`, and typed `nodes`.
+- **36 node types** — prose, stat cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, diffs, and more.
+- **Data-backed components** — tables, charts, status grids, and timelines reference datasets by `dataKey`.
+- **Local-first storage** — generated artifacts stay under the installed skill root unless overridden.
+- **CLI + Pi tool** — use `visual-artifact` directly or call `create_visual_artifact` from Pi.
+- **Static renderer, live JSON** — the renderer is built once; new artifacts appear without rebuilding.
+- **Safe rendering boundary** — validation before write, Zod parse before render, adapter-only UI.
+
+## Quick start
 
 Requirements: Bun, pnpm, Pi, Node.js 20+.
 
@@ -40,45 +73,61 @@ visual-artifact doctor
 
 `bootstrap` installs renderer dependencies, builds `skill/app/out`, compiles the Bun CLI, and symlinks `visual-artifact` into `~/.pi/bin/`.
 
-If the binary is already installed, rerun bootstrap with:
+If the binary already exists:
 
 ```bash
 visual-artifact bootstrap
 ```
 
-## Quick start
+## Create an artifact
 
-Create and serve an artifact from a file:
+From a file:
 
 ```bash
 visual-artifact create my-spec.json
 ```
 
-Create from stdin:
+From stdin:
 
 ```bash
 cat my-spec.json | visual-artifact create
-# or
 visual-artifact create - < my-spec.json
 ```
 
-The CLI writes runtime output inside the installed skill:
+Minimal spec:
 
-```text
-skill/artifacts/<project>/<slug>.json
+```json
+{
+  "slug": "demo-report",
+  "title": "Demo Report",
+  "description": "A tiny Visualizer artifact.",
+  "nodes": [
+    {
+      "type": "text",
+      "props": {
+        "text": "The agent supplied JSON. The renderer supplied the UI.",
+        "size": "lg"
+      }
+    }
+  ]
+}
 ```
 
-In this repository, `skill/artifacts/` is intentionally gitignored except for placeholder files, so local generated projects/specs/assets are not shipped.
-
-It returns a URL like:
+The CLI returns a URL like:
 
 ```text
-http://127.0.0.1:9999/artifacts/my-project/my-slug/
+http://127.0.0.1:9999/artifacts/my-project/demo-report/
 ```
 
-The Pi extension exposes the `create_visual_artifact` tool, which calls the same CLI path.
+By default, JSON is written to:
 
-## Commands
+```text
+<skill-root>/artifacts/<project>/<slug>.json
+```
+
+In this source repo that is `skill/artifacts/`, which is intentionally gitignored except placeholders.
+
+## CLI
 
 ```text
 visual-artifact [global flags] <command>
@@ -88,38 +137,26 @@ Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-i
 
 | Command | Purpose |
 |---|---|
-| `visual-artifact bootstrap [--dry-run]` | Build renderer, compile CLI, install symlink. |
-| `visual-artifact create [spec.json|-] [--project path] [--no-serve]` | Validate, write artifact JSON, and auto-start renderer unless disabled. |
+| `visual-artifact bootstrap [--dry-run]` | Build renderer, compile CLI, install binary symlink. |
+| `visual-artifact create [spec.json|-] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled. |
 | `visual-artifact validate [spec.json|-]` | Validate without writing. |
-| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve `skill/app/out` plus live artifact JSON. |
+| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve static renderer plus live artifact JSON. |
 | `visual-artifact serve status` | Check server health. |
-| `visual-artifact serve stop` | Stop a tracked server when available; manually stop detached/tmux servers. |
+| `visual-artifact serve stop` | Best-effort stop; manually kill externally started servers. |
 | `visual-artifact list [project]` | List projects or artifacts. |
 | `visual-artifact open [project/slug]` | Open the index or one artifact. |
 | `visual-artifact doctor` | Diagnose install/runtime state. |
 
-Machine-readable create output:
+Machine-readable output:
 
 ```bash
 visual-artifact --json create my-spec.json --no-serve
 visual-artifact --plain create my-spec.json --no-serve
 ```
 
-## Configuration
+## App development
 
-| Variable | Default | Description |
-|---|---|---|
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill>/artifacts` | Runtime artifact JSON store; generated contents are local output and gitignored in this repo. |
-| `VISUAL_ARTIFACT_OUT_DIR` | `<skill>/app/out` | Static renderer export. |
-| `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
-| `VISUAL_ARTIFACT_HOST` | `0.0.0.0` | Server bind host. |
-| `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
-| `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint prefix. |
-| `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
-| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create`/`open`, useful for tunnels or tailnet sharing. Include the mount path, e.g. `https://host.example/artifacts`. |
-| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<skill>/artifact-contract.json` | Override contract path. |
-
-## Renderer development
+Renderer:
 
 ```bash
 cd skill/app
@@ -132,7 +169,7 @@ pnpm verify:artifacts
 pnpm visual:qa        # optional adapter/styling QA
 ```
 
-CLI development:
+CLI:
 
 ```bash
 cd skill/cli
@@ -144,7 +181,7 @@ bun run install:binary
 
 ## Contract
 
-The contract is generated from renderer schema/manifest code:
+The contract is generated from renderer source:
 
 - `skill/app/src/lib/artifact-schema.ts`
 - `skill/app/src/lib/artifact-manifest.ts`
@@ -155,8 +192,40 @@ After schema or manifest changes:
 ```bash
 cd skill/app
 pnpm export:contract
+pnpm verify:artifacts
 ```
 
-## License
+Node reference: [`docs/nodes.md`](./docs/nodes.md).
 
-[MIT](LICENSE)
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `VISUAL_ARTIFACT_SKILL_ROOT` | auto-detected | Override skill root lookup. |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts` | Runtime artifact JSON store. |
+| `VISUAL_ARTIFACT_OUT_DIR` | `<skill-root>/app/out` | Static renderer export. |
+| `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
+| `VISUAL_ARTIFACT_HOST` | `0.0.0.0` | Server bind host. |
+| `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
+| `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint under the mount path. |
+| `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
+| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
+| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<skill-root>/artifact-contract.json` | Override contract path. |
+
+## Repository layout
+
+```text
+skill/
+  SKILL.md
+  artifact-contract.json
+  app/                 # Next.js renderer source + static export
+  artifacts/           # local generated JSON, gitignored
+  cli/                 # Bun CLI source and compiled binary
+  references/          # model-facing usage notes
+pi-extension/
+  visual-artifact.ts   # Pi tool wrapper for create_visual_artifact
+docs/
+  nodes.md             # node catalog and composition patterns
+ai-artifacts/
+  docs/                # architecture/product/reliability/design docs
+```

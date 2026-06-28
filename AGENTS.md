@@ -2,7 +2,7 @@
 
 > Map, not manual. Start here, then follow pointers. Keep this file short so the task stays in context.
 
-Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec, the Pi extension validates and writes it, and a Next.js renderer maps each node to a trusted adapter. The LLM never writes React, routes, JSX, imports, or CSS.
+Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec, the Pi extension delegates validation/storage to the CLI, and a Next.js renderer maps each node to a trusted adapter. The LLM never writes React, routes, JSX, imports, CSS, or full HTML for the renderer.
 
 ## Where knowledge lives
 
@@ -16,26 +16,25 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 | Design system and node philosophy | [`ai-artifacts/docs/DESIGN.md`](./ai-artifacts/docs/DESIGN.md) |
 | Frontend/renderer guide | [`ai-artifacts/docs/FRONTEND.md`](./ai-artifacts/docs/FRONTEND.md) |
 | Testing and verification | [`ai-artifacts/docs/RELIABILITY.md`](./ai-artifacts/docs/RELIABILITY.md) |
-| Why this knowledge layout exists | [`ai-artifacts/agent-md-creation.md`](./ai-artifacts/agent-md-creation.md) |
 | User-facing setup and usage | [`README.md`](./README.md) |
-| Model-facing routing and tool usage | [`pi-skill/visual-artifact/SKILL.md`](./pi-skill/visual-artifact/SKILL.md) |
+| Model-facing routing and tool usage | [`skill/SKILL.md`](./skill/SKILL.md) |
 | Node type reference | [`docs/nodes.md`](./docs/nodes.md) |
 
 ## Core principles
 
-1. **JSON, not code.** The agent surface is `artifact-contract.json`. Never generate React, routes, JSX, imports, or CSS for the renderer.
-2. **The contract is the handshake.** `src/lib/artifact-schema.ts` + `src/lib/artifact-manifest.ts` → `artifact-contract.json`. Run `pnpm export:contract` after any schema or manifest change.
-3. **Validate at boundaries.** The Pi extension validates specs before writing; the renderer parses with Zod before rendering. Parse, don't shotgun-validate.
-4. **Single sources of truth.** Paths live in `src/lib/paths.ts`. Artifact storage is `~/.pi/artifacts/<project>/<slug>.json`. Project names are derived, not chosen.
-5. **Small, well-named files.** Prefer scoped adapter files over monolithic registries. A path should telegraph its purpose.
+1. **JSON, not code.** The agent surface is `skill/artifact-contract.json`. Never generate React, routes, JSX, imports, CSS, or full HTML for the renderer.
+2. **The contract is the handshake.** `skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` → `skill/artifact-contract.json`. Run `pnpm export:contract` after schema or manifest changes.
+3. **Validate at boundaries.** CLI/Pi tool validates before writing; renderer parses with Zod before rendering.
+4. **Single sources of truth.** URL/path math lives in `skill/app/src/lib/paths.ts`. Default artifact storage is `<skill-root>/artifacts/<project>/<slug>.json`.
+5. **Small, well-named files.** Prefer scoped adapter files over monolithic registries.
 6. **Types are documentation.** Push semantic meaning into names. Use Zod to make illegal specs unrepresentable.
 
 ## Before committing renderer/schema changes
 
 ```bash
+cd skill/app
 pnpm lint
 pnpm export:contract
-pnpm test:contract
 pnpm verify:artifacts
 pnpm build
 ```
@@ -45,11 +44,14 @@ Run `pnpm visual:qa` if you touched adapters or styling.
 ## Fast dev environment
 
 ```bash
+cd skill/app
 pnpm dev          # http://localhost:9999/artifacts
-pnpm serve        # static export + live JSON
+
+cd ../cli
+bun run src/main.ts serve --no-open  # static export + live JSON after pnpm build
 ```
 
-The pipeline and skill are global-install friendly; `./install.sh` syncs wrappers, extension, and skill.
+The CLI is self-contained under `skill/cli`. `visual-artifact bootstrap` builds `skill/app`, compiles the CLI, and symlinks the binary into `~/.pi/bin/`.
 
 ## Live visual iteration with Impeccable
 
@@ -63,8 +65,7 @@ Use the Impeccable `live` command to iterate on UI in the browser. The helper ru
 
 1. Ensure the dev server is running:
    ```bash
-   # if not already running
-   tmux new-session -d -s visualizer-dev 'pnpm dev'
+   tmux new-session -d -s visualizer-dev 'cd skill/app && pnpm dev'
    ```
 2. Start the Impeccable live helper in the background:
    ```bash
@@ -79,42 +80,24 @@ Use the Impeccable `live` command to iterate on UI in the browser. The helper ru
    ```bash
    open -a Zen 'http://localhost:9999/artifacts/'
    ```
-5. **Run the poll loop in the foreground** and keep it running. This is the active listener:
+5. **Run the poll loop in the foreground** and keep it running:
    ```bash
    node .pi/skills/impeccable/scripts/live-poll.mjs
    ```
 6. Tell the user: "Live mode is ready. Pick an element and click Go."
 
-### User workflow in the browser
-
-1. The Impeccable bar appears at the top of the page.
-2. Click the target/crosshair icon, then click an element to edit.
-3. Choose an action: `bolder`, `quieter`, `layout`, `typeset`, `colorize`, `polish`, etc., or `impeccable` for freeform.
-4. Optionally annotate with comments/drawings or type a short prompt.
-5. Click **Go**. The agent receives the event immediately, generates 3 variants in source, and the browser swaps them via HMR.
-6. Cycle variants, tune parameters, accept (✓) or discard (✗).
-
-### Agent workflow per event
-
-After each event, `live-poll.mjs` exits with a JSON event. Handle it, then run `live-poll.mjs` again right away. Do not leave a gap where no poll is running.
-
-### Stop / cleanup
+### Cleanup
 
 ```bash
 node .pi/skills/impeccable/scripts/live-server.mjs stop
 tmux kill-session -t live-server
-```
-
-Also remove leftover live markers from `src/app/layout.tsx` if needed:
-
-```bash
 node .pi/skills/impeccable/scripts/live-inject.mjs --remove
 ```
 
 ## Decision defaults
 
 - **Adding a node type?** Follow [`ai-artifacts/docs/design-docs/node-design-principles.md`](./ai-artifacts/docs/design-docs/node-design-principles.md), then update schema, manifest, adapter, registry, and contract.
-- **Changing paths?** Update `src/lib/paths.ts` and check both dev and static-server modes.
+- **Changing paths?** Update `skill/app/src/lib/paths.ts` and check dev + CLI static-server modes.
 - **Changing styles/theme?** Read [`ai-artifacts/docs/DESIGN.md`](./ai-artifacts/docs/DESIGN.md) and [`ai-artifacts/docs/design-docs/theme-system.md`](./ai-artifacts/docs/design-docs/theme-system.md).
 - **Adding diagram logic?** Respect [`ai-artifacts/docs/design-docs/diagram-sandboxing.md`](./ai-artifacts/docs/design-docs/diagram-sandboxing.md) and test Mermaid separately.
 - **Unsure where something belongs?** Read [`ai-artifacts/docs/index.md`](./ai-artifacts/docs/index.md) first.

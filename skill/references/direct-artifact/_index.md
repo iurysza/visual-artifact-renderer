@@ -1,13 +1,13 @@
 ---
-description: "Use this route for component galleries, feature explainers, dashboards, quick diagrams, and visual summaries of a specific area. Build the artifact spec directly and call create_visual_artifact."
+description: "Use this route for component galleries, feature explainers, dashboards, quick diagrams, and visual summaries. Build the artifact spec directly and call create_visual_artifact or visual-artifact create."
 date created: 2026-06-16T20:50:00
-date modified: 2026-06-17T20:50:00
+date modified: 2026-06-28T00:00:00
 tags: ["visual-artifact", "direct", "gallery", "dashboard"]
 ---
 
 # Direct artifact
 
-Use this route when the user wants a rendered visual artifact that is not a full codebase architecture doc.
+Use this route for most visual-artifact requests.
 
 Good fits:
 
@@ -16,36 +16,56 @@ Good fits:
 - dashboards
 - quick diagrams
 - visual summaries of a specific area
-- anything where you can build the spec directly from known data
+- code reviews and recap pages
+- anything where you can build the spec from inspected facts
 
 ## How to build
 
-1. Inspect the relevant code or data to understand what to visualize.
-2. Read `~/.agents/skills/visual-artifact/artifact-contract.json` to confirm supported node types and props.
-3. Build a `VisualArtifactSpec` directly, valid against the schema.
-4. Call `create_visual_artifact` with the spec, or run `visual-artifact create <spec.json>` to validate, save, and auto-start the renderer via the CLI. The default server binds to `0.0.0.0:9999`, so it is reachable on both localhost and the machine's LAN IP.
-6. Return the artifact URL.
+1. Inspect the relevant code/data.
+2. Read the artifact contract:
+   - source repo: `skill/artifact-contract.json`
+   - installed skill: `<skill-root>/artifact-contract.json`
+3. Choose node types that match the content.
+4. Build a valid `VisualArtifactSpec`.
+5. Call `create_visual_artifact`, or run:
+
+```bash
+visual-artifact create spec.json --project /path/to/repo
+```
+
+The CLI validates, writes, and starts the renderer if needed.
 
 ## Output location
 
-Artifacts are saved under `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>.json`. The project name is derived from the caller's working directory.
+Default storage:
+
+```text
+<skill-root>/artifacts/<project>/<slug>.json
+```
+
+`<project>` is derived from the caller's git root or directory name.
 
 ## Sidecar image assets
 
-Image nodes support three `src` forms:
+Image nodes support:
 
-- **Relative path** (recommended for local assets): place the image file next to the artifact JSON under `~/.agents/skills/visual-artifact/artifacts/<project>/`, then use `"src": "hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
-- **Absolute HTTPS URL**: use for external or CDN images.
-- **`file://` URLs are forbidden**: they are not portable and will be rejected by the renderer and the Pi extension.
+- Relative sidecar paths, e.g. `"hero.png"` next to the artifact JSON.
+- Absolute HTTPS URLs.
+
+Never use `file://` URLs.
 
 ## Content-type patterns
 
 Pick a shape before building the spec:
-- [[references/content-types/architecture-diagrams|Architecture diagrams]]
-- [[references/content-types/dashboards|Dashboards & metrics]]
-- [[references/content-types/timelines|Timelines & roadmaps]]
-- [[references/content-types/data-organization|Data organization]]
 
-## Next step
+- [Architecture diagrams](../content-types/architecture-diagrams.md)
+- [Data organization](../content-types/data-organization.md)
+- [Timelines & roadmaps](../content-types/timelines.md)
 
-For comprehensive architecture documentation instead, use [[references/architecture-overview/_index|architecture overview]].
+## Quality bar
+
+- First node answers "what am I looking at?"
+- Important facts get visual weight.
+- Structured evidence goes into data/table nodes.
+- Diagrams are readable and captioned.
+- Secondary detail goes in tabs/accordion, not the main path.

@@ -1,20 +1,21 @@
 # Visualizer node reference
 
-> What node types are available and when to use them.
+> Available node types and when to use them.
 
-Visualizer artifacts are built from a constrained set of node types. The LLM never writes React, JSX, or CSS — it picks nodes from this list, fills their props, and optionally embeds data.
+Visualizer artifacts are built from a constrained node catalog. Agents never write React, JSX, CSS, routes, imports, or full HTML for the renderer; they choose nodes, fill props, and optionally provide data.
 
-The single source of truth for the contract is:
+## Sources of truth
 
-- [`skill/artifact-contract.json`](../skill/artifact-contract.json) — consumed by the CLI and Pi extension at runtime
-- [`skill/app/src/lib/artifact-schema.ts`](../skill/app/src/lib/artifact-schema.ts) — Zod schema and TypeScript types
-- [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, and limits
+- [`skill/artifact-contract.json`](../skill/artifact-contract.json) — exported runtime contract used by CLI and agents.
+- [`skill/app/src/lib/artifact-schema.ts`](../skill/app/src/lib/artifact-schema.ts) — Zod schema and TypeScript types.
+- [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, limits.
 
-Regenerate `artifact-contract.json` after any schema or manifest change:
+Regenerate the contract after schema or manifest changes:
 
 ```bash
 cd skill/app
 pnpm export:contract
+pnpm verify:artifacts
 ```
 
 ## Node set
@@ -24,125 +25,162 @@ Visualizer ships **36** node types:
 ```txt
 alert, area-chart, radar-chart, scatter-chart, heatmap, log,
 definition-list, diff, donut-chart, file-tree, heading, image,
-pie-chart, stepper, prose, text, card, metric, stat-card, badge,
+pie-chart, stepper, text, card, metric, stat-card, badge,
 button, separator, table, data-table, comparison-table, chart,
 mermaid, svg-diagram, flow, timeline, code-block, status-grid,
-grid, section, tabs, accordion
+grid, section, tabs, accordion, prose
 ```
 
 ## Selection map
 
 | Need | Use |
-| --- | --- |
+|---|---|
 | Page/section structure | `heading`, `section`, `text`, `separator` |
+| Long markdown narrative | `prose` |
 | Narrative container | `card` |
-| Compact inline KPI | `metric` |
-| Dashboard summary band | `stat-card` inside `grid` |
+| Compact KPI | `metric` |
+| Summary band | `stat-card` inside `grid` |
 | Metadata/action | `badge`, `button` |
 | Standard data | `table`, `data-table`, `chart` |
 | Checks, risks, options, parity | `comparison-table` |
-| Architecture/topology | `mermaid`, `svg-diagram` |
-| Request, deploy, or data path | `flow` |
-| Release/runbook sequence | `timeline` |
-| Commands/config/file maps | `code-block`, `file-tree`, `diff` |
 | Health/readiness/risk board | `status-grid` |
-| Long-form markdown prose | `prose` |
-| Callouts/warnings | `alert` |
+| Architecture/topology | `mermaid`, `svg-diagram` |
+| Request/deploy/data path | `flow` |
+| Release/runbook sequence | `timeline`, `stepper` |
+| Commands/config/file maps | `code-block`, `file-tree`, `diff`, `log` |
 | Proportional data | `pie-chart`, `donut-chart` |
 | Cumulative/trend data | `area-chart` |
 | Multi-dimensional comparison | `radar-chart` |
-| Correlations | `scatter-chart` |
-| Matrix/correlation data | `heatmap` |
-| Terminal/log output | `log` |
+| Correlation | `scatter-chart` |
+| Matrix/correlation intensity | `heatmap` |
 | Term definitions | `definition-list` |
-| Step progress | `stepper` |
 | Images | `image` |
-| Layout/alternate detail | `grid`, `tabs`, `accordion` |
+| Alternate detail | `tabs`, `accordion` |
 
 ## Composition guidance
 
-Prefer dashboard components over generic card soup:
+Prefer visual structure over card soup:
 
-- Open with a concise thesis, then a `stat-card` summary band.
-- Use `stat-card` for top KPIs, counts, health, and state tiles.
-- Use `status-grid` for component health, readiness, validation state, and risk boards.
-- Use `comparison-table` for evidence, risks, checks, options, runtime surfaces, and parity matrices.
-- Use `flow` for request paths, build/deploy chains, ingestion pipelines, and architecture handoffs.
-- Use `mermaid` for lightweight text-defined architecture, sequence, ERD, state, class, or C4 diagrams; the renderer adds wheel/pinch zoom, drag pan, keyboard controls, and fit.
-- Use `svg-diagram` for trusted full HTML/SVG interactive diagrams in the html-diagram style.
-- Use `timeline` for release phases, lifecycle states, migration steps, and operator runbooks.
-- Use `code-block` for commands, config snippets, env contracts, and file maps.
-- Use `tabs` when the same report has alternate contexts, e.g. Pi / OpenCode / wrapper / projects.
-- Use `accordion` only for secondary detail. Do not hide conclusions there.
-- Use `card` for narrative chunks that need child nodes, not for every small fact.
-- Use `prose` when you need long-form markdown (lists, links, paragraphs).
-- Use `alert` for important callouts, not for routine status.
-- Pair `chart` with table detail when exact values matter.
-- Avoid `file://` links in artifacts; link to app routes or public URLs.
-- For local image assets, place the image file next to the artifact JSON under `skill/artifacts/<project>/` and use a relative `src` like `"hero.png"`. The renderer resolves it to `/artifacts/data/artifacts/<project>/hero.png`.
+- Open with a concise thesis.
+- Follow with `stat-card` summary tiles when there are key facts.
+- Use `status-grid` for health, readiness, validation state, and risk.
+- Use `comparison-table` for evidence, options, tradeoffs, and parity.
+- Use `flow` for linear handoffs and `mermaid` for richer diagrams.
+- Use `svg-diagram` only when Mermaid cannot express the layout or interaction.
+- Use `timeline` or `stepper` for phases and runbooks.
+- Use `code-block` for exact commands/config, not whole source files.
+- Use `tabs` for alternate views of the same subject.
+- Use `accordion` for secondary detail, never for conclusions.
+- Avoid `file://` links. Use app routes, HTTPS URLs, or relative sidecar assets.
 
-## Copyable patterns
+## Data-backed nodes
 
-### Architecture brief
+Data-backed nodes read arrays from `spec.data` using `dataKey`.
 
-Thesis → stat band → Mermaid topology → flow path → status/evidence.
+Example:
+
+```json
+{
+  "data": {
+    "checks": [
+      { "check": "Contract", "status": "pass", "evidence": "pnpm verify:artifacts" },
+      { "check": "Build", "status": "ready", "evidence": "pnpm build" }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "comparison-table",
+      "props": {
+        "dataKey": "checks",
+        "columns": ["check", "status", "evidence"],
+        "statusKey": "status"
+      }
+    }
+  ]
+}
+```
+
+Keep data values compact. The CLI enforces row/string limits from the contract.
+
+## Local images
+
+For local assets, place the file next to the artifact JSON under:
+
+```text
+<skill-root>/artifacts/<project>/hero.png
+```
+
+Then reference it with a relative path:
+
+```json
+{ "type": "image", "props": { "src": "hero.png", "alt": "Artifact hero" } }
+```
+
+The renderer serves it as:
+
+```text
+/artifacts/data/artifacts/<project>/hero.png
+```
+
+## Copyable pattern: architecture brief
 
 ```json
 [
   {
     "type": "text",
-    "props": { "text": "The runtime is a three-stage ADK pipeline with explicit retrieval and TTS boundaries.", "size": "lg" }
+    "props": {
+      "text": "The runtime is a three-stage pipeline: JSON contract, CLI validation/storage, renderer adapters.",
+      "size": "lg"
+    }
   },
   {
     "type": "grid",
     "props": { "columns": 3 },
     "children": [
-      { "type": "stat-card", "props": { "label": "Agents", "value": 3, "caption": "Sequential ADK pipeline", "tone": "accent" } },
-      { "type": "stat-card", "props": { "label": "Retrieval", "value": "ChromaDB", "caption": "Grounded docs", "tone": "success" } },
-      { "type": "stat-card", "props": { "label": "Output", "value": "JSON + MP3", "caption": "Validated response", "tone": "default" } }
+      { "type": "stat-card", "props": { "label": "Surface", "value": "JSON", "caption": "Agent contract", "tone": "accent" } },
+      { "type": "stat-card", "props": { "label": "Boundary", "value": "CLI", "caption": "Validation + storage", "tone": "success" } },
+      { "type": "stat-card", "props": { "label": "Output", "value": "UI", "caption": "Trusted adapters", "tone": "default" } }
     ]
   },
   {
     "type": "mermaid",
     "props": {
-      "title": "Runtime topology",
-      "code": "flowchart LR\n  Client --> API[FastAPI]\n  API --> ADK[ADK sequence]\n  ADK --> Chroma[(ChromaDB)]\n  ADK --> TTS[Cloud TTS]"
-    }
-  },
-  {
-    "type": "flow",
-    "props": {
-      "title": "Request path",
-      "items": [
-        { "title": "Client", "label": "POST /retrieve" },
-        { "title": "FastAPI", "description": "Validates request" },
-        { "title": "ADK", "description": "Recognizes, retrieves, formats" },
-        { "title": "TTS", "description": "Synthesizes MP3" }
-      ]
+      "title": "Runtime flow",
+      "code": "flowchart LR\n  Agent --> Spec[JSON spec]\n  Spec --> CLI[visual-artifact CLI]\n  CLI --> Store[(artifacts)]\n  Store --> App[Next.js renderer]\n  App --> Page[artifact page]"
     }
   }
 ]
 ```
 
-### Runbook
-
-Timeline for phases, `code-block` for exact commands, `comparison-table` for checks.
+## Copyable pattern: runbook
 
 ```json
 {
   "data": {
     "releasePhases": [
       { "step": "01", "phase": "Verify", "action": "Run local checks", "status": "pass" },
-      { "step": "02", "phase": "Build", "action": "Create production bundle", "status": "ready" }
-    ],
-    "checks": [
-      { "check": "Artifacts", "result": "pass", "evidence": "pnpm verify:artifacts" }
+      { "step": "02", "phase": "Build", "action": "Create static export", "status": "ready" }
     ]
   },
   "nodes": [
-    { "type": "timeline", "props": { "dataKey": "releasePhases", "titleKey": "phase", "markerKey": "step", "descriptionKey": "action", "statusKey": "status" } },
-    { "type": "code-block", "props": { "title": "Ship checks", "language": "bash", "code": "pnpm verify:artifacts\npnpm lint\npnpm build" } },
-    { "type": "comparison-table", "props": { "dataKey": "checks", "columns": ["check", "result", "evidence"], "statusKey": "result" } }
+    {
+      "type": "timeline",
+      "props": {
+        "dataKey": "releasePhases",
+        "titleKey": "phase",
+        "markerKey": "step",
+        "descriptionKey": "action",
+        "statusKey": "status"
+      }
+    },
+    {
+      "type": "code-block",
+      "props": {
+        "title": "Ship checks",
+        "language": "bash",
+        "code": "cd skill/app\npnpm verify:artifacts\npnpm lint\npnpm build"
+      }
+    }
   ]
 }
 ```

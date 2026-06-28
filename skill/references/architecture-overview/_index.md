@@ -1,44 +1,46 @@
 ---
-description: "Run this flow when the user wants comprehensive architecture documentation of a codebase: system maps, dependency direction, important components, runtime flows, and changeability notes rendered as a visual artifact."
+description: "Manual flow for comprehensive codebase architecture artifacts: inspect facts, decide a thesis, plan visuals, assemble a VisualArtifactSpec, then render it."
 date created: 2026-06-16T20:50:00
-date modified: 2026-06-16T20:50:00
+date modified: 2026-06-28T00:00:00
 tags: ["visual-artifact", "architecture", "codebase-overview"]
 ---
 
 # Architecture overview
 
-Use this flow when a user asks for a full codebase architecture report: layers, entry points, external systems, important components, dependency direction, runtime flows, and where attention should go when navigating the code.
+Use this flow when the user wants a full codebase architecture artifact: layers, entry points, important components, runtime flows, data boundaries, and change implications.
 
-This is **not** a quick diagram or a feature explainer. For those, use [[references/direct-artifact/_index|direct artifact]] instead.
+For a quick feature explainer or diagram, use [direct artifact](../direct-artifact/_index.md).
 
 ## What this flow produces
 
-1. Deterministic repo probes: profile, folder tree, imports, dependencies.
-2. Six focused agentic reports: codebase orientation, important components, hotspot audit, change-scenario trace, boundary audit, testability audit.
-3. A report director brief that decides thesis, audience, section order, and emphasis.
-4. A visualization strategy that decides how each section is presented.
-5. A final `visual-artifact-spec.json` that another tool renders.
+A validated `VisualArtifactSpec` that opens with orientation, then shows the system map, key flows, important components, boundaries, and verification/attention areas.
 
 ## Run order
 
-Follow these steps in order. Do not skip ahead.
-
-1. Run [[references/architecture-overview/deterministic-extraction|deterministic extraction]] to build the fact base.
-2. Run the six [[references/architecture-overview/agentic-workflows|agentic workflows]] in parallel or sequence.
-3. Run the [[references/architecture-overview/report-director|report director]] to decide what the artifact should say.
-4. Run the [[references/architecture-overview/visualization-strategy|visualization strategy]] pass to decide how to say it.
-5. Run the [[references/architecture-overview/final-assembler|final assembler]] to generate the spec JSON.
-6. Read the generated `visual-artifact-spec.json` and either:
-   - call `create_visual_artifact` with the spec, or
-   - run `visual-artifact create visual-artifact-spec.json --project <repoRoot>` to validate, save, and auto-start the renderer via the CLI.
+1. [Collect deterministic facts](./deterministic-extraction.md).
+2. [Analyze architecture questions](./agentic-workflows.md).
+3. [Decide the report direction](./report-director.md).
+4. [Plan the visual treatment](./visualization-strategy.md).
+5. [Assemble and render the spec](./final-assembler.md).
 
 ## Output location
 
-All files land in `<repoRoot>/ai-artifacts/generated/<slug>/`.
+For working notes, use the target repo:
+
+```text
+<repoRoot>/ai-artifacts/generated/<slug>/
+```
+
+For the rendered artifact, the CLI writes:
+
+```text
+<skill-root>/artifacts/<project>/<slug>.json
+```
 
 ## Framing rules
 
-- Orientation first. The artifact answers "what is this project?" before anything else.
-- "Attention area" means "important place to understand", not "bad code".
-- Recommendations, if any, are a short trailing section.
-- Use neutral language. Never say "this code is bad." Say "this component is central because it coordinates X; changes here require broad context."
+- Orientation first: answer "what is this project?"
+- Evidence before opinion.
+- "Attention area" means "important to understand", not "bad code".
+- Recommendations, if any, are short and trailing.
+- Do not invent facts beyond inspected code/docs.

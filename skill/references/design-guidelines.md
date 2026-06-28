@@ -47,11 +47,11 @@ Match the content to the right renderer node.
 
 ## Content-type patterns
 
-For concrete patterns, see [[content-types/_index|content types]]:
-- [[content-types/architecture-diagrams|Architecture diagrams]] — topology, text-heavy overviews, hybrid layouts
-- [[content-types/dashboards|Dashboards & metrics]] — KPIs, status boards, hero numbers
-- [[content-types/timelines|Timelines & roadmaps]] — phases, milestones, chronological narratives
-- [[content-types/data-organization|Data organization]] — tables, comparisons, inventories
+For concrete patterns, see [content types](./content-types/_index.md):
+- [Architecture diagrams](./content-types/architecture-diagrams.md) — topology, text-heavy overviews, hybrid layouts
+- [Dashboards & metrics](./content-types/dashboards.md) — KPIs, status boards, hero numbers
+- [Timelines & roadmaps](./content-types/timelines.md) — phases, milestones, chronological narratives
+- [Data organization](./content-types/data-organization.md) — tables, comparisons, inventories
 
 ## Layout and hierarchy
 

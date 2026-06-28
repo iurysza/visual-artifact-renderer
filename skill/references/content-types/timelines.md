@@ -1,40 +1,51 @@
 ---
 description: "Build timelines and roadmaps: phases, milestones, and chronological narratives."
 date created: 2026-06-17
-date modified: 2026-06-17
+date modified: 2026-06-28
 tags: ["visual-artifact", "timeline", "roadmap", "phases"]
 ---
 
 # Timelines & roadmaps
 
-Use for chronological narratives, release plans, migration phases, and event sequences.
+Use for chronological narratives, release plans, migrations, and event sequences.
 
 ## Structure
 
-- Central timeline with phase markers.
-- Cards branch left/right or stack to one side.
-- Past phases muted, current phase emphasized, future phases tentative.
-- Each card contains date, label, status, and a one-line outcome.
+- Start with the outcome or current state.
+- Use `timeline` for dated or phased records.
+- Use `stepper` for process/progress states.
+- Use `code-block` for exact commands when the timeline is a runbook.
+- Use `status-grid` beside the timeline when each phase has readiness checks.
 
 ## Node selection
 
 | Content | Node |
 |---|---|
-| Linear sequence | `timeline` |
+| Chronological sequence | `timeline` |
+| Step-by-step progress | `stepper` |
 | Phase grouping | `section` |
 | Milestone details | `card` |
-| Status per milestone | `status-grid` alongside the timeline |
+| Status per phase | `status-grid` |
+| Commands | `code-block` |
 
-## Patterns
+## Data shape
 
-| Pattern | Use when |
-|---|---|
-| Vertical timeline | Roadmaps, release plans |
-| Horizontal timeline | Short event sequences |
-| Phase lanes | Multiple parallel tracks (e.g., backend + frontend + QA) |
+A timeline usually needs rows like:
+
+```json
+{
+  "phase": "Verify",
+  "step": "01",
+  "action": "Run local checks",
+  "status": "pass"
+}
+```
+
+Then map fields with `titleKey`, `markerKey`, `descriptionKey`, and `statusKey`.
 
 ## Anti-patterns
 
 - Timelines with no outcomes.
-- Every phase styled identically.
-- Future work that looks already done.
+- Every phase styled as equally important.
+- Future work that looks already complete.
+- Long paragraphs inside timeline rows.
