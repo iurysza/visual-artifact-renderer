@@ -65,7 +65,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 - **30+ node types** — prose, stat cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, diffs, and more.
 - **Data-backed components** — tables, charts, status grids, and timelines reference datasets by `dataKey`.
 - **Local-first storage** — generated artifacts stay under the installed skill root unless overridden.
-- **CLI + Pi tool** — use `visual-artifact` directly or call `create_visual_artifact` from Pi.
+- **CLI + Pi extension/tool** — use `visual-artifact` directly or let Pi call `create_visual_artifact`.
 - **Static renderer, live JSON** — the renderer is built once; new artifacts appear without rebuilding.
 - **Safe rendering boundary** — validation before write, Zod parse before render, adapter-only UI.
 
@@ -73,7 +73,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 Requirements: Bun, pnpm, Pi, Node.js 20+.
 
-From this repo:
+Install the agent integration from this repo:
 
 ```bash
 cd skill/cli
@@ -83,13 +83,21 @@ export PATH="$HOME/.pi/bin:$PATH"
 visual-artifact doctor
 ```
 
-`bootstrap` installs renderer dependencies, builds `skill/app/out`, compiles the Bun CLI, and symlinks `visual-artifact` into `~/.pi/bin/`.
+`bootstrap` builds the renderer and CLI, then installs the pieces Pi needs:
 
-If the binary already exists:
+- CLI symlink: `~/.pi/bin/visual-artifact`
+- skill symlink: `~/.pi/skills/visual-artifact`
+- extension symlink: `~/.pi/agent/extensions/visual-artifact.ts`
+
+After install, run `/reload` in Pi or restart Pi. The extension loads the skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
+
+If `visual-artifact` is already on PATH, future updates are just:
 
 ```bash
 visual-artifact bootstrap
 ```
+
+Custom harness note: `bootstrap` installs the Pi integration. It does not scan arbitrary agent harnesses. If your agent loads skills from a global skills folder such as `~/.agents/skills`, add or symlink this repo's `skill/` directory there as `visual-artifact`, then wire that harness's tool layer to call `visual-artifact create`.
 
 ## Create an artifact
 
@@ -149,9 +157,9 @@ Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-i
 
 | Command | Purpose |
 |---|---|
-| `visual-artifact bootstrap [--dry-run]` | Build renderer, compile CLI, install binary symlink. |
-| `visual-artifact create [spec.json|-] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled. |
-| `visual-artifact validate [spec.json|-]` | Validate without writing. |
+| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install CLI, skill, and Pi extension symlinks. |
+| `visual-artifact create [spec.json or -] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled. |
+| `visual-artifact validate [spec.json or -]` | Validate without writing. |
 | `visual-artifact contract` | Print the current artifact contract to stdout. |
 | `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve static renderer plus live artifact JSON. |
 | `visual-artifact serve status` | Check server health. |
