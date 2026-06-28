@@ -4,15 +4,19 @@ import type { ArtifactContract, GlobalOpts } from "../types.ts"
 
 interface ContractOpts extends GlobalOpts {
   contract?: string
-  format?: "json" | "summary"
+  format?: string
   node?: string
+}
+
+function writeStdout(text: string): void {
+  process.stdout.write(`${text}\n`)
 }
 
 function outputJson(log: Logger, data: unknown, opts: ContractOpts): void {
   if (opts.json || opts.plain) {
     log.output(data)
   } else {
-    log.outputText(JSON.stringify(data, null, 2))
+    writeStdout(JSON.stringify(data, null, 2))
   }
 }
 
@@ -32,18 +36,21 @@ function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpt
     return
   }
 
-  log.log(`Visualizer artifact contract v${contract.version}`)
-  log.log("")
-  log.log(`Node types: ${contract.nodeTypes.length}`)
-  for (const nodeType of contract.nodeTypes) {
-    const def = contract.nodes[nodeType]
-    const oneLine = def?.description?.split("\n")[0] ?? ""
-    log.log(`  ${nodeType}${oneLine ? ` — ${oneLine}` : ""}`)
-  }
-  log.log("")
-  log.log(`Data-backed node types: ${contract.dataNodes.length}`)
-  log.log(`Global limits: ${JSON.stringify(contract.globalLimits)}`)
-  log.log(`Pattern examples: ${summary.patterns.join(", ") || "none"}`)
+  const lines = [
+    `Visualizer artifact contract v${contract.version}`,
+    "",
+    `Node types: ${contract.nodeTypes.length}`,
+    ...contract.nodeTypes.map((nodeType) => {
+      const def = contract.nodes[nodeType]
+      const oneLine = def?.description?.split("\n")[0] ?? ""
+      return `  ${nodeType}${oneLine ? ` — ${oneLine}` : ""}`
+    }),
+    "",
+    `Data-backed node types: ${contract.dataNodes.length}`,
+    `Global limits: ${JSON.stringify(contract.globalLimits)}`,
+    `Pattern examples: ${summary.patterns.join(", ") || "none"}`,
+  ]
+  writeStdout(lines.join("\n"))
 }
 
 function printNode(log: Logger, contract: ArtifactContract, nodeType: string, opts: ContractOpts): number {
@@ -58,6 +65,11 @@ function printNode(log: Logger, contract: ArtifactContract, nodeType: string, op
 }
 
 export async function contract(opts: ContractOpts, log: Logger): Promise<number> {
+  if (opts.format && opts.format !== "json" && opts.format !== "summary") {
+    log.error(`Invalid format: ${opts.format}. Expected "json" or "summary".`)
+    return 2
+  }
+
   let contract: ArtifactContract
   try {
     contract = await loadContract(opts.contract)
