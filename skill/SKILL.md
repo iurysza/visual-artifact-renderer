@@ -71,7 +71,7 @@ visual-artifact [global flags] <command>
 
 | Command | What it does |
 |---|---|
-| `bootstrap` | Build renderer, compile CLI, install `~/.pi/bin/visual-artifact`. |
+| `bootstrap` | Build renderer, compile CLI, and install the CLI, skill, and Pi extension symlinks. |
 | `create [spec.json|-]` | Validate, save, and auto-start renderer unless `--no-serve`. |
 | `validate [spec.json|-]` | Validate without writing. |
 | `serve` | Serve static renderer + live artifact JSON. |

@@ -80,7 +80,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     promptGuidelines: [
       "For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.",
       "For simple visual artifacts, call create_visual_artifact directly with a JSON spec.",
-      "Read artifact-contract.json from the visual-artifact skill folder and only use supported node types and props.",
+      "Run `visual-artifact contract` and only use supported node types and props.",
       "Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.",
       "The CLI validates the spec, writes it to the skill artifacts folder, and auto-starts the renderer if needed.",
     ],
