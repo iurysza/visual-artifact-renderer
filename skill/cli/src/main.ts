@@ -11,6 +11,7 @@ import { list } from "./commands/list.ts"
 import { openArtifact } from "./commands/open.ts"
 import { doctor } from "./commands/doctor.ts"
 import { bootstrap } from "./commands/bootstrap.ts"
+import { contract } from "./commands/contract.ts"
 
 const VERSION = "1.0.0"
 
@@ -122,6 +123,19 @@ program
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)
     const exitCode = await bootstrap({ dryRun: opts.dryRun ?? false }, log)
+    process.exit(exitCode)
+  })
+
+program
+  .command("contract")
+  .description("Print the artifact contract used for validation.")
+  .option("-c, --contract <path>", "Path to artifact-contract.json")
+  .option("-f, --format <json|summary>", "Output format", "json")
+  .option("-n, --node <type>", "Print the definition for a single node type")
+  .action(async (opts) => {
+    const globalOpts = program.opts() as GlobalOpts
+    const log = buildLogger(globalOpts)
+    const exitCode = await contract({ ...globalOpts, ...opts }, log)
     process.exit(exitCode)
   })
 
