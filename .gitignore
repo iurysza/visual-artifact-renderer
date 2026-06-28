@@ -49,6 +49,7 @@ next-env.d.ts
 # generated / local artifacts
 .pi/handoffs/
 ai-artifacts/generated/
+ai-artifacts/skills/
 report/
 tmp-jscpd.json/
 example-artifact.json

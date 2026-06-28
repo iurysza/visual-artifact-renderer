@@ -1,6 +1,6 @@
 # Visual Artifact Renderer
 
-![Visual Artifact Renderer home](./assets/home-light.png)
+![Visual Artifact Renderer cover](./assets/cover.jpg)
 
 Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
 
