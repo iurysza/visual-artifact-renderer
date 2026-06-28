@@ -35,17 +35,19 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
   const outDir = resolve(appDir, "out")
   const distBinary = resolve(cliDir, "dist", "visual-artifact")
   const home = homedir()
-  const binLink = resolve(home, ".pi", "bin", "visual-artifact")
-  const skillLink = resolve(home, ".pi", "skills", "visual-artifact")
-  const extensionLink = resolve(home, ".pi", "agent", "extensions", "visual-artifact.ts")
+  const binPath = resolve(home, ".local", "bin", "visual-artifact")
+  const skillPath = resolve(home, ".agents", "skills", "visual-artifact")
+  const piAgentDir = resolve(home, ".pi", "agent")
+  const extensionPath = resolve(piAgentDir, "extensions", "visual-artifact.ts")
 
   const hasBun = commandExists("bun")
   const hasPnpm = commandExists("pnpm")
   const appOutExists = existsSync(outDir)
   const binaryExists = existsSync(distBinary)
-  const installed = existsSync(binLink)
-  const skillInstalled = existsSync(skillLink)
-  const extensionInstalled = existsSync(extensionLink)
+  const installed = existsSync(binPath)
+  const skillInstalled = existsSync(skillPath)
+  const piDetected = existsSync(piAgentDir)
+  const extensionInstalled = existsSync(extensionPath)
 
   if (opts.dryRun) {
     log.output({
@@ -56,13 +58,14 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
       binaryExists,
       installed,
       skillInstalled,
+      piDetected,
       extensionInstalled,
       plan: [
         hasPnpm ? "pnpm install in skill/app" : "skip: pnpm not found",
         hasPnpm ? "pnpm build in skill/app" : "skip: pnpm not found",
         hasBun ? "bun install in skill/cli" : "skip: bun not found",
         hasBun ? "bun run build in skill/cli" : "skip: bun not found",
-        hasBun ? "bun run install:binary in skill/cli (CLI binary, skill symlink, Pi extension symlink)" : "skip: bun not found",
+        hasBun ? "bun run install:binary in skill/cli (CLI to ~/.local/bin, skill to ~/.agents/skills, Pi extension if Pi is installed)" : "skip: bun not found",
       ],
     })
     return hasBun && hasPnpm ? 0 : 1
@@ -109,7 +112,9 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
     return rc
   }
 
-  log.success(`visual-artifact installed: ${binLink}`)
-  log.info("Run `/reload` in Pi, or restart Pi, to load the extension.")
+  log.success(`visual-artifact installed: ${binPath}`)
+  if (existsSync(piAgentDir)) {
+    log.info("Run `/reload` in Pi, or restart Pi, to load the extension.")
+  }
   return 0
 }

@@ -1,6 +1,6 @@
-import { mkdir, rm, symlink, access, chmod, lstat } from "node:fs/promises"
+import { access, chmod, copyFile, cp, lstat, mkdir, readdir, realpath, rm } from "node:fs/promises"
 import { constants, existsSync } from "node:fs"
-import { dirname, resolve } from "node:path"
+import { dirname, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { homedir } from "node:os"
 
@@ -12,17 +12,31 @@ const DIST = resolve(ROOT, "dist")
 const BINARY = resolve(DIST, "visual-artifact")
 
 const HOME = homedir()
-const BIN_DIR = resolve(HOME, ".pi", "bin")
-const BIN_LINK = resolve(BIN_DIR, "visual-artifact")
-const SKILL_LINK = resolve(HOME, ".pi", "skills", "visual-artifact")
-const EXTENSION_LINK = resolve(HOME, ".pi", "agent", "extensions", "visual-artifact.ts")
+const BIN_DIR = resolve(HOME, ".local", "bin")
+const BIN_PATH = resolve(BIN_DIR, "visual-artifact")
+const SKILL_TARGET = resolve(HOME, ".agents", "skills", "visual-artifact")
+const PI_AGENT_DIR = resolve(HOME, ".pi", "agent")
+const EXTENSION_TARGET = resolve(PI_AGENT_DIR, "extensions", "visual-artifact.ts")
+const INSTALLED_EXTENSION_SOURCE = resolve(SKILL_TARGET, "pi-extension", "visual-artifact.ts")
 
 function findExtensionSource(): string | null {
   const candidates = [
     resolve(REPO_ROOT, "pi-extension", "visual-artifact.ts"),
     resolve(SKILL_ROOT, "pi-extension", "visual-artifact.ts"),
+    EXTENSION_TARGET,
   ]
   return candidates.find((candidate) => existsSync(candidate)) ?? null
+}
+
+function shouldCopySkillPath(source: string): boolean {
+  const path = relative(SKILL_ROOT, source)
+  if (!path) return true
+  const parts = path.split(sep)
+  if (parts.includes("node_modules")) return false
+  if (parts.includes(".next")) return false
+  if (parts[0] === "artifacts") return parts.length === 1 || parts[1] === ".gitignore" || parts[1] === ".gitkeep"
+  if (parts[0] === "cli" && parts[1] === "dist") return false
+  return true
 }
 
 async function ensureExecutable(path: string): Promise<void> {
@@ -50,25 +64,81 @@ async function assertReadable(path: string, label: string): Promise<void> {
   }
 }
 
-async function removeManagedSymlink(path: string, label: string): Promise<void> {
+async function samePath(a: string, b: string): Promise<boolean> {
+  try {
+    return (await realpath(a)) === (await realpath(b))
+  } catch {
+    return resolve(a) === resolve(b)
+  }
+}
+
+async function isSymlink(path: string): Promise<boolean> {
+  try {
+    return (await lstat(path)).isSymbolicLink()
+  } catch {
+    return false
+  }
+}
+
+async function removePathOrSymlink(path: string): Promise<void> {
   try {
     const current = await lstat(path)
-    if (!current.isSymbolicLink()) {
-      throw new Error(`Refusing to replace non-symlink ${label}: ${path}`)
-    }
-    await rm(path, { force: true })
+    await rm(path, { recursive: current.isDirectory() && !current.isSymbolicLink(), force: true })
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return
     throw error
   }
 }
 
-async function installManagedSymlink(source: string, target: string, label: string): Promise<void> {
+async function copyFileReplacing(source: string, target: string, label: string): Promise<void> {
   await assertReadable(source, label)
   await mkdir(dirname(target), { recursive: true })
-  await removeManagedSymlink(target, label)
-  await symlink(source, target)
-  console.log(`[install] ${label} symlink: ${target} -> ${source}`)
+  await removePathOrSymlink(target)
+  await copyFile(source, target)
+  console.log(`[install] ${label}: ${target}`)
+}
+
+async function prepareSkillTarget(target: string): Promise<void> {
+  try {
+    const current = await lstat(target)
+    if (current.isSymbolicLink() || !current.isDirectory()) {
+      await rm(target, { force: true })
+    }
+  } catch (error) {
+    if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) throw error
+  }
+
+  await mkdir(target, { recursive: true })
+  const entries = await readdir(target, { withFileTypes: true })
+  for (const entry of entries) {
+    if (entry.name === "artifacts") continue
+    await rm(resolve(target, entry.name), { recursive: true, force: true })
+  }
+}
+
+async function copyExtensionIntoSkill(extensionSource: string): Promise<void> {
+  if (await samePath(extensionSource, INSTALLED_EXTENSION_SOURCE)) return
+  await mkdir(dirname(INSTALLED_EXTENSION_SOURCE), { recursive: true })
+  await copyFile(extensionSource, INSTALLED_EXTENSION_SOURCE)
+}
+
+async function installSkill(extensionSource: string): Promise<void> {
+  await assertReadable(resolve(SKILL_ROOT, "SKILL.md"), "Skill")
+
+  if (!(await isSymlink(SKILL_TARGET)) && await samePath(SKILL_ROOT, SKILL_TARGET)) {
+    await copyExtensionIntoSkill(extensionSource)
+    console.log(`[install] Skill already installed: ${SKILL_TARGET}`)
+    return
+  }
+
+  await prepareSkillTarget(SKILL_TARGET)
+  await cp(SKILL_ROOT, SKILL_TARGET, {
+    recursive: true,
+    force: true,
+    filter: shouldCopySkillPath,
+  })
+  await copyExtensionIntoSkill(extensionSource)
+  console.log(`[install] Skill copy: ${SKILL_TARGET}`)
 }
 
 async function main(): Promise<void> {
@@ -86,28 +156,15 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  await mkdir(BIN_DIR, { recursive: true })
+  await copyFileReplacing(BINARY, BIN_PATH, "CLI binary")
+  await ensureExecutable(BIN_PATH)
+  await installSkill(extensionSource)
 
-  await rm(BIN_LINK, { force: true })
-  try {
-    await symlink(BINARY, BIN_LINK)
-  } catch (error) {
-    console.error(`[install] Could not create binary symlink: ${BIN_LINK} -> ${BINARY}`)
-    console.error("          visual-artifact must be symlinked so it can locate the skill app, artifacts, and contract.")
-    console.error(error instanceof Error ? `          ${error.message}` : String(error))
-    process.exit(1)
-  }
-  await ensureExecutable(BIN_LINK)
-
-  console.log(`[install] Binary symlink: ${BIN_LINK} -> ${BINARY}`)
-
-  try {
-    await installManagedSymlink(SKILL_ROOT, SKILL_LINK, "Skill")
-    await installManagedSymlink(extensionSource, EXTENSION_LINK, "Pi extension")
-  } catch (error) {
-    console.error(`[install] ${error instanceof Error ? error.message : String(error)}`)
-    console.error("          Remove the existing path manually if you want visual-artifact to manage it.")
-    process.exit(1)
+  if (existsSync(PI_AGENT_DIR)) {
+    await copyFileReplacing(extensionSource, EXTENSION_TARGET, "Pi extension")
+    console.log("[install] Run `/reload` in Pi, or restart Pi, to load the visual-artifact extension.")
+  } else {
+    console.log("[install] Pi not detected; skipped Pi extension copy.")
   }
 
   const pathEnv = process.env.PATH ?? ""
@@ -117,8 +174,6 @@ async function main(): Promise<void> {
   } else {
     console.log("[install] Run `visual-artifact --help` to verify.")
   }
-
-  console.log("[install] Run `/reload` in Pi, or restart Pi, to load the visual-artifact extension.")
 }
 
 main().catch((error) => {

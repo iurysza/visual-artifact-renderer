@@ -3,19 +3,25 @@ import { resolve } from "node:path"
 import os from "node:os"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 
-const SKILL_PATH = resolve(os.homedir(), ".pi", "skills", "visual-artifact", "SKILL.md")
+const SKILL_PATH = resolve(os.homedir(), ".agents", "skills", "visual-artifact", "SKILL.md")
 
 function findCli(): string | null {
   try {
     return execSync("command -v visual-artifact", { encoding: "utf8", timeout: 3000 }).trim()
   } catch {
-    const fallback = resolve(os.homedir(), ".pi", "bin", "visual-artifact")
-    try {
-      execSync(`test -x ${fallback}`, { timeout: 1000 })
-      return fallback
-    } catch {
-      return null
+    const fallbacks = [
+      resolve(os.homedir(), ".local", "bin", "visual-artifact"),
+      resolve(os.homedir(), ".pi", "bin", "visual-artifact"),
+    ]
+    for (const fallback of fallbacks) {
+      try {
+        execSync(`test -x ${fallback}`, { timeout: 1000 })
+        return fallback
+      } catch {
+        // try next fallback
+      }
     }
+    return null
   }
 }
 

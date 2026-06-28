@@ -71,7 +71,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Quick start
 
-Requirements: Bun, pnpm, Pi, Node.js 20+.
+Requirements: Bun, pnpm, Node.js 20+. Pi is optional; if present, bootstrap installs the Pi extension too.
 
 Install the agent integration from this repo:
 
@@ -79,17 +79,17 @@ Install the agent integration from this repo:
 cd skill/cli
 bun install
 bun run src/main.ts bootstrap
-export PATH="$HOME/.pi/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-`bootstrap` builds the renderer and CLI, then installs the pieces Pi needs:
+`bootstrap` builds the renderer and CLI, then installs the pieces agents need:
 
-- CLI symlink: `~/.pi/bin/visual-artifact`
-- skill symlink: `~/.pi/skills/visual-artifact`
-- extension symlink: `~/.pi/agent/extensions/visual-artifact.ts`
+- CLI binary: `~/.local/bin/visual-artifact`
+- global skill copy: `~/.agents/skills/visual-artifact`
+- Pi extension copy, only when Pi is detected: `~/.pi/agent/extensions/visual-artifact.ts`
 
-After install, run `/reload` in Pi or restart Pi. The extension loads the skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
+For Pi, run `/reload` or restart Pi after install. The extension loads the global skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
 
 If `visual-artifact` is already on PATH, future updates are just:
 
@@ -97,7 +97,7 @@ If `visual-artifact` is already on PATH, future updates are just:
 visual-artifact bootstrap
 ```
 
-Custom harness note: `bootstrap` installs the Pi integration. It does not scan arbitrary agent harnesses. If your agent loads skills from a global skills folder such as `~/.agents/skills`, add or symlink this repo's `skill/` directory there as `visual-artifact`, then wire that harness's tool layer to call `visual-artifact create`.
+Custom harness note: `bootstrap` installs the skill into the common global skill folder. It does not discover arbitrary harness-specific skill roots. If your agent does not read `~/.agents/skills`, copy `~/.agents/skills/visual-artifact` into that harness's skill directory and wire its tool layer to call `visual-artifact create`.
 
 ## Create an artifact
 
@@ -157,7 +157,7 @@ Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-i
 
 | Command | Purpose |
 |---|---|
-| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install CLI, skill, and Pi extension symlinks. |
+| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
 | `visual-artifact create [spec.json or -] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled. |
 | `visual-artifact validate [spec.json or -]` | Validate without writing. |
 | `visual-artifact contract` | Print the current artifact contract to stdout. |
