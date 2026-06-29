@@ -48,8 +48,17 @@ next-env.d.ts
 
 # generated / local artifacts
 .pi/handoffs/
+ai-artifacts/exec-plans/
 ai-artifacts/generated/
+ai-artifacts/goals/
+ai-artifacts/mermaid-graph-debug/
+ai-artifacts/mermaid-validator/
 ai-artifacts/skills/
+ai-artifacts/visual-qa/
+ai-artifacts/agent-md-creation.md
+ai-artifacts/architecture-review-handoff.md
+ai-artifacts/*-report*.md
+ai-artifacts/validation-script.sh
 report/
 tmp-jscpd.json/
 example-artifact.json
