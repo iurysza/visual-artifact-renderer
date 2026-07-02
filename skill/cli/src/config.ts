@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path"
 import type { Config } from "./types.ts"
 
 export const DEFAULT_PORT = 9999
-export const DEFAULT_HOST = "0.0.0.0"
+export const DEFAULT_HOST = "127.0.0.1"
 export const DEFAULT_MOUNT_PATH = "/artifacts"
 export const DEFAULT_DATA_PATH = "/data/artifacts"
 

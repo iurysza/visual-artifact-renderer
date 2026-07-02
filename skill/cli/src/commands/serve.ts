@@ -175,7 +175,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
         return new Response("Not found", { status: 404 })
       }
 
-      if (stripped.startsWith("/data/artifacts/")) {
+      if (stripped.startsWith(`${dataPath}/`)) {
         return await serveData(stripped, artifactsDir, dataPath)
       }
 
