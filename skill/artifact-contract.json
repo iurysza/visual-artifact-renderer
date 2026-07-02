@@ -58,7 +58,7 @@
     "definition-list": {
       "description": "A compact list of terms and descriptions.",
       "props": {
-        "items": "{ term, description }[]"
+        "items": "{ term: string, description: string }[]"
       },
       "children": false,
       "example": {
@@ -215,7 +215,7 @@
     "file-tree": {
       "description": "A collapsible file explorer tree.",
       "props": {
-        "items": "{ name, type, children }[]"
+        "items": "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]"
       },
       "children": false,
       "example": {
@@ -277,7 +277,7 @@
     "stepper": {
       "description": "A step-by-step progress indicator.",
       "props": {
-        "items": "{ title, description?, status? }[]"
+        "items": "{ title: string, description?: string, status?: \"complete\" | \"current\" | \"pending\" }[]"
       },
       "children": false,
       "example": {
@@ -575,7 +575,7 @@
         "code": "string",
         "title": "string?",
         "caption": "string?",
-        "height": "number? 240-1600"
+        "height": "integer? 240-1600"
       },
       "children": false,
       "example": {
@@ -595,7 +595,7 @@
         "html": "string",
         "title": "string?",
         "caption": "string?",
-        "height": "number? 240-1600"
+        "height": "integer? 240-1600"
       },
       "children": false,
       "example": {
@@ -612,7 +612,7 @@
       "props": {
         "title": "string?",
         "caption": "string?",
-        "items": "{ title, label?, description?, status? }[]"
+        "items": "{ title: string, label?: string, description?: string, status?: string }[]"
       },
       "children": false,
       "example": {
@@ -768,7 +768,7 @@
       "description": "Tabbed organization for alternate views. Good for Pi/OpenCode/wrapper splits or monthly/segment detail.",
       "props": {
         "defaultValue": "string?",
-        "items": "{ value, label, nodes }[]"
+        "items": "{ value: string, label: string, nodes: nodes[] }[]"
       },
       "children": "items",
       "example": {
@@ -797,7 +797,7 @@
     "accordion": {
       "description": "Expandable sections for details, FAQs, sharp edges, or lower-priority evidence. Do not hide primary conclusions here.",
       "props": {
-        "items": "{ title, nodes }[]"
+        "items": "{ title: string, nodes: nodes[] }[]"
       },
       "children": "items",
       "example": {

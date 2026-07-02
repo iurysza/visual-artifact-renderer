@@ -93,7 +93,7 @@ export const artifactManifest = {
   "definition-list": {
     type: "definition-list",
     description: "A compact list of terms and descriptions.",
-    props: { items: "{ term, description }[]" },
+    props: { items: "{ term: string, description: string }[]" },
     children: false,
     limits: { items: 20 },
     example: { type: "definition-list", props: { items: [{ term: "Term", description: "Description" }] } },
@@ -157,7 +157,7 @@ export const artifactManifest = {
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree.",
-    props: { items: "{ name, type, children }[]" },
+    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]" },
     children: false,
     limits: { items: 50 },
     example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }] } },
@@ -180,7 +180,7 @@ export const artifactManifest = {
   "stepper": {
     type: "stepper",
     description: "A step-by-step progress indicator.",
-    props: { items: "{ title, description?, status? }[]" },
+    props: { items: "{ title: string, description?: string, status?: \"complete\" | \"current\" | \"pending\" }[]" },
     children: false,
     limits: { items: 10 },
     example: { type: "stepper", props: { items: [{ title: "Step 1", status: "complete" }, { title: "Step 2", status: "current" }] } },
@@ -295,7 +295,7 @@ export const artifactManifest = {
   mermaid: {
     type: "mermaid",
     description: "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
-    props: { code: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
+    props: { code: "string", title: "string?", caption: "string?", height: "integer? 240-1600" },
     children: false,
     limits: { code: 5000 },
     example: { type: "mermaid", props: { title: "Request flow", code: "flowchart LR\n  Client --> API\n  API --> DB" } },
@@ -303,14 +303,14 @@ export const artifactManifest = {
   "svg-diagram": {
     type: "svg-diagram",
     description: "Full-screen interactive SVG/HTML architecture diagram embedded in a sandboxed iframe. Use when Mermaid cannot lay out the topology cleanly, when you need animated request paths, clickable nodes, or precise visual control. The html value must be a complete self-contained document with hand-rolled CSS variables for light/dark themes, an apply-before-paint theme script, a theme toggle, and an SVG styled through CSS classes (no hard-coded hex inside SVG). Layout rules: pick a viewBox large enough for all nodes; keep at least 30px between node rectangles and 40px between zones; reserve the bottom-right corner for the detail card overlay; route edges and labels through empty space; verify by inspection that nothing overlaps.",
-    props: { html: "string", title: "string?", caption: "string?", height: "number? 240-1600" },
+    props: { html: "string", title: "string?", caption: "string?", height: "integer? 240-1600" },
     children: false,
     example: { type: "svg-diagram", props: { title: "Interactive architecture", height: 720, html: "<!doctype html><html><head><script>(function(){try{const k='visualizer-theme',s=localStorage.getItem(k),d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}})();</script><style>:root{--bg:#FAF9F5;--ink:#141413;}html.dark{--bg:#141413;--ink:#FAF9F5;}body{background:var(--bg);}</style></head><body><svg viewBox='0 0 100 40'><text x='5' y='24' fill='var(--ink)'>Architecture</text></svg></body></html>" } },
   },
   flow: {
     type: "flow",
     description: "Inline architecture diagram for ordered handoffs, pipelines, request paths, and deployment chains.",
-    props: { title: "string?", caption: "string?", items: "{ title, label?, description?, status? }[]" },
+    props: { title: "string?", caption: "string?", items: "{ title: string, label?: string, description?: string, status?: string }[]" },
     children: false,
     limits: { items: 6, itemStatus: 16 },
     example: { type: "flow", props: { title: "Request path", items: [{ title: "Client", label: "POST /retrieve" }, { title: "FastAPI" }, { title: "ADK pipeline", status: "running" }] } },
@@ -362,7 +362,7 @@ export const artifactManifest = {
   tabs: {
     type: "tabs",
     description: "Tabbed organization for alternate views. Good for Pi/OpenCode/wrapper splits or monthly/segment detail.",
-    props: { defaultValue: "string?", items: "{ value, label, nodes }[]" },
+    props: { defaultValue: "string?", items: "{ value: string, label: string, nodes: nodes[] }[]" },
     children: "items",
     limits: { items: 5 },
     example: { type: "tabs", props: { items: [{ value: "summary", label: "Summary", nodes: [{ type: "text", props: { text: "Tab content." } }] }] } },
@@ -370,7 +370,7 @@ export const artifactManifest = {
   accordion: {
     type: "accordion",
     description: "Expandable sections for details, FAQs, sharp edges, or lower-priority evidence. Do not hide primary conclusions here.",
-    props: { items: "{ title, nodes }[]" },
+    props: { items: "{ title: string, nodes: nodes[] }[]" },
     children: "items",
     limits: { items: 8 },
     example: { type: "accordion", props: { items: [{ title: "Why?", nodes: [{ type: "text", props: { text: "Because it is useful." } }] }] } },

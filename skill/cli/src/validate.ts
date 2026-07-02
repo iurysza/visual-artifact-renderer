@@ -85,12 +85,12 @@ function assertPlainObject(value: unknown, label: string): Record<string, unknow
 
 function propIsOptional(signature: string): boolean {
   const trimmed = signature.trim()
-  return trimmed.endsWith("?") || /^(string|number|boolean)\?(\s|$)/.test(trimmed)
+  return trimmed.endsWith("?") || /^(string|number|integer|boolean)\?(\s|$)/.test(trimmed)
 }
 
 function normalizeSignature(signature: string): string {
   const trimmed = signature.trim()
-  const primitiveOptional = trimmed.match(/^(string|number|boolean)\?(\s.*)?$/)
+  const primitiveOptional = trimmed.match(/^(string|number|integer|boolean)\?(\s.*)?$/)
   if (primitiveOptional) return `${primitiveOptional[1]}${primitiveOptional[2] ?? ""}`.trim()
   return trimmed.endsWith("?") ? trimmed.slice(0, -1).trim() : trimmed
 }
@@ -112,33 +112,104 @@ function validateEnum(value: unknown, signature: string, label: string): boolean
   return true
 }
 
+function validateNumberRange(value: number, signature: string, label: string): void {
+  const range = signature.match(/(\d+)-(\d+)/)
+  if (range && (value < Number(range[1]) || value > Number(range[2]))) {
+    throw new ValidationError(`${humanPath(label)} must be between ${range[1]} and ${range[2]}`)
+  }
+}
+
+type ObjectArrayField = {
+  key: string
+  optional: boolean
+  signature: string
+}
+
+function parseObjectArrayField(field: string): ObjectArrayField {
+  const match = field.match(/^([A-Za-z0-9_-]+)(\?)?(?::\s*(.+))?$/)
+  if (!match) {
+    throw new ValidationError(`Unsupported object-array contract field: ${field}`)
+  }
+  return {
+    key: match[1],
+    optional: Boolean(match[2]),
+    signature: match[3]?.trim() ?? "string",
+  }
+}
+
+function validateNoExtraKeys(value: Record<string, unknown>, allowedKeys: string[], label: string): void {
+  Object.keys(value).forEach(key => {
+    if (!allowedKeys.includes(key)) {
+      throw new ValidationError(`${humanPath(`${label}.${key}`)} is not supported`)
+    }
+  })
+}
+
+function validateFileTreeItems(value: unknown, label: string, requireNonEmpty: boolean): void {
+  if (!Array.isArray(value)) {
+    throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
+  }
+  if (requireNonEmpty && value.length === 0) {
+    throw new ValidationError(`${humanPath(label)} must be a non-empty array`)
+  }
+
+  value.forEach((item, index) => {
+    const itemLabel = `${label}[${index}]`
+    const itemObj = assertPlainObject(item, itemLabel)
+    validateNoExtraKeys(itemObj, ["name", "type", "children"], itemLabel)
+    assertString(itemObj.name, `${itemLabel}.name`)
+    if (itemObj.type !== undefined) {
+      validateEnum(itemObj.type, '"file" | "directory"', `${itemLabel}.type`)
+    }
+    if (itemObj.children !== undefined) {
+      validateFileTreeItems(itemObj.children, `${itemLabel}.children`, false)
+    }
+  })
+}
+
+function validateObjectArrayField(value: unknown, field: ObjectArrayField, label: string): void {
+  const normalized = normalizeSignature(field.signature)
+  if (normalized === "nodes[]") {
+    if (!Array.isArray(value)) {
+      throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
+    }
+    if (value.length === 0) {
+      throw new ValidationError(`${humanPath(label)} must be a non-empty array`)
+    }
+    return
+  }
+  if (normalized === "file-tree[]") {
+    validateFileTreeItems(value, label, false)
+    return
+  }
+  validatePropValue(value, normalized, label)
+}
+
 function validateObjectArray(value: unknown, signature: string, label: string): void {
   if (!Array.isArray(value)) {
     throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
+  }
+  if (value.length === 0) {
+    throw new ValidationError(`${humanPath(label)} must be a non-empty array`)
   }
 
   const shape = signature.match(/^\{\s*(.+?)\s*\}\[\]$/)?.[1]
   if (!shape) return
 
-  const fields = shape.split(",").map(field => field.trim()).filter(Boolean)
+  const fields = shape.split(",").map(field => parseObjectArrayField(field.trim())).filter(Boolean)
+  const allowedKeys = fields.map(field => field.key)
   value.forEach((item, index) => {
-    const itemObj = assertPlainObject(item, `${label}[${index}]`)
+    const itemLabel = `${label}[${index}]`
+    const itemObj = assertPlainObject(item, itemLabel)
+    validateNoExtraKeys(itemObj, allowedKeys, itemLabel)
     fields.forEach(field => {
-      const optional = field.endsWith("?")
-      const key = optional ? field.slice(0, -1) : field
-      const childLabel = `${label}[${index}].${key}`
-      const child = itemObj[key]
+      const childLabel = `${itemLabel}.${field.key}`
+      const child = itemObj[field.key]
       if (child === undefined) {
-        if (!optional) throw new ValidationError(`${humanPath(childLabel)} is required`)
+        if (!field.optional) throw new ValidationError(`${humanPath(childLabel)} is required`)
         return
       }
-      if (key === "nodes" || key === "children") {
-        if (!Array.isArray(child)) {
-          throw new ValidationError(`${humanPath(childLabel)} must be an array (got ${describeValue(child)})`)
-        }
-        return
-      }
-      assertString(child, childLabel)
+      validateObjectArrayField(child, field, childLabel)
     })
   })
 }
@@ -154,10 +225,15 @@ function validatePropValue(value: unknown, signature: string, label: string): vo
   }
   if (normalized === "number" || normalized.startsWith("number ")) {
     const numeric = assertNumber(value, label)
-    const range = normalized.match(/(\d+)-(\d+)/)
-    if (range && (numeric < Number(range[1]) || numeric > Number(range[2]))) {
-      throw new ValidationError(`${humanPath(label)} must be between ${range[1]} and ${range[2]}`)
+    validateNumberRange(numeric, normalized, label)
+    return
+  }
+  if (normalized === "integer" || normalized.startsWith("integer ")) {
+    const numeric = assertNumber(value, label)
+    if (!Number.isInteger(numeric)) {
+      throw new ValidationError(`${humanPath(label)} must be an integer`)
     }
+    validateNumberRange(numeric, normalized, label)
     return
   }
   if (normalized === "boolean") {
@@ -179,12 +255,16 @@ function validatePropValue(value: unknown, signature: string, label: string): vo
     if (!Array.isArray(value)) {
       throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
     }
+    if (value.length === 0) {
+      throw new ValidationError(`${humanPath(label)} must be a non-empty array`)
+    }
     value.forEach((item, index) => {
       if (typeof item === "string") {
         assertString(item, `${label}[${index}]`)
         return
       }
       const itemObj = assertPlainObject(item, `${label}[${index}]`)
+      validateNoExtraKeys(itemObj, ["key", "label"], `${label}[${index}]`)
       assertString(itemObj.key, `${label}[${index}].key`)
       assertOptionalString(itemObj.label, `${label}[${index}].label`)
     })
@@ -280,9 +360,20 @@ function validateNode(
     }
   }
 
+  if (type === "image" && typeof props.src === "string" && /^file:\/\//i.test(props.src)) {
+    throw new ValidationError(`${nodeLabel} → src must not use file:// URLs`)
+  }
+
+  if (type === "button" && typeof props.href === "string" && /^file:\/\//i.test(props.href)) {
+    throw new ValidationError(`${nodeLabel} → href must not use file:// URLs`)
+  }
+
   if (type === "flow" && Array.isArray(props.items)) {
     const items = props.items as unknown[]
     const maxItems = limits.items ?? 6
+    if (items.length < 2) {
+      throw new ValidationError(`${path}.props.items must have at least 2 items`)
+    }
     if (items.length > maxItems) {
       throw new ValidationError(`${path}.props.items has ${items.length} items, max allowed is ${maxItems}`)
     }
