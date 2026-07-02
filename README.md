@@ -6,6 +6,10 @@ Visual Artifact Renderer turns agent output into polished visual pages: reports,
 
 The idea is simple: **agents emit JSON, not HTML or React.**
 
+## Demo
+
+https://github.com/user-attachments/assets/1fdc9a6e-9566-4ae6-904d-dee1b8ee5e05
+
 ## Try it with prompts
 
 Ask your agent for a visual artifact when the answer would be easier to scan:
@@ -14,7 +18,6 @@ Ask your agent for a visual artifact when the answer would be easier to scan:
 - `Compare these two solutions using a visual artifact`
 - `Walk me through these code changes using a visual artifact`
 
-Watch the demo: [visual-artifact-demo.mp4](./assets/visual-artifact-demo.mp4).
 
 ## What problem this solves
 
