@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { VisualArtifactRenderer } from "@/components/visual-artifact-renderer"
+import { VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/artifact-schema"
 import { artifactDataUrl, artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/paths"
-import type { VisualArtifactSpec } from "@/lib/artifact-schema"
 
 interface ClientArtifactLoaderProps {
   project?: string
@@ -33,7 +33,11 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
         return res.json()
       })
       .then(data => {
-        setSpec(data)
+        const parsed = VisualArtifactSpecSchema.safeParse(data)
+        if (!parsed.success) {
+          throw new Error(`Invalid artifact: ${parsed.error.issues[0]?.message ?? "schema validation failed"}`)
+        }
+        setSpec(parsed.data)
         setError(null)
       })
       .catch(err => {

@@ -44,7 +44,7 @@
       "props": {
         "title": "string",
         "description": "string?",
-        "variant": "\"default\" | \"destructive\""
+        "variant": "\"default\" | \"destructive\"?"
       },
       "children": false,
       "example": {
@@ -245,7 +245,7 @@
         "src": "string",
         "alt": "string",
         "caption": "string?",
-        "aspect": "\"auto\" | \"square\" | \"video\" | \"wide\""
+        "aspect": "\"auto\" | \"square\" | \"video\" | \"wide\"?"
       },
       "children": false,
       "example": {

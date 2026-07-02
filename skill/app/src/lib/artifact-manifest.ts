@@ -86,7 +86,7 @@ export const artifactManifest = {
   "alert": {
     type: "alert",
     description: "An alert message to call out important information.",
-    props: { title: "string", description: "string?", variant: '"default" | "destructive"' },
+    props: { title: "string", description: "string?", variant: '"default" | "destructive"?' },
     children: false,
     example: { type: "alert", props: { title: "Heads up", description: "This is important." } },
   },
@@ -165,7 +165,7 @@ export const artifactManifest = {
   "image": {
     type: "image",
     description: "An image with optional caption and aspect ratio. Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path like \"hero.png\". Use absolute HTTPS URLs for external images. Never use file:// URLs.",
-    props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"' },
+    props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"?' },
     children: false,
     example: { type: "image", props: { src: "hero.png", alt: "Placeholder" } },
   },

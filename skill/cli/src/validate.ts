@@ -54,11 +54,164 @@ function assertOptionalString(value: unknown, label: string): string | undefined
   return assertString(value, label)
 }
 
+function assertBoolean(value: unknown, label: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new ValidationError(`${humanPath(label)} must be a boolean (got ${describeValue(value)})`)
+  }
+  return value
+}
+
+function assertNumber(value: unknown, label: string): number {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    throw new ValidationError(`${humanPath(label)} must be a number (got ${describeValue(value)})`)
+  }
+  return value
+}
+
+function assertStringArray(value: unknown, label: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
+  }
+  value.forEach((item, index) => assertString(item, `${label}[${index}]`))
+  return value as string[]
+}
+
 function assertPlainObject(value: unknown, label: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ValidationError(`${label} must be an object (got ${describeValue(value)})`)
+    throw new ValidationError(`${humanPath(label)} must be an object (got ${describeValue(value)})`)
   }
   return value as Record<string, unknown>
+}
+
+function propIsOptional(signature: string): boolean {
+  const trimmed = signature.trim()
+  return trimmed.endsWith("?") || /^(string|number|boolean)\?(\s|$)/.test(trimmed)
+}
+
+function normalizeSignature(signature: string): string {
+  const trimmed = signature.trim()
+  const primitiveOptional = trimmed.match(/^(string|number|boolean)\?(\s.*)?$/)
+  if (primitiveOptional) return `${primitiveOptional[1]}${primitiveOptional[2] ?? ""}`.trim()
+  return trimmed.endsWith("?") ? trimmed.slice(0, -1).trim() : trimmed
+}
+
+function validateEnum(value: unknown, signature: string, label: string): boolean {
+  if (!signature.includes(" | ") || signature.includes("string") || signature.includes("number")) return false
+  const values = signature.split("|").map(part => part.trim().replace(/^"|"$/g, ""))
+  if (values.every(item => /^\d+$/.test(item))) {
+    const numeric = assertNumber(value, label)
+    if (!values.includes(String(numeric))) {
+      throw new ValidationError(`${humanPath(label)} must be one of: ${values.join(", ")}`)
+    }
+    return true
+  }
+  const text = assertString(value, label)
+  if (!values.includes(text)) {
+    throw new ValidationError(`${humanPath(label)} must be one of: ${values.join(", ")}`)
+  }
+  return true
+}
+
+function validateObjectArray(value: unknown, signature: string, label: string): void {
+  if (!Array.isArray(value)) {
+    throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
+  }
+
+  const shape = signature.match(/^\{\s*(.+?)\s*\}\[\]$/)?.[1]
+  if (!shape) return
+
+  const fields = shape.split(",").map(field => field.trim()).filter(Boolean)
+  value.forEach((item, index) => {
+    const itemObj = assertPlainObject(item, `${label}[${index}]`)
+    fields.forEach(field => {
+      const optional = field.endsWith("?")
+      const key = optional ? field.slice(0, -1) : field
+      const childLabel = `${label}[${index}].${key}`
+      const child = itemObj[key]
+      if (child === undefined) {
+        if (!optional) throw new ValidationError(`${humanPath(childLabel)} is required`)
+        return
+      }
+      if (key === "nodes" || key === "children") {
+        if (!Array.isArray(child)) {
+          throw new ValidationError(`${humanPath(childLabel)} must be an array (got ${describeValue(child)})`)
+        }
+        return
+      }
+      assertString(child, childLabel)
+    })
+  })
+}
+
+function validatePropValue(value: unknown, signature: string, label: string): void {
+  const normalized = normalizeSignature(signature)
+
+  if (validateEnum(value, normalized, label)) return
+
+  if (normalized === "string") {
+    assertString(value, label)
+    return
+  }
+  if (normalized === "number" || normalized.startsWith("number ")) {
+    const numeric = assertNumber(value, label)
+    const range = normalized.match(/(\d+)-(\d+)/)
+    if (range && (numeric < Number(range[1]) || numeric > Number(range[2]))) {
+      throw new ValidationError(`${humanPath(label)} must be between ${range[1]} and ${range[2]}`)
+    }
+    return
+  }
+  if (normalized === "boolean") {
+    assertBoolean(value, label)
+    return
+  }
+  if (normalized === "string | number") {
+    if (typeof value !== "string" && typeof value !== "number") {
+      throw new ValidationError(`${humanPath(label)} must be a string or number (got ${describeValue(value)})`)
+    }
+    if (typeof value === "string") assertString(value, label)
+    return
+  }
+  if (normalized === "string[]") {
+    assertStringArray(value, label)
+    return
+  }
+  if (normalized === "(string | { key, label? })[]") {
+    if (!Array.isArray(value)) {
+      throw new ValidationError(`${humanPath(label)} must be an array (got ${describeValue(value)})`)
+    }
+    value.forEach((item, index) => {
+      if (typeof item === "string") {
+        assertString(item, `${label}[${index}]`)
+        return
+      }
+      const itemObj = assertPlainObject(item, `${label}[${index}]`)
+      assertString(itemObj.key, `${label}[${index}].key`)
+      assertOptionalString(itemObj.label, `${label}[${index}].label`)
+    })
+    return
+  }
+  if (normalized.startsWith("{") && normalized.endsWith("[]")) {
+    validateObjectArray(value, normalized, label)
+  }
+}
+
+function validateProps(props: Record<string, unknown>, nodeDef: NodeDef, path: string): void {
+  const propDefs = nodeDef.props ?? {}
+  Object.keys(props).forEach(key => {
+    if (!(key in propDefs)) {
+      throw new ValidationError(`${humanPath(`${path}.props.${key}`)} is not supported`)
+    }
+  })
+
+  Object.entries(propDefs).forEach(([key, signature]) => {
+    const value = props[key]
+    const label = `${path}.props.${key}`
+    if (value === undefined) {
+      if (!propIsOptional(signature)) throw new ValidationError(`${humanPath(label)} is required`)
+      return
+    }
+    validatePropValue(value, signature, label)
+  })
 }
 
 function validateNode(
@@ -80,9 +233,10 @@ function validateNode(
 
   const nodeDef = contract.nodes[type]
   const props = assertPlainObject(obj.props ?? {}, `${path}.props`)
+  validateProps(props, nodeDef, `${path}<${type}>`)
   const limits = nodeDef.limits ?? {}
 
-  if (nodeDef.requiresData) {
+  if (nodeDef.requiresData && props.dataKey !== undefined) {
     const dataKey = assertString(props.dataKey, `${path}<${type}>.props.dataKey`)
     const dataset = data?.[dataKey]
     if (!Array.isArray(dataset)) {
