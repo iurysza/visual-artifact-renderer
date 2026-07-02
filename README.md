@@ -232,7 +232,7 @@ Node reference: [`docs/nodes.md`](./docs/nodes.md).
 | `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts` | Runtime artifact JSON store. |
 | `VISUAL_ARTIFACT_OUT_DIR` | `<skill-root>/app/out` | Static renderer export. |
 | `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
-| `VISUAL_ARTIFACT_HOST` | `0.0.0.0` | Server bind host. |
+| `VISUAL_ARTIFACT_HOST` | `127.0.0.1` | Server bind host. |
 | `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
 | `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint under the mount path. |
 | `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
