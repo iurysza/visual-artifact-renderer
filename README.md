@@ -6,6 +6,16 @@ Visual Artifact Renderer turns agent output into polished visual pages: reports,
 
 The idea is simple: **agents emit JSON, not HTML or React.**
 
+## Try it with prompts
+
+Ask your agent for a visual artifact when the answer would be easier to scan:
+
+- `Create a visual artifact explaining the authentication flow`
+- `Compare these two solutions using a visual artifact`
+- `Walk me through these code changes using a visual artifact`
+
+Watch the demo: [visual-artifact-demo.mp4](./assets/visual-artifact-demo.mp4).
+
 ## What problem this solves
 
 HTML articles are a good way to explain complex work, but generating full HTML from an LLM is inconsistent, awkward to constrain, and burns tokens. Visual Artifact Renderer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page.
