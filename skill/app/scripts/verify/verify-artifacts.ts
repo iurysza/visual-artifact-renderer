@@ -1,8 +1,8 @@
 import { promises as fs } from "fs"
 import path from "path"
 
-import { artifactComponentManifest, artifactManifest } from "../src/lib/artifact-manifest"
-import { ARTIFACT_NODE_TYPES, VisualArtifactSpecSchema } from "../src/lib/artifact-schema"
+import { artifactComponentManifest, artifactManifest } from "../../src/lib/contract/artifact-manifest"
+import { ARTIFACT_NODE_TYPES, VisualArtifactSpecSchema } from "../../src/lib/contract/artifact-schema"
 
 async function findArtifactFiles(dir: string): Promise<string[]> {
   const files: string[] = []
@@ -24,7 +24,7 @@ async function findArtifactFiles(dir: string): Promise<string[]> {
 }
 
 async function main() {
-  const skillRoot = path.resolve(__dirname, "..")
+  const skillRoot = path.resolve(__dirname, "..", "..")
   const artifactsDir = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
     ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
     : path.join(skillRoot, "..", "artifacts")
@@ -76,7 +76,7 @@ async function main() {
     throw new Error(`Code block node should pass validation: ${codeBlock.error.message}`)
   }
 
-  const contractPath = path.resolve(__dirname, "..", "..", "artifact-contract.json")
+  const contractPath = path.resolve(__dirname, "..", "..", "..", "artifact-contract.json")
   const contractRaw = await fs.readFile(contractPath, "utf8")
   const contract = JSON.parse(contractRaw)
 

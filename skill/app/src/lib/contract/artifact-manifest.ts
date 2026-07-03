@@ -1,4 +1,4 @@
-import type { ArtifactNode } from "@/lib/artifact-schema"
+import type { ArtifactNode } from "@/lib/contract/artifact-schema"
 
 export type ArtifactManifestEntry = {
   type: ArtifactNode["type"]

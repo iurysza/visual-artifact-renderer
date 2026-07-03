@@ -4,8 +4,8 @@ import type { ReactNode } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { statusPanelClass, toneSurfaceClass } from "@/lib/status"
-import type { ArtifactTone } from "@/lib/artifact-schema"
+import { statusPanelClass, toneSurfaceClass } from "@/lib/artifacts/status"
+import type { ArtifactTone } from "@/lib/contract/artifact-schema"
 
 export function Figure({
   title,

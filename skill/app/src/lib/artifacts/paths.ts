@@ -90,7 +90,7 @@ export function artifactParamsFromPath(pathname: string): ArtifactRouteParams | 
 
   const [project, slug] = segments
   if (!SLUG_RE.test(project) || !SLUG_RE.test(slug)) return null
-  if (project === "data" || project === "_next" || project === "live-artifact" || project === "live-project") return null
+  if (project === "data" || project === "_next" || project === "shell-artifact" || project === "shell-project") return null
 
   return { project, slug }
 }
@@ -115,7 +115,7 @@ export function projectParamsFromPath(pathname: string): { project: string } | n
 
   const [project] = segments
   if (!SLUG_RE.test(project)) return null
-  if (project === "data" || project === "_next" || project === "live-artifact" || project === "live-project") return null
+  if (project === "data" || project === "_next" || project === "shell-artifact" || project === "shell-project") return null
 
   return { project }
 }

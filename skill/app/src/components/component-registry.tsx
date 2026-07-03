@@ -4,7 +4,7 @@ import { MermaidDiagram } from "@/components/mermaid/mermaid-diagram"
 import { createAdapter } from "@/components/adapters/create-adapter"
 import * as adapters from "@/components/adapters"
 
-import type { ArtifactNode } from "@/lib/artifact-schema"
+import type { ArtifactNode } from "@/lib/contract/artifact-schema"
 import type { AdapterArgs, RegistryAdapter } from "@/components/artifact-types"
 
 export type { ArtifactRenderContext, RenderNodes, AdapterArgs } from "@/components/artifact-types"

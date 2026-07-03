@@ -1,4 +1,4 @@
-import { ARTIFACT_DATA_SEGMENT, BASE_PATH } from "@/lib/paths"
+import { ARTIFACT_DATA_SEGMENT, BASE_PATH } from "@/lib/artifacts/paths"
 
 const FILE_PROTOCOL_RE = /^file:\/\//i
 const ABSOLUTE_URL_RE = /^(https?:)?\/\//i

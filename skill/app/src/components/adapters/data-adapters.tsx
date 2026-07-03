@@ -12,11 +12,11 @@ import {
 import { ChartShell } from "@/components/chart-shell"
 import { Figure, PanelCard, columnsClass } from "@/components/artifact-primitives"
 import { cn } from "@/lib/utils"
-import { formatCell, getRows, MissingData, normalizeColumns } from "@/lib/data"
-import { StatusChip, statusIsVisible } from "@/lib/status"
+import { formatCell, getRows, MissingData, normalizeColumns } from "@/lib/artifacts/data"
+import { StatusChip, statusIsVisible } from "@/lib/artifacts/status"
 
 import type { AdapterArgs } from "@/components/artifact-types"
-import type { ArtifactColumn } from "@/lib/artifact-schema"
+import type { ArtifactColumn } from "@/lib/contract/artifact-schema"
 
 export function renderTable({ node, context }: AdapterArgs<"table">) {
   return <TableBlock data={getRows(context.data, node.props.dataKey)} {...node.props} />

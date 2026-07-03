@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 
-import type { ArtifactNode, VisualArtifactSpec } from "@/lib/artifact-schema"
+import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 import { componentRegistry } from "@/components/component-registry"
 import type { ArtifactRenderContext } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"

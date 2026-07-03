@@ -1,7 +1,7 @@
 import { promises as fs } from "fs"
 import path from "path"
 
-import { ArtifactSlugSchema, VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/artifact-schema"
+import { ArtifactSlugSchema, VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 
 const ARTIFACTS_DIR = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
   ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)

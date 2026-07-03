@@ -1,5 +1,5 @@
 import { format, parseISO, isValid } from "date-fns"
-import type { ArtifactColumn, VisualArtifactSpec } from "@/lib/artifact-schema"
+import type { ArtifactColumn, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 
 export function getRows(
   data: VisualArtifactSpec["data"],

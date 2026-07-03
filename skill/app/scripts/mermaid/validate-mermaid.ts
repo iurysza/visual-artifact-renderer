@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { validateMermaid, formatValidationReport } from "../src/lib/mermaid-validator";
+import { validateMermaid, formatValidationReport } from "../../src/lib/mermaid/mermaid-validator";
 
 function help() {
   console.log(`

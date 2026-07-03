@@ -1,0 +1,172 @@
+{
+  "slug": "component-library",
+  "title": "Component Library",
+  "description": "JSON-backed showcase of every node type available in the visualizer contract, driven by data — replaces the deleted /components route.",
+  "layout": { "type": "default" },
+  "data": {
+    "revenueByMonth": [
+      { "month": "Jan", "revenue": 42000 },
+      { "month": "Feb", "revenue": 39000 },
+      { "month": "Mar", "revenue": 47400 },
+      { "month": "Apr", "revenue": 51200 }
+    ],
+    "categorySplit": [
+      { "category": "Enterprise", "count": 12 },
+      { "category": "SMB", "count": 8 },
+      { "category": "Personal", "count": 5 }
+    ],
+    "radarData": [
+      { "subject": "Speed", "value": 85 },
+      { "subject": "Reliability", "value": 72 },
+      { "subject": "Cost", "value": 90 },
+      { "subject": "DX", "value": 78 }
+    ],
+    "scatterData": [
+      { "x": 10, "y": 40 },
+      { "x": 30, "y": 60 },
+      { "x": 50, "y": 55 },
+      { "x": 70, "y": 80 }
+    ],
+    "heatmapData": [
+      { "day": "Mon", "hour": "09", "intensity": 3 },
+      { "day": "Mon", "hour": "14", "intensity": 7 },
+      { "day": "Tue", "hour": "09", "intensity": 5 },
+      { "day": "Tue", "hour": "14", "intensity": 2 }
+    ],
+    "serviceStatus": [
+      { "name": "API Gateway", "status": "healthy", "description": "99.98% uptime last 24h", "meta": "us-east-1" },
+      { "name": "Worker Pool", "status": "degraded", "description": "2 of 8 workers restarting", "meta": "us-west-2" },
+      { "name": "Database", "status": "healthy", "description": "Replication lag < 1s", "meta": "primary" }
+    ],
+    "releaseTimeline": [
+      { "title": "v2.0 launch", "marker": "Jun 12", "description": "Public release with new dashboard.", "status": "shipped" },
+      { "title": "v2.1 patch", "marker": "Jun 28", "description": "Hotfix for webhook retries.", "status": "shipped" },
+      { "title": "v2.2 beta", "marker": "Jul 15", "description": "Closed beta for analytics module.", "status": "in-progress" }
+    ],
+    "tableData": [
+      { "name": "Node A", "type": "leaf", "children": "no" },
+      { "name": "Grid", "type": "container", "children": "yes" },
+      { "name": "Tabs", "type": "container", "children": "items" }
+    ],
+    "operationalData": [
+      { "id": "TSK-001", "priority": "high", "assignee": "alex", "status": "done" },
+      { "id": "TSK-002", "priority": "medium", "assignee": "sam", "status": "in-progress" },
+      { "id": "TSK-003", "priority": "low", "assignee": "pat", "status": "pending" }
+    ],
+    "comparisonRows": [
+      { "option": "Option A", "cost": "$0", "speed": "fast", "status": "ready" },
+      { "option": "Option B", "cost": "$50", "speed": "faster", "status": "ready" },
+      { "option": "Option C", "cost": "$120", "speed": "fastest", "status": "beta" }
+    ],
+    "logLines": [
+      "[INFO] server started on :9999",
+      "[WARN] artifact cache miss for visualizer/smoke-test",
+      "[INFO] rendered 82 static pages in 401ms",
+      "[ERROR] failed to reach relay host (retrying in 5s)"
+    ]
+  },
+  "nodes": [
+    { "type": "text", "props": { "text": "This page showcases every node type in the visualizer contract. Each section is backed by JSON data — no React, no hardcoded components. svg-diagram is omitted (requires a full self-contained HTML document).", "size": "lg" } },
+    { "type": "separator", "props": {} },
+
+    { "type": "section", "props": { "title": "Stat band: grid + stat-card + card + metric", "description": "Top-level KPI tiles and nested metric display." }, "children": [
+      { "type": "grid", "props": { "columns": 3 }, "children": [
+        { "type": "stat-card", "props": { "label": "Node types", "value": 36, "delta": "full coverage", "trend": "up", "caption": "Every contract node type rendered.", "tone": "accent" } },
+        { "type": "stat-card", "props": { "label": "Data-backed", "value": 13, "caption": "Nodes requiring embedded data rows.", "tone": "success" } },
+        { "type": "card", "props": { "title": "Card + metric", "description": "Cards hold child nodes, including metric tiles.", "tone": "default" }, "children": [
+          { "type": "metric", "props": { "label": "Avg parse time", "value": "8ms", "delta": "-2ms", "trend": "up" } }
+        ] }
+      ] }
+    ] },
+
+    { "type": "section", "props": { "title": "Tables: table, data-table, comparison-table", "description": "Structured evidence rows backed by embedded data." }, "children": [
+      { "type": "table", "props": { "dataKey": "tableData", "caption": "Readable table for narrative rows." } },
+      { "type": "data-table", "props": { "dataKey": "operationalData", "columns": ["id", "priority", "assignee", "status"], "caption": "Dense table for operational data." } },
+      { "type": "comparison-table", "props": { "dataKey": "comparisonRows", "statusKey": "status", "caption": "Comparison table with status chips." } }
+    ] },
+
+    { "type": "section", "props": { "title": "Charts: chart, pie, donut, area, radar, scatter, heatmap", "description": "Data-driven visualizations." }, "children": [
+      { "type": "chart", "props": { "dataKey": "revenueByMonth", "xKey": "month", "yKey": "revenue", "kind": "bar", "label": "Revenue by month" } },
+      { "type": "pie-chart", "props": { "dataKey": "categorySplit", "categoryKey": "category", "valueKey": "count" } },
+      { "type": "donut-chart", "props": { "dataKey": "categorySplit", "categoryKey": "category", "valueKey": "count" } },
+      { "type": "area-chart", "props": { "dataKey": "revenueByMonth", "xKey": "month", "yKey": "revenue", "label": "Revenue trend" } },
+      { "type": "radar-chart", "props": { "dataKey": "radarData", "subjectKey": "subject", "valueKey": "value", "label": "Scores" } },
+      { "type": "scatter-chart", "props": { "dataKey": "scatterData", "xKey": "x", "yKey": "y", "label": "Correlation" } },
+      { "type": "heatmap", "props": { "dataKey": "heatmapData", "xKey": "day", "yKey": "hour", "valueKey": "intensity", "caption": "Activity by day/hour" } }
+    ] },
+
+    { "type": "section", "props": { "title": "Status & flows: status-grid, flow, timeline", "description": "Operational state and ordered sequences." }, "children": [
+      { "type": "status-grid", "props": { "dataKey": "serviceStatus", "statusKey": "status", "titleKey": "name", "descriptionKey": "description", "metaKey": "meta", "columns": 3 } },
+      { "type": "flow", "props": { "title": "Request path", "items": [
+        { "title": "Client", "label": "browser" },
+        { "title": "Next.js", "description": "Static export + ISR" },
+        { "title": "Bun server", "description": "Serves artifact JSON" },
+        { "title": "Renderer", "description": "Maps nodes to adapters" }
+      ] } },
+      { "type": "timeline", "props": { "dataKey": "releaseTimeline", "titleKey": "title", "markerKey": "marker", "descriptionKey": "description", "statusKey": "status" } }
+    ] },
+
+    { "type": "section", "props": { "title": "Diagrams: mermaid", "description": "Client-rendered Mermaid diagrams. svg-diagram omitted (requires full HTML document)." }, "children": [
+      { "type": "mermaid", "props": { "title": "Node registry", "code": "flowchart TD\n  Spec[VisualArtifactSpec] --> Reg[componentRegistry]\n  Reg --> Adapters[adapters/]\n  Adapters --> UI[components/ui/]" } }
+    ] },
+
+    { "type": "section", "props": { "title": "Code & data: code-block, file-tree, diff, log", "description": "Code snippets, file structure, diffs, and log output." }, "children": [
+      { "type": "code-block", "props": { "title": "Create an artifact", "language": "bash", "code": "visual-artifact create spec.json --project /path/to/repo", "caption": "Validates, writes, and serves." } },
+      { "type": "file-tree", "props": { "items": [
+        { "name": "skill/", "type": "directory", "children": [
+          { "name": "app/src/components/adapters/", "type": "directory" },
+          { "name": "app/src/components/ui/", "type": "directory" },
+          { "name": "cli/", "type": "directory" },
+          { "name": "artifacts/", "type": "directory" }
+        ]}
+      ] } },
+      { "type": "diff", "props": { "before": "const old = \"gone\"", "after": "const next = \"new\"", "language": "typescript", "title": "Example diff" } },
+      { "type": "log", "props": { "lines": ["[INFO] server started on :9999", "[WARN] artifact cache miss for visualizer/smoke-test", "[INFO] rendered 82 static pages in 401ms", "[ERROR] failed to reach relay host (retrying in 5s)"] } }
+    ] },
+
+    { "type": "section", "props": { "title": "Leaf nodes: alert, definition-list, stepper, badge, button, prose, image", "description": "Standalone content nodes without children." }, "children": [
+      { "type": "alert", "props": { "title": "Alert", "description": "Callout for important information.", "variant": "default" } },
+      { "type": "definition-list", "props": { "items": [
+        { "term": "VisualArtifactSpec", "description": "The JSON contract agents emit." },
+        { "term": "Adapter", "description": "Maps a node type to a trusted UI component." },
+        { "term": "Contract", "description": "Exported via artifact-contract.json." }
+      ] } },
+      { "type": "stepper", "props": { "items": [
+        { "title": "Inspect", "status": "complete", "description": "Read the contract." },
+        { "title": "Build", "status": "current", "description": "Write the spec JSON." },
+        { "title": "Render", "status": "pending", "description": "Validate and serve." }
+      ] } },
+      { "type": "grid", "props": { "columns": 3 }, "children": [
+        { "type": "badge", "props": { "label": "v1.0", "variant": "default" } },
+        { "type": "badge", "props": { "label": "stable", "variant": "secondary" } },
+        { "type": "badge", "props": { "label": "beta", "variant": "outline" } }
+      ] },
+      { "type": "button", "props": { "label": "Docs", "href": "https://example.com", "variant": "outline", "size": "sm" } },
+      { "type": "prose", "props": { "content": "Markdown text for prose, lists, links, and long-form narrative.\n\n- Use prose for paragraph-length descriptions.\n- Use text for short narrative.", "tone": "muted" } },
+      { "type": "image", "props": { "src": "https://placehold.co/600x200", "alt": "Placeholder image", "aspect": "wide" } }
+    ] },
+
+    { "type": "section", "props": { "title": "Containers: heading, section, tabs, accordion", "description": "Layout and grouping nodes." }, "children": [
+      { "type": "heading", "props": { "text": "Nested section", "level": 2 } },
+      { "type": "section", "props": { "title": "Inner section", "description": "Sections can nest and hold child nodes." }, "children": [
+        { "type": "text", "props": { "text": "Sections create scan rhythm before dense components.", "tone": "muted" } }
+      ] },
+      { "type": "tabs", "props": { "items": [
+        { "value": "overview", "label": "Overview", "nodes": [
+          { "type": "text", "props": { "text": "Overview tab content." } }
+        ]},
+        { "value": "detail", "label": "Detail", "nodes": [
+          { "type": "text", "props": { "text": "Detail tab content." } }
+        ]}
+      ] } },
+      { "type": "accordion", "props": { "items": [
+        { "title": "What is a node?", "nodes": [
+          { "type": "text", "props": { "text": "A node is a typed entry in the VisualArtifactSpec nodes array." } }
+        ]},
+        { "title": "What is a dataKey?", "nodes": [
+          { "type": "text", "props": { "text": "A dataKey references a key in the data object so data-backed nodes can render rows." } }
+        ]}
+      ] } }
+    ] }
+  ]
+}

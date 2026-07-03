@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import type { ArtifactNode, VisualArtifactSpec } from "@/lib/artifact-schema"
+import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 
 export type ArtifactRenderContext = {
   project: string

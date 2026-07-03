@@ -30,8 +30,11 @@ const MIME_TYPES: Record<string, string> = {
 }
 
 const ROUTE_SEGMENT_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const LIVE_ARTIFACT_SHELL = "/live-artifact"
-const LIVE_PROJECT_SHELL = "/live-project"
+// Live-fallback shells: static HTML pages served when an artifact exists on disk
+// but was created after the last `pnpm build`. The route folders live at
+// skill/app/src/app/shell-artifact and shell-project; do not delete them.
+const LIVE_ARTIFACT_SHELL = "/shell-artifact"
+const LIVE_PROJECT_SHELL = "/shell-project"
 
 function mimeType(filePath: string): string {
   const ext = filePath.slice(filePath.lastIndexOf(".")).toLowerCase()
@@ -299,7 +302,7 @@ function artifactRouteFromPath(reqPath: string): { project: string; slug: string
   if (segments.length !== 2) return null
   const [project, slug] = segments
   if (!ROUTE_SEGMENT_RE.test(project) || !ROUTE_SEGMENT_RE.test(slug)) return null
-  if (["data", "_next", "live-artifact", "live-project"].includes(project)) return null
+  if (["data", "_next", "shell-artifact", "shell-project"].includes(project)) return null
   return { project, slug }
 }
 
@@ -308,7 +311,7 @@ function projectIndexRouteFromPath(reqPath: string): { project: string } | null 
   if (segments.length !== 1) return null
   const [project] = segments
   if (!ROUTE_SEGMENT_RE.test(project)) return null
-  if (["data", "_next", "live-artifact", "live-project"].includes(project)) return null
+  if (["data", "_next", "shell-artifact", "shell-project"].includes(project)) return null
   return { project }
 }
 

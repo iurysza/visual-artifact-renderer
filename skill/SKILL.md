@@ -141,6 +141,27 @@ Full reference: `docs/nodes.md` in the source repo, or `visual-artifact contract
 - Keep diagrams under control; split if they stop scanning.
 - Use `accordion` only for secondary detail.
 
+## References
+
+Flavor guides for specific artifact intents. Read the relevant file before
+building:
+
+| Intent | Reference |
+|---|---|
+| Most artifacts (galleries, explainers, dashboards, quick diagrams) | [`references/direct-artifact/_index.md`](./references/direct-artifact/_index.md) |
+| Full codebase architecture overview | [`references/architecture-overview/_index.md`](./references/architecture-overview/_index.md) |
+| Dashboards & metrics | [`references/content-types/dashboards.md`](./references/content-types/dashboards.md) |
+| Architecture diagrams | [`references/content-types/architecture-diagrams.md`](./references/content-types/architecture-diagrams.md) |
+| Timelines & roadmaps | [`references/content-types/timelines.md`](./references/content-types/timelines.md) |
+| Data organization (tables, comparisons) | [`references/content-types/data-organization.md`](./references/content-types/data-organization.md) |
+| Design principles & anti-patterns | [`references/design-guidelines.md`](./references/design-guidelines.md) |
+
+The architecture overview flow runs five steps: deterministic extraction →
+architecture analysis → report direction → visualization strategy → final
+assembler. See
+[`references/architecture-overview/_index.md`](./references/architecture-overview/_index.md)
+for the full run order.
+
 ## Sidecar images
 
 Place local image assets next to the artifact JSON:

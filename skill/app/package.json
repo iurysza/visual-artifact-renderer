@@ -7,12 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:artifacts": "tsx scripts/verify-artifacts.ts",
-    "export:contract": "tsx scripts/export-contract.ts",
-    "visual:qa": "node scripts/visual-qa.mjs",
-    "health-check": "node scripts/health-check.mjs",
-    "validate:mermaid": "tsx scripts/validate-mermaid.ts",
-    "test:mermaid-validator": "tsx scripts/test-mermaid-validator.ts"
+    "verify:artifacts": "tsx scripts/verify/verify-artifacts.ts",
+    "export:contract": "tsx scripts/contract/export-contract.ts",
+    "visual:qa": "node scripts/qa/visual-qa.mjs",
+    "health-check": "node scripts/qa/health-check.mjs",
+    "validate:mermaid": "tsx scripts/mermaid/validate-mermaid.ts",
+    "test:mermaid-validator": "tsx scripts/mermaid/test-mermaid-validator.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

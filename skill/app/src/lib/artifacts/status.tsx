@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { formatCell } from "@/lib/data"
+import { formatCell } from "@/lib/artifacts/data"
 
 export function statusTone(value: string) {
   const normalized = value.toLowerCase()

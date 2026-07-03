@@ -19,10 +19,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Figure, PanelCard, columnsClass, tonePanelClass } from "@/components/artifact-primitives"
 import { cn } from "@/lib/utils"
-import { StatusChip, statusIsVisible } from "@/lib/status"
+import { StatusChip, statusIsVisible } from "@/lib/artifacts/status"
 
 import type { AdapterArgs } from "@/components/artifact-types"
-import type { ArtifactFlowItem } from "@/lib/artifact-schema"
+import type { ArtifactFlowItem } from "@/lib/contract/artifact-schema"
 
 export function renderCard({ node, children }: AdapterArgs<"card">) {
   const props = node.props ?? {}

@@ -2,8 +2,8 @@ import { promises as fs } from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
 
-import { artifactComponentManifest, artifactPatternExamples } from "../src/lib/artifact-manifest.js"
-import { ARTIFACT_NODE_TYPES, ARTIFACT_SPEC_CONSTRAINTS } from "../src/lib/artifact-schema.js"
+import { artifactComponentManifest, artifactPatternExamples } from "../../src/lib/contract/artifact-manifest.js"
+import { ARTIFACT_NODE_TYPES, ARTIFACT_SPEC_CONSTRAINTS } from "../../src/lib/contract/artifact-schema.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -45,7 +45,7 @@ const contract = {
 }
 
 async function main() {
-  const outPath = path.resolve(__dirname, "..", "..", "artifact-contract.json")
+  const outPath = path.resolve(__dirname, "..", "..", "..", "artifact-contract.json")
   await fs.writeFile(outPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8")
   console.log(`Wrote contract to ${outPath}`)
 }

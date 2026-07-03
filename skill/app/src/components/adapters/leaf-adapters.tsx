@@ -19,8 +19,8 @@ import { Heatmap } from "@/components/ui/heatmap"
 import { Log } from "@/components/ui/log"
 import { PanelCard, TrendPill } from "@/components/artifact-primitives"
 import { cn } from "@/lib/utils"
-import { getRows, MissingData } from "@/lib/data"
-import { resolveArtifactImageSrc } from "@/lib/image-src"
+import { getRows, MissingData } from "@/lib/artifacts/data"
+import { resolveArtifactImageSrc } from "@/lib/artifacts/image-src"
 
 import type { AdapterArgs } from "@/components/artifact-types"
 

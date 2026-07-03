@@ -1,4 +1,4 @@
-import { listProjects } from "@/lib/artifacts"
+import { listProjects } from "@/lib/artifacts/artifacts"
 import { ProjectIndexLoader } from "@/components/project-index-loader"
 
 export async function generateStaticParams() {

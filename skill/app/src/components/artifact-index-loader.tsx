@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { artifactIndexPath, artifactPagePath, projectPagePath } from "@/lib/paths"
+import { artifactIndexPath, artifactPagePath, projectPagePath } from "@/lib/artifacts/paths"
 import { formatDate } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -87,7 +87,7 @@ export function ArtifactIndexLoader() {
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-10 flex flex-col gap-4">
         <div>
 
           <h1 className="font-serif text-3xl font-medium tracking-[-0.03em] text-foreground sm:text-4xl">
@@ -98,13 +98,6 @@ export function ArtifactIndexLoader() {
             Browse reports, dashboards, and explainers generated from your local artifacts.
           </p>
         </div>
-        <Link
-          href="/components"
-          className="inline-flex w-fit items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-card-foreground shadow-sm transition hover:border-clay hover:text-clay"
-        >
-          <span>View Components</span>
-          <span className="font-mono text-xs">→</span>
-        </Link>
       </header>
 
       <section className="mb-12 flex flex-wrap items-center gap-3 border-b pb-8">

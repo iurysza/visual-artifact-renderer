@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { VisualArtifactRenderer } from "@/components/visual-artifact-renderer"
-import { VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/artifact-schema"
-import { artifactDataUrl, artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/paths"
+import { VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/contract/artifact-schema"
+import { artifactDataUrl, artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/artifacts/paths"
 
 interface ClientArtifactLoaderProps {
   project?: string

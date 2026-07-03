@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { ARTIFACT_NODE_TYPES } from "./artifact-schema"
+import { ARTIFACT_NODE_TYPES } from "../contract/artifact-schema"
 
 export const ReportDirectionArtifactTypeSchema = z.enum([
   "code-architecture",

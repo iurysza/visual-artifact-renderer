@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-import { listProjects, listArtifactsInProject, getVisualArtifactSpec } from "@/lib/artifacts"
+import { listProjects, listArtifactsInProject, getVisualArtifactSpec } from "@/lib/artifacts/artifacts"
 import { ClientArtifactLoader } from "@/components/client-artifact-loader"
 
 export async function generateStaticParams() {

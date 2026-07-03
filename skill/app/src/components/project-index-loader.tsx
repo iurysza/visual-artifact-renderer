@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { projectIndexPath, artifactPagePath, projectParamsFromPath } from "@/lib/paths"
+import { projectIndexPath, artifactPagePath, projectParamsFromPath } from "@/lib/artifacts/paths"
 import { formatDateTime } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
