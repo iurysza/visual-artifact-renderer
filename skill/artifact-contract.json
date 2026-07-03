@@ -84,6 +84,9 @@
         "variant": "\"default\" | \"destructive\"?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "alert",
         "props": {
@@ -98,6 +101,9 @@
         "items": "{ term: string, description: string }[]"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "definition-list",
         "props": {
@@ -120,6 +126,9 @@
         "defaultOpen": "boolean?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "diff",
         "props": {
@@ -138,6 +147,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "donut-chart",
         "props": {
@@ -158,6 +170,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "area-chart",
         "props": {
@@ -178,6 +193,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "radar-chart",
         "props": {
@@ -198,6 +216,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "scatter-chart",
         "props": {
@@ -218,6 +239,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "heatmap",
         "props": {
@@ -236,6 +260,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "log",
         "props": {
@@ -249,6 +276,9 @@
         "items": "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "file-tree",
         "props": {
@@ -276,6 +306,9 @@
         "aspect": "\"auto\" | \"square\" | \"video\" | \"wide\"?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "image",
         "props": {
@@ -293,6 +326,9 @@
       },
       "children": false,
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "pie-chart",
         "props": {
@@ -308,6 +344,9 @@
         "items": "{ title: string, description?: string, status?: \"complete\" | \"current\" | \"pending\" }[]"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "stepper",
         "props": {
@@ -332,6 +371,9 @@
         "align": "left | center | right?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "heading",
         "props": {
@@ -347,6 +389,9 @@
         "tone": "default | muted?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "prose",
         "props": {
@@ -363,6 +408,9 @@
         "align": "left | center | right?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "text",
         "props": {
@@ -380,6 +428,9 @@
         "tone": "default | accent | success | warning | danger?"
       },
       "children": "nodes",
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "card",
         "props": {
@@ -405,6 +456,9 @@
         "trend": "up | down | neutral?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "metric",
         "props": {
@@ -426,6 +480,9 @@
         "tone": "default | accent | success | warning | danger?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "stat-card",
         "props": {
@@ -445,6 +502,9 @@
         "variant": "default | secondary | destructive | outline | ghost | link?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "badge",
         "props": {
@@ -462,6 +522,9 @@
         "size": "default | xs | sm | lg?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "button",
         "props": {
@@ -475,6 +538,9 @@
       "description": "Visual separator between sections.",
       "props": {},
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "separator"
       }
@@ -489,6 +555,9 @@
       "children": false,
       "data": "data[dataKey] must be an array of row objects.",
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "table",
         "props": {
@@ -510,6 +579,9 @@
       "children": false,
       "data": "data[dataKey] must be an array of row objects.",
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "data-table",
         "props": {
@@ -534,6 +606,9 @@
       "children": false,
       "data": "data[dataKey] must be an array of row objects. statusKey values are rendered as status chips.",
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "comparison-table",
         "props": {
@@ -560,6 +635,9 @@
       "children": false,
       "data": "data[dataKey] must be an array of row objects containing xKey and yKey.",
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "chart",
         "props": {
@@ -579,6 +657,9 @@
         "height": "integer? 240-1600"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "mermaid",
         "props": {
@@ -596,6 +677,9 @@
         "height": "integer? 240-1600"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "svg-diagram",
         "props": {
@@ -613,6 +697,9 @@
         "items": "{ title: string, label?: string, description?: string, status?: string }[]"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "flow",
         "props": {
@@ -646,6 +733,9 @@
       "children": false,
       "data": "data[dataKey] must be an array of row objects. Defaults: title, marker, description, status.",
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "timeline",
         "props": {
@@ -666,6 +756,9 @@
         "caption": "string?"
       },
       "children": false,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "code-block",
         "props": {
@@ -689,6 +782,9 @@
       "children": false,
       "data": "data[dataKey] must be an array of row objects. statusKey chooses chip tone from values like pass/ok/healthy/warn/fail/risk.",
       "requiresData": true,
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "status-grid",
         "props": {
@@ -706,6 +802,9 @@
         "columns": "1 | 2 | 3 | 4?"
       },
       "children": "nodes",
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "grid",
         "props": {
@@ -728,6 +827,9 @@
         "description": "string?"
       },
       "children": "nodes",
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "section",
         "props": {
@@ -750,6 +852,9 @@
         "items": "{ value: string, label: string, nodes: nodes[] }[]"
       },
       "children": "items",
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "tabs",
         "props": {
@@ -776,6 +881,9 @@
         "items": "{ title: string, nodes: nodes[] }[]"
       },
       "children": "items",
+      "metadata": {
+        "id": "string?"
+      },
       "example": {
         "type": "accordion",
         "props": {

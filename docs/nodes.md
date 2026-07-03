@@ -19,6 +19,29 @@ pnpm export:contract
 pnpm verify:artifacts
 ```
 
+## Stable node IDs for annotations
+
+Every node can carry an optional `metadata.id` string. Agents can leave it off; the renderer falls back to deterministic node paths such as `nodes.0`, `nodes.1.children.2`, or `nodes.3.props.items.0.nodes.1`. IDs are useful when artifacts need to keep comments anchored to a node across edits or reorders.
+
+Example:
+
+```json
+{
+  "type": "stat-card",
+  "metadata": { "id": "summary-card" },
+  "props": { "label": "Summary", "value": "Ready" }
+}
+```
+
+When rendered, each node is wrapped in a layout-neutral boundary with these attributes:
+
+- `data-va-node-id` — the `metadata.id` value, when present
+- `data-va-node-path` — the deterministic path inside the spec
+- `data-va-node-type` — the node type, e.g. `stat-card`
+- `data-va-node-label` — a short label derived from `title`, `text`, `label`, or `content`
+
+The renderer uses `display: contents` for the boundary so grids, tabs, accordions, and cards keep their existing layout.
+
 ## Node set
 
 Visualizer ships **30+** node types:

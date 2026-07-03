@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 
 import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 import { componentRegistry } from "@/components/component-registry"
-import type { ArtifactRenderContext } from "@/components/artifact-types"
+import type { ArtifactRenderContext, RenderNodes } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
 
 export function VisualArtifactRenderer({ spec, project, slug }: { spec: VisualArtifactSpec; project: string; slug: string }) {
@@ -69,32 +69,87 @@ function HeroStat({ label, value }: { label: string; value: number }) {
   )
 }
 
-function RenderNode({ node, context }: { node: ArtifactNode; context: ArtifactRenderContext }) {
-  const Component = componentRegistry[node.type]
-  const children = "children" in node ? renderNodes(node.children, context) : undefined
-
-  return <>{Component({ node, context, children, renderNodes })}</>
+function NodeBoundary({
+  node,
+  nodePath,
+  children,
+}: {
+  node: ArtifactNode
+  nodePath: string
+  children: ReactNode
+}) {
+  return (
+    <div
+      className="contents"
+      data-va-node-id={node.metadata?.id}
+      data-va-node-path={nodePath}
+      data-va-node-type={node.type}
+      data-va-node-label={nodeLabel(node)}
+    >
+      {children}
+    </div>
+  )
 }
 
-function renderNodes(nodes: ArtifactNode[] | undefined, context: ArtifactRenderContext): ReactNode {
-  return nodes?.map((node, index) => <RenderNode key={`${node.type}-${index}`} node={node} context={context} />)
+function RenderNode({
+  node,
+  context,
+  nodePath,
+  renderNodes,
+}: {
+  node: ArtifactNode
+  context: ArtifactRenderContext
+  nodePath: string
+  renderNodes: RenderNodes
+}) {
+  const Component = componentRegistry[node.type]
+  const children =
+    "children" in node && node.children ? renderNodes(node.children, context, `${nodePath}.children`) : undefined
+
+  return <>{Component({ node, context, children, renderNodes, nodePath })}</>
+}
+
+function renderNodes(nodes: ArtifactNode[] | undefined, context: ArtifactRenderContext, prefix = "nodes"): ReactNode {
+  return nodes?.map((node, index) => {
+    const nodePath = `${prefix}.${index}`
+    return (
+      <NodeBoundary key={nodePath} node={node} nodePath={nodePath}>
+        <RenderNode node={node} context={context} nodePath={nodePath} renderNodes={renderNodes} />
+      </NodeBoundary>
+    )
+  })
+}
+
+function nodeLabel(node: ArtifactNode): string | undefined {
+  const props = node.props as Record<string, unknown> | undefined
+  if (!props) return undefined
+
+  const raw = props.title ?? props.text ?? props.label ?? props.content
+  if (typeof raw === "string" && raw.length > 0) {
+    return raw.slice(0, 80)
+  }
+
+  return undefined
 }
 
 function countNodes(nodes: ArtifactNode[] | undefined): number {
-  return nodes?.reduce((total, node) => {
-    if ("children" in node) return total + 1 + countNodes(node.children)
-    if (node.type === "tabs") return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
-    if (node.type === "accordion") return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
+  return (
+    nodes?.reduce((total, node) => {
+      if ("children" in node && node.children) return total + 1 + countNodes(node.children)
+      if (node.type === "tabs") return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
+      if (node.type === "accordion")
+        return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
 
-    return total + 1
-  }, 0) ?? 0
+      return total + 1
+    }, 0) ?? 0
+  )
 }
 
 function collectNodeTypes(nodes: ArtifactNode[] | undefined, types = new Set<ArtifactNode["type"]>()) {
   nodes?.forEach((node) => {
     types.add(node.type)
 
-    if ("children" in node) collectNodeTypes(node.children, types)
+    if ("children" in node && node.children) collectNodeTypes(node.children, types)
     if (node.type === "tabs") node.props.items.forEach((item) => collectNodeTypes(item.nodes, types))
     if (node.type === "accordion") node.props.items.forEach((item) => collectNodeTypes(item.nodes, types))
   })

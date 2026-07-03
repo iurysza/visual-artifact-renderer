@@ -10,7 +10,8 @@ export type ArtifactRenderContext = {
 
 export type RenderNodes = (
   nodes: ArtifactNode[] | undefined,
-  context: ArtifactRenderContext
+  context: ArtifactRenderContext,
+  prefix?: string
 ) => ReactNode
 
 export type AdapterArgs<T extends ArtifactNode["type"]> = {
@@ -18,6 +19,7 @@ export type AdapterArgs<T extends ArtifactNode["type"]> = {
   children?: ReactNode
   context: ArtifactRenderContext
   renderNodes: RenderNodes
+  nodePath: string
 }
 
 export type RegistryAdapter = (args: {
@@ -25,4 +27,5 @@ export type RegistryAdapter = (args: {
   children?: ReactNode
   context: ArtifactRenderContext
   renderNodes: RenderNodes
+  nodePath: string
 }) => ReactNode

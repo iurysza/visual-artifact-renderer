@@ -106,11 +106,15 @@ export type ArtifactNode =
   | {
       type: "definition-list"
       props: { items: { term: string; description: string }[] }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "file-tree"
       props: { items: FileTreeItem[] }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "diff"
       props: {
@@ -120,144 +124,210 @@ export type ArtifactNode =
         title?: string
         defaultOpen?: boolean
       }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "stepper"
       props: { items: { title: string; description?: string; status?: "complete" | "current" | "pending" }[] }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "image"
       props: { src: string; alt: string; caption?: string; aspect?: "auto" | "square" | "video" | "wide" }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "alert"
       props: { title: string; description?: string; variant?: "default" | "destructive" }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "pie-chart"
       props: { dataKey: string; categoryKey: string; valueKey: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "donut-chart"
       props: { dataKey: string; categoryKey: string; valueKey: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "area-chart"
       props: { dataKey: string; xKey?: string; yKey?: string; label?: string; color?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "radar-chart"
       props: { dataKey: string; subjectKey?: string; valueKey?: string; label?: string; color?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "scatter-chart"
       props: { dataKey: string; xKey?: string; yKey?: string; label?: string; color?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "heatmap"
       props: { dataKey: string; xKey?: string; yKey?: string; valueKey?: string; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "log"
       props: { lines?: string[]; dataKey?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "prose"
       props: { content: string; tone?: "default" | "muted" }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "heading"
       props: { text: string; level?: 1 | 2 | 3 | 4; align?: "left" | "center" | "right" }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "text"
       props: { text: string; tone?: "default" | "muted"; size?: "sm" | "base" | "lg"; align?: "left" | "center" | "right" }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "card"
       props?: { title?: string; description?: string; size?: "default" | "sm"; tone?: ArtifactTone }
       children?: ArtifactNode[]
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "metric"
       props: { label: string; value: string | number; delta?: string; trend?: "up" | "down" | "neutral" }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "stat-card"
       props: { label: string; value: string | number; delta?: string; trend?: "up" | "down" | "neutral"; caption?: string; tone?: ArtifactTone }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "badge"
       props: { label: string; variant?: z.infer<typeof BadgeVariantSchema> }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "button"
       props: { label: string; href?: string; variant?: z.infer<typeof ButtonVariantSchema>; size?: z.infer<typeof ButtonSizeSchema> }
-    }
-  | { type: "separator"; props?: Record<string, never> }
+    
+    metadata?: { id?: string }
+  }
+  | { type: "separator"; props?: Record<string, never>; metadata?: { id?: string } }
   | {
       type: "table"
       props: { dataKey: string; columns?: ArtifactColumn[]; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "data-table"
       props: { dataKey: string; columns?: ArtifactColumn[]; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "comparison-table"
       props: { dataKey: string; columns?: ArtifactColumn[]; statusKey?: string; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "chart"
       props: { dataKey: string; xKey: string; yKey: string; kind?: "line" | "bar"; label?: string; color?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "mermaid"
       props: { code: string; title?: string; caption?: string; height?: number }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "svg-diagram"
       props: { html: string; title?: string; caption?: string; height?: number }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "flow"
       props: { title?: string; caption?: string; items: ArtifactFlowItem[] }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "timeline"
       props: { dataKey: string; titleKey?: string; markerKey?: string; descriptionKey?: string; statusKey?: string; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "code-block"
       props: { title?: string; language?: string; code: string; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "status-grid"
       props: { dataKey: string; titleKey?: string; statusKey: string; descriptionKey?: string; metaKey?: string; columns?: 1 | 2 | 3 | 4; caption?: string }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "grid"
       props?: { columns?: 1 | 2 | 3 | 4 }
       children?: ArtifactNode[]
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "section"
       props?: { title?: string; description?: string }
       children?: ArtifactNode[]
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "tabs"
       props: {
         defaultValue?: string
         items: { value: string; label: string; nodes: ArtifactNode[] }[]
       }
-    }
+    
+    metadata?: { id?: string }
+  }
   | {
       type: "accordion"
       props: {
         items: { title: string; nodes: ArtifactNode[] }[]
       }
-    }
+    
+    metadata?: { id?: string }
+  }
 
 export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
   const childNodes = z.array(ArtifactNodeSchema).optional()

@@ -69,7 +69,7 @@ export function renderSection({ node, children }: AdapterArgs<"section">) {
   )
 }
 
-export function renderTabs({ node, context, renderNodes }: AdapterArgs<"tabs">) {
+export function renderTabs({ node, context, renderNodes, nodePath }: AdapterArgs<"tabs">) {
   const defaultValue = node.props.defaultValue ?? node.props.items[0]?.value
 
   return (
@@ -81,23 +81,23 @@ export function renderTabs({ node, context, renderNodes }: AdapterArgs<"tabs">) 
           </TabsTrigger>
         ))}
       </TabsList>
-      {node.props.items.map((item) => (
+      {node.props.items.map((item, index) => (
         <TabsContent key={item.value} value={item.value} className="flex flex-col gap-5 pt-1">
-          {renderNodes(item.nodes, context)}
+          {renderNodes(item.nodes, context, `${nodePath}.props.items.${index}.nodes`)}
         </TabsContent>
       ))}
     </Tabs>
   )
 }
 
-export function renderAccordion({ node, context, renderNodes }: AdapterArgs<"accordion">) {
+export function renderAccordion({ node, context, renderNodes, nodePath }: AdapterArgs<"accordion">) {
   return (
     <Accordion>
       {node.props.items.map((item, index) => (
         <AccordionItem key={item.title} value={`item-${index}`}>
           <AccordionTrigger>{item.title}</AccordionTrigger>
           <AccordionContent>
-            <div className="flex flex-col gap-4">{renderNodes(item.nodes, context)}</div>
+            <div className="flex flex-col gap-4">{renderNodes(item.nodes, context, `${nodePath}.props.items.${index}.nodes`)}</div>
           </AccordionContent>
         </AccordionItem>
       ))}

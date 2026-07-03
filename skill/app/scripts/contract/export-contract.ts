@@ -36,6 +36,7 @@ const contract = {
         children: entry.children,
         data: entry.data,
         requiresData: entry.requiresData,
+        metadata: { id: "string?" },
         example: entry.example,
       },
     ])
