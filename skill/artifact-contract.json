@@ -117,13 +117,20 @@
       }
     },
     "diff": {
-      "description": "Code or text difference visualization.",
+      "description": "Code or text difference visualization. Accepts either a raw unified diff string (content) or a before/after pair.",
       "props": {
-        "before": "string",
-        "after": "string",
+        "before": "string?",
+        "after": "string?",
+        "content": "string?",
         "language": "string?",
         "title": "string?",
-        "defaultOpen": "boolean?"
+        "defaultOpen": "boolean?",
+        "mode": "\"unified\" | \"split\"?",
+        "showLineNumbers": "boolean?",
+        "indicators": "\"bars\" | \"plus-minus\" | \"none\"?",
+        "highlightInline": "boolean?",
+        "hunkSeparator": "\"default\" | \"custom\"?",
+        "caption": "string?"
       },
       "children": false,
       "metadata": {
@@ -132,9 +139,9 @@
       "example": {
         "type": "diff",
         "props": {
-          "before": "a",
-          "after": "b",
-          "language": "typescript"
+          "content": "diff --git a/index.ts b/index.ts\n--- a/index.ts\n+++ b/index.ts\n@@ -1,3 +1,3 @@\n- old\n+ new\n",
+          "language": "typescript",
+          "title": "Sample diff"
         }
       }
     },
@@ -271,9 +278,15 @@
       }
     },
     "file-tree": {
-      "description": "A collapsible file explorer tree.",
+      "description": "A collapsible file explorer tree with optional git status badges, density settings, search, and empty-directory flattening.",
       "props": {
-        "items": "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]"
+        "items": "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]",
+        "flattenEmpty": "boolean?",
+        "searchable": "boolean?",
+        "gitStatus": "Record<string, GitStatus>?",
+        "density": "\"compact\" | \"default\" | \"relaxed\"",
+        "iconSet": "\"minimal\" | \"standard\" | \"complete\"",
+        "defaultExpanded": "boolean?"
       },
       "children": false,
       "metadata": {
@@ -293,7 +306,9 @@
                 }
               ]
             }
-          ]
+          ],
+          "flattenEmpty": true,
+          "searchable": true
         }
       }
     },

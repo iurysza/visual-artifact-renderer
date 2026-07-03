@@ -71,7 +71,7 @@ grid, section, tabs, accordion, prose
 | Architecture/topology | `mermaid`, `svg-diagram` |
 | Request/deploy/data path | `flow` |
 | Release/runbook sequence | `timeline`, `stepper` |
-| Commands/config/file maps | `code-block`, `file-tree`, `diff`, `log` |
+| Commands/config/file maps | `code-block`, `file-tree` (with `gitStatus`, `flattenEmpty`, `searchable`, `density`, `iconSet`, `defaultExpanded`), `diff` (with `content`, `mode`, `showLineNumbers`, `indicators`, `highlightInline`, `hunkSeparator`, `caption`), `log` |
 | Proportional data | `pie-chart`, `donut-chart` |
 | Cumulative/trend data | `area-chart` |
 | Multi-dimensional comparison | `radar-chart` |
@@ -206,5 +206,67 @@ The renderer serves it as:
       }
     }
   ]
+}
+```
+
+## Copyable pattern: file tree with git status
+
+```json
+{
+  "type": "file-tree",
+  "props": {
+    "items": [
+      {
+        "name": "src",
+        "type": "directory",
+        "children": [
+          { "name": "index.ts", "type": "file" },
+          { "name": "button.tsx", "type": "file" }
+        ]
+      }
+    ],
+    "flattenEmpty": true,
+    "searchable": true,
+    "density": "default",
+    "iconSet": "standard",
+    "defaultExpanded": true,
+    "gitStatus": {
+      "src/index.ts": { "status": "modified" },
+      "src/button.tsx": { "status": "added" },
+      "src": { "status": "modified", "descendant": true }
+    }
+  }
+}
+```
+
+## Copyable pattern: diff from a unified diff string
+
+```json
+{
+  "type": "diff",
+  "props": {
+    "title": "utils.ts",
+    "language": "typescript",
+    "mode": "unified",
+    "indicators": "plus-minus",
+    "highlightInline": true,
+    "content": "diff --git a/utils.ts b/utils.ts\n--- a/utils.ts\n+++ b/utils.ts\n@@ -1,3 +1,3 @@\n export function greet(name: string) {\n-  return `Hello, ${name}`;\n+  return `Hello, ${name}!`;\n }\n"
+  }
+}
+```
+
+## Copyable pattern: diff from before/after (split mode)
+
+```json
+{
+  "type": "diff",
+  "props": {
+    "title": "cache.go",
+    "language": "go",
+    "mode": "split",
+    "indicators": "bars",
+    "before": "func Get(key string) (*Item, bool) {\n    return item.Value, true\n}",
+    "after": "func Get(key string) (*Item, bool) {\n    delete(c.items, key)\n    return item.Value, true\n}"
+  }
 }
 ```

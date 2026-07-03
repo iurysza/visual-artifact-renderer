@@ -111,21 +111,38 @@ export function renderDefinitionList({ node }: AdapterArgs<"definition-list">) {
 }
 
 export function renderDiff({ node }: AdapterArgs<"diff">) {
-  const { before, after, language, title, defaultOpen } = node.props
+  const { before, after, content, language, title, defaultOpen, mode, showLineNumbers, indicators, highlightInline, hunkSeparator, caption } = node.props
   return (
     <Diff
       before={before}
       after={after}
+      content={content}
       language={language}
       title={title}
       defaultOpen={defaultOpen}
+      mode={mode}
+      showLineNumbers={showLineNumbers}
+      indicators={indicators}
+      highlightInline={highlightInline}
+      hunkSeparator={hunkSeparator}
+      caption={caption}
     />
   )
 }
 
 export function renderFileTree({ node }: AdapterArgs<"file-tree">) {
-  const { items } = node.props
-  return <FileTree items={items} />
+  const { items, flattenEmpty, searchable, gitStatus, density, iconSet, defaultExpanded } = node.props
+  return (
+    <FileTree
+      items={items}
+      flattenEmpty={flattenEmpty}
+      searchable={searchable}
+      gitStatus={gitStatus}
+      density={density}
+      iconSet={iconSet}
+      defaultExpanded={defaultExpanded}
+    />
+  )
 }
 
 export function renderImage({ node, context }: AdapterArgs<"image">) {
