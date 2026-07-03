@@ -28,22 +28,17 @@ Visual Artifact Renderer is a generative-UI, server-driven runtime for that gap.
 ## How it works
 
 ```mermaid
-flowchart LR
-  subgraph Agent["Agent / LLM"]
-    A1["Inspect source/data"]
+flowchart TB
+  subgraph Agent["Agent"]
+    A1["Inspect source code/data"]
     A2["Get node catalog<br/>visual-artifact contract"]
     A3["Build VisualArtifactSpec JSON"]
   end
 
-  subgraph Pi["Pi boundary"]
-    P1["create_visual_artifact"]
-  end
-
   subgraph CLI["visual-artifact CLI"]
-    C1["Read spec"]
-    C2["Validate"]
-    C3["Write artifact JSON"]
-    C4["Start server if needed"]
+    C1["Validate Spec"]
+    C2["Write artifact JSON"]
+    C3["Start server if needed"]
   end
 
   subgraph Store["Artifact store"]
@@ -53,11 +48,13 @@ flowchart LR
   subgraph Renderer["Next.js renderer"]
     R1["Fetch JSON"]
     R2["Render trusted adapters"]
-    R3["Open browser URL"]
   end
 
-  A1 --> A2 --> A3 --> P1 --> C1 --> C2 --> C3 --> S1 --> R1 --> R2 --> R3
-  C3 --> C4 --> R1
+  A1 --> A2 --> A3 --> C1
+
+  C1 -->|valid spec| C2 --> C3 --> S1 --> R1 --> R2
+
+  C1 -.->|invalid spec: return errors<br/>feedback to LLM to correct itself| A3
 ```
 
 The core flow:
