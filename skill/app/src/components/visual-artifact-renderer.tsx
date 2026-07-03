@@ -1,13 +1,40 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { KeyboardEvent, MouseEvent, ReactNode } from "react"
 
 import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 import { componentRegistry } from "@/components/component-registry"
 import type { ArtifactRenderContext, RenderNodes } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
+import { AnnotationProvider, useAnnotationContext } from "@/components/annotation-provider"
+import { AnnotationToggle } from "@/components/annotation-toggle"
+import { AnnotationPanel } from "@/components/annotation-panel"
 
-export function VisualArtifactRenderer({ spec, project, slug }: { spec: VisualArtifactSpec; project: string; slug: string }) {
+export function VisualArtifactRenderer({
+  spec,
+  project,
+  slug,
+}: {
+  spec: VisualArtifactSpec
+  project: string
+  slug: string
+}) {
+  return (
+    <AnnotationProvider project={project} slug={slug}>
+      <VisualArtifactRendererContent spec={spec} project={project} slug={slug} />
+    </AnnotationProvider>
+  )
+}
+
+function VisualArtifactRendererContent({
+  spec,
+  project,
+  slug,
+}: {
+  spec: VisualArtifactSpec
+  project: string
+  slug: string
+}) {
   const context: ArtifactRenderContext = { project, slug, data: spec.data }
   const datasetCount = Object.keys(spec.data ?? {}).length
   const nodeCount = countNodes(spec.nodes)
@@ -18,8 +45,11 @@ export function VisualArtifactRenderer({ spec, project, slug }: { spec: VisualAr
       <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
         <div className="border-b bg-muted/45 px-5 py-3 sm:px-7">
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <HeroPill>{datasetCount} dataset{datasetCount === 1 ? "" : "s"}</HeroPill>
+            <HeroPill>
+              {datasetCount} dataset{datasetCount === 1 ? "" : "s"}
+            </HeroPill>
             <HeroPill>{nodeCount} nodes</HeroPill>
+            <AnnotationToggle />
           </div>
         </div>
 
@@ -31,7 +61,9 @@ export function VisualArtifactRenderer({ spec, project, slug }: { spec: VisualAr
             <h1 className="max-w-5xl break-words font-serif text-4xl font-medium leading-[1.03] tracking-[-0.04em] text-foreground sm:text-6xl">
               {spec.title}
             </h1>
-            {spec.description && <p className="max-w-3xl break-words text-lg leading-8 text-muted-foreground">{spec.description}</p>}
+            {spec.description && (
+              <p className="max-w-3xl break-words text-lg leading-8 text-muted-foreground">{spec.description}</p>
+            )}
           </div>
 
           <aside className="rounded-2xl border bg-background/45 p-4">
@@ -48,6 +80,8 @@ export function VisualArtifactRenderer({ spec, project, slug }: { spec: VisualAr
       <div className={cn("space-y-9", spec.layout?.type === "grid" && gridClass(spec.layout.columns ?? 2))}>
         {renderNodes(spec.nodes, context)}
       </div>
+
+      <AnnotationPanel />
     </main>
   )
 }
@@ -78,15 +112,63 @@ function NodeBoundary({
   nodePath: string
   children: ReactNode
 }) {
+  const ctx = useAnnotationContext()
+  const nodeId = node.metadata?.id
+  const threadCount = ctx.getThreadCount(nodeId, nodePath)
+  const isHovered = ctx.hoveredNode?.nodeId === nodeId && ctx.hoveredNode?.nodePath === nodePath
+  const isSelected = ctx.selectedNode?.nodeId === nodeId && ctx.selectedNode?.nodePath === nodePath
+
+  function handleClick(event: MouseEvent<HTMLDivElement>) {
+    if (!ctx.isCommentMode) return
+    event.preventDefault()
+    event.stopPropagation()
+    ctx.setSelectedNode({ nodeId, nodePath })
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!ctx.isCommentMode) return
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    ctx.setSelectedNode({ nodeId, nodePath })
+  }
+
+  function handleMouseEnter() {
+    if (!ctx.isCommentMode) return
+    ctx.setHoveredNode({ nodeId, nodePath })
+  }
+
+  function handleMouseLeave() {
+    if (!ctx.isCommentMode) return
+    ctx.setHoveredNode(null)
+  }
+
   return (
     <div
-      className="contents"
-      data-va-node-id={node.metadata?.id}
+      className={cn(
+        "relative transition-shadow",
+        ctx.isCommentMode && "cursor-pointer",
+        ctx.isCommentMode && isHovered && !isSelected && "ring-2 ring-clay/50",
+        isSelected && "ring-2 ring-clay"
+      )}
+      data-va-node-id={nodeId}
       data-va-node-path={nodePath}
       data-va-node-type={node.type}
       data-va-node-label={nodeLabel(node)}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onKeyDown={handleKeyDown}
+      role={ctx.isCommentMode ? "button" : undefined}
+      aria-label={ctx.isCommentMode ? `Select ${node.type} node` : undefined}
+      aria-pressed={ctx.isCommentMode ? isSelected : undefined}
+      tabIndex={ctx.isCommentMode ? 0 : undefined}
     >
       {children}
+      {ctx.isCommentMode && threadCount > 0 && (
+        <span className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-clay text-[10px] font-medium text-white shadow-sm">
+          {threadCount}
+        </span>
+      )}
     </div>
   )
 }
@@ -136,7 +218,8 @@ function countNodes(nodes: ArtifactNode[] | undefined): number {
   return (
     nodes?.reduce((total, node) => {
       if ("children" in node && node.children) return total + 1 + countNodes(node.children)
-      if (node.type === "tabs") return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
+      if (node.type === "tabs")
+        return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
       if (node.type === "accordion")
         return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
 

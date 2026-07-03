@@ -1,5 +1,16 @@
-import { parseAnnotationDocument, type AnnotationDocument } from "@agents/visual-artifact-annotations"
+import { parseAnnotationDocument } from "@agents/visual-artifact-annotations"
 import { artifactAnnotationsUrl } from "./paths"
+
+import type {
+  AnnotationAnchor,
+  AnnotationAuthor,
+  AnnotationDocument,
+  AnnotationMessage,
+  AnnotationMutation,
+  AnnotationMutations,
+  AnnotationThread,
+  AnnotationThreadStatus,
+} from "@agents/visual-artifact-annotations"
 
 export async function loadAnnotationDocument(project: string, slug: string): Promise<AnnotationDocument> {
   const response = await fetch(artifactAnnotationsUrl(project, slug))
@@ -10,4 +21,13 @@ export async function loadAnnotationDocument(project: string, slug: string): Pro
   return parseAnnotationDocument(raw)
 }
 
-export type { AnnotationDocument }
+export type {
+  AnnotationAnchor,
+  AnnotationAuthor,
+  AnnotationDocument,
+  AnnotationMessage,
+  AnnotationMutation,
+  AnnotationMutations,
+  AnnotationThread,
+  AnnotationThreadStatus,
+}
