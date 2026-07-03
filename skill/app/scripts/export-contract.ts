@@ -3,12 +3,29 @@ import path from "path"
 import { fileURLToPath } from "url"
 
 import { artifactComponentManifest, artifactPatternExamples } from "../src/lib/artifact-manifest.js"
-import { ARTIFACT_NODE_TYPES } from "../src/lib/artifact-schema.js"
+import { ARTIFACT_NODE_TYPES, ARTIFACT_SPEC_CONSTRAINTS } from "../src/lib/artifact-schema.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const contract = {
   version: "1.0.0",
+  spec: {
+    slug: ARTIFACT_SPEC_CONSTRAINTS.slug,
+    title: ARTIFACT_SPEC_CONSTRAINTS.title,
+    description: ARTIFACT_SPEC_CONSTRAINTS.description,
+    layout: {
+      type: {
+        enum: Array.from(ARTIFACT_SPEC_CONSTRAINTS.layout.type.enum),
+      },
+      columns: {
+        enum: Array.from(ARTIFACT_SPEC_CONSTRAINTS.layout.columns.enum),
+      },
+    },
+    nodes: {
+      type: ARTIFACT_SPEC_CONSTRAINTS.nodes.type,
+      minItems: ARTIFACT_SPEC_CONSTRAINTS.nodes.minItems,
+    },
+  },
   nodeTypes: ARTIFACT_NODE_TYPES,
   nodes: Object.fromEntries(
     artifactComponentManifest.map((entry) => [

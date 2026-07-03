@@ -18,15 +18,15 @@ Read:
 3. `report-direction.md`
 4. `visualization-strategy.md`
 5. source evidence as needed
-6. `visual-artifact contract` (current node catalog and limits)
+6. `visual-artifact contract` (current root spec and node constraints)
 
 ## Build rules
 
 - Start with the thesis.
 - Put reusable rows into `data` and reference them with `dataKey`.
 - Use only supported node types.
-- Keep node count under contract limits.
-- Keep status strings short.
+- Keep the spec focused; split sprawling artifacts into separate sections or artifacts.
+- Keep status strings short and put detail in descriptions.
 - Do not invent facts.
 - Do not output raw HTML except inside `svg-diagram` when necessary.
 

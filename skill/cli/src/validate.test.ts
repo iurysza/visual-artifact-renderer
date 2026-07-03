@@ -17,6 +17,10 @@ function specWith(node: unknown): ArtifactSpec {
   }
 }
 
+function cloneContract(): ArtifactContract {
+  return JSON.parse(JSON.stringify(contract)) as ArtifactContract
+}
+
 function expectInvalid(node: unknown, message: string): void {
   expect(() => validateSpec(specWith(node), contract)).toThrow(ValidationError)
   expect(() => validateSpec(specWith(node), contract)).toThrow(message)
@@ -25,10 +29,30 @@ function expectInvalid(node: unknown, message: string): void {
 describe("validateSpec contract parity", () => {
   test("rejects slugs longer than the renderer accepts", () => {
     const spec = specWith({ type: "text", props: { text: "Hi" } })
-    spec.slug = "a".repeat(81)
+    spec.slug = "a".repeat(contract.spec.slug.maxLength + 1)
 
     expect(() => validateSpec(spec, contract)).toThrow(ValidationError)
-    expect(() => validateSpec(spec, contract)).toThrow("max allowed is 80")
+    expect(() => validateSpec(spec, contract)).toThrow(`max allowed is ${contract.spec.slug.maxLength}`)
+  })
+
+  test("honors root constraints from the contract", () => {
+    const titleContract = cloneContract()
+    titleContract.spec.title.minLength = 30
+    const shortTitle = specWith({ type: "text", props: { text: "Hi" } })
+    shortTitle.title = "Short"
+    expect(() => validateSpec(shortTitle, titleContract)).toThrow("min allowed is 30")
+
+    const descriptionContract = cloneContract()
+    descriptionContract.spec.description.optional = false
+    expect(() => validateSpec(specWith({ type: "text", props: { text: "Hi" } }), descriptionContract)).toThrow(
+      "description is required",
+    )
+
+    const layoutContract = cloneContract()
+    layoutContract.spec.layout.type.enum = ["grid"]
+    const defaultLayout = specWith({ type: "text", props: { text: "Hi" } })
+    defaultLayout.layout = { type: "default" }
+    expect(() => validateSpec(defaultLayout, layoutContract)).toThrow("layout.type must be one of: grid")
   })
 
   test("rejects invalid stepper statuses before artifacts are written", () => {

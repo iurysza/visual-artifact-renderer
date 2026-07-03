@@ -2,10 +2,12 @@ import { z } from "zod"
 
 import { containerSchema, leafSchema, optionalPropsSchema } from "./schema-helpers"
 
+export const ARTIFACT_SLUG_MAX_LENGTH = 80
+
 export const ArtifactSlugSchema = z
   .string()
   .min(1)
-  .max(80)
+  .max(ARTIFACT_SLUG_MAX_LENGTH)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use kebab-case slugs")
 
 const TextAlignSchema = z.enum(["left", "center", "right"])
@@ -30,6 +32,36 @@ const TrendSchema = z.enum(["up", "down", "neutral"])
 const ChartKindSchema = z.enum(["line", "bar"])
 const ToneSchema = z.enum(["default", "accent", "success", "warning", "danger"])
 const GridColumnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
+
+export const ARTIFACT_SPEC_CONSTRAINTS = {
+  slug: {
+    type: "string",
+    format: "kebab-case",
+    minLength: 1,
+    maxLength: ARTIFACT_SLUG_MAX_LENGTH,
+  },
+  title: {
+    type: "string",
+    minLength: 1,
+  },
+  description: {
+    type: "string",
+    minLength: 1,
+    optional: true,
+  },
+  layout: {
+    type: {
+      enum: ["default", "grid"] as const,
+    },
+    columns: {
+      enum: [1, 2, 3, 4] as const,
+    },
+  },
+  nodes: {
+    type: "array",
+    minItems: 1,
+  },
+} as const
 const DiagramHeightSchema = z.number().int().min(240).max(1600)
 
 const FlowItemSchema = z

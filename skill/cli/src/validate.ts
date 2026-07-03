@@ -54,6 +54,19 @@ function assertOptionalString(value: unknown, label: string): string | undefined
   return assertString(value, label)
 }
 
+function validateStringLength(
+  value: string,
+  label: string,
+  limits: { minLength?: number; maxLength?: number },
+): void {
+  if (limits.minLength !== undefined && value.length < limits.minLength) {
+    throw new ValidationError(`${label} is ${value.length} chars, min allowed is ${limits.minLength}`)
+  }
+  if (limits.maxLength !== undefined && value.length > limits.maxLength) {
+    throw new ValidationError(`${label} is ${value.length} chars, max allowed is ${limits.maxLength}`)
+  }
+}
+
 function assertBoolean(value: unknown, label: string): boolean {
   if (typeof value !== "boolean") {
     throw new ValidationError(`${humanPath(label)} must be a boolean (got ${describeValue(value)})`)
@@ -392,34 +405,41 @@ export function validateSpec(spec: unknown, contract: ArtifactContract): Artifac
     throw new ValidationError("slug is required")
   }
   const slug = assertString(obj.slug, "slug")
-  if (!KEBAB_CASE_RE.test(slug)) {
+  if (contract.spec.slug.format === "kebab-case" && !KEBAB_CASE_RE.test(slug)) {
     throw new ValidationError(`slug "${slug}" must be kebab-case (lowercase letters, numbers, and single hyphens)`)
   }
-  if (slug.length > 80) {
-    throw new ValidationError(`slug "${slug}" is ${slug.length} chars, max allowed is 80`)
-  }
+  validateStringLength(slug, `slug "${slug}"`, contract.spec.slug)
 
   if (obj.title === undefined) {
     throw new ValidationError("title is required")
   }
   const title = assertString(obj.title, "title")
+  validateStringLength(title, "title", contract.spec.title)
 
-  const description = assertOptionalString(obj.description, "description")
+  let description: string | undefined
+  if (obj.description === undefined) {
+    if (!contract.spec.description.optional) throw new ValidationError("description is required")
+  } else {
+    description = assertString(obj.description, "description")
+    validateStringLength(description, "description", contract.spec.description)
+  }
 
   let layout: { type?: "default" | "grid"; columns?: number } | undefined
   if (obj.layout !== undefined) {
     const layoutObj = assertPlainObject(obj.layout, "layout")
-    if (layoutObj.type !== undefined && layoutObj.type !== "default" && layoutObj.type !== "grid") {
-      throw new ValidationError("layout.type must be 'default' or 'grid'")
+    if (
+      layoutObj.type !== undefined &&
+      (typeof layoutObj.type !== "string" || !contract.spec.layout.type.enum.includes(layoutObj.type))
+    ) {
+      throw new ValidationError(`layout.type must be one of: ${contract.spec.layout.type.enum.join(", ")}`)
     }
     if (
       layoutObj.columns !== undefined &&
       (typeof layoutObj.columns !== "number" ||
         !Number.isInteger(layoutObj.columns) ||
-        layoutObj.columns < 1 ||
-        layoutObj.columns > 4)
+        !contract.spec.layout.columns.enum.includes(layoutObj.columns))
     ) {
-      throw new ValidationError("layout.columns must be an integer between 1 and 4")
+      throw new ValidationError(`layout.columns must be one of: ${contract.spec.layout.columns.enum.join(", ")}`)
     }
     layout = {
       type: layoutObj.type as "default" | "grid" | undefined,
@@ -435,8 +455,8 @@ export function validateSpec(spec: unknown, contract: ArtifactContract): Artifac
   if (!Array.isArray(obj.nodes)) {
     throw new ValidationError("nodes must be an array")
   }
-  if (obj.nodes.length === 0) {
-    throw new ValidationError("nodes must be a non-empty array")
+  if (obj.nodes.length < contract.spec.nodes.minItems) {
+    throw new ValidationError(`nodes must have at least ${contract.spec.nodes.minItems} item(s)`)
   }
 
   const nodes = obj.nodes as unknown[]

@@ -20,9 +20,29 @@ function outputJson(log: Logger, data: unknown, opts: ContractOpts): void {
   }
 }
 
+function formatSpecConstraints(spec: ArtifactContract["spec"]): string[] {
+  const lines = ["Spec constraints:"]
+
+  const slug = spec.slug
+  lines.push(`  slug: ${slug.format}, ${slug.minLength}-${slug.maxLength} chars`)
+
+  lines.push(`  title: ${spec.title.type}, min ${spec.title.minLength}`)
+
+  const desc = spec.description
+  lines.push(`  description: ${desc.type}, min ${desc.minLength}${desc.optional ? ", optional" : ""}`)
+
+  lines.push(`  layout.type: ${spec.layout.type.enum.join(", ")}`)
+  lines.push(`  layout.columns: ${spec.layout.columns.enum.join(", ")}`)
+
+  lines.push(`  nodes: ${spec.nodes.type}, min ${spec.nodes.minItems}`)
+
+  return lines
+}
+
 function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpts): void {
   const summary = {
     version: contract.version,
+    spec: contract.spec,
     nodeCount: contract.nodeTypes.length,
     nodeTypes: contract.nodeTypes,
     dataNodeCount: contract.dataNodes.length,
@@ -37,6 +57,8 @@ function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpt
 
   const lines = [
     `Visualizer artifact contract v${contract.version}`,
+    "",
+    ...formatSpecConstraints(contract.spec),
     "",
     `Node types: ${contract.nodeTypes.length}`,
     ...contract.nodeTypes.map((nodeType) => {

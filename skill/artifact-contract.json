@@ -1,5 +1,42 @@
 {
   "version": "1.0.0",
+  "spec": {
+    "slug": {
+      "type": "string",
+      "format": "kebab-case",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "optional": true
+    },
+    "layout": {
+      "type": {
+        "enum": [
+          "default",
+          "grid"
+        ]
+      },
+      "columns": {
+        "enum": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1
+    }
+  },
   "nodeTypes": [
     "alert",
     "area-chart",

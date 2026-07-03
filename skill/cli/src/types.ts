@@ -1,5 +1,36 @@
+export interface SpecConstraints {
+  slug: {
+    type: string
+    format: string
+    minLength: number
+    maxLength: number
+  }
+  title: {
+    type: string
+    minLength: number
+  }
+  description: {
+    type: string
+    minLength: number
+    optional: boolean
+  }
+  layout: {
+    type: {
+      enum: string[]
+    }
+    columns: {
+      enum: number[]
+    }
+  }
+  nodes: {
+    type: string
+    minItems: number
+  }
+}
+
 export interface ArtifactContract {
   version: string
+  spec: SpecConstraints
   nodeTypes: readonly string[]
   nodes: Record<string, NodeDef>
   dataNodes: readonly string[]
