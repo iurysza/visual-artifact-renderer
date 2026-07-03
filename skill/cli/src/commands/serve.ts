@@ -2,7 +2,7 @@ import { resolve, join } from "node:path"
 import { spawn } from "node:child_process"
 import type { Server } from "bun"
 import { loadConfig, localBaseUrl } from "../config.ts"
-import { artifactJsonPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
+import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
 import type { Logger } from "../logger.ts"
 import { dirExists, fileExists } from "../util.ts"
@@ -94,7 +94,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     log.warn(`Artifacts directory missing: ${artifactsDir}`)
   }
 
-  const server = Bun.serve({
+  Bun.serve({
     port: config.port,
     hostname: config.host,
     async fetch(req) {
@@ -177,6 +177,17 @@ async function serveData(stripped: string, artifactsDir: string, dataPath: strin
     return new Response(Bun.file(filePath))
   }
 
+  const assetMatch = matchAsset(reqPath, dataPath)
+  if (assetMatch) {
+    const route = parseBundleRoute(assetMatch.project, assetMatch.slug)
+    if (!route) return notFound()
+    if (!isSafeAssetName(assetMatch.fileName)) return notFound()
+    const filePath = resolve(assetsDirPath(artifactsDir, route.project, route.slug), assetMatch.fileName)
+    if (!isInsideArtifactsDir(filePath, artifactsDir)) return notFound()
+    if (!(await fileExists(filePath))) return notFound()
+    return new Response(Bun.file(filePath))
+  }
+
   return notFound()
 }
 
@@ -206,6 +217,23 @@ function matchArtifactData(reqPath: string, dataPath: string): { project: string
   const match = reqPath.match(pattern)
   if (!match) return null
   return { project: match[1], slug: match[2] }
+}
+
+function matchAsset(reqPath: string, dataPath: string): { project: string; slug: string; fileName: string } | null {
+  const pattern = new RegExp(
+    `^${escapeRegex(dataPath)}/([a-z0-9]+(?:-[a-z0-9]+)*)/([a-z0-9]+(?:-[a-z0-9]+)*)/assets/(.+)$`,
+  )
+  const match = reqPath.match(pattern)
+  if (!match) return null
+  return { project: match[1], slug: match[2], fileName: match[3] }
+}
+
+function isSafeAssetName(fileName: string): boolean {
+  if (fileName === "" || fileName === "." || fileName === "..") return false
+  if (fileName.includes("/") || fileName.includes("\\")) return false
+  if (fileName.includes("\0")) return false
+  if (fileName.startsWith(".")) return false
+  return true
 }
 
 async function serveStatic(reqPath: string, outDir: string): Promise<Response | null> {
