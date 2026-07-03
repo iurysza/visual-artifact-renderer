@@ -145,7 +145,7 @@ export const artifactManifest = {
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree with optional git status badges, density settings, search, and empty-directory flattening.",
-    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"', iconSet: '"minimal" | "standard" | "complete"', defaultExpanded: "boolean?" },
+    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"?', iconSet: '"minimal" | "standard" | "complete"?', defaultExpanded: "boolean?" },
     children: false,
     example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }], flattenEmpty: true, searchable: true } },
   },

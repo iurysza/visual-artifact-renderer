@@ -284,8 +284,8 @@
         "flattenEmpty": "boolean?",
         "searchable": "boolean?",
         "gitStatus": "Record<string, GitStatus>?",
-        "density": "\"compact\" | \"default\" | \"relaxed\"",
-        "iconSet": "\"minimal\" | \"standard\" | \"complete\"",
+        "density": "\"compact\" | \"default\" | \"relaxed\"?",
+        "iconSet": "\"minimal\" | \"standard\" | \"complete\"?",
         "defaultExpanded": "boolean?"
       },
       "children": false,

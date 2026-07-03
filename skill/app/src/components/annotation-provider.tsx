@@ -2,11 +2,26 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 
-import { loadAnnotationDocument } from "@/lib/artifacts/annotations"
-import type { AnnotationDocument, AnnotationThread } from "@/lib/artifacts/annotations"
+import {
+  loadAnnotationDocument,
+  postAnnotationMutations,
+  resolveLocalAuthor,
+} from "@/lib/artifacts/annotations"
+import type {
+  AnnotationAnchor,
+  AnnotationAuthor,
+  AnnotationDocument,
+  AnnotationMessage,
+  AnnotationMutations,
+  AnnotationThread,
+} from "@/lib/artifacts/annotations"
 import { getThreadCount, getThreadsForNode, type NodeIdentity } from "@/components/annotation-helpers"
 
+export type ThreadFilter = "all" | "open" | "resolved"
+
 interface AnnotationContextValue {
+  project: string
+  slug: string
   doc: AnnotationDocument | null
   isLoading: boolean
   error: string | null
@@ -19,12 +34,25 @@ interface AnnotationContextValue {
   setSelectedNode: (node: NodeIdentity | null) => void
   activeThreadId: string | null
   setActiveThreadId: (id: string | null) => void
+  filter: ThreadFilter
+  setFilter: (filter: ThreadFilter) => void
   draftText: string
   setDraftText: (text: string) => void
   clearSelection: () => void
   getThreadsForNode: (nodeId: string | undefined, nodePath: string) => AnnotationThread[]
   getThreadCount: (nodeId: string | undefined, nodePath: string) => number
+  filteredThreads: AnnotationThread[]
   totalThreadCount: number
+  openThreadCount: number
+  resolvedThreadCount: number
+  author: AnnotationAuthor | null
+  isSaving: boolean
+  createThread: (anchor: AnnotationAnchor, body: string) => Promise<void>
+  addReply: (threadId: string, body: string) => Promise<void>
+  resolveThread: (threadId: string) => Promise<void>
+  reopenThread: (threadId: string) => Promise<void>
+  selectThread: (threadId: string) => void
+  resetError: () => void
 }
 
 const AnnotationContext = createContext<AnnotationContextValue | null>(null)
@@ -38,9 +66,6 @@ export function AnnotationProvider({
   slug: string
   children: React.ReactNode
 }) {
-  // Remount the inner provider when the artifact identity changes so the
-  // loading state is naturally reset without synchronously calling setState
-  // inside an effect.
   return (
     <AnnotationProviderInner key={`${project}:${slug}`} project={project} slug={slug}>
       {children}
@@ -60,14 +85,18 @@ function AnnotationProviderInner({
   const [doc, setDoc] = useState<AnnotationDocument | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const [isCommentMode, setIsCommentMode] = useState(false)
   const [hoveredNode, setHoveredNode] = useState<NodeIdentity | null>(null)
   const [selectedNode, setSelectedNode] = useState<NodeIdentity | null>(null)
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  const [filter, setFilter] = useState<ThreadFilter>("all")
   const [draftText, setDraftText] = useState("")
+  const [author, setAuthor] = useState<AnnotationAuthor | null>(null)
 
   useEffect(() => {
     let cancelled = false
+
     loadAnnotationDocument(project, slug)
       .then((data) => {
         if (!cancelled) setDoc(data)
@@ -78,10 +107,25 @@ function AnnotationProviderInner({
       .finally(() => {
         if (!cancelled) setIsLoading(false)
       })
+
     return () => {
       cancelled = true
     }
   }, [project, slug])
+
+  useEffect(() => {
+    let cancelled = false
+    resolveLocalAuthor()
+      .then((a) => {
+        if (!cancelled) setAuthor(a)
+      })
+      .catch(() => {
+        if (!cancelled) setAuthor(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const clearSelection = useCallback(() => {
     setSelectedNode(null)
@@ -101,12 +145,9 @@ function AnnotationProviderInner({
       setIsCommentMode(value)
       if (!value) clearSelection()
     },
-    [clearSelection]
+    [clearSelection],
   )
 
-  // Keep the latest state values in a ref so the keyboard listener can read
-  // them without re-registering on every render or synchronously setting state
-  // inside the effect body.
   const stateRef = useRef({
     draftText,
     selectedNode,
@@ -140,20 +181,169 @@ function AnnotationProviderInner({
     (nodeId: string | undefined, nodePath: string) => {
       return doc ? getThreadsForNode(doc.threads, nodeId, nodePath) : []
     },
-    [doc]
+    [doc],
   )
 
   const getThreadCountBound = useCallback(
     (nodeId: string | undefined, nodePath: string) => {
       return doc ? getThreadCount(doc.threads, nodeId, nodePath) : 0
     },
-    [doc]
+    [doc],
   )
 
+  const filteredThreads = useMemo(() => {
+    if (!doc) return []
+    if (filter === "all") return doc.threads
+    return doc.threads.filter((thread) => thread.status === filter)
+  }, [doc, filter])
+
   const totalThreadCount = doc?.threads.length ?? 0
+  const openThreadCount = doc?.threads.filter((t) => t.status === "open").length ?? 0
+  const resolvedThreadCount = doc?.threads.filter((t) => t.status === "resolved").length ?? 0
+
+  const makeMessage = useCallback(
+    (body: string): AnnotationMessage => {
+      const now = new Date().toISOString()
+      return {
+        id: generateId(),
+        author: author ?? { name: "Local Author", email: "dev@localhost" },
+        body: body.trim(),
+        createdAt: now,
+        updatedAt: now,
+      }
+    },
+    [author],
+  )
+
+  const withOptimisticMutation = useCallback(
+    async (
+      buildOptimisticDoc: (current: AnnotationDocument) => AnnotationDocument,
+      mutations: AnnotationMutations,
+    ) => {
+      if (!doc) return
+      const previousDoc = doc
+      const optimisticDoc = buildOptimisticDoc(doc)
+      setDoc(optimisticDoc)
+      setIsSaving(true)
+      setError(null)
+
+      try {
+        await postAnnotationMutations(project, slug, mutations)
+      } catch (err) {
+        setDoc(previousDoc)
+        setError(err instanceof Error ? err.message : "Failed to save annotations")
+      } finally {
+        setIsSaving(false)
+      }
+    },
+    [doc, project, slug],
+  )
+
+  const createThread = useCallback(
+    async (anchor: AnnotationAnchor, body: string) => {
+      const trimmed = body.trim()
+      if (!trimmed) return
+
+      const message = makeMessage(trimmed)
+      const now = message.createdAt
+      const thread: AnnotationThread = {
+        id: generateId(),
+        anchor,
+        status: "open",
+        createdAt: now,
+        updatedAt: now,
+        messages: [message],
+      }
+
+      await withOptimisticMutation(
+        (current) => ({
+          ...current,
+          threads: [...current.threads, thread],
+        }),
+        [{ type: "createThread", thread }],
+      )
+
+      setActiveThreadId(thread.id)
+      setDraftText("")
+    },
+    [makeMessage, withOptimisticMutation],
+  )
+
+  const addReply = useCallback(
+    async (threadId: string, body: string) => {
+      const trimmed = body.trim()
+      if (!trimmed) return
+      const message = makeMessage(trimmed)
+
+      await withOptimisticMutation(
+        (current) => ({
+          ...current,
+          threads: current.threads.map((thread) =>
+            thread.id === threadId
+              ? { ...thread, messages: [...thread.messages, message], updatedAt: message.createdAt }
+              : thread,
+          ),
+        }),
+        [{ type: "addMessage", threadId, message }],
+      )
+    },
+    [makeMessage, withOptimisticMutation],
+  )
+
+  const resolveThread = useCallback(
+    async (threadId: string) => {
+      await withOptimisticMutation(
+        (current) => ({
+          ...current,
+          threads: current.threads.map((thread) =>
+            thread.id === threadId ? { ...thread, status: "resolved" } : thread,
+          ),
+        }),
+        [{ type: "resolveThread", threadId }],
+      )
+    },
+    [withOptimisticMutation],
+  )
+
+  const reopenThread = useCallback(
+    async (threadId: string) => {
+      await withOptimisticMutation(
+        (current) => ({
+          ...current,
+          threads: current.threads.map((thread) =>
+            thread.id === threadId ? { ...thread, status: "open" } : thread,
+          ),
+        }),
+        [{ type: "reopenThread", threadId }],
+      )
+    },
+    [withOptimisticMutation],
+  )
+
+  const selectThread = useCallback(
+    (threadId: string) => {
+      setActiveThreadId(threadId)
+      const thread = doc?.threads.find((t) => t.id === threadId)
+      if (!thread) return
+      setSelectedNode({
+        nodeId: thread.anchor.nodeId,
+        nodePath: thread.anchor.nodePath,
+        nodeType: thread.anchor.nodeType,
+        textSnippet: thread.anchor.textSnippet,
+      })
+      scrollToNode(thread.anchor.nodeId, thread.anchor.nodePath)
+    },
+    [doc],
+  )
+
+  const resetError = useCallback(() => {
+    setError(null)
+  }, [])
 
   const value = useMemo<AnnotationContextValue>(
     () => ({
+      project,
+      slug,
       doc,
       isLoading,
       error,
@@ -166,14 +356,29 @@ function AnnotationProviderInner({
       setSelectedNode,
       activeThreadId,
       setActiveThreadId,
+      filter,
+      setFilter,
       draftText,
       setDraftText,
       clearSelection,
       getThreadsForNode: getThreadsForNodeBound,
       getThreadCount: getThreadCountBound,
+      filteredThreads,
       totalThreadCount,
+      openThreadCount,
+      resolvedThreadCount,
+      author,
+      isSaving,
+      createThread,
+      addReply,
+      resolveThread,
+      reopenThread,
+      selectThread,
+      resetError,
     }),
     [
+      project,
+      slug,
       doc,
       isLoading,
       error,
@@ -183,12 +388,24 @@ function AnnotationProviderInner({
       hoveredNode,
       selectedNode,
       activeThreadId,
+      filter,
       draftText,
       clearSelection,
       getThreadsForNodeBound,
       getThreadCountBound,
+      filteredThreads,
       totalThreadCount,
-    ]
+      openThreadCount,
+      resolvedThreadCount,
+      author,
+      isSaving,
+      createThread,
+      addReply,
+      resolveThread,
+      reopenThread,
+      selectThread,
+      resetError,
+    ],
   )
 
   return <AnnotationContext.Provider value={value}>{children}</AnnotationContext.Provider>
@@ -200,4 +417,26 @@ export function useAnnotationContext(): AnnotationContextValue {
     throw new Error("useAnnotationContext must be used within an AnnotationProvider")
   }
   return ctx
+}
+
+function generateId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+export function scrollToNode(nodeId: string | undefined, nodePath: string): void {
+  if (typeof document === "undefined") return
+  const selector = nodeId ? `[data-va-node-id="${cssEscape(nodeId)}"]` : `[data-va-node-path="${cssEscape(nodePath)}"]`
+  const element = document.querySelector(selector)
+  if (!element) return
+  element.scrollIntoView({ behavior: "smooth", block: "center" })
+}
+
+function cssEscape(value: string): string {
+  if (typeof window !== "undefined" && "CSS" in window && window.CSS.escape) {
+    return window.CSS.escape(value)
+  }
+  return value.replace(/(["'\\])/g, "\\$1")
 }

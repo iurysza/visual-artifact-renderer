@@ -11,6 +11,8 @@ export const BASE_PATH = "/artifacts"
 
 export const ARTIFACT_DATA_SEGMENT = "data/artifacts"
 
+export const ANNOTATION_API_SEGMENT = "api/annotations"
+
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export interface ArtifactRouteParams {
@@ -79,6 +81,16 @@ export function artifactDataUrl(project: string, slug: string): string {
 /** Absolute public URL to a bundled annotation JSON payload, resolved at runtime. */
 export function artifactAnnotationsUrl(project: string, slug: string): string {
   return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/annotations.json`
+}
+
+/** Absolute public URL to the annotation mutations API, resolved at runtime. */
+export function artifactAnnotationsApiUrl(project: string, slug: string): string {
+  return `${resolveBasePath()}/${ANNOTATION_API_SEGMENT}/${project}/${slug}`
+}
+
+/** Absolute public URL to the local author endpoint, resolved at runtime. */
+export function artifactAnnotationsAuthorUrl(): string {
+  return `${resolveBasePath()}/${ANNOTATION_API_SEGMENT}/author`
 }
 
 /**

@@ -3,6 +3,8 @@ import type { AnnotationAnchor, AnnotationThread } from "@/lib/artifacts/annotat
 export interface NodeIdentity {
   nodeId?: string
   nodePath: string
+  nodeType?: string
+  textSnippet?: string
 }
 
 export function nodeIdentityMatches(

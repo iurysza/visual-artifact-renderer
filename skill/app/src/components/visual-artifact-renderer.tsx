@@ -122,7 +122,15 @@ function NodeBoundary({
     if (!ctx.isCommentMode) return
     event.preventDefault()
     event.stopPropagation()
-    ctx.setSelectedNode({ nodeId, nodePath })
+
+    const nodeThreads = ctx.getThreadsForNode(nodeId, nodePath)
+    if (nodeThreads.length > 0) {
+      ctx.selectThread(nodeThreads[0]!.id)
+    } else {
+      ctx.setSelectedNode({ nodeId, nodePath, nodeType: node.type, textSnippet: nodeLabel(node) })
+      ctx.setActiveThreadId(null)
+      ctx.setDraftText("")
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {

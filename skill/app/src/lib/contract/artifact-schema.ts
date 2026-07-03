@@ -118,8 +118,6 @@ export type ArtifactNode =
   }
   | {
       type: "file-tree"
-  | {
-      type: "file-tree"
       props: {
         items: FileTreeItem[]
         flattenEmpty?: boolean
