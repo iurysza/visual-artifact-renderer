@@ -5,10 +5,6 @@ export interface ArtifactContract {
   dataNodes: readonly string[]
   compositionGuidance: readonly string[]
   patternExamples: Record<string, { description: string; nodes: unknown[] }>
-  globalLimits: {
-    dataRowsMax: number
-    dataStringMax: number
-  }
 }
 
 export interface NodeDef {
@@ -18,15 +14,6 @@ export interface NodeDef {
   data?: string
   requiresData?: boolean
   example: unknown
-  limits?: {
-    text?: number
-    label?: number
-    code?: number
-    items?: number
-    itemStatus?: number
-    children?: number
-    status?: number
-  }
 }
 
 export interface ArtifactSpec {

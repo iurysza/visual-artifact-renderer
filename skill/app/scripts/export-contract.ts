@@ -20,16 +20,11 @@ const contract = {
         data: entry.data,
         requiresData: entry.requiresData,
         example: entry.example,
-        limits: entry.limits,
       },
     ])
   ),
   dataNodes: artifactComponentManifest.filter((e) => e.requiresData).map((e) => e.type),
   patternExamples: artifactPatternExamples,
-  globalLimits: {
-    dataRowsMax: 20,
-    dataStringMax: 200,
-  },
 }
 
 async function main() {

@@ -71,9 +71,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 20
       }
     },
     "diff": {
@@ -93,9 +90,6 @@
           "after": "b",
           "language": "typescript"
         }
-      },
-      "limits": {
-        "text": 5000
       }
     },
     "donut-chart": {
@@ -234,9 +228,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 50
       }
     },
     "image": {
@@ -294,9 +285,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 10
       }
     },
     "heading": {
@@ -313,9 +301,6 @@
           "text": "Quarterly Revenue",
           "level": 2
         }
-      },
-      "limits": {
-        "text": 120
       }
     },
     "prose": {
@@ -330,9 +315,6 @@
         "props": {
           "content": "Here is a list of items:\n\n- First item\n- Second item\n\n[Learn more](https://example.com)"
         }
-      },
-      "limits": {
-        "content": 3000
       }
     },
     "text": {
@@ -350,9 +332,6 @@
           "text": "Revenue grew across enterprise accounts.",
           "tone": "muted"
         }
-      },
-      "limits": {
-        "text": 800
       }
     },
     "card": {
@@ -378,9 +357,6 @@
             }
           }
         ]
-      },
-      "limits": {
-        "children": 10
       }
     },
     "metric": {
@@ -400,9 +376,6 @@
           "delta": "+12.5%",
           "trend": "up"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "stat-card": {
@@ -426,9 +399,6 @@
           "caption": "Tracked targets already linked.",
           "tone": "success"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "badge": {
@@ -444,9 +414,6 @@
           "label": "On track",
           "variant": "secondary"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "button": {
@@ -465,9 +432,6 @@
           "href": "https://example.com",
           "variant": "outline"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "separator": {
@@ -584,9 +548,6 @@
           "title": "Request flow",
           "code": "flowchart LR\n  Client --> API\n  API --> DB"
         }
-      },
-      "limits": {
-        "code": 5000
       }
     },
     "svg-diagram": {
@@ -633,10 +594,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 6,
-        "itemStatus": 16
       }
     },
     "timeline": {
@@ -661,9 +618,6 @@
           "descriptionKey": "action",
           "statusKey": "status"
         }
-      },
-      "limits": {
-        "status": 16
       }
     },
     "code-block": {
@@ -682,9 +636,6 @@
           "language": "bash",
           "code": "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1"
         }
-      },
-      "limits": {
-        "code": 3000
       }
     },
     "status-grid": {
@@ -710,9 +661,6 @@
           "descriptionKey": "notes",
           "columns": 3
         }
-      },
-      "limits": {
-        "status": 16
       }
     },
     "grid": {
@@ -734,9 +682,6 @@
             }
           }
         ]
-      },
-      "limits": {
-        "children": 12
       }
     },
     "section": {
@@ -759,9 +704,6 @@
             }
           }
         ]
-      },
-      "limits": {
-        "children": 10
       }
     },
     "tabs": {
@@ -789,9 +731,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 5
       }
     },
     "accordion": {
@@ -817,9 +756,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 8
       }
     }
   },
@@ -973,9 +909,5 @@
         }
       ]
     }
-  },
-  "globalLimits": {
-    "dataRowsMax": 20,
-    "dataStringMax": 200
   }
 }

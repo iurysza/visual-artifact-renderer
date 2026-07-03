@@ -9,7 +9,7 @@ Visualizer artifacts are built from a constrained node catalog. Agents never wri
 - `visual-artifact contract` — get the exported runtime contract used by the CLI and agents.
 - [`skill/artifact-contract.json`](../skill/artifact-contract.json) — exported runtime contract (source of truth on disk).
 - [`skill/app/src/lib/artifact-schema.ts`](../skill/app/src/lib/artifact-schema.ts) — Zod schema and TypeScript types.
-- [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, limits.
+- [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, and props.
 
 Regenerate the contract after schema or manifest changes:
 
@@ -101,7 +101,7 @@ Example:
 }
 ```
 
-Keep data values compact. The CLI enforces row/string limits from the contract.
+Keep data values well-formed. The CLI validates structural correctness (types, required fields, enums) from the contract.
 
 ## Local images
 

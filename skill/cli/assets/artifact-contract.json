@@ -58,7 +58,7 @@
     "definition-list": {
       "description": "A compact list of terms and descriptions.",
       "props": {
-        "items": "{ term, description }[]"
+        "items": "{ term: string, description: string }[]"
       },
       "children": false,
       "example": {
@@ -71,9 +71,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 20
       }
     },
     "diff": {
@@ -93,9 +90,6 @@
           "after": "b",
           "language": "typescript"
         }
-      },
-      "limits": {
-        "text": 5000
       }
     },
     "donut-chart": {
@@ -215,7 +209,7 @@
     "file-tree": {
       "description": "A collapsible file explorer tree.",
       "props": {
-        "items": "{ name, type, children }[]"
+        "items": "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]"
       },
       "children": false,
       "example": {
@@ -234,9 +228,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 50
       }
     },
     "image": {
@@ -277,7 +268,7 @@
     "stepper": {
       "description": "A step-by-step progress indicator.",
       "props": {
-        "items": "{ title, description?, status? }[]"
+        "items": "{ title: string, description?: string, status?: \"complete\" | \"current\" | \"pending\" }[]"
       },
       "children": false,
       "example": {
@@ -294,9 +285,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 10
       }
     },
     "heading": {
@@ -313,15 +301,13 @@
           "text": "Quarterly Revenue",
           "level": 2
         }
-      },
-      "limits": {
-        "text": 120
       }
     },
     "prose": {
       "description": "Markdown text for prose, lists, links, and long-form narrative. Use this instead of 'text' when you need multiple paragraphs or basic markdown formatting.",
       "props": {
-        "content": "string"
+        "content": "string",
+        "tone": "default | muted?"
       },
       "children": false,
       "example": {
@@ -329,9 +315,6 @@
         "props": {
           "content": "Here is a list of items:\n\n- First item\n- Second item\n\n[Learn more](https://example.com)"
         }
-      },
-      "limits": {
-        "content": 3000
       }
     },
     "text": {
@@ -349,9 +332,6 @@
           "text": "Revenue grew across enterprise accounts.",
           "tone": "muted"
         }
-      },
-      "limits": {
-        "text": 800
       }
     },
     "card": {
@@ -377,9 +357,6 @@
             }
           }
         ]
-      },
-      "limits": {
-        "children": 10
       }
     },
     "metric": {
@@ -399,9 +376,6 @@
           "delta": "+12.5%",
           "trend": "up"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "stat-card": {
@@ -425,9 +399,6 @@
           "caption": "Tracked targets already linked.",
           "tone": "success"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "badge": {
@@ -443,9 +414,6 @@
           "label": "On track",
           "variant": "secondary"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "button": {
@@ -464,9 +432,6 @@
           "href": "https://example.com",
           "variant": "outline"
         }
-      },
-      "limits": {
-        "label": 40
       }
     },
     "separator": {
@@ -574,7 +539,7 @@
         "code": "string",
         "title": "string?",
         "caption": "string?",
-        "height": "number? 240-1600"
+        "height": "integer? 240-1600"
       },
       "children": false,
       "example": {
@@ -583,9 +548,6 @@
           "title": "Request flow",
           "code": "flowchart LR\n  Client --> API\n  API --> DB"
         }
-      },
-      "limits": {
-        "code": 5000
       }
     },
     "svg-diagram": {
@@ -594,7 +556,7 @@
         "html": "string",
         "title": "string?",
         "caption": "string?",
-        "height": "number? 240-1600"
+        "height": "integer? 240-1600"
       },
       "children": false,
       "example": {
@@ -611,7 +573,7 @@
       "props": {
         "title": "string?",
         "caption": "string?",
-        "items": "{ title, label?, description?, status? }[]"
+        "items": "{ title: string, label?: string, description?: string, status?: string }[]"
       },
       "children": false,
       "example": {
@@ -632,10 +594,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 6,
-        "itemStatus": 16
       }
     },
     "timeline": {
@@ -660,9 +618,6 @@
           "descriptionKey": "action",
           "statusKey": "status"
         }
-      },
-      "limits": {
-        "status": 16
       }
     },
     "code-block": {
@@ -681,9 +636,6 @@
           "language": "bash",
           "code": "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1"
         }
-      },
-      "limits": {
-        "code": 3000
       }
     },
     "status-grid": {
@@ -709,9 +661,6 @@
           "descriptionKey": "notes",
           "columns": 3
         }
-      },
-      "limits": {
-        "status": 16
       }
     },
     "grid": {
@@ -733,9 +682,6 @@
             }
           }
         ]
-      },
-      "limits": {
-        "children": 12
       }
     },
     "section": {
@@ -758,16 +704,13 @@
             }
           }
         ]
-      },
-      "limits": {
-        "children": 10
       }
     },
     "tabs": {
       "description": "Tabbed organization for alternate views. Good for Pi/OpenCode/wrapper splits or monthly/segment detail.",
       "props": {
         "defaultValue": "string?",
-        "items": "{ value, label, nodes }[]"
+        "items": "{ value: string, label: string, nodes: nodes[] }[]"
       },
       "children": "items",
       "example": {
@@ -788,15 +731,12 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 5
       }
     },
     "accordion": {
       "description": "Expandable sections for details, FAQs, sharp edges, or lower-priority evidence. Do not hide primary conclusions here.",
       "props": {
-        "items": "{ title, nodes }[]"
+        "items": "{ title: string, nodes: nodes[] }[]"
       },
       "children": "items",
       "example": {
@@ -816,9 +756,6 @@
             }
           ]
         }
-      },
-      "limits": {
-        "items": 8
       }
     }
   },
@@ -972,9 +909,5 @@
         }
       ]
     }
-  },
-  "globalLimits": {
-    "dataRowsMax": 20,
-    "dataStringMax": 200
   }
 }

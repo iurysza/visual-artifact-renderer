@@ -27,7 +27,6 @@ function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpt
     nodeTypes: contract.nodeTypes,
     dataNodeCount: contract.dataNodes.length,
     dataNodes: contract.dataNodes,
-    globalLimits: contract.globalLimits,
     patterns: Object.keys(contract.patternExamples),
   }
 
@@ -47,7 +46,6 @@ function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpt
     }),
     "",
     `Data-backed node types: ${contract.dataNodes.length}`,
-    `Global limits: ${JSON.stringify(contract.globalLimits)}`,
     `Pattern examples: ${summary.patterns.join(", ") || "none"}`,
   ]
   writeStdout(lines.join("\n"))
