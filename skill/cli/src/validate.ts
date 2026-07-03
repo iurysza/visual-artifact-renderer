@@ -395,6 +395,9 @@ export function validateSpec(spec: unknown, contract: ArtifactContract): Artifac
   if (!KEBAB_CASE_RE.test(slug)) {
     throw new ValidationError(`slug "${slug}" must be kebab-case (lowercase letters, numbers, and single hyphens)`)
   }
+  if (slug.length > 80) {
+    throw new ValidationError(`slug "${slug}" is ${slug.length} chars, max allowed is 80`)
+  }
 
   if (obj.title === undefined) {
     throw new ValidationError("title is required")

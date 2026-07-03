@@ -55,10 +55,10 @@ Use `visual-artifact contract` to print the full contract, `visual-artifact cont
 
 Rules:
 
-- `slug` must be kebab-case.
+- `slug` must be kebab-case and at most 80 characters (matches renderer route/filename limits).
 - `nodes` must be non-empty.
 - Data-backed nodes need `data.<dataKey>` arrays.
-- Keep data strings compact; contract limits are enforced.
+- Keep data values well-formed. The CLI validates structural correctness (types, required fields, enums) from the contract.
 - Do not use `file://` URLs. Use HTTPS, app routes, or sidecar image files.
 
 ## CLI

@@ -23,6 +23,14 @@ function expectInvalid(node: unknown, message: string): void {
 }
 
 describe("validateSpec contract parity", () => {
+  test("rejects slugs longer than the renderer accepts", () => {
+    const spec = specWith({ type: "text", props: { text: "Hi" } })
+    spec.slug = "a".repeat(81)
+
+    expect(() => validateSpec(spec, contract)).toThrow(ValidationError)
+    expect(() => validateSpec(spec, contract)).toThrow("max allowed is 80")
+  })
+
   test("rejects invalid stepper statuses before artifacts are written", () => {
     expectInvalid(
       {
