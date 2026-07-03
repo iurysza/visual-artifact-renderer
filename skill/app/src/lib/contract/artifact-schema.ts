@@ -79,6 +79,13 @@ type FileTreeItem = {
   children?: FileTreeItem[]
 }
 
+const GitStatusSchema = z
+  .object({
+    status: z.enum(["modified", "added", "deleted", "renamed", "untracked", "ignored"]),
+    descendant: z.boolean().optional(),
+  })
+  .strict()
+
 const FileTreeItemSchema: z.ZodType<FileTreeItem> = z.lazy(() =>
   z.object({
     name: z.string().min(1),
@@ -109,16 +116,31 @@ export type ArtifactNode =
     }
   | {
       type: "file-tree"
-      props: { items: FileTreeItem[] }
+      props: {
+        items: FileTreeItem[]
+        flattenEmpty?: boolean
+        searchable?: boolean
+        gitStatus?: Record<string, { status: "modified" | "added" | "deleted" | "renamed" | "untracked" | "ignored"; descendant?: boolean }>
+        density?: "compact" | "default" | "relaxed"
+        iconSet?: "minimal" | "standard" | "complete"
+        defaultExpanded?: boolean
+      }
     }
   | {
       type: "diff"
       props: {
-        before: string
-        after: string
+        before?: string
+        after?: string
+        content?: string
         language?: string
         title?: string
         defaultOpen?: boolean
+        mode?: "unified" | "split"
+        showLineNumbers?: boolean
+        indicators?: "bars" | "plus-minus" | "none"
+        highlightInline?: boolean
+        hunkSeparator?: "default" | "custom"
+        caption?: string
       }
     }
   | {
@@ -276,13 +298,26 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
     }),
     leafSchema("file-tree", {
       items: z.array(FileTreeItemSchema).min(1),
+      flattenEmpty: z.boolean().optional(),
+      searchable: z.boolean().optional(),
+      gitStatus: z.record(z.string().min(1), GitStatusSchema).optional(),
+      density: z.enum(["compact", "default", "relaxed"]).optional(),
+      iconSet: z.enum(["minimal", "standard", "complete"]).optional(),
+      defaultExpanded: z.boolean().optional(),
     }),
     leafSchema("diff", {
-      before: z.string(),
-      after: z.string(),
+      before: z.string().optional(),
+      after: z.string().optional(),
+      content: z.string().optional(),
       language: z.string().optional(),
       title: z.string().optional(),
       defaultOpen: z.boolean().optional(),
+      mode: z.enum(["unified", "split"]).optional(),
+      showLineNumbers: z.boolean().optional(),
+      indicators: z.enum(["bars", "plus-minus", "none"]).optional(),
+      highlightInline: z.boolean().optional(),
+      hunkSeparator: z.enum(["default", "custom"]).optional(),
+      caption: z.string().optional(),
     }),
     leafSchema("stepper", {
       items: z.array(
@@ -526,6 +561,17 @@ export const VisualArtifactSpecSchema = z
     const visit = (nodes: ArtifactNode[], path: (string | number)[]) => {
       nodes.forEach((node, index) => {
         const nodePath = [...path, index]
+
+        if (node.type === "diff") {
+          const { before, after, content } = node.props
+          if (!content && (before === undefined || after === undefined)) {
+            context.addIssue({
+              code: "custom",
+              message: "diff requires either props.content or both props.before and props.after",
+              path: [...nodePath, "props"],
+            })
+          }
+        }
 
         if (
           node.type === "table" ||

@@ -89,10 +89,10 @@ export const artifactManifest = {
   },
   "diff": {
     type: "diff",
-    description: "Code or text difference visualization.",
-    props: { before: "string", after: "string", language: "string?", title: "string?", defaultOpen: "boolean?" },
+    description: "Code or text difference visualization. Accepts either a raw unified diff string (content) or a before/after pair.",
+    props: { before: "string?", after: "string?", content: "string?", language: "string?", title: "string?", defaultOpen: "boolean?", mode: '"unified" | "split"?', showLineNumbers: "boolean?", indicators: '"bars" | "plus-minus" | "none"?', highlightInline: "boolean?", hunkSeparator: '"default" | "custom"?', caption: "string?" },
     children: false,
-    example: { type: "diff", props: { before: "a", after: "b", language: "typescript" } },
+    example: { type: "diff", props: { content: "diff --git a/index.ts b/index.ts\n--- a/index.ts\n+++ b/index.ts\n@@ -1,3 +1,3 @@\n- old\n+ new\n", language: "typescript", title: "Sample diff" } },
   },
   "donut-chart": {
     type: "donut-chart",
@@ -144,10 +144,10 @@ export const artifactManifest = {
   },
   "file-tree": {
     type: "file-tree",
-    description: "A collapsible file explorer tree.",
-    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]" },
+    description: "A collapsible file explorer tree with optional git status badges, density settings, search, and empty-directory flattening.",
+    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[] }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"', iconSet: '"minimal" | "standard" | "complete"', defaultExpanded: "boolean?" },
     children: false,
-    example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }] } },
+    example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }], flattenEmpty: true, searchable: true } },
   },
   "image": {
     type: "image",
