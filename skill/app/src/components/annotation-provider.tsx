@@ -2,6 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 
+import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
+
 import {
   loadAnnotationDocument,
   postAnnotationMutations,
@@ -15,7 +17,12 @@ import type {
   AnnotationMutations,
   AnnotationThread,
 } from "@/lib/artifacts/annotations"
-import { getThreadCount, getThreadsForNode, type NodeIdentity } from "@/components/annotation-helpers"
+import {
+  findAnchorElement,
+  getThreadCount,
+  getThreadsForNode,
+  type NodeIdentity,
+} from "@/components/annotation-helpers"
 
 export type ThreadFilter = "all" | "open" | "resolved"
 
@@ -46,6 +53,7 @@ interface AnnotationContextValue {
   openThreadCount: number
   resolvedThreadCount: number
   author: AnnotationAuthor | null
+  isFallbackAuthor: boolean
   isSaving: boolean
   createThread: (anchor: AnnotationAnchor, body: string) => Promise<void>
   addReply: (threadId: string, body: string) => Promise<void>
@@ -93,6 +101,12 @@ function AnnotationProviderInner({
   const [filter, setFilter] = useState<ThreadFilter>("all")
   const [draftText, setDraftText] = useState("")
   const [author, setAuthor] = useState<AnnotationAuthor | null>(null)
+
+  const isFallbackAuthor = Boolean(
+    author &&
+      author.name === LOCAL_ANONYMOUS_AUTHOR.name &&
+      author.email === LOCAL_ANONYMOUS_AUTHOR.email,
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -206,7 +220,7 @@ function AnnotationProviderInner({
       const now = new Date().toISOString()
       return {
         id: generateId(),
-        author: author ?? { name: "Local Author", email: "dev@localhost" },
+        author: author ?? LOCAL_ANONYMOUS_AUTHOR,
         body: body.trim(),
         createdAt: now,
         updatedAt: now,
@@ -368,6 +382,7 @@ function AnnotationProviderInner({
       openThreadCount,
       resolvedThreadCount,
       author,
+      isFallbackAuthor,
       isSaving,
       createThread,
       addReply,
@@ -398,6 +413,7 @@ function AnnotationProviderInner({
       openThreadCount,
       resolvedThreadCount,
       author,
+      isFallbackAuthor,
       isSaving,
       createThread,
       addReply,
@@ -428,15 +444,7 @@ function generateId(): string {
 
 export function scrollToNode(nodeId: string | undefined, nodePath: string): void {
   if (typeof document === "undefined") return
-  const selector = nodeId ? `[data-va-node-id="${cssEscape(nodeId)}"]` : `[data-va-node-path="${cssEscape(nodePath)}"]`
-  const element = document.querySelector(selector)
+  const element = findAnchorElement(nodeId, nodePath)
   if (!element) return
   element.scrollIntoView({ behavior: "smooth", block: "center" })
-}
-
-function cssEscape(value: string): string {
-  if (typeof window !== "undefined" && "CSS" in window && window.CSS.escape) {
-    return window.CSS.escape(value)
-  }
-  return value.replace(/(["'\\])/g, "\\$1")
 }

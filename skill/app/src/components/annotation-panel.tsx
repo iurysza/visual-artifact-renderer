@@ -1,15 +1,31 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CheckCircle2, Circle, MessageSquare, RefreshCcw, Send } from "lucide-react"
+import { format, formatDistanceToNowStrict, isValid } from "date-fns"
+import { AlertTriangle, CheckCircle2, Circle, Link, MessageSquare, RefreshCcw, Send } from "lucide-react"
+import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAnnotationContext } from "@/components/annotation-provider"
-import type { AnnotationThread, AnnotationMessage } from "@/lib/artifacts/annotations"
+import { useAnchorPresence } from "@/hooks/use-anchor-presence"
+import { artifactPageUrl } from "@/lib/artifacts/paths"
+import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
 import { cn } from "@/lib/utils"
+
+function formatAnnotationTime(dateInput: string): string {
+  const date = new Date(dateInput)
+  if (!isValid(date)) return dateInput
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  if (diffMs < 0) return format(date, "MMM d, yyyy")
+  if (diffMs < 60_000) return "just now"
+  const days = diffMs / (1000 * 60 * 60 * 24)
+  if (days < 7) return formatDistanceToNowStrict(date, { addSuffix: true })
+  return format(date, "MMM d, yyyy")
+}
 
 export function AnnotationPanel() {
   const ctx = useAnnotationContext()
@@ -39,6 +55,7 @@ function PanelHeader() {
         )}
       </div>
       <div className="flex items-center gap-2">
+        <CopyLinkButton />
         {ctx.isSaving && (
           <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
         )}
@@ -163,6 +180,7 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
   const ctx = useAnnotationContext()
   const lastMessage = thread.messages[thread.messages.length - 1]
   const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
+  const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
 
   return (
     <button
@@ -174,7 +192,17 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
         <span className="line-clamp-1 text-sm font-medium text-foreground">
           {snippet}
         </span>
-        <ThreadStatusBadge status={thread.status} />
+        <div className="flex shrink-0 items-center gap-1">
+          {!isPresent && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
+              title="Anchor not found"
+            >
+              <AlertTriangle className="size-3" />
+            </span>
+          )}
+          <ThreadStatusBadge status={thread.status} />
+        </div>
       </div>
       <p className="line-clamp-2 text-xs text-muted-foreground">
         {lastMessage?.body}
@@ -193,6 +221,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
   const [replyText, setReplyText] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
+  const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
 
   async function handleSubmit(event?: React.FormEvent) {
     event?.preventDefault()
@@ -217,6 +246,12 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
           <div>
             <p className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</p>
             <p className="text-xs text-muted-foreground">{thread.anchor.nodeType}</p>
+            {!isPresent && (
+              <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                <AlertTriangle className="size-3" />
+                Anchor not found; this thread may have moved.
+              </p>
+            )}
           </div>
           <ThreadStatusBadge status={thread.status} />
         </div>
@@ -276,15 +311,44 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
 }
 
 function MessageBubble({ message }: { message: AnnotationMessage }) {
+  const isFallback =
+    message.author.name === LOCAL_ANONYMOUS_AUTHOR.name &&
+    message.author.email === LOCAL_ANONYMOUS_AUTHOR.email
+
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-foreground">{message.author.name}</span>
-        <span className="text-[10px] text-muted-foreground">
+      <div className="flex items-start justify-between gap-2">
+        <AuthorLabel author={message.author} isFallback={isFallback} />
+        <span className="shrink-0 text-[10px] text-muted-foreground">
           <TimeLabel date={message.createdAt} />
         </span>
       </div>
       <p className="whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
+    </div>
+  )
+}
+
+function AuthorLabel({
+  author,
+  isFallback,
+}: {
+  author: AnnotationAuthor
+  isFallback?: boolean
+}) {
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs font-medium text-foreground">{author.name}</span>
+        {isFallback && (
+          <span
+            className="text-[10px] text-muted-foreground"
+            title="Git identity not set; using local author."
+          >
+            (git identity not set)
+          </span>
+        )}
+      </div>
+      <span className="text-[10px] text-muted-foreground">{author.email}</span>
     </div>
   )
 }
@@ -322,6 +386,10 @@ function CreateThreadComposer() {
       <div className="border-b px-4 py-3">
         <p className="text-xs text-muted-foreground">Comment on</p>
         <p className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</p>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Posting as {ctx.author?.name ?? "Local Author"}
+          {ctx.isFallbackAuthor && " (git identity not set)"}
+        </p>
       </div>
 
       <ScrollArea className="flex-1">
@@ -372,6 +440,31 @@ function CreateThreadComposer() {
   )
 }
 
+function CopyLinkButton() {
+  const ctx = useAnnotationContext()
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    if (typeof window === "undefined") return
+    const url = artifactPageUrl(ctx.project, ctx.slug, window.location.origin)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard unavailable or denied; keep the button quiet
+    }
+  }
+
+  return (
+    <Button variant="ghost" size="icon" onClick={handleCopy} title="Copy artifact URL">
+      <Link data-icon="only" />
+      <span className="sr-only">Copy artifact URL</span>
+      {copied && <span className="sr-only">Copied</span>}
+    </Button>
+  )
+}
+
 function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
   if (status === "resolved") {
     return (
@@ -390,15 +483,5 @@ function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
 }
 
 function TimeLabel({ date }: { date: string }) {
-  return useMemo(() => {
-    try {
-      const d = new Date(date)
-      return d.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      })
-    } catch {
-      return date
-    }
-  }, [date])
+  return useMemo(() => formatAnnotationTime(date), [date])
 }

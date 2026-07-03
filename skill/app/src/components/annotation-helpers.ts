@@ -40,3 +40,22 @@ export function getThreadCount(
 ): number {
   return getThreadsForNode(threads, nodeId, nodePath).length
 }
+
+export function cssEscape(value: string): string {
+  if (typeof window !== "undefined" && "CSS" in window && window.CSS.escape) {
+    return window.CSS.escape(value)
+  }
+  return value.replace(/(["'\\])/g, "\\$1")
+}
+
+export function findAnchorElement(nodeId: string | undefined, nodePath: string): Element | null {
+  if (typeof document === "undefined") return null
+  const selector = nodeId
+    ? `[data-va-node-id="${cssEscape(nodeId)}"]`
+    : `[data-va-node-path="${cssEscape(nodePath)}"]`
+  return document.querySelector(selector)
+}
+
+export function isAnchorOrphaned(nodeId: string | undefined, nodePath: string): boolean {
+  return !findAnchorElement(nodeId, nodePath)
+}
