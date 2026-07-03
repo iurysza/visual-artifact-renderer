@@ -10,10 +10,10 @@ const DATA_URI_RE = /^data:/i
  * Rules:
  * - Absolute HTTP(S), protocol-relative, and data URIs are passed through unchanged.
  * - `file://` URLs are rejected (they are not portable across machines).
- * - Relative paths are resolved against the artifact's project directory
- *   served at `/artifacts/data/artifacts/<project>/`.
+ * - Relative paths are resolved against the artifact's bundle assets directory
+ *   served at `/artifacts/data/artifacts/<project>/<slug>/assets/`.
  */
-export function resolveArtifactImageSrc(src: string, project: string): string {
+export function resolveArtifactImageSrc(src: string, project: string, slug: string): string {
   if (FILE_PROTOCOL_RE.test(src)) {
     throw new Error(`image src must not use file:// URLs: ${src}`)
   }
@@ -23,5 +23,5 @@ export function resolveArtifactImageSrc(src: string, project: string): string {
   }
 
   const normalized = src.replace(/^[\/]+/, "")
-  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/${normalized}`
+  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/assets/${normalized}`
 }

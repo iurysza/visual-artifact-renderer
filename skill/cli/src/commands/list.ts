@@ -1,10 +1,10 @@
-import { readdir, stat } from "node:fs/promises"
-import { join, resolve } from "node:path"
+import { readdir } from "node:fs/promises"
+import { resolve } from "node:path"
 import { loadConfig } from "../config.ts"
+import { isInsideArtifactsDir } from "../lib/paths.ts"
+import { listProjectArtifacts } from "../lib/scan.ts"
 import type { Logger } from "../logger.ts"
 import { dirExists } from "../util.ts"
-
-const ROUTE_SEGMENT_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export async function list(project: string | undefined, log: Logger): Promise<number> {
   const config = loadConfig()
@@ -17,7 +17,7 @@ export async function list(project: string | undefined, log: Logger): Promise<nu
 
   if (project) {
     const projectDir = resolve(artifactsDir, project)
-    if (!projectDir.startsWith(resolve(artifactsDir) + "/")) {
+    if (!isInsideArtifactsDir(projectDir, artifactsDir)) {
       log.error("Invalid project name")
       return 2
     }
@@ -25,7 +25,7 @@ export async function list(project: string | undefined, log: Logger): Promise<nu
       log.error(`Project not found: ${project}`)
       return 1
     }
-    const artifacts = await readProjectArtifacts(projectDir)
+    const artifacts = await listProjectArtifacts(projectDir)
     log.output({ project, artifacts })
     return 0
   }
@@ -34,8 +34,9 @@ export async function list(project: string | undefined, log: Logger): Promise<nu
   const entries = await readdir(artifactsDir, { withFileTypes: true })
   for (const entry of entries) {
     if (!entry.isDirectory()) continue
-    const projectDir = join(artifactsDir, entry.name)
-    const artifacts = await readProjectArtifacts(projectDir)
+    const projectDir = resolve(artifactsDir, entry.name)
+    if (!isInsideArtifactsDir(projectDir, artifactsDir)) continue
+    const artifacts = await listProjectArtifacts(projectDir)
     if (artifacts.length === 0) continue
     projects.push({
       name: entry.name,
@@ -54,21 +55,3 @@ export async function list(project: string | undefined, log: Logger): Promise<nu
   return 0
 }
 
-async function readProjectArtifacts(projectDir: string) {
-  const artifacts: { slug: string; title?: string; description?: string; modifiedAt: string }[] = []
-  try {
-    const files = await readdir(projectDir, { withFileTypes: true })
-    for (const file of files) {
-      if (!file.isFile() || !file.name.endsWith(".json")) continue
-      const slug = file.name.replace(/\.json$/, "")
-      if (!ROUTE_SEGMENT_RE.test(slug)) continue
-      const filePath = join(projectDir, file.name)
-      const stats = await stat(filePath)
-      artifacts.push({ slug, modifiedAt: stats.mtime.toISOString() })
-    }
-  } catch {
-    // ignore
-  }
-  artifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime())
-  return artifacts
-}

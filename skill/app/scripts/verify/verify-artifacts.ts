@@ -8,13 +8,15 @@ async function findArtifactFiles(dir: string): Promise<string[]> {
   const files: string[] = []
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        const subFiles = await findArtifactFiles(fullPath)
-        files.push(...subFiles)
-      } else if (entry.isFile() && entry.name.endsWith(".json")) {
-        files.push(fullPath)
+    for (const projectEntry of entries) {
+      if (!projectEntry.isDirectory()) continue
+      const projectName = projectEntry.name
+      const projectDir = path.join(dir, projectName)
+      const bundleEntries = await fs.readdir(projectDir, { withFileTypes: true })
+      for (const bundleEntry of bundleEntries) {
+        if (!bundleEntry.isDirectory()) continue
+        const artifactJson = path.join(projectDir, bundleEntry.name, "artifact.json")
+        files.push(artifactJson)
       }
     }
   } catch (error) {
@@ -34,9 +36,10 @@ async function main() {
     const raw = await fs.readFile(filePath, "utf8")
     const parsed = VisualArtifactSpecSchema.parse(JSON.parse(raw))
     const fileName = path.basename(filePath)
+    const slugDir = path.basename(path.dirname(filePath))
 
-    if (`${parsed.slug}.json` !== fileName) {
-      throw new Error(`${filePath} slug does not match filename ${parsed.slug}.json`)
+    if (fileName !== "artifact.json" || parsed.slug !== slugDir) {
+      throw new Error(`${filePath} slug does not match bundle directory ${parsed.slug}`)
     }
   }
 

@@ -4,6 +4,7 @@ import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-s
 
 export type ArtifactRenderContext = {
   project: string
+  slug: string
   data: VisualArtifactSpec["data"]
 }
 

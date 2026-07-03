@@ -1,8 +1,9 @@
 import { resolve, join } from "node:path"
-import { readdir, stat, readFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import type { Server } from "bun"
 import { loadConfig, localBaseUrl } from "../config.ts"
+import { artifactJsonPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
+import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
 import type { Logger } from "../logger.ts"
 import { dirExists, fileExists } from "../util.ts"
 import type { Config } from "../types.ts"
@@ -29,7 +30,6 @@ const MIME_TYPES: Record<string, string> = {
   ".map": "application/json; charset=utf-8",
 }
 
-const ROUTE_SEGMENT_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 // Live-fallback shells: static HTML pages served when an artifact exists on disk
 // but was created after the last `pnpm build`. The route folders live at
 // skill/app/src/app/shell-artifact and shell-project; do not delete them.
@@ -53,75 +53,7 @@ function stripMountPath(urlPath: string, mountPath: string): string | null {
   if (urlPath === mountPath || urlPath.startsWith(`${mountPath}/`)) {
     return urlPath.slice(mountPath.length) || "/"
   }
-  return urlPath
-}
-
-async function scanArtifacts(artifactsDir: string) {
-  const projects: { name: string; artifactCount: number; lastModifiedAt: string }[] = []
-  const allArtifacts: { slug: string; title?: string; description?: string; modifiedAt: string; project: string }[] = []
-
-  try {
-    const entries = await readdir(artifactsDir, { withFileTypes: true })
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-
-      const projectDir = join(artifactsDir, entry.name)
-      const files = await readdir(projectDir, { withFileTypes: true })
-      const projectArtifacts: { slug: string; title?: string; description?: string; modifiedAt: string }[] = []
-
-      for (const file of files) {
-        if (!file.isFile() || !file.name.endsWith(".json")) continue
-
-        const slug = file.name.replace(/\.json$/, "")
-        if (!ROUTE_SEGMENT_RE.test(slug)) continue
-        if (slug === entry.name) continue
-
-        const filePath = join(projectDir, file.name)
-        const stats = await stat(filePath)
-        const meta = await readArtifactMeta(filePath)
-
-        const artifact = {
-          slug,
-          title: meta.title,
-          description: meta.description,
-          modifiedAt: stats.mtime.toISOString(),
-        }
-        projectArtifacts.push(artifact)
-        allArtifacts.push({ ...artifact, project: entry.name })
-      }
-
-      if (projectArtifacts.length === 0) continue
-
-      projectArtifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime())
-      const lastModifiedAt = projectArtifacts[0].modifiedAt
-
-      projects.push({
-        name: entry.name,
-        artifactCount: projectArtifacts.length,
-        lastModifiedAt,
-      })
-    }
-  } catch (error: any) {
-    if (error.code !== "ENOENT") throw error
-  }
-
-  projects.sort((a, b) => new Date(b.lastModifiedAt).getTime() - new Date(a.lastModifiedAt).getTime())
-  allArtifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime())
-
-  return { projects, artifacts: allArtifacts }
-}
-
-async function readArtifactMeta(filePath: string): Promise<{ title?: string; description?: string }> {
-  try {
-    const raw = await readFile(filePath, "utf8")
-    const parsed = JSON.parse(raw)
-    return {
-      title: typeof parsed.title === "string" && parsed.title.length > 0 ? parsed.title : undefined,
-      description: typeof parsed.description === "string" && parsed.description.length > 0 ? parsed.description : undefined,
-    }
-  } catch {
-    return {}
-  }
+  return null
 }
 
 export interface ServeOpts {
@@ -214,63 +146,66 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
   return 0
 }
 
-async function serveData(reqPath: string, artifactsDir: string, dataPath: string): Promise<Response> {
+async function serveData(stripped: string, artifactsDir: string, dataPath: string): Promise<Response> {
+  const reqPath = stripped
+
   if (reqPath === `${dataPath}/index.json`) {
     const { projects, artifacts } = await scanArtifacts(artifactsDir)
     const body = JSON.stringify({ projects, recent: artifacts.slice(0, 3) }, null, 2)
-    return new Response(body, { headers: { "Content-Type": "application/json; charset=utf-8" } })
+    return jsonResponse(body)
   }
 
-  const prefix = `${dataPath}/`
-  if (reqPath.startsWith(prefix) && reqPath.endsWith("/index.json")) {
-    const relative = reqPath.slice(prefix.length).replace(/\/index\.json$/, "")
-    if (!ROUTE_SEGMENT_RE.test(relative)) {
-      return new Response("Not found", { status: 404 })
-    }
-    const projectDir = resolve(artifactsDir, relative)
-    if (!projectDir.startsWith(resolve(artifactsDir) + "/")) {
-      return new Response("Not found", { status: 404 })
-    }
+  const projectIndexMatch = matchProjectIndex(reqPath, dataPath)
+  if (projectIndexMatch) {
+    const route = parseProjectRoute(projectIndexMatch.project)
+    if (!route) return notFound()
+    const projectDir = resolve(artifactsDir, route.project)
+    if (!isInsideArtifactsDir(projectDir, artifactsDir)) return notFound()
+    if (!(await dirExists(projectDir))) return notFound()
     const artifacts = await listProjectArtifacts(projectDir)
-    const body = JSON.stringify({ project: relative, artifacts }, null, 2)
-    return new Response(body, { headers: { "Content-Type": "application/json; charset=utf-8" } })
+    const body = JSON.stringify({ project: route.project, artifacts }, null, 2)
+    return jsonResponse(body)
   }
 
-  const prefix2 = `${dataPath}/`
-  if (reqPath.startsWith(prefix2)) {
-    const relative = reqPath.slice(prefix2.length).replace(/^(\.\.\/)+/, "").replace(/^\.\.$/, "")
-    const filePath = resolve(artifactsDir, relative)
-    const resolvedArtifactsDir = resolve(artifactsDir)
-    if (!filePath.startsWith(resolvedArtifactsDir + "/") && filePath !== resolvedArtifactsDir) {
-      return new Response("Not found", { status: 404 })
-    }
-    if (await fileExists(filePath)) {
-      const file = Bun.file(filePath)
-      return new Response(file)
-    }
+  const artifactDataMatch = matchArtifactData(reqPath, dataPath)
+  if (artifactDataMatch) {
+    const route = parseBundleRoute(artifactDataMatch.project, artifactDataMatch.slug)
+    if (!route) return notFound()
+    const filePath = artifactJsonPath(artifactsDir, route.project, route.slug)
+    if (!isInsideArtifactsDir(filePath, artifactsDir)) return notFound()
+    if (!(await fileExists(filePath))) return notFound()
+    return new Response(Bun.file(filePath))
   }
 
-  return new Response("Artifact not found", { status: 404 })
+  return notFound()
 }
 
-async function listProjectArtifacts(projectDir: string) {
-  const artifacts: { slug: string; title?: string; description?: string; modifiedAt: string }[] = []
-  try {
-    const files = await readdir(projectDir, { withFileTypes: true })
-    for (const file of files) {
-      if (!file.isFile() || !file.name.endsWith(".json")) continue
-      const slug = file.name.replace(/\.json$/, "")
-      if (!ROUTE_SEGMENT_RE.test(slug)) continue
-      const filePath = join(projectDir, file.name)
-      const stats = await stat(filePath)
-      const meta = await readArtifactMeta(filePath)
-      artifacts.push({ slug, title: meta.title, description: meta.description, modifiedAt: stats.mtime.toISOString() })
-    }
-  } catch (error: any) {
-    if (error.code !== "ENOENT") throw error
-  }
-  artifacts.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime())
-  return artifacts
+function jsonResponse(body: string): Response {
+  return new Response(body, { headers: { "Content-Type": "application/json; charset=utf-8" } })
+}
+
+function notFound(): Response {
+  return new Response("Not found", { status: 404 })
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function matchProjectIndex(reqPath: string, dataPath: string): { project: string } | null {
+  const pattern = new RegExp(`^${escapeRegex(dataPath)}/([a-z0-9]+(?:-[a-z0-9]+)*)/index\\.json$`)
+  const match = reqPath.match(pattern)
+  if (!match) return null
+  return { project: match[1] }
+}
+
+function matchArtifactData(reqPath: string, dataPath: string): { project: string; slug: string } | null {
+  const pattern = new RegExp(
+    `^${escapeRegex(dataPath)}/([a-z0-9]+(?:-[a-z0-9]+)*)/([a-z0-9]+(?:-[a-z0-9]+)*)/artifact\\.json$`,
+  )
+  const match = reqPath.match(pattern)
+  if (!match) return null
+  return { project: match[1], slug: match[2] }
 }
 
 async function serveStatic(reqPath: string, outDir: string): Promise<Response | null> {
@@ -300,26 +235,20 @@ async function serveDirectoryIndex(reqPath: string, outDir: string): Promise<Res
 function artifactRouteFromPath(reqPath: string): { project: string; slug: string } | null {
   const segments = reqPath.split("/").filter(Boolean)
   if (segments.length !== 2) return null
-  const [project, slug] = segments
-  if (!ROUTE_SEGMENT_RE.test(project) || !ROUTE_SEGMENT_RE.test(slug)) return null
-  if (["data", "_next", "shell-artifact", "shell-project"].includes(project)) return null
-  return { project, slug }
+  return parseBundleRoute(segments[0], segments[1])
 }
 
 function projectIndexRouteFromPath(reqPath: string): { project: string } | null {
   const segments = reqPath.split("/").filter(Boolean)
   if (segments.length !== 1) return null
-  const [project] = segments
-  if (!ROUTE_SEGMENT_RE.test(project)) return null
-  if (["data", "_next", "shell-artifact", "shell-project"].includes(project)) return null
-  return { project }
+  return parseProjectRoute(segments[0])
 }
 
 async function serveLiveArtifactShell(reqPath: string, artifactsDir: string, outDir: string): Promise<Response | null> {
   const route = artifactRouteFromPath(reqPath)
   if (!route) return null
-  const jsonPath = resolve(artifactsDir, route.project, `${route.slug}.json`)
-  if (!jsonPath.startsWith(resolve(artifactsDir) + "/")) return null
+  const jsonPath = artifactJsonPath(artifactsDir, route.project, route.slug)
+  if (!isInsideArtifactsDir(jsonPath, artifactsDir)) return null
   if (!(await fileExists(jsonPath))) return null
   const shellPath = join(outDir, LIVE_ARTIFACT_SHELL, "index.html")
   if (!(await fileExists(shellPath))) return null
@@ -331,7 +260,7 @@ async function serveLiveProjectIndexShell(reqPath: string, artifactsDir: string,
   const route = projectIndexRouteFromPath(reqPath)
   if (!route) return null
   const projectDir = resolve(artifactsDir, route.project)
-  if (!projectDir.startsWith(resolve(artifactsDir) + "/")) return null
+  if (!isInsideArtifactsDir(projectDir, artifactsDir)) return null
   if (!(await dirExists(projectDir))) return null
   const shellPath = join(outDir, LIVE_PROJECT_SHELL, "index.html")
   if (!(await fileExists(shellPath))) return null

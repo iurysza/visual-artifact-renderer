@@ -7,8 +7,8 @@ import { componentRegistry } from "@/components/component-registry"
 import type { ArtifactRenderContext } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
 
-export function VisualArtifactRenderer({ spec, project }: { spec: VisualArtifactSpec; project: string }) {
-  const context: ArtifactRenderContext = { project, data: spec.data }
+export function VisualArtifactRenderer({ spec, project, slug }: { spec: VisualArtifactSpec; project: string; slug: string }) {
+  const context: ArtifactRenderContext = { project, slug, data: spec.data }
   const datasetCount = Object.keys(spec.data ?? {}).length
   const nodeCount = countNodes(spec.nodes)
   const componentCount = collectNodeTypes(spec.nodes).size

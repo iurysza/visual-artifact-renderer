@@ -1,7 +1,8 @@
-import { dirname, resolve } from "node:path"
+import { resolve } from "node:path"
 import { writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import { artifactBaseUrl, loadConfig, localBaseUrl } from "../config.ts"
+import { artifactJsonPath, assetsDirPath, bundleDirPath } from "../lib/paths.ts"
 import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
@@ -100,9 +101,11 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     const config = loadConfig()
     const projectPath = opts.project ? resolve(opts.project) : resolve(process.cwd())
     const projectName = deriveProjectName(projectPath)
-    const filePath = resolve(config.artifactsDir, projectName, `${spec.slug}.json`)
+    const bundleDir = bundleDirPath(config.artifactsDir, projectName, spec.slug)
+    const filePath = artifactJsonPath(config.artifactsDir, projectName, spec.slug)
 
-    await ensureDir(dirname(filePath))
+    await ensureDir(bundleDir)
+    await ensureDir(assetsDirPath(config.artifactsDir, projectName, spec.slug))
     await writeFile(filePath, `${JSON.stringify(spec, null, 2)}\n`, "utf8")
 
     if (opts.serve !== false) {
@@ -118,14 +121,16 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
         projectName,
         projectPath,
         path: filePath,
+        bundleDir,
         url,
       })
     } else if (opts.plain) {
       log.outputText(filePath)
     } else {
       log.success(`Created visual artifact ${spec.slug} in project ${projectName}`)
-      log.log(`  path: ${filePath}`)
-      log.log(`  url:  ${url}`)
+      log.log(`  bundle: ${bundleDir}`)
+      log.log(`  path:   ${filePath}`)
+      log.log(`  url:    ${url}`)
     }
 
     return 0

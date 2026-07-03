@@ -33,9 +33,14 @@ function publicDataPath(segments: string[]): string {
   return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${segments.join("/")}`
 }
 
-/** Absolute public path to an artifact JSON payload. */
+/** Absolute public path to a bundled artifact JSON payload. */
 export function artifactDataPath(project: string, slug: string): string {
-  return publicDataPath([project, `${slug}.json`])
+  return publicDataPath([project, slug, "artifact.json"])
+}
+
+/** Absolute public path to a bundled annotation JSON payload. */
+export function artifactAnnotationsPath(project: string, slug: string): string {
+  return publicDataPath([project, slug, "annotations.json"])
 }
 
 /** Absolute public path to the live home index JSON. */
@@ -66,9 +71,14 @@ export function resolveBasePath(): string {
   return match ? match[1] : BASE_PATH
 }
 
-/** Absolute public path to an artifact JSON payload, resolved at runtime. */
+/** Absolute public URL to a bundled artifact JSON payload, resolved at runtime. */
 export function artifactDataUrl(project: string, slug: string): string {
-  return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}.json`
+  return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/artifact.json`
+}
+
+/** Absolute public URL to a bundled annotation JSON payload, resolved at runtime. */
+export function artifactAnnotationsUrl(project: string, slug: string): string {
+  return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/annotations.json`
 }
 
 /**

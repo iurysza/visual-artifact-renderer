@@ -7,6 +7,16 @@ const ARTIFACTS_DIR = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
   ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
   : path.resolve(process.cwd(), "..", "artifacts")
 
+const ARTIFACT_JSON = "artifact.json"
+
+function artifactBundleDir(projectName: string, slug: string): string {
+  return path.join(ARTIFACTS_DIR, projectName, slug)
+}
+
+function artifactJsonPath(projectName: string, slug: string): string {
+  return path.join(artifactBundleDir(projectName, slug), ARTIFACT_JSON)
+}
+
 export interface ProjectListing {
   name: string
   artifactCount: number
@@ -62,14 +72,16 @@ export async function listArtifactsInProject(projectName: string): Promise<Artif
     const artifacts: ArtifactListing[] = []
 
     for (const entry of entries) {
-      if (!entry.isFile() || !entry.name.endsWith(".json")) continue
+      if (!entry.isDirectory()) continue
 
-      const slug = entry.name.replace(/\.json$/, "")
+      const slug = entry.name
       const parsedSlug = ArtifactSlugSchema.safeParse(slug)
       if (!parsedSlug.success) continue
 
-      const filePath = path.join(projectDir, entry.name)
-      const stats = await fs.stat(filePath)
+      const filePath = artifactJsonPath(projectName, parsedSlug.data)
+      const stats = await fs.stat(filePath).catch(() => null)
+      if (!stats) continue
+
       const raw = await fs.readFile(filePath, "utf8")
       let title = slug
       let description: string | undefined
@@ -109,7 +121,7 @@ export async function getVisualArtifactSpec(projectName: string, slug: string): 
     return null
   }
 
-  const filePath = path.join(ARTIFACTS_DIR, parsedProject.data, `${parsedSlug.data}.json`)
+  const filePath = artifactJsonPath(parsedProject.data, parsedSlug.data)
 
   try {
     const file = await fs.readFile(filePath, "utf8")

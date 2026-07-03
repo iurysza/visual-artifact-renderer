@@ -130,7 +130,7 @@ export function renderFileTree({ node }: AdapterArgs<"file-tree">) {
 
 export function renderImage({ node, context }: AdapterArgs<"image">) {
   const { src, alt, caption, aspect } = node.props
-  return <ArtifactImage src={resolveArtifactImageSrc(src, context.project)} alt={alt} caption={caption} aspect={aspect} />
+  return <ArtifactImage src={resolveArtifactImageSrc(src, context.project, context.slug)} alt={alt} caption={caption} aspect={aspect} />
 }
 
 export function renderPieChart({ node, context }: AdapterArgs<"pie-chart">) {
