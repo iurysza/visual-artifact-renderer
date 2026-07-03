@@ -239,7 +239,25 @@ Node reference: [`docs/nodes.md`](./docs/nodes.md).
 
 ## Annotations
 
-Artifacts support node-level annotation threads. Enable annotation mode in the renderer, select a node, and create a comment thread. Replies, resolve, and reopen actions persist to the bundle's `annotations.json`.
+Artifacts support node-level annotation threads. Open any artifact page and click the **Comments** toggle in the header to enter annotation mode.
+
+### Creating a comment
+
+1. Enable comment mode with the **Comments** toggle.
+2. Hover over a rendered node to see a subtle outline; click the node to select it.
+3. Write a comment in the right sidebar composer and click **Post**.
+4. The thread is anchored to the node and saved to the bundle's `annotations.json`.
+
+### Replying, resolving, and reopening
+
+- Click a thread in the sidebar to view its messages and reply.
+- Click **Resolve thread** to mark a thread as resolved.
+- Click **Reopen** on a resolved thread to continue the discussion.
+- The thread count badge on each node updates in real time.
+
+### Sharing
+
+Use the **Copy link** button in the sidebar header to copy the canonical artifact page URL.
 
 ### Local-only writes
 

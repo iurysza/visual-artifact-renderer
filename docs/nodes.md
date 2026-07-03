@@ -128,22 +128,22 @@ Keep data values well-formed. The CLI validates structural correctness (types, r
 
 ## Local images
 
-For local assets, place the file next to the artifact JSON under:
+For local assets, place the file inside the artifact's `assets` directory:
 
 ```text
-<skill-root>/artifacts/<project>/hero.png
+<skill-root>/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 Then reference it with a relative path:
 
 ```json
-{ "type": "image", "props": { "src": "hero.png", "alt": "Artifact hero" } }
+{ "type": "image", "props": { "src": "assets/hero.png", "alt": "Artifact hero" } }
 ```
 
 The renderer serves it as:
 
 ```text
-/artifacts/data/artifacts/<project>/hero.png
+/artifacts/data/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 ## Copyable pattern: architecture brief

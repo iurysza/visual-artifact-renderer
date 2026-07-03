@@ -6,10 +6,12 @@
 
 | Concept | Meaning | Source |
 |---|---|---|
-| Artifact | A rendered visual page backed by one JSON spec. | `skill/artifacts/<project>/<slug>.json` by default |
-| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `skill/app/src/lib/artifact-schema.ts` |
+| Artifact | A rendered visual page backed by one JSON spec and optional annotation threads. | `skill/artifacts/<project>/<slug>/artifact.json` + `annotations.json` |
+| Artifact bundle | The directory holding `artifact.json`, `annotations.json`, and `assets/`. | `skill/artifacts/<project>/<slug>/` |
+| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `skill/app/src/lib/contract/artifact-schema.ts` |
 | Node | One typed UI unit in `nodes[]`: text, stat-card, chart, Mermaid, etc. | schema + manifest |
 | Node type | Discriminated `type` value. The LLM chooses from the contract. | `ARTIFACT_NODE_TYPES` |
+| Node identity | `metadata.id` (preferred) or deterministic node path used to anchor comments. | rendered `data-va-node-*` attributes |
 | Data key | Name under `spec.data` referenced by data-backed nodes. | `dataKey` props |
 | Adapter | Trusted React renderer for one node type. | `skill/app/src/components/adapters/*` |
 | Registry | Node dispatch table. | `skill/app/src/components/component-registry.tsx` |
@@ -19,6 +21,10 @@
 | Renderer | Next.js app that renders saved specs. | `skill/app` |
 | CLI | Bun binary that validates, writes, serves, and opens artifacts. | `skill/cli` |
 | Pi extension | Pi tool wrapper that delegates to the CLI. | `pi-extension/visual-artifact.ts` |
+| Annotation document | Persisted thread collection for one artifact. | `annotations.json` |
+| Annotation thread | Anchored discussion with status and messages. | `@agents/visual-artifact-annotations` |
+| Annotation anchor | Node identity (`nodeId` or `nodePath`), type, and optional snippet/coordinates. | `@agents/visual-artifact-annotations` |
+| Annotation author | Name/email from git config or local anonymous fallback. | `@agents/visual-artifact-annotations` |
 
 ## 2. Layers
 
@@ -31,16 +37,20 @@
 │ Tool boundary; sends JSON to the CLI.                        │
 ├─────────────────────────────────────────────────────────────┤
 │ visual-artifact CLI                                          │
-│ Validates, derives project, writes, serves, lists, opens.     │
+│ Validates, derives project, writes bundle, serves, lists,     │
+│ opens, and persists annotation mutations.                     │
 ├─────────────────────────────────────────────────────────────┤
 │ Contract                                                     │
 │ Schema + manifest exported to artifact-contract.json.         │
+├─────────────────────────────────────────────────────────────┤
+│ Shared annotation schema                                     │
+│ Zod parsers shared by renderer and CLI.                       │
 ├─────────────────────────────────────────────────────────────┤
 │ Renderer                                                     │
 │ Next.js shell → client loaders → renderer → adapters.         │
 ├─────────────────────────────────────────────────────────────┤
 │ Storage                                                      │
-│ <skill-root>/artifacts/<project>/<slug>.json by default.      │
+│ <skill-root>/artifacts/<project>/<slug>/ by default.          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -53,7 +63,7 @@ Agent JSON
   → create_visual_artifact
   → visual-artifact create - --project <cwd> --json
   → validate against the exported contract
-  → write <skill-root>/artifacts/<project>/<slug>.json
+  → write <skill-root>/artifacts/<project>/<slug>/artifact.json
   → return /artifacts/<project>/<slug>/
 ```
 
@@ -63,10 +73,12 @@ Agent JSON
 /artifacts/<project>/<slug>/
   → static page shell
   → artifactParamsFromPath()
-  → /artifacts/data/artifacts/<project>/<slug>.json
+  → /artifacts/data/artifacts/<project>/<slug>/artifact.json
   → VisualArtifactSpecSchema.parse()
   → renderNodes()
   → componentRegistry[type]
+  → AnnotationProvider loads /artifacts/data/artifacts/<project>/<slug>/annotations.json
+  → render annotation UI
 ```
 
 ### Index rendering
@@ -83,6 +95,17 @@ Agent JSON
   → artifacts in one project
 ```
 
+### Annotation mutation
+
+```text
+Browser mutation
+  → /artifacts/api/annotations/<project>/<slug>
+  → CLI validates with shared annotation schema
+  → applyMutations()
+  → write <skill-root>/artifacts/<project>/<slug>/annotations.json
+  → return updated AnnotationDocument
+```
+
 ## 4. Boundary rules
 
 | Boundary | Rule |
@@ -91,17 +114,20 @@ Agent JSON
 | CLI → disk | Validate before writing. |
 | Disk → renderer | Zod parse before render. |
 | Renderer → UI | Only registered adapters render nodes. |
-| Images/buttons | No `file://`; use relative sidecar assets or HTTPS/app URLs. |
+| Images/buttons | No `file://`; use relative sidecar assets or HTTPS URLs. |
 | Diagrams | Mermaid is text; `svg-diagram` is sandboxed iframe HTML. |
+| Browser → CLI annotations | Mutations must validate against shared annotation schema. |
+| Anchor → thread | Identity prefers `nodeId`, falls back to `nodePath`. |
 
 ## 5. Single sources of truth
 
 | Concern | File |
 |---|---|
-| Spec shape | `skill/app/src/lib/artifact-schema.ts` |
-| LLM-facing node descriptions | `skill/app/src/lib/artifact-manifest.ts` |
+| Spec shape | `skill/app/src/lib/contract/artifact-schema.ts` |
+| LLM-facing node descriptions | `skill/app/src/lib/contract/artifact-manifest.ts` |
 | Exported runtime contract | `skill/artifact-contract.json` |
-| URL/path math | `skill/app/src/lib/paths.ts` |
+| Shared annotation schema | `skill/shared/src/annotations.ts` |
+| URL/path math | `skill/app/src/lib/artifacts/paths.ts` |
 | CLI defaults and env vars | `skill/cli/src/config.ts` |
 | Project-name derivation | `skill/cli/src/util.ts` |
 | Node dispatch | `skill/app/src/components/component-registry.tsx` |
@@ -115,3 +141,5 @@ Agent JSON
 - Contract must be regenerated after schema or manifest changes.
 - Renderer commands run from `skill/app`; CLI commands run from `skill/cli` or the installed binary.
 - The `/artifacts` base path is part of the public URL contract.
+- Annotation JSON is read with the shared Zod schema in both renderer and CLI.
+- Annotation mutations are written only by the local CLI server; static hosts cannot accept browser edits.

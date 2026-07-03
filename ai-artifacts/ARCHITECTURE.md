@@ -17,6 +17,8 @@ flowchart LR
   Server --> App[Next.js renderer]
   App --> Adapters[trusted node adapters]
   Adapters --> Browser[artifact page]
+  Browser --> Annotations[annotation API]
+  Annotations --> Store
 ```
 
 The project has four runtime faces:
@@ -41,8 +43,9 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | Adapters | Leaf, data-backed, and layout node renderers. | `src/components/adapters/*.tsx` |
 | UI primitives | shadcn/Base UI components and artifact-specific primitives. | `src/components/ui/*`, `src/components/artifact-primitives.tsx` |
 | Diagrams | Mermaid renderer and sandboxed SVG iframe. | `src/components/mermaid/*`, `src/components/svg-diagram.tsx` |
-| Schema/manifest | Contract source of truth. | `src/lib/artifact-schema.ts`, `src/lib/artifact-manifest.ts` |
-| Paths | URL/data-route helpers. | `src/lib/paths.ts` |
+| Schema/manifest | Contract source of truth. | `src/lib/contract/artifact-schema.ts`, `src/lib/contract/artifact-manifest.ts` |
+| Paths | URL/data-route helpers. | `src/lib/artifacts/paths.ts` |
+| Annotations | Thread state, UI, and API client. | `src/components/annotation-provider.tsx`, `src/components/annotation-panel.tsx`, `src/components/annotation-helpers.ts`, `src/lib/artifacts/annotations.ts` |
 
 ### 2.2 CLI (`skill/cli`)
 
@@ -58,7 +61,19 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 
 The CLI finds the skill root by walking from the binary/script path, then by checking `VISUAL_ARTIFACT_SKILL_ROOT`, `~/.agents/skills/visual-artifact`, and `~/.pi/skills/visual-artifact`.
 
-### 2.3 Pi extension (`pi-extension`)
+### 2.3 Shared annotation schema (`skill/shared`)
+
+The `@agents/visual-artifact-annotations` package is the single source of truth for annotation data shapes and parsers. It lives in `skill/shared` and is linked into both the renderer and the CLI. It defines:
+
+- `AnnotationAuthor` — name and email, with a local anonymous fallback.
+- `AnnotationAnchor` — `nodeId`, `nodePath`, `nodeType`, optional `textSnippet`, and optional `x`/`y` coordinates.
+- `AnnotationThread` — id, anchor, status (`open` | `resolved`), timestamps, and messages.
+- `AnnotationMutation` — `createThread`, `addMessage`, `resolveThread`, `reopenThread`.
+- `AnnotationDocument` — version, project, slug, and threads.
+
+Both the renderer and the CLI parse annotation payloads with the same Zod schemas, so JSON read from disk or posted from the browser cannot silently diverge.
+
+### 2.4 Pi extension (`pi-extension`)
 
 The extension registers:
 
@@ -74,8 +89,9 @@ The extension registers:
 |---|---|---|
 | `skill/artifact-contract.json` | `skill/app/scripts/export-contract.ts` | CLI, Pi extension through CLI, agents via `visual-artifact contract`, docs |
 | `skill/cli/src/assets/contract.json` | CLI build copies contract | Compiled CLI fallback |
-| `VisualArtifactSpecSchema` | `skill/app/src/lib/artifact-schema.ts` | Renderer and `verify-artifacts` |
-| `artifactManifest` | `skill/app/src/lib/artifact-manifest.ts` | Contract exporter and docs |
+| `VisualArtifactSpecSchema` | `skill/app/src/lib/contract/artifact-schema.ts` | Renderer and `verify-artifacts` |
+| `artifactManifest` | `skill/app/src/lib/contract/artifact-manifest.ts` | Contract exporter and docs |
+| `@agents/visual-artifact-annotations` | `skill/shared/src/annotations.ts` | Renderer and CLI for annotation data |
 
 ## 3. Runtime flows
 
@@ -99,13 +115,25 @@ Agent builds spec
 Browser opens /artifacts/<project>/<slug>/
   → static shell loads
   → ClientArtifactLoader parses project/slug from URL
-  → fetch /artifacts/data/artifacts/<project>/<slug>.json
+  → fetch /artifacts/data/artifacts/<project>/<slug>/artifact.json
   → Zod parse as VisualArtifactSpec
   → VisualArtifactRenderer renders nodes
   → componentRegistry dispatches to adapters
 ```
 
-### 3.3 Static export + live JSON
+### 3.3 Render annotations
+
+```text
+Browser opens /artifacts/<project>/<slug>/
+  → AnnotationProvider loads /artifacts/data/artifacts/<project>/<slug>/annotations.json
+  → parse as AnnotationDocument
+  → render comment toggle, node outlines, thread badges, and sidebar
+  → user mutation posts to /artifacts/api/annotations/<project>/<slug>
+  → CLI validates mutations, applies them, writes annotations.json
+  → UI refetches/updates optimistically
+```
+
+### 3.4 Static export + live JSON
 
 ```text
 cd skill/app && pnpm build
@@ -122,12 +150,27 @@ This is why new artifacts can be created after build without rebuilding the rend
 
 ## 4. Filesystem and URL contracts
 
+Artifacts are stored as bundles:
+
+```text
+<skill-root>/artifacts/
+  <project>/
+    <slug>/
+      artifact.json
+      annotations.json
+      assets/
+```
+
 | Path | Role |
 |---|---|
-| `<skill-root>/artifacts/<project>/<slug>.json` | Default artifact storage. |
+| `<skill-root>/artifacts/<project>/<slug>/artifact.json` | Artifact spec inside a bundle. |
+| `<skill-root>/artifacts/<project>/<slug>/annotations.json` | Persisted annotation threads for the artifact. |
+| `<skill-root>/artifacts/<project>/<slug>/assets/` | Sidecar images and other assets. |
 | `<skill-root>/app/out` | Static renderer export. |
 | `/artifacts/<project>/<slug>/` | Artifact page route. |
-| `/artifacts/data/artifacts/<project>/<slug>.json` | Public JSON endpoint. |
+| `/artifacts/data/artifacts/<project>/<slug>/artifact.json` | Public artifact JSON endpoint. |
+| `/artifacts/data/artifacts/<project>/<slug>/annotations.json` | Public annotation JSON endpoint. |
+| `/artifacts/api/annotations/<project>/<slug>` | Annotation mutation endpoint. |
 | `/artifacts/data/artifacts/index.json` | Live home index. |
 | `/artifacts/data/artifacts/<project>/index.json` | Live project index. |
 
@@ -154,13 +197,17 @@ Agents lose arbitrary expressiveness, but gain stable rendering, smaller prompts
 
 The renderer uses Zod. The CLI uses plain TypeScript validation against exported JSON. This duplicates some rules, but catches bad specs before disk writes and keeps the compiled CLI independent from renderer source.
 
-### Static app, live data
+### Static app, live data, and annotations
 
-Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. The fallback shell is the bridge for artifacts created after the last build.
+Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. The annotation mutation endpoint requires the local CLI server because it writes to disk; a static host can serve the annotation JSON but cannot accept edits from browser JavaScript. The fallback shell is the bridge for artifacts created after the last build.
 
-### Skill-root storage
+### Skill-root bundle storage
 
-Artifacts live with the installed skill by default, not inside the caller repo. That keeps generated output local and avoids mutating arbitrary projects. Use `VISUAL_ARTIFACT_ARTIFACTS_DIR` when a central store is needed.
+Artifacts are stored as bundles (`artifact.json`, `annotations.json`, `assets/`) under the skill root by default. This keeps generated output local and makes it easy to copy or share an artifact with its discussion intact. Use `VISUAL_ARTIFACT_ARTIFACTS_DIR` when a central store is needed.
+
+### Annotation persistence
+
+Annotation mutations are validated by the shared schema, applied by the CLI, and written to `annotations.json`. The renderer uses optimistic UI updates with a rollback on error, so the UX feels immediate while the filesystem remains the source of truth.
 
 ## 6. Change hotspots
 
@@ -168,3 +215,4 @@ Artifacts live with the installed skill by default, not inside the caller repo. 
 - URL/path change: `skill/app/src/lib/paths.ts`, CLI serve/create/open, README/docs.
 - Storage change: CLI config, serve/list/open/create, docs, extension expectations.
 - Contract change: export contract, verify artifacts, rebuild CLI if bundled fallback matters.
+- Annotation change: update shared schema, then both renderer and CLI tests; keep boundary fixtures in sync.
