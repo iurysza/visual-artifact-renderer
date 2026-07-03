@@ -1,28 +1,50 @@
 "use client"
 
-import { MessageSquare } from "lucide-react"
+import { Crosshair, MessageSquare } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useAnnotationContext } from "@/components/annotation-provider"
 
 export function AnnotationToggle() {
-  const { isCommentMode, toggleCommentMode, totalThreadCount } = useAnnotationContext()
+  const ctx = useAnnotationContext()
+  const active = ctx.isCommentMode
 
   return (
     <Button
-      variant={isCommentMode ? "default" : "outline"}
+      variant={active ? "secondary" : "outline"}
       size="sm"
-      onClick={toggleCommentMode}
-      aria-pressed={isCommentMode}
-      aria-label={isCommentMode ? "Exit comment mode" : "Enter comment mode"}
+      onClick={() => (active ? ctx.closeComments() : ctx.openComments())}
+      aria-pressed={active}
+      aria-label={active ? "Close comments" : "Open comments"}
+      className="rounded-full"
     >
       <MessageSquare data-icon="inline-start" />
-      {isCommentMode ? "Comments on" : "Comments"}
-      {totalThreadCount > 0 && (
-        <span className="ml-1.5 rounded-full bg-primary-foreground/20 px-1.5 py-0 text-[10px] font-medium">
-          {totalThreadCount}
+      Comments
+      {ctx.totalThreadCount > 0 && (
+        <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0 text-[10px] font-medium">
+          {ctx.totalThreadCount}
         </span>
       )}
+    </Button>
+  )
+}
+
+export function NodePickToggle() {
+  const ctx = useAnnotationContext()
+  const active = ctx.isPickingNode
+
+  return (
+    <Button
+      variant={active ? "default" : "outline"}
+      size="sm"
+      onClick={() => (active ? ctx.stopNodePick() : ctx.startNodePick())}
+      aria-pressed={active}
+      aria-label={active ? "Stop picking a node" : "Pick a node to comment"}
+      title={active ? "Stop picking a node" : "Pick a node to comment"}
+      className="rounded-full"
+    >
+      <Crosshair data-icon="only" />
+      <span className="sr-only">Pick a node to comment</span>
     </Button>
   )
 }

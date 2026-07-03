@@ -5,6 +5,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home } from "lucide-react"
 
+import { useOptionalAnnotationContext } from "@/components/annotation-provider"
+import { AnnotationToggle, NodePickToggle } from "@/components/annotation-toggle"
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,6 +28,7 @@ function humanize(slug: string) {
 
 export function SiteHeader() {
   const pathname = usePathname()
+  const optionalCtx = useOptionalAnnotationContext()
   const routePath = pathname?.startsWith(BASE_PATH)
     ? pathname.slice(BASE_PATH.length) || "/"
     : pathname || "/"
@@ -73,7 +77,15 @@ export function SiteHeader() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <ThemeToggle className="shrink-0" />
+        <div className="flex items-center gap-2">
+          {optionalCtx && (
+            <>
+              <AnnotationToggle />
+              <NodePickToggle />
+            </>
+          )}
+          <ThemeToggle className="shrink-0" />
+        </div>
       </div>
     </header>
   )

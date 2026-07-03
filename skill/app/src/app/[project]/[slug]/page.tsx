@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { listProjects, listArtifactsInProject, getVisualArtifactSpec } from "@/lib/artifacts/artifacts"
-import { ClientArtifactLoader } from "@/components/client-artifact-loader"
+import { ArtifactPageShell } from "@/components/artifact-page-shell"
 
 export async function generateStaticParams() {
   const projects = await listProjects()
@@ -40,8 +40,8 @@ export default async function ArtifactPage({
 
   if (initialSpec) {
     // Render from the build-time spec immediately, then re-fetch client-side for live updates.
-    return <ClientArtifactLoader project={project} slug={slug} initialSpec={initialSpec} />
+    return <ArtifactPageShell project={project} slug={slug} initialSpec={initialSpec} />
   }
 
-  return <ClientArtifactLoader project={project} slug={slug} />
+  return <ArtifactPageShell project={project} slug={slug} />
 }

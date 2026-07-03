@@ -6,8 +6,7 @@ import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-s
 import { componentRegistry } from "@/components/component-registry"
 import type { ArtifactRenderContext, RenderNodes } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
-import { AnnotationProvider, useAnnotationContext } from "@/components/annotation-provider"
-import { AnnotationToggle } from "@/components/annotation-toggle"
+import { useAnnotationContext } from "@/components/annotation-provider"
 import { AnnotationPanel } from "@/components/annotation-panel"
 
 export function VisualArtifactRenderer({
@@ -19,11 +18,7 @@ export function VisualArtifactRenderer({
   project: string
   slug: string
 }) {
-  return (
-    <AnnotationProvider project={project} slug={slug}>
-      <VisualArtifactRendererContent spec={spec} project={project} slug={slug} />
-    </AnnotationProvider>
-  )
+  return <VisualArtifactRendererContent spec={spec} project={project} slug={slug} />
 }
 
 function VisualArtifactRendererContent({
@@ -49,7 +44,6 @@ function VisualArtifactRendererContent({
               {datasetCount} dataset{datasetCount === 1 ? "" : "s"}
             </HeroPill>
             <HeroPill>{nodeCount} nodes</HeroPill>
-            <AnnotationToggle />
           </div>
         </div>
 
@@ -119,34 +113,38 @@ function NodeBoundary({
   const isSelected = ctx.selectedNode?.nodeId === nodeId && ctx.selectedNode?.nodePath === nodePath
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
-    if (!ctx.isCommentMode) return
+    if (!ctx.isPickingNode) return
     event.preventDefault()
     event.stopPropagation()
 
-    const nodeThreads = ctx.getThreadsForNode(nodeId, nodePath)
-    if (nodeThreads.length > 0) {
-      ctx.selectThread(nodeThreads[0]!.id)
-    } else {
-      ctx.setSelectedNode({ nodeId, nodePath, nodeType: node.type, textSnippet: nodeLabel(node) })
-      ctx.setActiveThreadId(null)
-      ctx.setDraftText("")
-    }
+    ctx.selectNodeForComment({
+      nodeId,
+      nodePath,
+      nodeType: node.type,
+      textSnippet: nodeLabel(node),
+    })
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (!ctx.isCommentMode) return
+    if (!ctx.isPickingNode) return
     if (event.key !== "Enter" && event.key !== " ") return
     event.preventDefault()
-    ctx.setSelectedNode({ nodeId, nodePath })
+
+    ctx.selectNodeForComment({
+      nodeId,
+      nodePath,
+      nodeType: node.type,
+      textSnippet: nodeLabel(node),
+    })
   }
 
   function handleMouseEnter() {
-    if (!ctx.isCommentMode) return
+    if (!ctx.isPickingNode) return
     ctx.setHoveredNode({ nodeId, nodePath })
   }
 
   function handleMouseLeave() {
-    if (!ctx.isCommentMode) return
+    if (!ctx.isPickingNode) return
     ctx.setHoveredNode(null)
   }
 
@@ -154,8 +152,8 @@ function NodeBoundary({
     <div
       className={cn(
         "relative transition-shadow",
-        ctx.isCommentMode && "cursor-pointer",
-        ctx.isCommentMode && isHovered && !isSelected && "ring-2 ring-clay/50",
+        ctx.isPickingNode && "cursor-pointer",
+        ctx.isPickingNode && isHovered && !isSelected && "ring-2 ring-clay/50",
         isSelected && "ring-2 ring-clay"
       )}
       data-va-node-id={nodeId}
@@ -166,10 +164,10 @@ function NodeBoundary({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onKeyDown={handleKeyDown}
-      role={ctx.isCommentMode ? "button" : undefined}
-      aria-label={ctx.isCommentMode ? `Select ${node.type} node` : undefined}
-      aria-pressed={ctx.isCommentMode ? isSelected : undefined}
-      tabIndex={ctx.isCommentMode ? 0 : undefined}
+      role={ctx.isPickingNode ? "button" : undefined}
+      aria-label={ctx.isPickingNode ? `Select ${node.type} node` : undefined}
+      aria-pressed={ctx.isPickingNode ? isSelected : undefined}
+      tabIndex={ctx.isPickingNode ? 0 : undefined}
     >
       {children}
       {ctx.isCommentMode && threadCount > 0 && (

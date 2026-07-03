@@ -33,8 +33,7 @@ interface AnnotationContextValue {
   isLoading: boolean
   error: string | null
   isCommentMode: boolean
-  toggleCommentMode: () => void
-  setIsCommentMode: (value: boolean) => void
+  isPickingNode: boolean
   hoveredNode: NodeIdentity | null
   setHoveredNode: (node: NodeIdentity | null) => void
   selectedNode: NodeIdentity | null
@@ -46,6 +45,11 @@ interface AnnotationContextValue {
   draftText: string
   setDraftText: (text: string) => void
   clearSelection: () => void
+  openComments: () => void
+  closeComments: () => void
+  startNodePick: () => void
+  stopNodePick: () => void
+  selectNodeForComment: (node: NodeIdentity) => void
   getThreadsForNode: (nodeId: string | undefined, nodePath: string) => AnnotationThread[]
   getThreadCount: (nodeId: string | undefined, nodePath: string) => number
   filteredThreads: AnnotationThread[]
@@ -95,6 +99,7 @@ function AnnotationProviderInner({
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isCommentMode, setIsCommentMode] = useState(false)
+  const [isPickingNode, setIsPickingNode] = useState(false)
   const [hoveredNode, setHoveredNode] = useState<NodeIdentity | null>(null)
   const [selectedNode, setSelectedNode] = useState<NodeIdentity | null>(null)
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
@@ -147,43 +152,96 @@ function AnnotationProviderInner({
     setDraftText("")
   }, [])
 
-  const toggleCommentMode = useCallback(() => {
-    setIsCommentMode((prev) => {
-      if (prev) clearSelection()
-      return !prev
-    })
-  }, [clearSelection])
+  const openComments = useCallback(() => {
+    setIsCommentMode(true)
+    setIsPickingNode(false)
+    setActiveThreadId(null)
+    setSelectedNode(null)
+    setDraftText("")
+  }, [])
 
-  const setIsCommentModeWrapped = useCallback(
-    (value: boolean) => {
-      setIsCommentMode(value)
-      if (!value) clearSelection()
+  const closeComments = useCallback(() => {
+    setIsCommentMode(false)
+    setIsPickingNode(false)
+    setActiveThreadId(null)
+    setSelectedNode(null)
+    setDraftText("")
+    setError(null)
+  }, [])
+
+  const startNodePick = useCallback(() => {
+    setIsCommentMode(true)
+    setIsPickingNode(true)
+    setActiveThreadId(null)
+    setSelectedNode(null)
+    setDraftText("")
+  }, [])
+
+  const stopNodePick = useCallback(() => {
+    setIsPickingNode(false)
+  }, [])
+
+  const selectNodeForComment = useCallback(
+    (node: NodeIdentity) => {
+      setSelectedNode(node)
+      setIsPickingNode(false)
+      setDraftText("")
+      const nodeThreads = doc ? getThreadsForNode(doc.threads, node.nodeId, node.nodePath) : []
+      if (nodeThreads.length > 0) {
+        setActiveThreadId(nodeThreads[0]!.id)
+      } else {
+        setActiveThreadId(null)
+      }
+      scrollToNode(node.nodeId, node.nodePath)
     },
-    [clearSelection],
+    [doc],
   )
 
   const stateRef = useRef({
     draftText,
     selectedNode,
+    activeThreadId,
+    isPickingNode,
     isCommentMode,
+    closeComments,
     clearSelection,
   })
 
   useEffect(() => {
-    stateRef.current = { draftText, selectedNode, isCommentMode, clearSelection }
+    stateRef.current = {
+      draftText,
+      selectedNode,
+      activeThreadId,
+      isPickingNode,
+      isCommentMode,
+      closeComments,
+      clearSelection,
+    }
   })
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return
       event.preventDefault()
-      const { draftText, selectedNode, isCommentMode, clearSelection } = stateRef.current
+      const {
+        draftText,
+        activeThreadId,
+        selectedNode,
+        isPickingNode,
+        isCommentMode,
+        closeComments,
+        clearSelection,
+      } = stateRef.current
       if (draftText) {
         setDraftText("")
+      } else if (activeThreadId) {
+        setActiveThreadId(null)
       } else if (selectedNode) {
         clearSelection()
+      } else if (isPickingNode) {
+        setIsPickingNode(false)
       } else if (isCommentMode) {
-        setIsCommentMode(false)
+        closeComments()
       }
     }
 
@@ -362,8 +420,7 @@ function AnnotationProviderInner({
       isLoading,
       error,
       isCommentMode,
-      toggleCommentMode,
-      setIsCommentMode: setIsCommentModeWrapped,
+      isPickingNode,
       hoveredNode,
       setHoveredNode,
       selectedNode,
@@ -375,6 +432,11 @@ function AnnotationProviderInner({
       draftText,
       setDraftText,
       clearSelection,
+      openComments,
+      closeComments,
+      startNodePick,
+      stopNodePick,
+      selectNodeForComment,
       getThreadsForNode: getThreadsForNodeBound,
       getThreadCount: getThreadCountBound,
       filteredThreads,
@@ -398,14 +460,18 @@ function AnnotationProviderInner({
       isLoading,
       error,
       isCommentMode,
-      toggleCommentMode,
-      setIsCommentModeWrapped,
+      isPickingNode,
       hoveredNode,
       selectedNode,
       activeThreadId,
       filter,
       draftText,
       clearSelection,
+      openComments,
+      closeComments,
+      startNodePick,
+      stopNodePick,
+      selectNodeForComment,
       getThreadsForNodeBound,
       getThreadCountBound,
       filteredThreads,
@@ -433,6 +499,10 @@ export function useAnnotationContext(): AnnotationContextValue {
     throw new Error("useAnnotationContext must be used within an AnnotationProvider")
   }
   return ctx
+}
+
+export function useOptionalAnnotationContext(): AnnotationContextValue | null {
+  return useContext(AnnotationContext)
 }
 
 function generateId(): string {

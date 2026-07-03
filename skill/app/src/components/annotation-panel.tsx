@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { format, formatDistanceToNowStrict, isValid } from "date-fns"
-import { AlertTriangle, CheckCircle2, Circle, Link, MessageSquare, RefreshCcw, Send } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Circle, MessageSquare, RefreshCcw, Send, X } from "lucide-react"
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAnnotationContext } from "@/components/annotation-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
-import { artifactPageUrl } from "@/lib/artifacts/paths"
 import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
 import { cn } from "@/lib/utils"
 
@@ -34,7 +33,7 @@ export function AnnotationPanel() {
 
   return (
     <aside
-      className="fixed right-0 top-0 z-40 flex h-screen w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-80"
+      className="fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-80"
       aria-label="Annotation sidebar"
     >
       <PanelHeader />
@@ -55,17 +54,19 @@ function PanelHeader() {
         )}
       </div>
       <div className="flex items-center gap-2">
-        <CopyLinkButton />
         {ctx.isSaving && (
           <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
         )}
-        <button
-          onClick={ctx.clearSelection}
-          className="text-xs text-muted-foreground hover:text-foreground"
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={ctx.closeComments}
+          aria-label="Close comments"
+          title="Close comments"
         >
-          Esc
-        </button>
+          <X data-icon="only" />
+          <span className="sr-only">Close comments</span>
+        </Button>
       </div>
     </div>
   )
@@ -138,7 +139,7 @@ function ThreadList() {
               <p className="mt-2 text-sm text-muted-foreground">
                 No {filter === "all" ? "" : filter} threads yet.
               </p>
-              <p className="text-xs text-muted-foreground">Select a node to add a comment.</p>
+              <p className="text-xs text-muted-foreground">Use the target button to pick a node.</p>
             </div>
           )}
 
@@ -232,6 +233,13 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
     setIsSubmitting(false)
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault()
+      handleSubmit()
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="border-b px-4 py-3">
@@ -288,6 +296,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
               <Textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Reply..."
                 className="min-h-20"
                 aria-label="Reply"
@@ -362,8 +371,6 @@ function CreateThreadComposer() {
     return ctx.getThreadsForNode(selectedNode.nodeId, selectedNode.nodePath)
   }, [ctx, selectedNode])
 
-  const snippet = selectedNode?.nodeId || selectedNode?.nodePath || "node"
-
   async function handleSubmit(event?: React.FormEvent) {
     event?.preventDefault()
     if (!selectedNode || !draftText.trim() || isSubmitting) return
@@ -381,17 +388,15 @@ function CreateThreadComposer() {
     setIsSubmitting(false)
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault()
+      handleSubmit()
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col">
-      <div className="border-b px-4 py-3">
-        <p className="text-xs text-muted-foreground">Comment on</p>
-        <p className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</p>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Posting as {ctx.author?.name ?? "Local Author"}
-          {ctx.isFallbackAuthor && " (git identity not set)"}
-        </p>
-      </div>
-
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-3 p-4">
           {nodeThreads.map((thread) => (
@@ -417,9 +422,14 @@ function CreateThreadComposer() {
 
       <div className="border-t p-4">
         <div className="flex flex-col gap-2">
+          <p className="text-[10px] text-muted-foreground">
+            Posting as {ctx.author?.name ?? "Local Author"}
+            {ctx.isFallbackAuthor && " (git identity not set)"}
+          </p>
           <Textarea
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Start a comment..."
             className="min-h-28"
             aria-label="Start a comment"
@@ -437,31 +447,6 @@ function CreateThreadComposer() {
         </div>
       </div>
     </div>
-  )
-}
-
-function CopyLinkButton() {
-  const ctx = useAnnotationContext()
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    if (typeof window === "undefined") return
-    const url = artifactPageUrl(ctx.project, ctx.slug, window.location.origin)
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // clipboard unavailable or denied; keep the button quiet
-    }
-  }
-
-  return (
-    <Button variant="ghost" size="icon" onClick={handleCopy} title="Copy artifact URL">
-      <Link data-icon="only" />
-      <span className="sr-only">Copy artifact URL</span>
-      {copied && <span className="sr-only">Copied</span>}
-    </Button>
   )
 }
 

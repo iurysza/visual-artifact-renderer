@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
 import { ScrollActiveProvider } from "@/components/scroll-active-provider"
-import { SiteHeader } from "@/components/site-header"
+import { AppChrome } from "@/components/app-chrome"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
@@ -46,8 +46,7 @@ export default function RootLayout({
           enableColorScheme
         >
           <ScrollActiveProvider>
-            <SiteHeader />
-            {children}
+            <AppChrome>{children}</AppChrome>
           </ScrollActiveProvider>
         </ThemeProvider>
       </body>
