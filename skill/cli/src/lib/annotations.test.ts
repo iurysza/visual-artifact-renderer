@@ -1,0 +1,230 @@
+import { describe, expect, test } from "bun:test"
+import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import {
+  parseAnnotationAuthor,
+  parseAnnotationAnchor,
+  parseAnnotationDocument,
+  parseAnnotationMutation,
+  parseAnnotationMutations,
+  emptyAnnotationDocument,
+} from "@agents/visual-artifact-annotations"
+import {
+  applyMutations,
+  readAnnotationsDocument,
+  resolveLocalAuthor,
+  writeAnnotationsDocument,
+} from "./annotations.ts"
+
+async function makeTempDir(prefix: string): Promise<string> {
+  return mkdtemp(join(tmpdir(), prefix))
+}
+
+const validAuthor = { name: "Iury Souza", email: "iury@example.com" }
+const validAnchor = {
+  nodeId: "summary-card",
+  nodePath: "nodes.1.children.0",
+  nodeType: "stat-card",
+  textSnippet: "Executive Summary",
+  x: 0.42,
+  y: 0.18,
+}
+const validMessage = {
+  id: "msg_123",
+  author: validAuthor,
+  body: "This wording is confusing.",
+  createdAt: "2026-07-03T00:00:00.000Z",
+  updatedAt: "2026-07-03T00:00:00.000Z",
+}
+const validThread = {
+  id: "thr_123",
+  anchor: validAnchor,
+  status: "open" as const,
+  createdAt: "2026-07-03T00:00:00.000Z",
+  updatedAt: "2026-07-03T00:00:00.000Z",
+  messages: [validMessage],
+}
+const validDocument = {
+  version: 1 as const,
+  project: "example-project",
+  slug: "example-artifact",
+  threads: [validThread],
+}
+
+describe("parseAnnotationAuthor", () => {
+  test("accepts valid author", () => {
+    expect(parseAnnotationAuthor(validAuthor)).toEqual(validAuthor)
+  })
+
+  test("rejects missing name", () => {
+    expect(() => parseAnnotationAuthor({ email: "iury@example.com" })).toThrow(/name/)
+  })
+
+  test("rejects invalid email", () => {
+    expect(() => parseAnnotationAuthor({ name: "Iury", email: "not-an-email" })).toThrow(/email/)
+  })
+
+  test("rejects extra keys", () => {
+    expect(() => parseAnnotationAuthor({ ...validAuthor, avatar: "x" })).toThrow(/avatar/)
+  })
+})
+
+describe("parseAnnotationAnchor", () => {
+  test("accepts valid anchor", () => {
+    expect(parseAnnotationAnchor(validAnchor)).toEqual(validAnchor)
+  })
+
+  test("rejects missing nodePath", () => {
+    expect(() => parseAnnotationAnchor({ nodeType: "text" })).toThrow(/nodePath/)
+  })
+
+  test("rejects coordinate out of range", () => {
+    expect(() => parseAnnotationAnchor({ ...validAnchor, x: 1.5 })).toThrow(/x/)
+  })
+})
+
+describe("parseAnnotationDocument", () => {
+  test("accepts valid document", () => {
+    expect(parseAnnotationDocument(validDocument)).toEqual(validDocument)
+  })
+
+  test("rejects wrong version", () => {
+    expect(() => parseAnnotationDocument({ ...validDocument, version: 2 })).toThrow(/version/)
+  })
+
+  test("rejects missing project", () => {
+    expect(() => parseAnnotationDocument({ ...validDocument, project: undefined })).toThrow(/project/)
+  })
+
+  test("rejects thread with empty messages", () => {
+    const bad = { ...validDocument, threads: [{ ...validThread, messages: [] }] }
+    expect(() => parseAnnotationDocument(bad)).toThrow(/messages/)
+  })
+})
+
+describe("parseAnnotationMutation", () => {
+  test("accepts createThread mutation", () => {
+    const mutation = { type: "createThread" as const, thread: validThread }
+    expect(parseAnnotationMutation(mutation)).toEqual(mutation)
+  })
+
+  test("accepts addMessage mutation", () => {
+    const mutation = { type: "addMessage" as const, threadId: "thr_123", message: validMessage }
+    expect(parseAnnotationMutation(mutation)).toEqual(mutation)
+  })
+
+  test("accepts resolveThread mutation", () => {
+    const mutation = { type: "resolveThread" as const, threadId: "thr_123" }
+    expect(parseAnnotationMutation(mutation)).toEqual(mutation)
+  })
+
+  test("rejects unknown mutation type", () => {
+    expect(() => parseAnnotationMutation({ type: "deleteThread", threadId: "thr_123" })).toThrow(/type/)
+  })
+
+  test("rejects createThread with invalid thread", () => {
+    expect(() =>
+      parseAnnotationMutation({ type: "createThread" as const, thread: { ...validThread, id: "" } }),
+    ).toThrow(/id/)
+  })
+})
+
+describe("parseAnnotationMutations invalid fixtures", () => {
+  test("rejects invalid timestamp", () => {
+    const badMessage = { ...validMessage, createdAt: "not-a-timestamp" }
+    const badThread = { ...validThread, messages: [badMessage] }
+    expect(() => parseAnnotationMutations([{ type: "createThread", thread: badThread }])).toThrow(/createdAt/)
+  })
+
+  test("rejects invalid thread status", () => {
+    const badThread = { ...validThread, status: "closed" }
+    expect(() => parseAnnotationMutations([{ type: "createThread", thread: badThread }])).toThrow(/status/)
+  })
+
+  test("rejects malformed author in message", () => {
+    const badMessage = { ...validMessage, author: { name: "X" } }
+    const badThread = { ...validThread, messages: [badMessage] }
+    expect(() => parseAnnotationMutations([{ type: "createThread", thread: badThread }])).toThrow(/email/)
+  })
+})
+
+describe("applyMutations", () => {
+  test("creates thread", () => {
+    const doc = emptyAnnotationDocument("example-project", "example-artifact")
+    const updated = applyMutations(doc, [{ type: "createThread", thread: validThread }])
+    expect(updated.threads).toHaveLength(1)
+    expect(updated.threads[0].id).toBe("thr_123")
+  })
+
+  test("adds message to existing thread", () => {
+    const doc = emptyAnnotationDocument("example-project", "example-artifact")
+    const withThread = applyMutations(doc, [{ type: "createThread", thread: validThread }])
+    const reply = { ...validMessage, id: "msg_456", body: "Agreed." }
+    const updated = applyMutations(withThread, [{ type: "addMessage", threadId: "thr_123", message: reply }])
+    expect(updated.threads[0].messages).toHaveLength(2)
+  })
+
+  test("resolves and reopens thread", () => {
+    const doc = { ...validDocument }
+    const resolved = applyMutations(doc, [{ type: "resolveThread", threadId: "thr_123" }])
+    expect(resolved.threads[0].status).toBe("resolved")
+    const reopened = applyMutations(resolved, [{ type: "reopenThread", threadId: "thr_123" }])
+    expect(reopened.threads[0].status).toBe("open")
+  })
+
+  test("fails when thread not found", () => {
+    const doc = emptyAnnotationDocument("example-project", "example-artifact")
+    expect(() => applyMutations(doc, [{ type: "resolveThread", threadId: "missing" }])).toThrow(/not found/)
+  })
+})
+
+describe("readAnnotationsDocument", () => {
+  test("returns empty document when file is missing", async () => {
+    const dir = await makeTempDir("visualizer-annotations-")
+    try {
+      const doc = await readAnnotationsDocument(dir, { project: "project", slug: "slug" })
+      expect(doc).toEqual(emptyAnnotationDocument("project", "slug"))
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("parses existing document", async () => {
+    const dir = await makeTempDir("visualizer-annotations-")
+    try {
+      const projectDir = join(dir, "example-project", "example-artifact")
+      await mkdir(projectDir, { recursive: true })
+      await writeFile(join(projectDir, "annotations.json"), JSON.stringify(validDocument), "utf8")
+      const doc = await readAnnotationsDocument(dir, { project: "example-project", slug: "example-artifact" })
+      expect(doc).toEqual(validDocument)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("round-trip write/read", () => {
+  test("writes mutation then reads back the same document", async () => {
+    const dir = await makeTempDir("visualizer-annotations-")
+    try {
+      const route = { project: "example-project", slug: "example-artifact" }
+      const doc = await readAnnotationsDocument(dir, route)
+      const updated = applyMutations(doc, [{ type: "createThread", thread: validThread }])
+      await writeAnnotationsDocument(dir, route, updated)
+      const read = await readAnnotationsDocument(dir, route)
+      expect(read).toEqual(updated)
+      expect(read.threads[0].messages[0].body).toBe("This wording is confusing.")
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("resolveLocalAuthor", () => {
+  test("returns an author with name and email", async () => {
+    const author = await resolveLocalAuthor()
+    expect(author.name).toBeTruthy()
+    expect(author.email).toBeTruthy()
+  })
+})

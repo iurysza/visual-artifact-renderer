@@ -4,6 +4,8 @@ import type { Server } from "bun"
 import { loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
+import { applyMutations, parseAnnotationMutationsPayload, readAnnotationsDocument, resolveLocalAuthor, writeAnnotationsDocument } from "../lib/annotations.ts"
+import type { AnnotationMutations } from "../lib/annotations.ts"
 import type { Logger } from "../logger.ts"
 import { dirExists, fileExists } from "../util.ts"
 import type { Config } from "../types.ts"
@@ -83,6 +85,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
   const artifactsDir = config.artifactsDir
   const mountPath = normalizeMountPath(config.mountPath)
   const dataPath = normalizeMountPath(config.dataPath) || "/data/artifacts"
+  const apiPath = "/api/annotations"
 
   if (!(await dirExists(outDir))) {
     log.error(`Static export directory missing: ${outDir}`)
@@ -108,6 +111,10 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
       const stripped = stripMountPath(pathname, mountPath)
       if (stripped === null) {
         return new Response("Not found", { status: 404 })
+      }
+
+      if (stripped.startsWith(`${apiPath}/`) || stripped === apiPath) {
+        return await serveApi(req, stripped, artifactsDir, apiPath)
       }
 
       if (stripped.startsWith(`${dataPath}/`)) {
@@ -146,7 +153,51 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
   return 0
 }
 
-async function serveData(stripped: string, artifactsDir: string, dataPath: string): Promise<Response> {
+export async function serveApi(req: Request, stripped: string, artifactsDir: string, apiPath: string): Promise<Response> {
+  const reqPath = stripped
+
+  if (reqPath === `${apiPath}/author` && req.method === "GET") {
+    const author = await resolveLocalAuthor()
+    return jsonResponse(JSON.stringify(author, null, 2))
+  }
+
+  const mutationMatch = matchMutationRoute(reqPath, apiPath)
+  if (mutationMatch && req.method === "POST") {
+    const route = parseBundleRoute(mutationMatch.project, mutationMatch.slug)
+    if (!route) return badRequest("Invalid project or slug")
+    const projectDir = resolve(artifactsDir, route.project)
+    if (!isInsideArtifactsDir(projectDir, artifactsDir)) return badRequest("Invalid project or slug")
+
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return badRequest("Invalid JSON body")
+    }
+
+    let mutations: AnnotationMutations
+    try {
+      mutations = parseAnnotationMutationsPayload(body)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      return badRequest(message)
+    }
+
+    try {
+      const doc = await readAnnotationsDocument(artifactsDir, route)
+      const updated = applyMutations(doc, mutations)
+      await writeAnnotationsDocument(artifactsDir, route, updated)
+      return jsonResponse(JSON.stringify(updated, null, 2))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 500 })
+    }
+  }
+
+  return notFound()
+}
+
+export async function serveData(stripped: string, artifactsDir: string, dataPath: string): Promise<Response> {
   const reqPath = stripped
 
   if (reqPath === `${dataPath}/index.json`) {
@@ -177,6 +228,14 @@ async function serveData(stripped: string, artifactsDir: string, dataPath: strin
     return new Response(Bun.file(filePath))
   }
 
+  const annotationsMatch = matchAnnotations(reqPath, dataPath)
+  if (annotationsMatch) {
+    const route = parseBundleRoute(annotationsMatch.project, annotationsMatch.slug)
+    if (!route) return notFound()
+    const doc = await readAnnotationsDocument(artifactsDir, route)
+    return jsonResponse(JSON.stringify(doc, null, 2))
+  }
+
   const assetMatch = matchAsset(reqPath, dataPath)
   if (assetMatch) {
     const route = parseBundleRoute(assetMatch.project, assetMatch.slug)
@@ -191,12 +250,16 @@ async function serveData(stripped: string, artifactsDir: string, dataPath: strin
   return notFound()
 }
 
-function jsonResponse(body: string): Response {
-  return new Response(body, { headers: { "Content-Type": "application/json; charset=utf-8" } })
+function jsonResponse(body: string, init?: ResponseInit): Response {
+  return new Response(body, { ...init, headers: { "Content-Type": "application/json; charset=utf-8" } })
 }
 
 function notFound(): Response {
   return new Response("Not found", { status: 404 })
+}
+
+function badRequest(message: string): Response {
+  return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 400 })
 }
 
 function escapeRegex(value: string): string {
@@ -219,6 +282,15 @@ function matchArtifactData(reqPath: string, dataPath: string): { project: string
   return { project: match[1], slug: match[2] }
 }
 
+function matchAnnotations(reqPath: string, dataPath: string): { project: string; slug: string } | null {
+  const pattern = new RegExp(
+    `^${escapeRegex(dataPath)}/([a-z0-9]+(?:-[a-z0-9]+)*)/([a-z0-9]+(?:-[a-z0-9]+)*)/annotations\\.json$`,
+  )
+  const match = reqPath.match(pattern)
+  if (!match) return null
+  return { project: match[1], slug: match[2] }
+}
+
 function matchAsset(reqPath: string, dataPath: string): { project: string; slug: string; fileName: string } | null {
   const pattern = new RegExp(
     `^${escapeRegex(dataPath)}/([a-z0-9]+(?:-[a-z0-9]+)*)/([a-z0-9]+(?:-[a-z0-9]+)*)/assets/(.+)$`,
@@ -226,6 +298,15 @@ function matchAsset(reqPath: string, dataPath: string): { project: string; slug:
   const match = reqPath.match(pattern)
   if (!match) return null
   return { project: match[1], slug: match[2], fileName: match[3] }
+}
+
+function matchMutationRoute(reqPath: string, apiPath: string): { project: string; slug: string } | null {
+  const pattern = new RegExp(
+    `^${escapeRegex(apiPath)}/([a-z0-9]+(?:-[a-z0-9]+)*)/([a-z0-9]+(?:-[a-z0-9]+)*)$`,
+  )
+  const match = reqPath.match(pattern)
+  if (!match) return null
+  return { project: match[1], slug: match[2] }
 }
 
 function isSafeAssetName(fileName: string): boolean {

@@ -149,10 +149,13 @@ The CLI returns a URL like:
 http://127.0.0.1:9999/artifacts/my-project/demo-report/
 ```
 
-By default, JSON is written to:
+By default, artifacts are written as bundles to:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>.json
+<skill-root>/artifacts/<project>/<slug>/
+  artifact.json
+  annotations.json
+  assets/
 ```
 
 In this source repo that is `skill/artifacts/`, which is intentionally gitignored except placeholders.
@@ -234,7 +237,15 @@ pnpm verify:artifacts
 
 Node reference: [`docs/nodes.md`](./docs/nodes.md).
 
-## Configuration
+## Annotations
+
+Artifacts support node-level annotation threads. Enable annotation mode in the renderer, select a node, and create a comment thread. Replies, resolve, and reopen actions persist to the bundle's `annotations.json`.
+
+### Local-only writes
+
+Static-hosted artifacts can **serve** `artifact.json` and `annotations.json`, but they cannot **write** edits back to disk from browser JavaScript. The local `visual-artifact serve` CLI can persist annotations because it runs on your machine and has filesystem access. Hosted comment editing requires a writable backend, Git-backed flow, or similar service in the future.
+
+Authors are inferred from local git config (`user.name` and `user.email`), with a fallback to a local anonymous author when git identity is unavailable.
 
 | Variable | Default | Description |
 |---|---|---|

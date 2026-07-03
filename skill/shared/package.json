@@ -1,0 +1,12 @@
+{
+  "name": "@agents/visual-artifact-annotations",
+  "version": "1.0.0",
+  "description": "Shared annotation schema and parsers for the visual-artifact CLI and renderer.",
+  "type": "module",
+  "exports": {
+    ".": "./src/annotations.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}
