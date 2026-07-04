@@ -109,6 +109,13 @@
   --sidebar-accent-foreground: var(--slate);
   --sidebar-border: var(--gray-300);
   --sidebar-ring: var(--clay);
+
+  /* Annotation motion tokens */
+  --va-annotation-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --va-annotation-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --va-annotation-fast: 100ms;
+  --va-annotation-base: 160ms;
+  --va-annotation-panel: 190ms;
 }
 
 html.dark {
@@ -224,6 +231,32 @@ html.dark {
 .dark .prose {
   --tw-prose-links: var(--clay);
   --tw-prose-pre-bg: var(--paper);
+}
+
+/* Annotation motion utilities. */
+@keyframes va-view-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.va-view-enter {
+  animation: va-view-enter 140ms var(--va-annotation-ease) both;
+}
+
+@keyframes va-badge-pop {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: scale(1); }
+}
+.va-badge-pop {
+  animation: va-badge-pop 160ms var(--va-annotation-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .va-view-enter,
+  .va-badge-pop {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /*

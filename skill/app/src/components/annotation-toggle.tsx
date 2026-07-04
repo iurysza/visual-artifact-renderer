@@ -43,8 +43,8 @@ export function NodePickToggle() {
       title={active ? "Stop picking a node" : "Pick a node to comment"}
       className="rounded-full"
     >
-      <Crosshair data-icon="only" />
-      <span className="sr-only">Pick a node to comment</span>
+      <Crosshair data-icon="inline-start" />
+      <span className="hidden sm:inline">{active ? "Picking..." : "Pick a component"}</span>
     </Button>
   )
 }

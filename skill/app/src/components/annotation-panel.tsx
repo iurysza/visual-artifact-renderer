@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { format, formatDistanceToNowStrict, isValid } from "date-fns"
-import { AlertTriangle, CheckCircle2, Circle, MessageSquare, RefreshCcw, Send, X } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Circle, Crosshair, MessageSquare, RefreshCcw, Send, X } from "lucide-react"
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAnnotationContext } from "@/components/annotation-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
+import { threadNodeIdentity } from "@/components/annotation-helpers"
 import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
 import { cn } from "@/lib/utils"
 
@@ -29,11 +30,18 @@ function formatAnnotationTime(dateInput: string): string {
 export function AnnotationPanel() {
   const ctx = useAnnotationContext()
 
-  if (!ctx.isCommentMode && !ctx.error) return null
-
   return (
     <aside
-      className="fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-80"
+      className={cn(
+        "fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-80",
+        "transition-all duration-[var(--va-annotation-panel)] ease-[var(--va-annotation-ease)]",
+        ctx.isCommentMode
+          ? "translate-x-0 opacity-100"
+          : "translate-x-2 opacity-0 pointer-events-none",
+      )}
+      data-state={ctx.isCommentMode ? "open" : "closed"}
+      aria-hidden={!ctx.isCommentMode}
+      inert={!ctx.isCommentMode}
       aria-label="Annotation sidebar"
     >
       <PanelHeader />
@@ -49,11 +57,15 @@ function PanelHeader() {
     <div className="flex items-center justify-between border-b px-4 py-3">
       <div className="flex items-center gap-2">
         <h3 className="font-serif text-base font-medium tracking-tight">Comments</h3>
-        {ctx.totalThreadCount > 0 && (
-          <Badge variant="secondary">{ctx.totalThreadCount}</Badge>
-        )}
+        {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
       </div>
       <div className="flex items-center gap-2">
+        {ctx.isPickingNode && (
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-medium text-clay">
+            <Crosshair className="size-3" />
+            Pick a component
+          </span>
+        )}
         {ctx.isSaving && (
           <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
         )}
@@ -74,54 +86,72 @@ function PanelHeader() {
 
 function PanelContent() {
   const ctx = useAnnotationContext()
-  const { isLoading, error, doc, activeThreadId, selectedNode } = ctx
+  const { isLoading, error, panelView } = ctx
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-4">
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="h-1.5 w-1.5 animate-ping rounded-full bg-clay"></span>
-          Loading comments...
-        </p>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
+  if (error) return <ErrorState />
 
-  if (error) {
-    return (
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
-          <p className="text-sm text-destructive">Could not save comments.</p>
-          <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+  if (panelView === "thread" && ctx.activeThreadId) {
+    const thread = ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId)
+    if (thread) {
+      return (
+        <div key="thread" className="va-view-enter flex flex-1 flex-col">
+          <ThreadDetail thread={thread} />
         </div>
-        <Button variant="outline" size="sm" onClick={ctx.resetError}>
-          Dismiss
-        </Button>
+      )
+    }
+  }
+
+  if (panelView === "node") {
+    return (
+      <div key="node" className="va-view-enter flex flex-1 flex-col">
+        <CreateThreadComposer />
       </div>
     )
   }
 
-  if (activeThreadId) {
-    const thread = doc?.threads.find((t) => t.id === activeThreadId)
-    if (thread) return <ThreadDetail thread={thread} />
-  }
+  return (
+    <div key="list" className="va-view-enter flex flex-1 flex-col">
+      <ThreadList />
+    </div>
+  )
+}
 
-  if (selectedNode) {
-    return <CreateThreadComposer />
-  }
+function LoadingState() {
+  return (
+    <div className="flex flex-1 items-center justify-center p-4">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="h-1.5 w-1.5 animate-ping rounded-full bg-clay"></span>
+        Loading comments...
+      </p>
+    </div>
+  )
+}
 
-  return <ThreadList />
+function ErrorState() {
+  const ctx = useAnnotationContext()
+  return (
+    <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+        <p className="text-sm text-destructive">Could not save comments.</p>
+        <p className="mt-1 text-xs text-muted-foreground">{ctx.error}</p>
+      </div>
+      <Button variant="outline" size="sm" onClick={ctx.resetError}>
+        Dismiss
+      </Button>
+    </div>
+  )
 }
 
 function ThreadList() {
   const ctx = useAnnotationContext()
-  const { filteredThreads, openThreadCount, resolvedThreadCount, filter, setFilter } = ctx
+  const { filteredThreads, openThreadCount, resolvedThreadCount, filter, setFilter, isPickingNode } = ctx
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex items-center gap-1 border-b px-4 py-2">
         <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
-          All {filteredThreads.length > 0 && `(${ctx.totalThreadCount})`}
+          All {ctx.totalThreadCount > 0 && `(${ctx.totalThreadCount})`}
         </FilterButton>
         <FilterButton active={filter === "open"} onClick={() => setFilter("open")}>
           Open {openThreadCount > 0 && `(${openThreadCount})`}
@@ -132,14 +162,18 @@ function ThreadList() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="flex flex-col p-3">
+        <div className="flex flex-col gap-2 p-4">
           {filteredThreads.length === 0 && (
-            <div className="rounded-lg border border-dashed p-4 text-center">
+            <div className="rounded-xl border border-dashed p-5 text-center">
               <MessageSquare className="mx-auto size-6 text-muted-foreground/60" />
               <p className="mt-2 text-sm text-muted-foreground">
                 No {filter === "all" ? "" : filter} threads yet.
               </p>
-              <p className="text-xs text-muted-foreground">Use the target button to pick a node.</p>
+              <p className="text-xs text-muted-foreground">
+                {isPickingNode
+                  ? "Click a component on the canvas to comment."
+                  : "Use the Pick a component button to start a comment."}
+              </p>
             </div>
           )}
 
@@ -182,17 +216,25 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
   const lastMessage = thread.messages[thread.messages.length - 1]
   const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
   const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
+  const isActive = ctx.activeThreadId === thread.id
+  const identity = threadNodeIdentity(thread)
+  const replyLabel = thread.messages.length === 1 ? "reply" : "replies"
 
   return (
     <button
       type="button"
       onClick={() => ctx.selectThread(thread.id)}
-      className="group flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+      onMouseEnter={() => ctx.setPreviewNode(identity)}
+      onMouseLeave={() => ctx.setPreviewNode(null)}
+      aria-label={`Open thread on ${snippet}, ${thread.status}, ${thread.messages.length} ${replyLabel}`}
+      className={cn(
+        "group flex flex-col gap-2 rounded-xl border p-4 text-left transition-all duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
+        "hover:border-muted-foreground/20 hover:bg-muted/50",
+        isActive && "border-clay/40 bg-clay/[0.04]",
+      )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-1 text-sm font-medium text-foreground">
-          {snippet}
-        </span>
+        <span className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</span>
         <div className="flex shrink-0 items-center gap-1">
           {!isPresent && (
             <span
@@ -205,11 +247,9 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
           <ThreadStatusBadge status={thread.status} />
         </div>
       </div>
-      <p className="line-clamp-2 text-xs text-muted-foreground">
-        {lastMessage?.body}
-      </p>
+      <p className="line-clamp-2 text-xs text-muted-foreground">{lastMessage?.body}</p>
       <p className="text-[10px] text-muted-foreground">
-        {thread.messages.length} {thread.messages.length === 1 ? "reply" : "replies"}
+        {thread.messages.length} {replyLabel}
         {" · "}
         <TimeLabel date={thread.updatedAt} />
       </p>
@@ -223,6 +263,21 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
   const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
+  const backLabel = ctx.returnView === "node" ? "← Back to selected node" : "← Back to threads"
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return
+      if (replyText.trim()) {
+        event.preventDefault()
+        event.stopPropagation()
+        setReplyText("")
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown, true)
+    return () => window.removeEventListener("keydown", handleKeyDown, true)
+  }, [replyText])
 
   async function handleSubmit(event?: React.FormEvent) {
     event?.preventDefault()
@@ -242,15 +297,15 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="border-b px-4 py-3">
+      <div className="border-b px-4 py-4">
         <button
           type="button"
-          onClick={() => ctx.setActiveThreadId(null)}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          onClick={ctx.navigateBack}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          ← Back to threads
+          {backLabel}
         </button>
-        <div className="mt-2 flex items-start justify-between gap-2">
+        <div className="mt-3 flex items-start justify-between gap-2">
           <div>
             <p className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</p>
             <p className="text-xs text-muted-foreground">{thread.anchor.nodeType}</p>
@@ -266,7 +321,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-4 p-4">
           {thread.messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
@@ -282,7 +337,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -395,16 +450,42 @@ function CreateThreadComposer() {
     }
   }
 
+  if (!selectedNode) return null
+
   return (
     <div className="flex flex-1 flex-col">
+      <div className="border-b px-4 py-4">
+        <button
+          type="button"
+          onClick={ctx.navigateBack}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          ← Back to all comments
+        </button>
+        <div className="mt-3">
+          <p className="line-clamp-1 text-sm font-medium text-foreground">
+            {selectedNode.textSnippet ?? "Selected component"}
+          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground">{selectedNode.nodeType ?? "node"}</p>
+            <span className="text-[10px] text-muted-foreground">
+              · {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-3 p-4">
           {nodeThreads.map((thread) => (
             <button
               key={thread.id}
               type="button"
-              onClick={() => ctx.setActiveThreadId(thread.id)}
-              className="rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+              onClick={() => ctx.selectThread(thread.id)}
+              onMouseEnter={() => ctx.setPreviewNode(threadNodeIdentity(thread))}
+              onMouseLeave={() => ctx.setPreviewNode(null)}
+              aria-label={`Open thread on ${selectedNode.textSnippet ?? selectedNode.nodeType}, ${thread.status}, ${thread.messages.length} ${thread.messages.length === 1 ? "reply" : "replies"}`}
+              className="group flex flex-col gap-2 rounded-xl border p-4 text-left transition-all duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)] hover:border-muted-foreground/20 hover:bg-muted/50"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-foreground">

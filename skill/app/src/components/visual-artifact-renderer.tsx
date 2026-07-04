@@ -34,9 +34,16 @@ function VisualArtifactRendererContent({
   const datasetCount = Object.keys(spec.data ?? {}).length
   const nodeCount = countNodes(spec.nodes)
   const componentCount = collectNodeTypes(spec.nodes).size
+  const ctx = useAnnotationContext()
 
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14">
+    <main
+      data-comments-open={ctx.isCommentMode ? "true" : undefined}
+      className={cn(
+        "mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14",
+        "data-[comments-open=true]:md:pr-80",
+      )}
+    >
       <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
         <div className="border-b bg-muted/45 px-5 py-3 sm:px-7">
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -109,8 +116,15 @@ function NodeBoundary({
   const ctx = useAnnotationContext()
   const nodeId = node.metadata?.id
   const threadCount = ctx.getThreadCount(nodeId, nodePath)
-  const isHovered = ctx.hoveredNode?.nodeId === nodeId && ctx.hoveredNode?.nodePath === nodePath
-  const isSelected = ctx.selectedNode?.nodeId === nodeId && ctx.selectedNode?.nodePath === nodePath
+  const isHovered =
+    (ctx.hoveredNode?.nodeId === nodeId && ctx.hoveredNode?.nodePath === nodePath) ||
+    (ctx.previewNode?.nodeId === nodeId && ctx.previewNode?.nodePath === nodePath)
+  const isSelected =
+    (ctx.selectedNode?.nodeId === nodeId && ctx.selectedNode?.nodePath === nodePath) ||
+    (ctx.highlightedNode?.nodeId === nodeId && ctx.highlightedNode?.nodePath === nodePath)
+  const hasThread = threadCount > 0
+
+  const annotationState = isSelected ? "selected" : isHovered ? "hovered" : hasThread ? "has-thread" : "idle"
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!ctx.isPickingNode) return
@@ -153,13 +167,12 @@ function NodeBoundary({
       className={cn(
         "relative transition-shadow",
         ctx.isPickingNode && "cursor-pointer",
-        ctx.isPickingNode && isHovered && !isSelected && "ring-2 ring-clay/50",
-        isSelected && "ring-2 ring-clay"
       )}
       data-va-node-id={nodeId}
       data-va-node-path={nodePath}
       data-va-node-type={node.type}
       data-va-node-label={nodeLabel(node)}
+      data-annotation-state={annotationState}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -169,9 +182,19 @@ function NodeBoundary({
       aria-pressed={ctx.isPickingNode ? isSelected : undefined}
       tabIndex={ctx.isPickingNode ? 0 : undefined}
     >
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-[var(--radius-xl)] transition-all",
+          "duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
+          annotationState === "idle" && "opacity-0",
+          annotationState === "hovered" && "opacity-100 ring-1 ring-clay/50 bg-clay/[0.03] shadow-sm",
+          annotationState === "selected" && "opacity-100 ring-2 ring-clay bg-clay/[0.05] shadow-md",
+          annotationState === "has-thread" && "opacity-0",
+        )}
+      />
       {children}
-      {ctx.isCommentMode && threadCount > 0 && (
-        <span className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-clay text-[10px] font-medium text-white shadow-sm">
+      {ctx.isCommentMode && hasThread && (
+        <span className="va-badge-pop absolute right-2 top-2 z-10 flex size-5 items-center justify-center rounded-full bg-clay text-[10px] font-medium text-white shadow-sm">
           {threadCount}
         </span>
       )}

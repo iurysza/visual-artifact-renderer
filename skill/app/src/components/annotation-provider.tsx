@@ -25,6 +25,8 @@ import {
 } from "@/components/annotation-helpers"
 
 export type ThreadFilter = "all" | "open" | "resolved"
+export type PanelView = "list" | "node" | "thread"
+export type ReturnView = "list" | "node"
 
 interface AnnotationContextValue {
   project: string
@@ -38,8 +40,14 @@ interface AnnotationContextValue {
   setHoveredNode: (node: NodeIdentity | null) => void
   selectedNode: NodeIdentity | null
   setSelectedNode: (node: NodeIdentity | null) => void
+  highlightedNode: NodeIdentity | null
+  setHighlightedNode: (node: NodeIdentity | null) => void
+  previewNode: NodeIdentity | null
+  setPreviewNode: (node: NodeIdentity | null) => void
   activeThreadId: string | null
   setActiveThreadId: (id: string | null) => void
+  panelView: PanelView
+  returnView: ReturnView
   filter: ThreadFilter
   setFilter: (filter: ThreadFilter) => void
   draftText: string
@@ -64,6 +72,7 @@ interface AnnotationContextValue {
   resolveThread: (threadId: string) => Promise<void>
   reopenThread: (threadId: string) => Promise<void>
   selectThread: (threadId: string) => void
+  navigateBack: () => void
   resetError: () => void
 }
 
@@ -102,7 +111,11 @@ function AnnotationProviderInner({
   const [isPickingNode, setIsPickingNode] = useState(false)
   const [hoveredNode, setHoveredNode] = useState<NodeIdentity | null>(null)
   const [selectedNode, setSelectedNode] = useState<NodeIdentity | null>(null)
+  const [highlightedNode, setHighlightedNode] = useState<NodeIdentity | null>(null)
+  const [previewNode, setPreviewNode] = useState<NodeIdentity | null>(null)
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  const [panelView, setPanelView] = useState<PanelView>("list")
+  const [returnView, setReturnView] = useState<ReturnView>("list")
   const [filter, setFilter] = useState<ThreadFilter>("all")
   const [draftText, setDraftText] = useState("")
   const [author, setAuthor] = useState<AnnotationAuthor | null>(null)
@@ -146,36 +159,44 @@ function AnnotationProviderInner({
     }
   }, [])
 
+  const resetPanelState = useCallback(() => {
+    setActiveThreadId(null)
+    setSelectedNode(null)
+    setHighlightedNode(null)
+    setPreviewNode(null)
+    setDraftText("")
+    setPanelView("list")
+    setReturnView("list")
+  }, [])
+
   const clearSelection = useCallback(() => {
     setSelectedNode(null)
     setActiveThreadId(null)
+    setHighlightedNode(null)
+    setPreviewNode(null)
     setDraftText("")
+    setPanelView("list")
+    setReturnView("list")
   }, [])
 
   const openComments = useCallback(() => {
     setIsCommentMode(true)
     setIsPickingNode(false)
-    setActiveThreadId(null)
-    setSelectedNode(null)
-    setDraftText("")
-  }, [])
+    resetPanelState()
+  }, [resetPanelState])
 
   const closeComments = useCallback(() => {
     setIsCommentMode(false)
     setIsPickingNode(false)
-    setActiveThreadId(null)
-    setSelectedNode(null)
-    setDraftText("")
     setError(null)
-  }, [])
+    resetPanelState()
+  }, [resetPanelState])
 
   const startNodePick = useCallback(() => {
     setIsCommentMode(true)
     setIsPickingNode(true)
-    setActiveThreadId(null)
-    setSelectedNode(null)
-    setDraftText("")
-  }, [])
+    resetPanelState()
+  }, [resetPanelState])
 
   const stopNodePick = useCallback(() => {
     setIsPickingNode(false)
@@ -186,25 +207,26 @@ function AnnotationProviderInner({
       setSelectedNode(node)
       setIsPickingNode(false)
       setDraftText("")
-      const nodeThreads = doc ? getThreadsForNode(doc.threads, node.nodeId, node.nodePath) : []
-      if (nodeThreads.length > 0) {
-        setActiveThreadId(nodeThreads[0]!.id)
-      } else {
-        setActiveThreadId(null)
-      }
+      setActiveThreadId(null)
+      setHighlightedNode(null)
+      setPreviewNode(null)
+      setPanelView("node")
+      setReturnView("list")
       scrollToNode(node.nodeId, node.nodePath)
     },
-    [doc],
+    [setSelectedNode, setIsPickingNode, setDraftText, setActiveThreadId, setHighlightedNode, setPreviewNode, setPanelView, setReturnView],
   )
 
   const stateRef = useRef({
     draftText,
     selectedNode,
     activeThreadId,
+    panelView,
+    returnView,
     isPickingNode,
     isCommentMode,
     closeComments,
-    clearSelection,
+    navigateBack: () => {},
   })
 
   useEffect(() => {
@@ -212,42 +234,14 @@ function AnnotationProviderInner({
       draftText,
       selectedNode,
       activeThreadId,
+      panelView,
+      returnView,
       isPickingNode,
       isCommentMode,
       closeComments,
-      clearSelection,
+      navigateBack: stateRef.current.navigateBack,
     }
   })
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
-      event.preventDefault()
-      const {
-        draftText,
-        activeThreadId,
-        selectedNode,
-        isPickingNode,
-        isCommentMode,
-        closeComments,
-        clearSelection,
-      } = stateRef.current
-      if (draftText) {
-        setDraftText("")
-      } else if (activeThreadId) {
-        setActiveThreadId(null)
-      } else if (selectedNode) {
-        clearSelection()
-      } else if (isPickingNode) {
-        setIsPickingNode(false)
-      } else if (isCommentMode) {
-        closeComments()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
 
   const getThreadsForNodeBound = useCallback(
     (nodeId: string | undefined, nodePath: string) => {
@@ -336,9 +330,17 @@ function AnnotationProviderInner({
       )
 
       setActiveThreadId(thread.id)
+      setPanelView("thread")
+      setReturnView("node")
+      setHighlightedNode({
+        nodeId: anchor.nodeId,
+        nodePath: anchor.nodePath,
+        nodeType: anchor.nodeType,
+        textSnippet: anchor.textSnippet,
+      })
       setDraftText("")
     },
-    [makeMessage, withOptimisticMutation],
+    [makeMessage, withOptimisticMutation, setActiveThreadId, setPanelView, setReturnView, setHighlightedNode, setDraftText],
   )
 
   const addReply = useCallback(
@@ -394,10 +396,13 @@ function AnnotationProviderInner({
 
   const selectThread = useCallback(
     (threadId: string) => {
-      setActiveThreadId(threadId)
       const thread = doc?.threads.find((t) => t.id === threadId)
       if (!thread) return
-      setSelectedNode({
+
+      setActiveThreadId(threadId)
+      setPanelView("thread")
+      setReturnView(panelView === "node" ? "node" : "list")
+      setHighlightedNode({
         nodeId: thread.anchor.nodeId,
         nodePath: thread.anchor.nodePath,
         nodeType: thread.anchor.nodeType,
@@ -405,8 +410,49 @@ function AnnotationProviderInner({
       })
       scrollToNode(thread.anchor.nodeId, thread.anchor.nodePath)
     },
-    [doc],
+    [doc, panelView, setActiveThreadId, setPanelView, setReturnView, setHighlightedNode],
   )
+
+  const navigateBack = useCallback(() => {
+    if (panelView === "thread") {
+      setActiveThreadId(null)
+      setHighlightedNode(null)
+      setPanelView(returnView)
+      if (returnView === "list") {
+        setSelectedNode(null)
+        setDraftText("")
+      }
+    } else if (panelView === "node") {
+      setPanelView("list")
+      setSelectedNode(null)
+      setHighlightedNode(null)
+      setDraftText("")
+    } else if (isPickingNode) {
+      setIsPickingNode(false)
+    } else {
+      closeComments()
+    }
+  }, [panelView, returnView, isPickingNode, closeComments, setActiveThreadId, setHighlightedNode, setPanelView, setSelectedNode, setDraftText, setIsPickingNode])
+
+  useEffect(() => {
+    stateRef.current.navigateBack = navigateBack
+  }, [navigateBack])
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return
+      event.preventDefault()
+      const { draftText } = stateRef.current
+      if (draftText) {
+        setDraftText("")
+      } else {
+        stateRef.current.navigateBack()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   const resetError = useCallback(() => {
     setError(null)
@@ -425,8 +471,14 @@ function AnnotationProviderInner({
       setHoveredNode,
       selectedNode,
       setSelectedNode,
+      highlightedNode,
+      setHighlightedNode,
+      previewNode,
+      setPreviewNode,
       activeThreadId,
       setActiveThreadId,
+      panelView,
+      returnView,
       filter,
       setFilter,
       draftText,
@@ -451,6 +503,7 @@ function AnnotationProviderInner({
       resolveThread,
       reopenThread,
       selectThread,
+      navigateBack,
       resetError,
     }),
     [
@@ -462,10 +515,21 @@ function AnnotationProviderInner({
       isCommentMode,
       isPickingNode,
       hoveredNode,
+      setHoveredNode,
       selectedNode,
+      setSelectedNode,
+      highlightedNode,
+      setHighlightedNode,
+      previewNode,
+      setPreviewNode,
       activeThreadId,
+      setActiveThreadId,
+      panelView,
+      returnView,
       filter,
+      setFilter,
       draftText,
+      setDraftText,
       clearSelection,
       openComments,
       closeComments,
@@ -486,6 +550,7 @@ function AnnotationProviderInner({
       resolveThread,
       reopenThread,
       selectThread,
+      navigateBack,
       resetError,
     ],
   )
@@ -516,5 +581,8 @@ export function scrollToNode(nodeId: string | undefined, nodePath: string): void
   if (typeof document === "undefined") return
   const element = findAnchorElement(nodeId, nodePath)
   if (!element) return
-  element.scrollIntoView({ behavior: "smooth", block: "center" })
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  element.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" })
 }
