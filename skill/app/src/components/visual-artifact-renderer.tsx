@@ -131,6 +131,8 @@ function NodeBoundary({
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!isClickable) return
+    const target = event.target as Element
+    if (isInsideInteractive(target)) return
     event.preventDefault()
     event.stopPropagation()
 
@@ -180,24 +182,21 @@ function NodeBoundary({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onKeyDown={handleKeyDown}
-      role={isClickable ? "button" : undefined}
       aria-label={isClickable ? `Comment on ${node.type} node` : undefined}
-      aria-pressed={isClickable ? isSelected : undefined}
-      tabIndex={isClickable ? 0 : undefined}
     >
       <div
         className={cn(
           "pointer-events-none absolute inset-0 rounded-[var(--radius-xl)] transition-all",
           "duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
           annotationState === "idle" && "opacity-0",
-          annotationState === "hovered" && "opacity-100 ring-2 ring-clay/40 bg-clay/[0.06] shadow-sm",
+          annotationState === "hovered" && "opacity-100 ring-2 ring-clay/60 bg-clay/[0.06] shadow-sm",
           annotationState === "selected" && "opacity-100 ring-2 ring-clay bg-clay/[0.08] shadow-md",
-          annotationState === "has-thread" && "opacity-100 ring-1 ring-clay/20 bg-clay/[0.02]",
+          annotationState === "has-thread" && "opacity-100 ring-1 ring-clay/30 bg-clay/[0.03]",
         )}
       />
       {children}
       {isCommentActive && hasThread && (
-        <span className="va-badge-pop absolute right-2 top-2 z-10 flex size-5 items-center justify-center rounded-full bg-clay text-[10px] font-medium text-white shadow-sm">
+        <span className="va-badge-pop absolute right-2 top-2 z-10 flex size-5 items-center justify-center rounded-full bg-clay text-[10px] font-medium text-foreground shadow-sm">
           {threadCount}
         </span>
       )}
@@ -278,4 +277,23 @@ function gridClass(columns: 1 | 2 | 3 | 4) {
   if (columns === 4) return "grid gap-4 space-y-0 md:grid-cols-2 xl:grid-cols-4"
 
   return "grid gap-4 space-y-0 md:grid-cols-2"
+}
+
+function isInteractiveElement(element: Element | null): boolean {
+  if (!element) return false
+  const interactiveTags = ["A", "BUTTON", "INPUT", "TEXTAREA", "SELECT", "DETAILS", "SUMMARY"]
+  if (interactiveTags.includes(element.tagName)) return true
+  const role = element.getAttribute("role")
+  if (role === "button" || role === "link" || role === "tab" || role === "menuitem") return true
+  if (element.hasAttribute("tabindex") && element.getAttribute("tabindex") !== "-1") return true
+  return false
+}
+
+function isInsideInteractive(target: Element): boolean {
+  let current: Element | null = target
+  while (current) {
+    if (isInteractiveElement(current)) return true
+    current = current.parentElement
+  }
+  return false
 }

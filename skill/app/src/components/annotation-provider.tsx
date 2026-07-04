@@ -441,6 +441,7 @@ function AnnotationProviderInner({
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return
+      if (!stateRef.current.isCommentMode) return
       event.preventDefault()
       const { draftText } = stateRef.current
       if (draftText) {

@@ -251,6 +251,16 @@ html.dark {
   animation: va-badge-pop 160ms var(--va-annotation-ease) both;
 }
 
+/* Panel visibility transition: keep the panel visible during the 190ms exit
+   animation, then hide it so screen readers and test tools do not see the
+   closed sidebar as a blocking dialog. */
+.va-panel {
+  transition: transform 190ms var(--va-annotation-ease), opacity 190ms var(--va-annotation-ease), visibility 0ms 190ms;
+}
+.va-panel-open {
+  transition-delay: 0ms;
+}
+
 @keyframes va-view-exit {
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-4px); }

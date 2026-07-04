@@ -54,59 +54,20 @@ export function AnnotationPanel() {
     closeButtonRef.current?.focus()
   }, [ctx.isCommentMode])
 
-  useEffect(() => {
-    if (!ctx.isCommentMode) return
-    const panel = panelRef.current
-    if (!panel) return
-
-    const focusableSelector =
-      'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
-    function trapFocus(event: KeyboardEvent) {
-      if (event.key !== "Tab") return
-      const panelEl = panelRef.current
-      if (!panelEl) return
-      const focusables = Array.from(panelEl.querySelectorAll<HTMLElement>(focusableSelector)).filter(
-        (el) => el.offsetParent !== null,
-      )
-      if (focusables.length === 0) return
-      const first = focusables[0]
-      const last = focusables[focusables.length - 1]
-      const active = document.activeElement
-
-      if (event.shiftKey) {
-        if (active === first || !panelEl.contains(active)) {
-          event.preventDefault()
-          last.focus()
-        }
-      } else {
-        if (active === last || !panelEl.contains(active)) {
-          event.preventDefault()
-          first.focus()
-        }
-      }
-    }
-
-    document.addEventListener("keydown", trapFocus)
-    return () => document.removeEventListener("keydown", trapFocus)
-  }, [ctx.isCommentMode])
-
   return (
     <aside
       ref={panelRef}
       className={cn(
-        "fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
-        "transition-all duration-[var(--va-annotation-panel)] ease-[var(--va-annotation-ease)]",
+        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
         ctx.isCommentMode
-          ? "translate-x-0 opacity-100"
-          : "translate-x-5 opacity-0 pointer-events-none",
+          ? "va-panel-open visible translate-x-0 opacity-100"
+          : "invisible translate-x-5 opacity-0 pointer-events-none",
       )}
       data-state={ctx.isCommentMode ? "open" : "closed"}
       aria-hidden={!ctx.isCommentMode}
       inert={!ctx.isCommentMode}
-      role={ctx.isCommentMode ? "dialog" : undefined}
-      aria-modal={ctx.isCommentMode ? "true" : undefined}
-      aria-label="Annotation sidebar"
+      role={ctx.isCommentMode ? "complementary" : undefined}
+      aria-label={ctx.isCommentMode ? "Annotation sidebar" : undefined}
     >
       <PanelHeader closeButtonRef={closeButtonRef} />
       <PanelContent />
@@ -193,7 +154,7 @@ function ViewSwitcher({ view, children }: { view: PanelView; children: React.Rea
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
       {exiting && (
-        <div key={`exit-${exiting.view}`} className="va-view-exit absolute inset-0 z-0">
+        <div key={`exit-${exiting.view}`} className="va-view-exit absolute inset-0 z-0" aria-hidden="true" inert>
           {exiting.children}
         </div>
       )}
