@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { format, formatDistanceToNowStrict, isValid } from "date-fns"
 import { AlertTriangle, CheckCircle2, Circle, Crosshair, MessageSquare, RefreshCcw, Send, X } from "lucide-react"
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAnnotationContext } from "@/components/annotation-provider"
+import { useAnnotationContext, type PanelView } from "@/components/annotation-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
 import { threadNodeIdentity } from "@/components/annotation-helpers"
 import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
@@ -27,30 +27,94 @@ function formatAnnotationTime(dateInput: string): string {
   return format(date, "MMM d, yyyy")
 }
 
+function formatSaveError(error: string | null): string {
+  if (!error) return "Something went wrong."
+  try {
+    const parsed = JSON.parse(error)
+    const raw = typeof parsed.error === "string" ? parsed.error : typeof parsed.message === "string" ? parsed.message : error
+    if (raw.includes("author.email") || raw.toLowerCase().includes("invalid email")) {
+      return "We couldn't save your comment. Check your Git author email and try again."
+    }
+    if (raw.includes("author.name") || raw.toLowerCase().includes("invalid name")) {
+      return "We couldn't save your comment. Check your Git author name and try again."
+    }
+    return "We couldn't save your comment. Please try again."
+  } catch {
+    return "We couldn't save your comment. Please try again."
+  }
+}
+
 export function AnnotationPanel() {
   const ctx = useAnnotationContext()
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (!ctx.isCommentMode) return
+    closeButtonRef.current?.focus()
+  }, [ctx.isCommentMode])
+
+  useEffect(() => {
+    if (!ctx.isCommentMode) return
+    const panel = panelRef.current
+    if (!panel) return
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+    function trapFocus(event: KeyboardEvent) {
+      if (event.key !== "Tab") return
+      const panelEl = panelRef.current
+      if (!panelEl) return
+      const focusables = Array.from(panelEl.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+        (el) => el.offsetParent !== null,
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement
+
+      if (event.shiftKey) {
+        if (active === first || !panelEl.contains(active)) {
+          event.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (active === last || !panelEl.contains(active)) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    document.addEventListener("keydown", trapFocus)
+    return () => document.removeEventListener("keydown", trapFocus)
+  }, [ctx.isCommentMode])
 
   return (
     <aside
+      ref={panelRef}
       className={cn(
-        "fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-80",
+        "fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
         "transition-all duration-[var(--va-annotation-panel)] ease-[var(--va-annotation-ease)]",
         ctx.isCommentMode
           ? "translate-x-0 opacity-100"
-          : "translate-x-2 opacity-0 pointer-events-none",
+          : "translate-x-5 opacity-0 pointer-events-none",
       )}
       data-state={ctx.isCommentMode ? "open" : "closed"}
       aria-hidden={!ctx.isCommentMode}
       inert={!ctx.isCommentMode}
+      role={ctx.isCommentMode ? "dialog" : undefined}
+      aria-modal={ctx.isCommentMode ? "true" : undefined}
       aria-label="Annotation sidebar"
     >
-      <PanelHeader />
+      <PanelHeader closeButtonRef={closeButtonRef} />
       <PanelContent />
     </aside>
   )
 }
 
-function PanelHeader() {
+function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLButtonElement | null> }) {
   const ctx = useAnnotationContext()
 
   return (
@@ -70,6 +134,7 @@ function PanelHeader() {
           <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
         )}
         <Button
+          ref={closeButtonRef}
           variant="ghost"
           size="icon-xs"
           onClick={ctx.closeComments}
@@ -91,28 +156,50 @@ function PanelContent() {
   if (isLoading) return <LoadingState />
   if (error) return <ErrorState />
 
-  if (panelView === "thread" && ctx.activeThreadId) {
-    const thread = ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId)
-    if (thread) {
-      return (
-        <div key="thread" className="va-view-enter flex flex-1 flex-col">
-          <ThreadDetail thread={thread} />
-        </div>
-      )
-    }
-  }
-
-  if (panelView === "node") {
-    return (
-      <div key="node" className="va-view-enter flex flex-1 flex-col">
+  return (
+    <ViewSwitcher view={panelView}>
+      {panelView === "thread" && ctx.activeThreadId ? (
+        (() => {
+          const thread = ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId)
+          return thread ? <ThreadDetail thread={thread} /> : <ThreadList />
+        })()
+      ) : panelView === "node" ? (
         <CreateThreadComposer />
-      </div>
-    )
-  }
+      ) : (
+        <ThreadList />
+      )}
+    </ViewSwitcher>
+  )
+}
+
+function ViewSwitcher({ view, children }: { view: PanelView; children: React.ReactNode }) {
+  const lastViewRef = useRef<PanelView>(view)
+  const lastChildrenRef = useRef<React.ReactNode>(children)
+  const [exiting, setExiting] = useState<{ view: PanelView; children: React.ReactNode } | null>(null)
+
+  useLayoutEffect(() => {
+    if (view !== lastViewRef.current) {
+      // capture the previous view/children and show exit overlay
+      setExiting({ view: lastViewRef.current, children: lastChildrenRef.current })
+      lastViewRef.current = view
+      lastChildrenRef.current = children
+      const id = window.setTimeout(() => setExiting(null), 140)
+      return () => window.clearTimeout(id)
+    }
+    // keep the last children up to date when view hasn't changed
+    lastChildrenRef.current = children
+  }, [view, children])
 
   return (
-    <div key="list" className="va-view-enter flex flex-1 flex-col">
-      <ThreadList />
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      {exiting && (
+        <div key={`exit-${exiting.view}`} className="va-view-exit absolute inset-0 z-0">
+          {exiting.children}
+        </div>
+      )}
+      <div key={`enter-${view}`} className="va-view-enter relative z-10 flex flex-1 flex-col">
+        {children}
+      </div>
     </div>
   )
 }
@@ -133,8 +220,7 @@ function ErrorState() {
   return (
     <div className="flex flex-1 flex-col gap-3 p-4">
       <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
-        <p className="text-sm text-destructive">Could not save comments.</p>
-        <p className="mt-1 text-xs text-muted-foreground">{ctx.error}</p>
+        <p className="text-sm text-destructive">{formatSaveError(ctx.error)}</p>
       </div>
       <Button variant="outline" size="sm" onClick={ctx.resetError}>
         Dismiss
@@ -172,7 +258,7 @@ function ThreadList() {
               <p className="text-xs text-muted-foreground">
                 {isPickingNode
                   ? "Click a component on the canvas to comment."
-                  : "Use the Pick a component button to start a comment."}
+                  : "Click any component on the canvas to start a comment."}
               </p>
             </div>
           )}
@@ -316,7 +402,19 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
               </p>
             )}
           </div>
-          <ThreadStatusBadge status={thread.status} />
+          <div className="flex shrink-0 items-center gap-2">
+            {thread.status === "resolved" ? (
+              <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
+                Reopen
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => ctx.resolveThread(thread.id)}>
+                <CheckCircle2 data-icon="inline-start" />
+                Resolve
+              </Button>
+            )}
+            <ThreadStatusBadge status={thread.status} />
+          </div>
         </div>
       </div>
 
@@ -332,40 +430,27 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
         {thread.status === "resolved" ? (
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">This thread is resolved.</p>
-            <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
-              Reopen
-            </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="self-start"
-              onClick={() => ctx.resolveThread(thread.id)}
-            >
-              <CheckCircle2 data-icon="inline-start" />
-              Resolve thread
-            </Button>
-            <div className="flex flex-col gap-2">
-              <Textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Reply..."
-                className="min-h-20"
-                aria-label="Reply"
-              />
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  disabled={!replyText.trim() || isSubmitting}
-                  onClick={() => handleSubmit()}
-                >
-                  <Send data-icon="inline-start" />
-                  Reply
-                </Button>
-              </div>
+          <div className="flex flex-col gap-2">
+            <Textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Reply..."
+              className="min-h-20"
+              aria-label="Reply"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-[10px] text-muted-foreground">{shortcutLabel()} to reply</span>
+              <Button
+                size="sm"
+                disabled={!replyText.trim() || isSubmitting}
+                onClick={() => handleSubmit()}
+              >
+                <Send data-icon="inline-start" />
+                Reply
+              </Button>
             </div>
           </div>
         )}
@@ -502,28 +587,47 @@ function CreateThreadComposer() {
       </ScrollArea>
 
       <div className="border-t p-4">
-        <div className="flex flex-col gap-2">
-          <p className="text-[10px] text-muted-foreground">
-            Posting as {ctx.author?.name ?? "Local Author"}
-            {ctx.isFallbackAuthor && " (git identity not set)"}
-          </p>
-          <Textarea
-            value={draftText}
-            onChange={(e) => setDraftText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Start a comment..."
-            className="min-h-28"
-            aria-label="Start a comment"
-          />
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              disabled={!draftText.trim() || isSubmitting}
-              onClick={() => handleSubmit()}
-            >
-              <Send data-icon="inline-start" />
-              Post
-            </Button>
+        <div className="flex flex-col gap-3">
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <p className="text-xs font-medium text-foreground">
+              Commenting on{" "}
+              <span className="text-clay">{selectedNode.textSnippet ?? "selected component"}</span>
+            </p>
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="capitalize">{selectedNode.nodeType ?? "node"}</span>
+              <span>·</span>
+              <span>
+                {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                Posting as <span className="font-medium text-foreground">{ctx.author?.name ?? "Local Author"}</span>
+                {ctx.isFallbackAuthor && " (git identity not set)"}
+              </span>
+            </div>
+            <Textarea
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Start a comment..."
+              className="min-h-28"
+              aria-label="Start a comment"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-[10px] text-muted-foreground">{shortcutLabel()} to post</span>
+              <Button
+                size="sm"
+                disabled={!draftText.trim() || isSubmitting}
+                onClick={() => handleSubmit()}
+              >
+                <Send data-icon="inline-start" />
+                Post
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -550,4 +654,11 @@ function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
 
 function TimeLabel({ date }: { date: string }) {
   return useMemo(() => formatAnnotationTime(date), [date])
+}
+
+function shortcutLabel(): string {
+  if (typeof navigator !== "undefined" && navigator.platform?.toLowerCase().includes("mac")) {
+    return "⌘ + Enter"
+  }
+  return "Ctrl + Enter"
 }
