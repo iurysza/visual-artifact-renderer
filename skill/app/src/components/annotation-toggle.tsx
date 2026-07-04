@@ -19,7 +19,7 @@ export function AnnotationToggle() {
       className="rounded-full"
     >
       <MessageSquare data-icon="inline-start" />
-      Comments
+      <span className="hidden sm:inline">Comments</span>
       {ctx.totalThreadCount > 0 && (
         <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0 text-[10px] font-medium">
           {ctx.totalThreadCount}

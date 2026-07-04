@@ -28,18 +28,26 @@ export function ThemeToggle({ className }: { className?: string }) {
       ? "Light"
       : "Dark"
     : "Theme"
+  const mobileLabel = mounted
+    ? resolvedTheme === "dark"
+      ? "☀"
+      : "☾"
+    : "◐"
 
   return (
     <button
       type="button"
       aria-label="Toggle dark mode"
       className={cn(
-        "rounded-full border bg-card/90 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "rounded-full border bg-card/90 px-2 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3",
         className
       )}
       onClick={toggleTheme}
     >
-      {label}
+      <span className="hidden sm:inline">{label}</span>
+      <span aria-hidden="true" className="sm:hidden">
+        {mobileLabel}
+      </span>
     </button>
   )
 }
