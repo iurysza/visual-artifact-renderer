@@ -147,6 +147,8 @@ function NodeBoundary({
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!isClickable) return
     if (event.key !== "Enter" && event.key !== " ") return
+    const target = event.target as Element
+    if (isInsideInteractive(target)) return
     event.preventDefault()
 
     ctx.selectNodeForComment({
