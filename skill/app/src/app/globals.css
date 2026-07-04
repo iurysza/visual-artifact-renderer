@@ -116,6 +116,7 @@
   --va-annotation-fast: 100ms;
   --va-annotation-base: 160ms;
   --va-annotation-panel: 190ms;
+  --va-annotation-panel-width: 20rem;
 }
 
 html.dark {
@@ -250,8 +251,17 @@ html.dark {
   animation: va-badge-pop 160ms var(--va-annotation-ease) both;
 }
 
+@keyframes va-view-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+.va-view-exit {
+  animation: va-view-exit 120ms var(--va-annotation-ease-standard) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .va-view-enter,
+  .va-view-exit,
   .va-badge-pop {
     animation: none !important;
     opacity: 1 !important;

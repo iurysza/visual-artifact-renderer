@@ -41,7 +41,8 @@ function VisualArtifactRendererContent({
       data-comments-open={ctx.isCommentMode ? "true" : undefined}
       className={cn(
         "mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14",
-        "data-[comments-open=true]:md:pr-80",
+        "transition-[padding] duration-[var(--va-annotation-panel)] ease-[var(--va-annotation-ease)]",
+        "data-[comments-open=true]:md:pr-[var(--va-annotation-panel-width)]",
       )}
     >
       <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
@@ -116,6 +117,7 @@ function NodeBoundary({
   const ctx = useAnnotationContext()
   const nodeId = node.metadata?.id
   const threadCount = ctx.getThreadCount(nodeId, nodePath)
+  const isCommentActive = ctx.isCommentMode
   const isHovered =
     (ctx.hoveredNode?.nodeId === nodeId && ctx.hoveredNode?.nodePath === nodePath) ||
     (ctx.previewNode?.nodeId === nodeId && ctx.previewNode?.nodePath === nodePath)
@@ -125,9 +127,10 @@ function NodeBoundary({
   const hasThread = threadCount > 0
 
   const annotationState = isSelected ? "selected" : isHovered ? "hovered" : hasThread ? "has-thread" : "idle"
+  const isClickable = isCommentActive || ctx.isPickingNode
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
-    if (!ctx.isPickingNode) return
+    if (!isClickable) return
     event.preventDefault()
     event.stopPropagation()
 
@@ -140,7 +143,7 @@ function NodeBoundary({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (!ctx.isPickingNode) return
+    if (!isClickable) return
     if (event.key !== "Enter" && event.key !== " ") return
     event.preventDefault()
 
@@ -153,12 +156,12 @@ function NodeBoundary({
   }
 
   function handleMouseEnter() {
-    if (!ctx.isPickingNode) return
+    if (!isClickable) return
     ctx.setHoveredNode({ nodeId, nodePath })
   }
 
   function handleMouseLeave() {
-    if (!ctx.isPickingNode) return
+    if (!isClickable) return
     ctx.setHoveredNode(null)
   }
 
@@ -166,7 +169,7 @@ function NodeBoundary({
     <div
       className={cn(
         "relative transition-shadow",
-        ctx.isPickingNode && "cursor-pointer",
+        isClickable && "cursor-pointer",
       )}
       data-va-node-id={nodeId}
       data-va-node-path={nodePath}
@@ -177,23 +180,23 @@ function NodeBoundary({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onKeyDown={handleKeyDown}
-      role={ctx.isPickingNode ? "button" : undefined}
-      aria-label={ctx.isPickingNode ? `Select ${node.type} node` : undefined}
-      aria-pressed={ctx.isPickingNode ? isSelected : undefined}
-      tabIndex={ctx.isPickingNode ? 0 : undefined}
+      role={isClickable ? "button" : undefined}
+      aria-label={isClickable ? `Comment on ${node.type} node` : undefined}
+      aria-pressed={isClickable ? isSelected : undefined}
+      tabIndex={isClickable ? 0 : undefined}
     >
       <div
         className={cn(
           "pointer-events-none absolute inset-0 rounded-[var(--radius-xl)] transition-all",
           "duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
           annotationState === "idle" && "opacity-0",
-          annotationState === "hovered" && "opacity-100 ring-1 ring-clay/50 bg-clay/[0.03] shadow-sm",
-          annotationState === "selected" && "opacity-100 ring-2 ring-clay bg-clay/[0.05] shadow-md",
-          annotationState === "has-thread" && "opacity-0",
+          annotationState === "hovered" && "opacity-100 ring-2 ring-clay/40 bg-clay/[0.06] shadow-sm",
+          annotationState === "selected" && "opacity-100 ring-2 ring-clay bg-clay/[0.08] shadow-md",
+          annotationState === "has-thread" && "opacity-100 ring-1 ring-clay/20 bg-clay/[0.02]",
         )}
       />
       {children}
-      {ctx.isCommentMode && hasThread && (
+      {isCommentActive && hasThread && (
         <span className="va-badge-pop absolute right-2 top-2 z-10 flex size-5 items-center justify-center rounded-full bg-clay text-[10px] font-medium text-white shadow-sm">
           {threadCount}
         </span>

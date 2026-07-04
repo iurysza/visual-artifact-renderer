@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Home } from "lucide-react"
 
 import { useOptionalAnnotationContext } from "@/components/annotation-provider"
-import { AnnotationToggle, NodePickToggle } from "@/components/annotation-toggle"
+import { AnnotationToggle } from "@/components/annotation-toggle"
 
 import {
   Breadcrumb,
@@ -89,7 +89,6 @@ export function SiteHeader() {
           {optionalCtx && (
             <>
               <AnnotationToggle />
-              <NodePickToggle />
             </>
           )}
           <ThemeToggle className="shrink-0" />
