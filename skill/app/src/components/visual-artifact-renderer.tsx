@@ -1,6 +1,6 @@
 "use client"
 
-import type { KeyboardEvent, MouseEvent, ReactNode } from "react"
+import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from "react"
 
 import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 import { componentRegistry } from "@/components/component-registry"
@@ -131,10 +131,44 @@ function NodeBoundary({
   const annotationState = isSelected ? "selected" : isHovered ? "hovered" : hasThread ? "has-thread" : "idle"
   const isClickable = isCommentActive || ctx.isPickingNode
 
+  // Capture pointer events and key events during explicit pick mode so nested
+  // interactive descendants don't steal activation. For ordinary comment mode
+  // we preserve the nested interactive guard.
+  function handlePointerDownCapture(event: PointerEvent<HTMLDivElement>) {
+    if (!ctx.isPickingNode) return
+    event.preventDefault()
+    event.stopPropagation()
+
+    ctx.selectNodeForComment({
+      nodeId,
+      nodePath,
+      nodeType: node.type,
+      textSnippet: nodeLabel(node),
+    })
+  }
+
+  function handleKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+    if (!ctx.isPickingNode) return
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    event.stopPropagation()
+
+    ctx.selectNodeForComment({
+      nodeId,
+      nodePath,
+      nodeType: node.type,
+      textSnippet: nodeLabel(node),
+    })
+  }
+
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!isClickable) return
+    // If a capture handler already handled the event, don't run selection again.
+    if ((event as unknown as { defaultPrevented?: boolean }).defaultPrevented) return
+
     const target = event.target as Element
-    if (isInsideInteractive(target)) return
+    // In pick mode selection should win; otherwise preserve nested interactive guard.
+    if (!ctx.isPickingNode && isInsideInteractive(target)) return
     event.preventDefault()
     event.stopPropagation()
 
@@ -149,8 +183,10 @@ function NodeBoundary({
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!isClickable) return
     if (event.key !== "Enter" && event.key !== " ") return
+    if ((event as unknown as { defaultPrevented?: boolean }).defaultPrevented) return
+
     const target = event.target as Element
-    if (isInsideInteractive(target)) return
+    if (!ctx.isPickingNode && isInsideInteractive(target)) return
     event.preventDefault()
 
     ctx.selectNodeForComment({
@@ -186,7 +222,13 @@ function NodeBoundary({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onKeyDown={handleKeyDown}
-      aria-label={isClickable ? `Comment on ${node.type} node` : undefined}
+      onPointerDownCapture={handlePointerDownCapture}
+      onKeyDownCapture={handleKeyDownCapture}
+      tabIndex={ctx.isPickingNode ? 0 : undefined}
+      role={ctx.isPickingNode ? "button" : undefined}
+      aria-label={
+        ctx.isPickingNode ? `Pick ${node.type} component` : isCommentActive ? `Comment on ${node.type} node` : undefined
+      }
     >
       <div
         className={cn(

@@ -1,11 +1,21 @@
 "use client"
 
+import { useEffect } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAnnotationContext } from "@/components/annotation-provider"
 
 export function NodePickHUD() {
   const ctx = useAnnotationContext()
+
+  // When entering explicit pick mode, move focus to a visible, tappable
+  // control so keyboard and screen reader users always have a clear target.
+  useEffect(() => {
+    if (!ctx.isPickingNode) return
+    const el = document.getElementById("node-pick-cancel") as HTMLElement | null
+    if (el) el.focus()
+  }, [ctx.isPickingNode])
+
   if (!ctx.isPickingNode) return null
 
   return (
@@ -20,9 +30,9 @@ export function NodePickHUD() {
           <p className="text-xs text-muted-foreground">Tap any component on the page to comment</p>
         </div>
         <div className="flex items-start gap-2">
-          <Button size="sm" variant="ghost" onClick={() => ctx.stopNodePick()} aria-label="Cancel picking">
+          <Button id="node-pick-cancel" size="lg" variant="ghost" onClick={() => ctx.stopNodePick()} aria-label="Cancel picking">
             <X />
-            <span className="sr-only">Cancel picking</span>
+            <span>Cancel</span>
           </Button>
         </div>
       </div>
