@@ -8,6 +8,7 @@ import type { ArtifactRenderContext, RenderNodes } from "@/components/artifact-t
 import { cn } from "@/lib/utils"
 import { useAnnotationContext } from "@/components/annotation-provider"
 import { AnnotationPanel } from "@/components/annotation-panel"
+import { NodePickHUD } from "@/components/node-pick-hud"
 
 export function VisualArtifactRenderer({
   spec,
@@ -84,6 +85,7 @@ function VisualArtifactRendererContent({
       </div>
 
       <AnnotationPanel />
+      <NodePickHUD />
     </main>
   )
 }

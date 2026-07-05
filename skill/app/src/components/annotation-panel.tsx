@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAnnotationContext, type PanelView } from "@/components/annotation-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
 import { threadNodeIdentity } from "@/components/annotation-helpers"
+import { NodePickToggle } from "@/components/annotation-toggle"
 import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
 import { cn } from "@/lib/utils"
 
@@ -50,24 +51,30 @@ export function AnnotationPanel() {
   const panelRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    if (!ctx.isCommentMode) return
+    // Focus the close button when comments open, but do not steal focus while
+    // the user is actively picking a node (mobile pick HUD should be focusable).
+    if (!ctx.isCommentMode || ctx.isPickingNode) return
     closeButtonRef.current?.focus()
-  }, [ctx.isCommentMode])
+  }, [ctx.isCommentMode, ctx.isPickingNode])
 
   return (
     <aside
       ref={panelRef}
       className={cn(
         "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
-        ctx.isCommentMode
+        // Hide the panel while the user is picking a node so the artifact canvas
+        // becomes fully tappable on mobile. Keep comment mode active.
+        ctx.isCommentMode && !ctx.isPickingNode
           ? "va-panel-open visible translate-x-0 opacity-100"
           : "invisible translate-x-5 opacity-0 pointer-events-none",
       )}
-      data-state={ctx.isCommentMode ? "open" : "closed"}
-      aria-hidden={!ctx.isCommentMode}
-      inert={!ctx.isCommentMode}
-      role={ctx.isCommentMode ? "complementary" : undefined}
-      aria-label={ctx.isCommentMode ? "Annotation sidebar" : undefined}
+      data-state={ctx.isCommentMode && !ctx.isPickingNode ? "open" : "closed"}
+      aria-hidden={!(ctx.isCommentMode && !ctx.isPickingNode)}
+      // Make the panel inert while hidden so screen readers and focus don't
+      // interact with it during picking.
+      inert={!(ctx.isCommentMode && !ctx.isPickingNode)}
+      role={ctx.isCommentMode && !ctx.isPickingNode ? "complementary" : undefined}
+      aria-label={ctx.isCommentMode && !ctx.isPickingNode ? "Annotation sidebar" : undefined}
     >
       <PanelHeader closeButtonRef={closeButtonRef} />
       <PanelContent />
@@ -94,6 +101,10 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
         {ctx.isSaving && (
           <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
         )}
+        {/* Add a clear pick action inside the panel header so mobile users can
+            start selecting a component to comment on. Using the NodePickToggle
+            preserves the existing start/stop behavior and visuals. */}
+        <NodePickToggle />
         <Button
           ref={closeButtonRef}
           variant="ghost"
@@ -501,13 +512,25 @@ function CreateThreadComposer() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="border-b px-4 py-4">
-        <button
-          type="button"
-          onClick={ctx.navigateBack}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          ← Back to all comments
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={ctx.navigateBack}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            ← Back to all comments
+          </button>
+          <div>
+            <button
+              type="button"
+              onClick={() => ctx.startNodePick()}
+              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+            >
+              Change component
+            </button>
+          </div>
+        </div>
+
         <div className="mt-3">
           <p className="line-clamp-1 text-sm font-medium text-foreground">
             {selectedNode.textSnippet ?? "Selected component"}
