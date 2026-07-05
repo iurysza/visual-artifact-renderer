@@ -398,7 +398,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4">
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         {thread.status === "resolved" ? (
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">This thread is resolved.</p>
@@ -412,6 +412,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
               placeholder="Reply..."
               className="min-h-20"
               aria-label="Reply"
+              id="thread-reply-textarea"
             />
             <div className="flex items-center justify-end gap-2">
               <span className="text-[10px] text-muted-foreground">{shortcutLabel()} to reply</span>
@@ -507,6 +508,32 @@ function CreateThreadComposer() {
     }
   }
 
+  // focus and ensure visibility of the composer on mobile when a node is
+  // selected so the textarea isn't hidden behind the keyboard or chrome.
+  // We only do this for small/coarse-pointer devices to avoid stealing focus
+  // on desktop.
+  useEffect(() => {
+    const isClient = typeof window !== "undefined"
+    if (!isClient) return
+    const isMobile = window.matchMedia ? window.matchMedia("(pointer:coarse)").matches || window.innerWidth <= 768 : window.innerWidth <= 768
+    if (!isMobile) return
+
+    const id = setTimeout(() => {
+      const el = document.getElementById("create-thread-textarea") as HTMLTextAreaElement | null
+      if (el) {
+        try {
+          el.focus()
+        } catch {}
+        // try to bring it into view
+        try {
+          el.scrollIntoView({ behavior: "smooth", block: "center" })
+        } catch {}
+      }
+    }, 220)
+
+    return () => clearTimeout(id)
+  }, [selectedNode])
+
   if (!selectedNode) return null
 
   return (
@@ -570,7 +597,7 @@ function CreateThreadComposer() {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4">
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="flex flex-col gap-3">
           <div className="rounded-lg border bg-muted/40 p-3">
             <p className="text-xs font-medium text-foreground">
@@ -594,6 +621,7 @@ function CreateThreadComposer() {
               </span>
             </div>
             <Textarea
+              id="create-thread-textarea"
               value={draftText}
               onChange={(e) => setDraftText(e.target.value)}
               onKeyDown={handleKeyDown}

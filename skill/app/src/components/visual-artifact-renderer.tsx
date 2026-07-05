@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { useAnnotationContext } from "@/components/annotation-provider"
 import { AnnotationPanel } from "@/components/annotation-panel"
 import { NodePickHUD } from "@/components/node-pick-hud"
+import type { NodeIdentity } from "@/components/annotation-helpers"
 
 export function VisualArtifactRenderer({
   spec,
@@ -137,6 +138,12 @@ function NodeBoundary({
   // this flag; onClickCapture consumes it and prevents activation.
   const clickSuppressedRef = useRef(false)
 
+  // Track pointer type and coordinates for touch tap detection to avoid
+  // accidental selection during scrolling.
+  const lastPointerTypeRef = useRef<string | null>(null)
+  const lastPointerDownCoordsRef = useRef<{ x: number; y: number } | null>(null)
+  const lastTouchCandidateRef = useRef<NodeIdentity | null>(null)
+
   // Capture pointer events and key events during explicit pick mode so nested
   // interactive descendants don't steal activation. For ordinary comment mode
   // we preserve the nested interactive guard.
@@ -165,6 +172,17 @@ function NodeBoundary({
     if (!ctx.isPickingNode) return
 
     const found = findClosestVaNodeFromEventTarget(event.target)
+
+    lastPointerTypeRef.current = (event as unknown as { pointerType?: string }).pointerType ?? null
+    lastPointerDownCoordsRef.current = { x: event.clientX, y: event.clientY }
+
+    // For touch, do not preventDefault on pointerdown so scrolling works.
+    // Instead remember the candidate and let click capture confirm the tap.
+    if (event.pointerType === "touch") {
+      lastTouchCandidateRef.current = found
+      return
+    }
+
     if (!found) return
 
     // mark click suppressed so the later click event (which may happen after
@@ -214,6 +232,43 @@ function NodeBoundary({
     // handles click-only (mouse/assistive) activation which otherwise would
     // be prevented by the original preventDefault and lost in bubble phase.
     if (ctx.isPickingNode) {
+      const pointerType = lastPointerTypeRef.current
+
+      // If the last pointer was touch, treat this click as a touch tap. Only
+      // confirm selection if movement since pointerdown is small (i.e., a tap).
+      if (pointerType === "touch") {
+        const down = lastPointerDownCoordsRef.current
+        const dx = down ? Math.abs((event as unknown as MouseEvent).clientX - down.x) : 0
+        const dy = down ? Math.abs((event as unknown as MouseEvent).clientY - down.y) : 0
+        const moved = Math.hypot(dx, dy) > 10
+
+        // clear transient touch trackers
+        lastPointerTypeRef.current = null
+        lastPointerDownCoordsRef.current = null
+
+        if (moved) {
+          // likely a scroll; don't select
+          lastTouchCandidateRef.current = null
+          return
+        }
+
+        const found = findClosestVaNodeFromEventTarget(event.target) ?? lastTouchCandidateRef.current
+        lastTouchCandidateRef.current = null
+
+        if (found) {
+          // for touch, set pick candidate instead of opening composer
+          clickSuppressedRef.current = true
+          event.preventDefault()
+          event.stopPropagation()
+          ctx.setPickCandidateNode(found)
+          return
+        }
+
+        // No VA node found; still prevent native activation to avoid unexpected navigation.
+        event.preventDefault()
+        return
+      }
+
       const found = findClosestVaNodeFromEventTarget(event.target)
       if (found) {
         event.preventDefault()

@@ -18,6 +18,8 @@ export function NodePickHUD() {
 
   if (!ctx.isPickingNode) return null
 
+  const candidate = ctx.pickCandidateNode
+
   return (
     <div
       role="status"
@@ -26,14 +28,35 @@ export function NodePickHUD() {
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">Select component</p>
-          <p className="text-xs text-muted-foreground">Tap any component on the page to comment</p>
+          {!candidate ? (
+            <>
+              <p className="text-sm font-medium">Select component</p>
+              <p className="text-xs text-muted-foreground">Tap a component to select it. Scroll freely.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium">Comment on</p>
+              <p className="text-xs text-muted-foreground">{candidate.textSnippet ?? candidate.nodeType ?? "Selected component"}</p>
+            </>
+          )}
         </div>
         <div className="flex items-start gap-2">
-          <Button id="node-pick-cancel" size="lg" variant="ghost" onClick={() => ctx.stopNodePick()} aria-label="Cancel picking">
-            <X />
-            <span>Cancel</span>
-          </Button>
+          {candidate ? (
+            <>
+              <Button id="node-pick-confirm" size="lg" onClick={() => ctx.confirmNodePick()} aria-label="Confirm pick">
+                Comment on this
+              </Button>
+              <Button id="node-pick-cancel" size="lg" variant="ghost" onClick={() => ctx.stopNodePick()} aria-label="Cancel picking">
+                <X />
+                <span>Cancel</span>
+              </Button>
+            </>
+          ) : (
+            <Button id="node-pick-cancel" size="lg" variant="ghost" onClick={() => ctx.stopNodePick()} aria-label="Cancel picking">
+              <X />
+              <span>Cancel</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

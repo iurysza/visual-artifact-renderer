@@ -36,6 +36,9 @@ interface AnnotationContextValue {
   error: string | null
   isCommentMode: boolean
   isPickingNode: boolean
+  pickCandidateNode: NodeIdentity | null
+  setPickCandidateNode: (node: NodeIdentity | null) => void
+  confirmNodePick: () => void
   hoveredNode: NodeIdentity | null
   setHoveredNode: (node: NodeIdentity | null) => void
   selectedNode: NodeIdentity | null
@@ -109,6 +112,7 @@ function AnnotationProviderInner({
   const [isSaving, setIsSaving] = useState(false)
   const [isCommentMode, setIsCommentMode] = useState(false)
   const [isPickingNode, setIsPickingNode] = useState(false)
+  const [pickCandidateNode, setPickCandidateNode] = useState<NodeIdentity | null>(null)
   const [hoveredNode, setHoveredNode] = useState<NodeIdentity | null>(null)
   const [selectedNode, setSelectedNode] = useState<NodeIdentity | null>(null)
   const [highlightedNode, setHighlightedNode] = useState<NodeIdentity | null>(null)
@@ -182,12 +186,14 @@ function AnnotationProviderInner({
   const openComments = useCallback(() => {
     setIsCommentMode(true)
     setIsPickingNode(false)
+    setPickCandidateNode(null)
     resetPanelState()
   }, [resetPanelState])
 
   const closeComments = useCallback(() => {
     setIsCommentMode(false)
     setIsPickingNode(false)
+    setPickCandidateNode(null)
     setError(null)
     resetPanelState()
   }, [resetPanelState])
@@ -195,17 +201,20 @@ function AnnotationProviderInner({
   const startNodePick = useCallback(() => {
     setIsCommentMode(true)
     setIsPickingNode(true)
+    setPickCandidateNode(null)
     resetPanelState()
   }, [resetPanelState])
 
   const stopNodePick = useCallback(() => {
     setIsPickingNode(false)
+    setPickCandidateNode(null)
   }, [])
 
   const selectNodeForComment = useCallback(
     (node: NodeIdentity) => {
       setSelectedNode(node)
       setIsPickingNode(false)
+      setPickCandidateNode(null)
       setDraftText("")
       setActiveThreadId(null)
       setHighlightedNode(null)
@@ -216,6 +225,12 @@ function AnnotationProviderInner({
     },
     [setSelectedNode, setIsPickingNode, setDraftText, setActiveThreadId, setHighlightedNode, setPreviewNode, setPanelView, setReturnView],
   )
+
+  const confirmNodePick = useCallback(() => {
+    if (!pickCandidateNode) return
+    selectNodeForComment(pickCandidateNode)
+    setPickCandidateNode(null)
+  }, [pickCandidateNode, selectNodeForComment])
 
   const stateRef = useRef({
     draftText,
@@ -468,6 +483,9 @@ function AnnotationProviderInner({
       error,
       isCommentMode,
       isPickingNode,
+      pickCandidateNode,
+      setPickCandidateNode,
+      confirmNodePick,
       hoveredNode,
       setHoveredNode,
       selectedNode,
@@ -515,6 +533,9 @@ function AnnotationProviderInner({
       error,
       isCommentMode,
       isPickingNode,
+      pickCandidateNode,
+      setPickCandidateNode,
+      confirmNodePick,
       hoveredNode,
       setHoveredNode,
       selectedNode,
