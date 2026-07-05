@@ -250,8 +250,11 @@ function NodeBoundary({
         lastPointerDownCoordsRef.current = null
 
         if (moved) {
-          // likely a scroll; don't select
+          // likely a scroll; don't select. Swallow this click so nested
+          // interactive elements don't activate after a moved touch.
           lastTouchCandidateRef.current = null
+          event.preventDefault()
+          event.stopPropagation()
           return
         }
 
