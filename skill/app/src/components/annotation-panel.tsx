@@ -252,7 +252,7 @@ function ThreadList() {
         </FilterButton>
       </div>
 
-      <ScrollArea className="md:flex-1 max-h-[48vh]">
+      <ScrollArea className="max-h-[48vh] md:max-h-none md:flex-1">
         <div className="flex flex-col gap-2 p-4">
           {filteredThreads.length === 0 && (
             <div className="rounded-xl border border-dashed p-5 text-center">
@@ -604,7 +604,7 @@ function CreateThreadComposer() {
         </div>
       </div>
 
-      <ScrollArea className="md:flex-1 max-h-[40vh]">
+      <ScrollArea className="max-h-[40vh] md:max-h-none md:flex-1">
         <div className="flex flex-col gap-3 p-4">
           {nodeThreads.map((thread) => (
             <button
