@@ -86,38 +86,71 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
   const ctx = useAnnotationContext()
 
   return (
-    <div className="flex items-center justify-between border-b px-4 py-3">
-      <div className="flex items-center gap-2">
-        <h3 className="font-serif text-base font-medium tracking-tight">Comments</h3>
-        {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
+    <>
+      {/* Desktop header */}
+      <div className="hidden md:flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-serif text-base font-medium tracking-tight">Comments</h3>
+          {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
+        </div>
+        <div className="flex items-center gap-2">
+          {ctx.isPickingNode && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-medium text-clay">
+              <Crosshair className="size-3" />
+              Pick a component
+            </span>
+          )}
+          {ctx.isSaving && (
+            <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
+          )}
+          <NodePickToggle />
+          <Button
+            ref={closeButtonRef}
+            variant="ghost"
+            size="icon-xs"
+            onClick={ctx.closeComments}
+            aria-label="Close comments"
+            title="Close comments"
+          >
+            <X data-icon="only" />
+            <span className="sr-only">Close comments</span>
+          </Button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {ctx.isPickingNode && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-medium text-clay">
-            <Crosshair className="size-3" />
-            Pick a component
-          </span>
-        )}
-        {ctx.isSaving && (
-          <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
-        )}
-        {/* Add a clear pick action inside the panel header so mobile users can
-            start selecting a component to comment on. Using the NodePickToggle
-            preserves the existing start/stop behavior and visuals. */}
-        <NodePickToggle />
-        <Button
-          ref={closeButtonRef}
-          variant="ghost"
-          size="icon-xs"
-          onClick={ctx.closeComments}
-          aria-label="Close comments"
-          title="Close comments"
-        >
-          <X data-icon="only" />
-          <span className="sr-only">Close comments</span>
-        </Button>
+
+      {/* Mobile header: single app bar, dynamic title */}
+      <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={ctx.navigateBack}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <h3 className="font-serif text-base font-medium tracking-tight">
+            {ctx.panelView === "node" && ctx.selectedNode ? "New comment" : "Comments"}
+          </h3>
+          {ctx.totalThreadCount > 0 && <Badge variant="secondary" className="ml-2">{ctx.totalThreadCount}</Badge>}
+        </div>
+        <div className="flex items-center gap-2">
+          {/* On mobile, keep node pick toggle as icon-only */}
+          <NodePickToggle />
+          <Button
+            ref={closeButtonRef}
+            variant="ghost"
+            size="icon-xs"
+            onClick={ctx.closeComments}
+            aria-label="Close comments"
+            title="Close comments"
+          >
+            <X data-icon="only" />
+            <span className="sr-only">Close comments</span>
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -219,7 +252,7 @@ function ThreadList() {
         </FilterButton>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="md:flex-1 max-h-[48vh]">
         <div className="flex flex-col gap-2 p-4">
           {filteredThreads.length === 0 && (
             <div className="rounded-xl border border-dashed p-5 text-center">
@@ -415,7 +448,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
               id="thread-reply-textarea"
             />
             <div className="flex items-center justify-end gap-2">
-              <span className="text-[10px] text-muted-foreground">{shortcutLabel()} to reply</span>
+              <span className="text-[10px] text-muted-foreground hidden md:inline">{shortcutLabel()} to reply</span>
               <Button
                 size="sm"
                 disabled={!replyText.trim() || isSubmitting}
@@ -538,7 +571,7 @@ function CreateThreadComposer() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="border-b px-4 py-4">
+      <div className="border-b px-4 py-4 hidden md:block">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -571,7 +604,7 @@ function CreateThreadComposer() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="md:flex-1 max-h-[40vh]">
         <div className="flex flex-col gap-3 p-4">
           {nodeThreads.map((thread) => (
             <button
@@ -599,7 +632,21 @@ function CreateThreadComposer() {
 
       <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="flex flex-col gap-3">
-          <div className="rounded-lg border bg-muted/40 p-3">
+          {/* Mobile compact target chip */}
+          <div className="flex items-center justify-between gap-2 rounded-lg border p-2 md:hidden">
+            <div className="min-w-0">
+              <p className="line-clamp-1 text-sm font-medium text-foreground">{selectedNode.textSnippet ?? "Selected component"}</p>
+              <p className="text-xs text-muted-foreground">{selectedNode.nodeType ?? "node"} · {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}</p>
+            </div>
+            <div>
+              <button type="button" onClick={() => ctx.startNodePick()} className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+                Change
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop target summary */}
+          <div className="rounded-lg border bg-muted/40 p-3 hidden md:block">
             <p className="text-xs font-medium text-foreground">
               Commenting on{" "}
               <span className="text-clay">{selectedNode.textSnippet ?? "selected component"}</span>
@@ -626,11 +673,11 @@ function CreateThreadComposer() {
               onChange={(e) => setDraftText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Start a comment..."
-              className="min-h-28"
+              className="min-h-20 md:min-h-28"
               aria-label="Start a comment"
             />
             <div className="flex items-center justify-end gap-2">
-              <span className="text-[10px] text-muted-foreground">{shortcutLabel()} to post</span>
+              <span className="text-[10px] text-muted-foreground hidden md:inline">{shortcutLabel()} to post</span>
               <Button
                 size="sm"
                 disabled={!draftText.trim() || isSubmitting}
