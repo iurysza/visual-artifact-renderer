@@ -39,12 +39,12 @@ export function NodePickToggle() {
       size="sm"
       onClick={() => (active ? ctx.stopNodePick() : ctx.startNodePick())}
       aria-pressed={active}
-      aria-label={active ? "Stop picking a node" : "Pick a node to comment"}
-      title={active ? "Stop picking a node" : "Pick a node to comment"}
+      aria-label={active ? "Stop selecting component" : "Start a new comment by selecting a component"}
+      title={active ? "Stop selecting component" : "Start a new comment by selecting a component"}
       className="rounded-full"
     >
       <Crosshair data-icon="inline-start" />
-      <span className="hidden sm:inline">{active ? "Picking..." : "Pick a component"}</span>
+      <span className="hidden sm:inline">{active ? "Selecting..." : "New comment"}</span>
     </Button>
   )
 }
