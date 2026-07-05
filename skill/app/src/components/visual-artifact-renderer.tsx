@@ -209,10 +209,23 @@ function NodeBoundary({
       return
     }
 
-    // If we're in pick mode but no prior capture handled it, prevent the
-    // native activation (navigation/click) but allow propagation so the
-    // bubble-phase click handler can run selection logic.
-    event.preventDefault()
+    // If we're in pick mode but no prior capture handled it, select the
+    // deepest VA node now in capture and suppress nested activation. This
+    // handles click-only (mouse/assistive) activation which otherwise would
+    // be prevented by the original preventDefault and lost in bubble phase.
+    if (ctx.isPickingNode) {
+      const found = findClosestVaNodeFromEventTarget(event.target)
+      if (found) {
+        event.preventDefault()
+        event.stopPropagation()
+        ctx.selectNodeForComment(found)
+        return
+      }
+
+      // No VA node found; still prevent native activation to avoid unexpected navigation.
+      event.preventDefault()
+      return
+    }
   }
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
