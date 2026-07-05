@@ -9,6 +9,7 @@ import {
   parseAnnotationMutation,
   parseAnnotationMutations,
   emptyAnnotationDocument,
+  LOCAL_ANONYMOUS_AUTHOR,
 } from "@agents/visual-artifact-annotations"
 import {
   applyMutations,
@@ -67,6 +68,10 @@ describe("parseAnnotationAuthor", () => {
 
   test("rejects extra keys", () => {
     expect(() => parseAnnotationAuthor({ ...validAuthor, avatar: "x" })).toThrow(/avatar/)
+  })
+
+  test("accepts local fallback author", () => {
+    expect(parseAnnotationAuthor(LOCAL_ANONYMOUS_AUTHOR)).toEqual(LOCAL_ANONYMOUS_AUTHOR)
   })
 })
 

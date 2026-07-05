@@ -13,7 +13,7 @@ export type AnnotationAuthor = z.infer<typeof AnnotationAuthorSchema>
 
 export const LOCAL_ANONYMOUS_AUTHOR: AnnotationAuthor = {
   name: "Local Author",
-  email: "dev@localhost",
+  email: "local-author@example.test",
 }
 
 export const AnnotationAnchorSchema = z
