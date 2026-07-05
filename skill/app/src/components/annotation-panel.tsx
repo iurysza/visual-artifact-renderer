@@ -84,14 +84,30 @@ export function AnnotationPanel() {
 
 function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLButtonElement | null> }) {
   const ctx = useAnnotationContext()
+  const activeThread = ctx.activeThreadId ? ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId) : null
+  const title =
+    ctx.panelView === "node" && ctx.selectedNode
+      ? "Comment on selection"
+      : ctx.panelView === "thread" && activeThread
+      ? "Thread"
+      : "Review comments"
 
   return (
     <>
       {/* Desktop header */}
       <div className="hidden md:flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <h3 className="font-serif text-base font-medium tracking-tight">Comments</h3>
-          {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
+            {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
+          </div>
+          {activeThread && (
+            <div className="text-xs text-muted-foreground mt-1">
+              <span className="font-medium text-foreground">{activeThread.anchor.textSnippet || activeThread.anchor.nodeType}</span>
+              <span className="ml-2">{activeThread.anchor.nodeType}</span>
+              <span className="ml-2">· {activeThread.messages.length} thread{activeThread.messages.length === 1 ? "" : "s"}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {ctx.isPickingNode && (
@@ -319,14 +335,14 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
       onMouseLeave={() => ctx.setPreviewNode(null)}
       aria-label={`Open thread on ${snippet}, ${thread.status}, ${thread.messages.length} ${replyLabel}`}
       className={cn(
-        "group flex flex-col gap-2 rounded-xl border p-4 text-left transition-all duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
+        "group flex flex-col gap-2 md:gap-1 rounded-xl md:rounded-lg border p-4 md:p-3 text-left transition-all duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
         "hover:border-muted-foreground/20 hover:bg-muted/50",
         isActive && "border-clay/40 bg-clay/[0.04]",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</span>
-        <div className="flex shrink-0 items-center gap-1">
+        <span className="line-clamp-1 text-sm md:text-sm font-medium text-foreground">{snippet}</span>
+        <div className="flex shrink-0 items-center gap-2">
           {!isPresent && (
             <span
               className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
@@ -338,10 +354,11 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
           <ThreadStatusBadge status={thread.status} />
         </div>
       </div>
-      <p className="line-clamp-2 text-xs text-muted-foreground">{lastMessage?.body}</p>
-      <p className="text-[10px] text-muted-foreground">
-        {thread.messages.length} {replyLabel}
-        {" · "}
+      <p className="line-clamp-2 text-xs text-muted-foreground md:truncate md:overflow-hidden">{lastMessage?.body}</p>
+      <p className="text-[10px] text-muted-foreground flex items-center gap-2">
+        {lastMessage?.author?.name && <span className="hidden md:inline text-[11px] text-muted-foreground">{lastMessage.author.name} ·</span>}
+        <span>{thread.messages.length} {replyLabel}</span>
+        <span>·</span>
         <TimeLabel date={thread.updatedAt} />
       </p>
     </button>
@@ -431,7 +448,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
         {thread.status === "resolved" ? (
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">This thread is resolved.</p>
@@ -630,7 +647,7 @@ function CreateThreadComposer() {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
         <div className="flex flex-col gap-3">
           {/* Mobile compact target chip */}
           <div className="flex items-center justify-between gap-2 rounded-lg border p-2 md:hidden">
@@ -697,17 +714,29 @@ function CreateThreadComposer() {
 function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
   if (status === "resolved") {
     return (
-      <Badge variant="secondary" className="gap-1">
-        <CheckCircle2 className="size-3" />
-        Resolved
-      </Badge>
+      <>
+        <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <CheckCircle2 className="size-3" />
+          <span>Resolved</span>
+        </span>
+        <Badge variant="secondary" className="gap-1 md:hidden">
+          <CheckCircle2 className="size-3" />
+          Resolved
+        </Badge>
+      </>
     )
   }
   return (
-    <Badge variant="outline" className="gap-1">
-      <Circle className="size-3" />
-      Open
-    </Badge>
+    <>
+      <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="inline-block h-2 w-2 rounded-full bg-clay" />
+        <span>Open</span>
+      </span>
+      <Badge variant="outline" className="gap-1 md:hidden">
+        <Circle className="size-3" />
+        Open
+      </Badge>
+    </>
   )
 }
 
