@@ -125,9 +125,12 @@ function NodeBoundary({
   const isHovered =
     (ctx.hoveredNode?.nodeId === nodeId && ctx.hoveredNode?.nodePath === nodePath) ||
     (ctx.previewNode?.nodeId === nodeId && ctx.previewNode?.nodePath === nodePath)
+  const isCandidate =
+    (ctx.pickCandidateNode?.nodeId === nodeId && ctx.pickCandidateNode?.nodePath === nodePath)
   const isSelected =
     (ctx.selectedNode?.nodeId === nodeId && ctx.selectedNode?.nodePath === nodePath) ||
-    (ctx.highlightedNode?.nodeId === nodeId && ctx.highlightedNode?.nodePath === nodePath)
+    (ctx.highlightedNode?.nodeId === nodeId && ctx.highlightedNode?.nodePath === nodePath) ||
+    isCandidate
   const hasThread = threadCount > 0
 
   const annotationState = isSelected ? "selected" : isHovered ? "hovered" : hasThread ? "has-thread" : "idle"
@@ -257,7 +260,9 @@ function NodeBoundary({
 
         if (found) {
           // for touch, set pick candidate instead of opening composer
-          clickSuppressedRef.current = true
+          // don't set clickSuppressedRef here: we already prevented default and
+          // stopped propagation for the current event, and persisting the
+          // suppression causes the next tap to be swallowed.
           event.preventDefault()
           event.stopPropagation()
           ctx.setPickCandidateNode(found)
