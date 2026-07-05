@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from "react"
 
 import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-schema"
@@ -131,6 +132,11 @@ function NodeBoundary({
   const annotationState = isSelected ? "selected" : isHovered ? "hovered" : hasThread ? "has-thread" : "idle"
   const isClickable = isCommentActive || ctx.isPickingNode
 
+  // Local suppression flag used to prevent nested interactive activation after
+  // we selected a node during pointer/key capture. Pointer/key capture sets
+  // this flag; onClickCapture consumes it and prevents activation.
+  const clickSuppressedRef = useRef(false)
+
   // Capture pointer events and key events during explicit pick mode so nested
   // interactive descendants don't steal activation. For ordinary comment mode
   // we preserve the nested interactive guard.
@@ -161,6 +167,10 @@ function NodeBoundary({
     const found = findClosestVaNodeFromEventTarget(event.target)
     if (!found) return
 
+    // mark click suppressed so the later click event (which may happen after
+    // we toggle picking state) doesn't activate nested interactive elements.
+    clickSuppressedRef.current = true
+
     event.preventDefault()
     event.stopPropagation()
 
@@ -174,10 +184,35 @@ function NodeBoundary({
     const found = findClosestVaNodeFromEventTarget(event.target)
     if (!found) return
 
+    // keyboard selection can synthesize a click; suppress it similarly.
+    clickSuppressedRef.current = true
+
     event.preventDefault()
     event.stopPropagation()
 
     ctx.selectNodeForComment(found)
+  }
+
+  function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
+    // Only intervene for explicit pick mode or when a prior capture set the
+    // suppression flag. Otherwise, let nested interactive elements handle clicks.
+    if (!ctx.isPickingNode && !clickSuppressedRef.current) return
+
+    // If a prior capture already processed selection (pointer/key), consume
+    // the suppression flag and fully stop the click so nested controls don't
+    // activate. This also prevents duplicate selection since the capture phase
+    // has already selected.
+    if (clickSuppressedRef.current) {
+      event.preventDefault()
+      event.stopPropagation()
+      clickSuppressedRef.current = false
+      return
+    }
+
+    // If we're in pick mode but no prior capture handled it, prevent the
+    // native activation (navigation/click) but allow propagation so the
+    // bubble-phase click handler can run selection logic.
+    event.preventDefault()
   }
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
@@ -235,6 +270,7 @@ function NodeBoundary({
       data-va-node-type={node.type}
       data-va-node-label={nodeLabel(node)}
       data-annotation-state={annotationState}
+      onClickCapture={handleClickCapture}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
