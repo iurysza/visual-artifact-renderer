@@ -113,7 +113,7 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
           {ctx.isPickingNode && (
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-medium text-clay">
               <Crosshair className="size-3" />
-              Pick a component
+              Selecting component
             </span>
           )}
           {ctx.isSaving && (
