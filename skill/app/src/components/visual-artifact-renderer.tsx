@@ -134,31 +134,50 @@ function NodeBoundary({
   // Capture pointer events and key events during explicit pick mode so nested
   // interactive descendants don't steal activation. For ordinary comment mode
   // we preserve the nested interactive guard.
+  function findClosestVaNodeFromEventTarget(target: EventTarget | null) {
+    const el = target as Element | null
+    if (!el) return null
+    const anchor = el.closest('[data-va-node-path]') as Element | null
+    if (!anchor) return null
+
+    const foundNodeId = anchor.getAttribute("data-va-node-id") ?? undefined
+    const foundNodePath = anchor.getAttribute("data-va-node-path") ?? undefined
+    const foundNodeType = anchor.getAttribute("data-va-node-type") ?? undefined
+    const foundNodeLabel = anchor.getAttribute("data-va-node-label") ?? undefined
+
+    if (!foundNodePath) return null
+
+    return {
+      nodeId: foundNodeId,
+      nodePath: foundNodePath,
+      nodeType: foundNodeType,
+      textSnippet: foundNodeLabel,
+    }
+  }
+
   function handlePointerDownCapture(event: PointerEvent<HTMLDivElement>) {
     if (!ctx.isPickingNode) return
+
+    const found = findClosestVaNodeFromEventTarget(event.target)
+    if (!found) return
+
     event.preventDefault()
     event.stopPropagation()
 
-    ctx.selectNodeForComment({
-      nodeId,
-      nodePath,
-      nodeType: node.type,
-      textSnippet: nodeLabel(node),
-    })
+    ctx.selectNodeForComment(found)
   }
 
   function handleKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     if (!ctx.isPickingNode) return
     if (event.key !== "Enter" && event.key !== " ") return
+
+    const found = findClosestVaNodeFromEventTarget(event.target)
+    if (!found) return
+
     event.preventDefault()
     event.stopPropagation()
 
-    ctx.selectNodeForComment({
-      nodeId,
-      nodePath,
-      nodeType: node.type,
-      textSnippet: nodeLabel(node),
-    })
+    ctx.selectNodeForComment(found)
   }
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
@@ -169,15 +188,14 @@ function NodeBoundary({
     const target = event.target as Element
     // In pick mode selection should win; otherwise preserve nested interactive guard.
     if (!ctx.isPickingNode && isInsideInteractive(target)) return
+
+    const found = findClosestVaNodeFromEventTarget(event.target)
+    if (!found) return
+
     event.preventDefault()
     event.stopPropagation()
 
-    ctx.selectNodeForComment({
-      nodeId,
-      nodePath,
-      nodeType: node.type,
-      textSnippet: nodeLabel(node),
-    })
+    ctx.selectNodeForComment(found)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -187,14 +205,13 @@ function NodeBoundary({
 
     const target = event.target as Element
     if (!ctx.isPickingNode && isInsideInteractive(target)) return
+
+    const found = findClosestVaNodeFromEventTarget(event.target)
+    if (!found) return
+
     event.preventDefault()
 
-    ctx.selectNodeForComment({
-      nodeId,
-      nodePath,
-      nodeType: node.type,
-      textSnippet: nodeLabel(node),
-    })
+    ctx.selectNodeForComment(found)
   }
 
   function handleMouseEnter() {
