@@ -28,6 +28,17 @@ export type ThreadFilter = "all" | "open" | "resolved"
 export type PanelView = "list" | "node" | "thread"
 export type ReturnView = "list" | "node"
 
+/**
+ * Author resolution state.
+ *
+ * `loading` — initial fetch in flight, `author` is the local fallback.
+ * `ready` — git identity resolved, `author` is the real identity.
+ * `fallback` — fetch failed or git identity unset; `author` is the local
+ *   fallback so posting is still possible, but the UI should label it as a
+ *   local author rather than a real git identity.
+ */
+export type AuthorStatus = "loading" | "ready" | "fallback"
+
 interface AnnotationContextValue {
   project: string
   slug: string
@@ -67,7 +78,8 @@ interface AnnotationContextValue {
   totalThreadCount: number
   openThreadCount: number
   resolvedThreadCount: number
-  author: AnnotationAuthor | null
+  author: AnnotationAuthor
+  authorStatus: AuthorStatus
   isFallbackAuthor: boolean
   isSaving: boolean
   createThread: (anchor: AnnotationAnchor, body: string) => Promise<void>
@@ -122,13 +134,14 @@ function AnnotationProviderInner({
   const [returnView, setReturnView] = useState<ReturnView>("list")
   const [filter, setFilter] = useState<ThreadFilter>("all")
   const [draftText, setDraftText] = useState("")
-  const [author, setAuthor] = useState<AnnotationAuthor | null>(null)
+  // Start with the local fallback so `author` is never null and posting can
+  // never race the fetch. `authorStatus` makes the loading/ready/fallback
+  // distinction explicit; the composer uses it to disable Post while loading
+  // and to label fallback correctly.
+  const [author, setAuthor] = useState<AnnotationAuthor>(LOCAL_ANONYMOUS_AUTHOR)
+  const [authorStatus, setAuthorStatus] = useState<AuthorStatus>("loading")
 
-  const isFallbackAuthor = Boolean(
-    author &&
-      author.name === LOCAL_ANONYMOUS_AUTHOR.name &&
-      author.email === LOCAL_ANONYMOUS_AUTHOR.email,
-  )
+  const isFallbackAuthor = authorStatus === "fallback"
 
   useEffect(() => {
     let cancelled = false
@@ -153,10 +166,18 @@ function AnnotationProviderInner({
     let cancelled = false
     resolveLocalAuthor()
       .then((a) => {
-        if (!cancelled) setAuthor(a)
+        if (cancelled) return
+        // If the server returned the local fallback author, the git identity
+        // was unset, so treat it as a fallback rather than a real identity.
+        const isFallback =
+          a.name === LOCAL_ANONYMOUS_AUTHOR.name && a.email === LOCAL_ANONYMOUS_AUTHOR.email
+        setAuthor(a)
+        setAuthorStatus(isFallback ? "fallback" : "ready")
       })
       .catch(() => {
-        if (!cancelled) setAuthor(null)
+        if (cancelled) return
+        setAuthor(LOCAL_ANONYMOUS_AUTHOR)
+        setAuthorStatus("fallback")
       })
     return () => {
       cancelled = true
@@ -287,7 +308,7 @@ function AnnotationProviderInner({
       const now = new Date().toISOString()
       return {
         id: generateId(),
-        author: author ?? LOCAL_ANONYMOUS_AUTHOR,
+        author,
         body: body.trim(),
         createdAt: now,
         updatedAt: now,
@@ -515,6 +536,7 @@ function AnnotationProviderInner({
       openThreadCount,
       resolvedThreadCount,
       author,
+      authorStatus,
       isFallbackAuthor,
       isSaving,
       createThread,
@@ -565,6 +587,7 @@ function AnnotationProviderInner({
       openThreadCount,
       resolvedThreadCount,
       author,
+      authorStatus,
       isFallbackAuthor,
       isSaving,
       createThread,

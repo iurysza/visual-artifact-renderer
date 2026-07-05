@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAnnotationContext, type PanelView } from "@/components/annotation-provider"
+import { useAnnotationContext, type AuthorStatus, type PanelView } from "@/components/annotation-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
 import { threadNodeIdentity } from "@/components/annotation-helpers"
 import { NodePickToggle } from "@/components/annotation-toggle"
@@ -43,6 +43,28 @@ function formatSaveError(error: string | null): string {
   } catch {
     return "We couldn't save your comment. Please try again."
   }
+}
+
+function ComposerAuthorLabel({ author, status }: { author: AnnotationAuthor; status: AuthorStatus }) {
+  if (status === "loading") {
+    return (
+      <span className="text-xs text-muted-foreground" aria-live="polite">
+        Loading author…
+      </span>
+    )
+  }
+  if (status === "fallback") {
+    return (
+      <span className="text-xs text-muted-foreground" title="Git identity not set; using local fallback author.">
+        Posting as <span className="font-medium text-foreground">{author.name}</span> (local fallback)
+      </span>
+    )
+  }
+  return (
+    <span className="text-xs text-muted-foreground">
+      Posting as <span className="font-medium text-foreground">{author.name}</span>
+    </span>
+  )
 }
 
 export function AnnotationPanel() {
@@ -455,6 +477,9 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <ComposerAuthorLabel author={ctx.author} status={ctx.authorStatus} />
+            </div>
             <Textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
@@ -463,12 +488,13 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
               className="min-h-20"
               aria-label="Reply"
               id="thread-reply-textarea"
+              aria-disabled={ctx.authorStatus === "loading"}
             />
             <div className="flex items-center justify-end gap-2">
               <span className="text-[10px] text-muted-foreground hidden md:inline">{shortcutLabel()} to reply</span>
               <Button
                 size="sm"
-                disabled={!replyText.trim() || isSubmitting}
+                disabled={ctx.authorStatus === "loading" || !replyText.trim() || isSubmitting}
                 onClick={() => handleSubmit()}
               >
                 <Send data-icon="inline-start" />
@@ -679,10 +705,7 @@ function CreateThreadComposer() {
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                Posting as <span className="font-medium text-foreground">{ctx.author?.name ?? "Local Author"}</span>
-                {ctx.isFallbackAuthor && " (git identity not set)"}
-              </span>
+              <ComposerAuthorLabel author={ctx.author} status={ctx.authorStatus} />
             </div>
             <Textarea
               id="create-thread-textarea"
@@ -692,12 +715,13 @@ function CreateThreadComposer() {
               placeholder="Start a comment..."
               className="min-h-20 md:min-h-28"
               aria-label="Start a comment"
+              aria-disabled={ctx.authorStatus === "loading"}
             />
             <div className="flex items-center justify-end gap-2">
               <span className="text-[10px] text-muted-foreground hidden md:inline">{shortcutLabel()} to post</span>
               <Button
                 size="sm"
-                disabled={!draftText.trim() || isSubmitting}
+                disabled={ctx.authorStatus === "loading" || !draftText.trim() || isSubmitting}
                 onClick={() => handleSubmit()}
               >
                 <Send data-icon="inline-start" />
