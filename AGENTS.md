@@ -53,6 +53,22 @@ bun run src/main.ts serve --no-open  # static export + live JSON after pnpm buil
 
 The CLI is self-contained under `skill/cli`. `visual-artifact bootstrap` builds `skill/app`, compiles the CLI, and symlinks the binary into `~/.pi/bin/`.
 
+## After landing new features
+
+New components, schema changes, or CLI behavior changes need to be rebuilt and reinstalled before the Pi extension and CLI reflect them. After the build checks pass, prompt the user to run:
+
+```bash
+cd skill/app
+pnpm lint
+pnpm export:contract
+pnpm verify:artifacts
+pnpm build
+cd ../..
+visual-artifact bootstrap
+```
+
+Then tell them to run `/reload` in Pi or restart Pi to load the updated extension.
+
 ## Live visual iteration with Impeccable
 
 Use the Impeccable `live` command to iterate on UI in the browser. The helper runs in the background and injects a global bar into the page so the user can pick an element, request a design action, and get generated variants without leaving the browser.
