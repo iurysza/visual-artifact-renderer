@@ -32,6 +32,7 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
 
   const appDir = resolve(skillRoot, "app")
   const cliDir = resolve(skillRoot, "cli")
+  const sharedDir = resolve(skillRoot, "shared")
   const outDir = resolve(appDir, "out")
   const distBinary = resolve(cliDir, "dist", "visual-artifact")
   const home = homedir()
@@ -91,6 +92,12 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
   rc = run("pnpm", ["build"], appDir)
   if (rc !== 0) {
     log.error("renderer build failed")
+    return rc
+  }
+
+  rc = run("bun", ["install"], sharedDir)
+  if (rc !== 0) {
+    log.error("shared dependency install failed")
     return rc
   }
 

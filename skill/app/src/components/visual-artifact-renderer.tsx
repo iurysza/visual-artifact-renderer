@@ -47,8 +47,8 @@ function VisualArtifactRendererContent({
       className={cn(
         "mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14",
         "transition-[padding] duration-[var(--va-annotation-panel)] ease-[var(--va-annotation-ease)]",
-        "data-[comments-open=true]:md:pr-[var(--va-annotation-panel-width)]",
-        "data-[ai-colab-open=true]:md:pr-[var(--va-annotation-panel-width)]",
+        "data-[comments-open=true]:md:pr-[calc(var(--va-annotation-panel-width)+var(--va-annotation-panel-gap))]",
+        "data-[ai-colab-open=true]:md:pr-[calc(var(--va-annotation-panel-width)+var(--va-annotation-panel-gap))]",
       )}
     >
       <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">

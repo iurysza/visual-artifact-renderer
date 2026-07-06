@@ -117,6 +117,7 @@
   --va-annotation-base: 160ms;
   --va-annotation-panel: 190ms;
   --va-annotation-panel-width: clamp(22rem, 28vw, 30rem);
+  --va-annotation-panel-gap: 1.25rem;
 }
 
 html.dark {

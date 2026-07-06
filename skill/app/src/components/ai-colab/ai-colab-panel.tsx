@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { AlertTriangle, Check, Copy, MessageSquare, Plus, Trash2, X } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Check, Copy, MessageSquare, Plus, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -68,74 +68,61 @@ function AIColabPanelHeader({
   return (
     <>
       {/* Desktop header */}
-      <div className="hidden items-center justify-between border-b px-4 py-3 md:flex">
-        <div className="flex items-center gap-3">
-          {isNodeView && (
-            <button
-              type="button"
-              onClick={() => ctx.goToList()}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Back"
-            >
-              ←
-            </button>
-          )}
-          <div>
+      <div
+        className={cn(
+          "hidden border-b px-4 py-3 md:flex",
+          isNodeView ? "flex-col gap-2" : "items-center justify-between",
+        )}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {isNodeView && <BackButton onClick={() => ctx.goToList()} label="Back to comments" />}
             <div className="flex items-center gap-2">
               <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
               {ctx.comments.length > 0 && <Badge variant="secondary">{ctx.comments.length}</Badge>}
             </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             {isNodeView && (
-              <div className="text-xs text-muted-foreground mt-0.5">
-                <span className="font-medium text-foreground">
-                  {ctx.selectedNode?.textSnippet ?? "Selected component"}
-                </span>
-                <span className="ml-2">{ctx.selectedNode?.nodeType ?? "node"}</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => ctx.startNodePick()}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Change component
+              </button>
             )}
+            <CopyMarkdownButton />
+            {ctx.copyError && (
+              <span className="text-xs text-destructive">{ctx.copyError}</span>
+            )}
+            <Button
+              ref={desktopCloseRef}
+              variant="ghost"
+              size="icon-xs"
+              onClick={ctx.closeAIColab}
+              aria-label="Close AI Colab panel"
+              title="Close AI Colab panel"
+            >
+              <X data-icon="only" />
+              <span className="sr-only">Close AI Colab panel</span>
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isNodeView && (
-            <button
-              type="button"
-              onClick={() => ctx.startNodePick()}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-            >
-              Change component
-            </button>
-          )}
-          <CopyMarkdownButton />
-          {ctx.copyError && (
-            <span className="text-xs text-destructive">{ctx.copyError}</span>
-          )}
-          <Button
-            ref={desktopCloseRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeAIColab}
-            aria-label="Close AI Colab panel"
-            title="Close AI Colab panel"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close AI Colab panel</span>
-          </Button>
-        </div>
+        {isNodeView && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {ctx.selectedNode?.textSnippet ?? "Selected component"}
+            </span>
+            <span>{ctx.selectedNode?.nodeType ?? "node"}</span>
+          </div>
+        )}
       </div>
 
       {/* Mobile header */}
       <div className="flex items-center justify-between border-b px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
-          {isNodeView && (
-            <button
-              type="button"
-              onClick={() => ctx.goToList()}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Back"
-            >
-              ←
-            </button>
-          )}
+          {isNodeView && <BackButton onClick={() => ctx.goToList()} label="Back" />}
           <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
           {ctx.comments.length > 0 && <Badge variant="secondary">{ctx.comments.length}</Badge>}
         </div>
@@ -429,6 +416,21 @@ function NodeCommentComposer() {
         </div>
       </ScrollArea>
     </div>
+  )
+}
+
+function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={label}
+      title={label}
+    >
+      <ArrowLeft className="size-4" />
+      <span className="sr-only">{label}</span>
+    </button>
   )
 }
 

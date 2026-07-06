@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { format, formatDistanceToNowStrict, isValid } from "date-fns"
-import { AlertTriangle, Check, CheckCircle2, Circle, Crosshair, MessageSquare, Pencil, RefreshCcw, Send, Trash2, X } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Crosshair, MessageSquare, Pencil, RefreshCcw, Send, Trash2, X } from "lucide-react"
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
 import { Button } from "@/components/ui/button"
@@ -109,7 +109,7 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
   const activeThread = ctx.activeThreadId ? ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId) : null
 
   if (ctx.panelView === "thread" && activeThread) {
-    return <ThreadPanelHeader thread={activeThread} closeButtonRef={closeButtonRef} />
+    return <ThreadPanelHeader thread={activeThread} />
   }
 
   const title =
@@ -168,14 +168,7 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
       {/* Mobile header: single app bar, dynamic title */}
       <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={ctx.navigateBack}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Back"
-          >
-            ←
-          </button>
+          <BackButton onClick={ctx.navigateBack} label="Back" />
           <h3 className="font-serif text-base font-medium tracking-tight">
             {ctx.panelView === "node" && ctx.selectedNode ? "New comment" : "Comments"}
           </h3>
@@ -206,10 +199,8 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
 
 function ThreadPanelHeader({
   thread,
-  closeButtonRef,
 }: {
   thread: AnnotationThread
-  closeButtonRef: React.RefObject<HTMLButtonElement | null>
 }) {
   const ctx = useAnnotationContext()
   const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
@@ -218,69 +209,43 @@ function ThreadPanelHeader({
   return (
     <>
       {/* Desktop thread header */}
-      <div className="hidden md:flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={ctx.navigateBack}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Back"
-          >
-            ←
-          </button>
-          <div>
+      <div className="hidden md:flex flex-col gap-2 border-b px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <BackButton onClick={ctx.navigateBack} label="Back to comments" />
             <div className="flex items-center gap-2">
               <h3 className="font-serif text-base font-medium tracking-tight">Thread</h3>
               <Badge variant="secondary">{thread.messages.length}</Badge>
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              <span className="font-medium text-foreground">{snippet}</span>
-              <span className="ml-2">{thread.anchor.nodeType}</span>
-              {!isPresent && (
-                <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-muted-foreground" title="Anchor not found">
-                  <AlertTriangle className="size-3" />
-                </span>
-              )}
-            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {thread.status === "resolved" ? (
+              <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
+                Reopen
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => ctx.resolveThread(thread.id)}>
+                <CheckCircle2 data-icon="inline-start" />
+                Resolve
+              </Button>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {thread.status === "resolved" ? (
-            <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
-              Reopen
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" onClick={() => ctx.resolveThread(thread.id)}>
-              <CheckCircle2 data-icon="inline-start" />
-              Resolve
-            </Button>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{snippet}</span>
+          <span>{thread.anchor.nodeType}</span>
+          {!isPresent && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground" title="Anchor not found">
+              <AlertTriangle className="size-3" />
+            </span>
           )}
-          <ThreadStatusBadge status={thread.status} />
-          <Button
-            ref={closeButtonRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeComments}
-            aria-label="Close comments"
-            title="Close comments"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close comments</span>
-          </Button>
         </div>
       </div>
 
       {/* Mobile thread header */}
       <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={ctx.navigateBack}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Back"
-          >
-            ←
-          </button>
+          <BackButton onClick={ctx.navigateBack} label="Back" />
           <h3 className="font-serif text-base font-medium tracking-tight">Thread</h3>
           <Badge variant="secondary">{thread.messages.length}</Badge>
         </div>
@@ -301,20 +266,24 @@ function ThreadPanelHeader({
               <span className="sr-only">Resolve</span>
             </Button>
           )}
-          <Button
-            ref={closeButtonRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeComments}
-            aria-label="Close comments"
-            title="Close comments"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close comments</span>
-          </Button>
         </div>
       </div>
     </>
+  )
+}
+
+function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={label}
+      title={label}
+    >
+      <ArrowLeft className="size-4" />
+      <span className="sr-only">{label}</span>
+    </button>
   )
 }
 
@@ -823,13 +792,7 @@ function CreateThreadComposer() {
     <div className="flex flex-1 flex-col">
       <div className="border-b px-4 py-4 hidden md:block">
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={ctx.navigateBack}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            ← Back to all comments
-          </button>
+          <BackButton onClick={ctx.navigateBack} label="Back to all comments" />
           <div>
             <button
               type="button"
