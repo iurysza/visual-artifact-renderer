@@ -59,3 +59,19 @@ export function findAnchorElement(nodeId: string | undefined, nodePath: string):
 export function isAnchorOrphaned(nodeId: string | undefined, nodePath: string): boolean {
   return !findAnchorElement(nodeId, nodePath)
 }
+
+export function scrollToNode(
+  nodeId: string | undefined,
+  nodePath: string,
+): void {
+  if (typeof document === "undefined") return
+  const element = findAnchorElement(nodeId, nodePath)
+  if (!element) return
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  element.scrollIntoView({
+    behavior: reducedMotion ? "auto" : "smooth",
+    block: "center",
+  })
+}

@@ -18,9 +18,9 @@ import type {
   AnnotationThread,
 } from "@/lib/artifacts/annotations"
 import {
-  findAnchorElement,
   getThreadCount,
   getThreadsForNode,
+  scrollToNode,
   type NodeIdentity,
 } from "./annotation-helpers"
 
@@ -671,12 +671,4 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-export function scrollToNode(nodeId: string | undefined, nodePath: string): void {
-  if (typeof document === "undefined") return
-  const element = findAnchorElement(nodeId, nodePath)
-  if (!element) return
-  const reducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  element.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" })
-}
+

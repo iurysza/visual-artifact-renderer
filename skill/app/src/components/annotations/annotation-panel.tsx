@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
-  Circle,
   Crosshair,
   MessageSquare,
   Pencil,
@@ -30,6 +29,8 @@ import {
 import { useAnchorPresence } from "@/hooks/use-anchor-presence";
 import { threadNodeIdentity } from "./annotation-helpers";
 import { NodePickToggle } from "./annotation-toggle";
+import { CommentCard, ThreadStatusBadge } from "./comment-card";
+import type { CommentListItem } from "./comment-list-item";
 import type {
   AnnotationThread,
   AnnotationMessage,
@@ -113,15 +114,7 @@ function ComposerAuthorLabel({
 
 export function AnnotationPanel() {
   const ctx = useAnnotationContext();
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    // Focus the close button when comments open, but do not steal focus while
-    // the user is actively picking a node (mobile pick HUD should be focusable).
-    if (!ctx.isCommentMode || ctx.isPickingNode) return;
-    closeButtonRef.current?.focus();
-  }, [ctx.isCommentMode, ctx.isPickingNode]);
 
   return (
     <aside
@@ -148,17 +141,13 @@ export function AnnotationPanel() {
           : undefined
       }
     >
-      <PanelHeader closeButtonRef={closeButtonRef} />
+      <PanelHeader />
       <PanelContent />
     </aside>
   );
 }
 
-function PanelHeader({
-  closeButtonRef,
-}: {
-  closeButtonRef: React.RefObject<HTMLButtonElement | null>;
-}) {
+function PanelHeader() {
   const ctx = useAnnotationContext();
   const activeThread = ctx.activeThreadId
     ? ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId)
@@ -169,7 +158,7 @@ function PanelHeader({
   }
 
   if (ctx.panelView === "node" && ctx.selectedNode) {
-    return <NodePanelHeader closeButtonRef={closeButtonRef} />;
+    return <NodePanelHeader />;
   }
 
   return (
@@ -197,17 +186,6 @@ function PanelHeader({
           <div className="md:hidden">
             <NodePickToggle />
           </div>
-          <Button
-            ref={closeButtonRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeComments}
-            aria-label="Close comments"
-            title="Close comments"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close comments</span>
-          </Button>
         </div>
       </div>
 
@@ -225,28 +203,13 @@ function PanelHeader({
         </div>
         <div className="flex items-center gap-2">
           <NodePickToggle />
-          <Button
-            ref={closeButtonRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeComments}
-            aria-label="Close comments"
-            title="Close comments"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close comments</span>
-          </Button>
         </div>
       </div>
     </>
   );
 }
 
-function NodePanelHeader({
-  closeButtonRef,
-}: {
-  closeButtonRef: React.RefObject<HTMLButtonElement | null>;
-}) {
+function NodePanelHeader() {
   const ctx = useAnnotationContext();
   const selectedNode = ctx.selectedNode;
   const isPresent = useAnchorPresence(
@@ -274,20 +237,6 @@ function NodePanelHeader({
     </button>
   );
 
-  const closeButton = (
-    <Button
-      ref={closeButtonRef}
-      variant="ghost"
-      size="icon-xs"
-      onClick={ctx.closeComments}
-      aria-label="Close comments"
-      title="Close comments"
-    >
-      <X data-icon="only" />
-      <span className="sr-only">Close comments</span>
-    </Button>
-  );
-
   return (
     <DetailPanelHeader
       title="New comment"
@@ -297,12 +246,7 @@ function NodePanelHeader({
       isPresent={isPresent}
       onBack={ctx.navigateBack}
       backLabel="Back to comments"
-      mobileActions={
-        <>
-          {changeButton}
-          {closeButton}
-        </>
-      }
+      mobileActions={changeButton}
     />
   );
 }
@@ -621,9 +565,21 @@ function ThreadList() {
             </div>
           )}
 
-          {filteredThreads.map((thread) => (
-            <ThreadListItem key={thread.id} thread={thread} />
-          ))}
+          {filteredThreads.map((thread) => {
+            const item = threadToListItem(thread, ctx.activeThreadId);
+            return (
+              <CommentCard
+                key={thread.id}
+                item={item}
+                onClick={() => ctx.selectThread(thread.id)}
+                onMouseEnter={() =>
+                  ctx.setPreviewNode(threadNodeIdentity(thread))
+                }
+                onMouseLeave={() => ctx.setPreviewNode(null)}
+                ariaLabelPrefix="Open thread"
+              />
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
@@ -655,64 +611,27 @@ function FilterButton({
   );
 }
 
-function ThreadListItem({ thread }: { thread: AnnotationThread }) {
-  const ctx = useAnnotationContext();
+function threadToListItem(
+  thread: AnnotationThread,
+  activeThreadId: string | null,
+): CommentListItem {
   const lastMessage = thread.messages[thread.messages.length - 1];
-  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType;
-  const isPresent = useAnchorPresence(
-    thread.anchor.nodeId,
-    thread.anchor.nodePath,
-  );
-  const isActive = ctx.activeThreadId === thread.id;
-  const identity = threadNodeIdentity(thread);
-  const replyLabel = thread.messages.length === 1 ? "reply" : "replies";
-
-  return (
-    <button
-      type="button"
-      onClick={() => ctx.selectThread(thread.id)}
-      onMouseEnter={() => ctx.setPreviewNode(identity)}
-      onMouseLeave={() => ctx.setPreviewNode(null)}
-      aria-label={`Open thread on ${snippet}, ${thread.status}, ${thread.messages.length} ${replyLabel}`}
-      className={cn(
-        "group flex flex-col gap-2 md:gap-1 rounded-xl md:rounded-lg border p-4 md:p-3 text-left transition-all duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
-        "hover:border-muted-foreground/20 hover:bg-muted/50",
-        isActive && "border-clay/40 bg-clay/[0.04]",
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-1 text-sm md:text-sm font-medium text-foreground">
-          {snippet}
-        </span>
-        <div className="flex shrink-0 items-center gap-2">
-          {!isPresent && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
-              title="Anchor not found"
-            >
-              <AlertTriangle className="size-3" />
-            </span>
-          )}
-          <ThreadStatusBadge status={thread.status} />
-        </div>
-      </div>
-      <p className="line-clamp-2 text-xs text-muted-foreground md:truncate md:overflow-hidden">
-        {lastMessage?.body}
-      </p>
-      <p className="text-[10px] text-muted-foreground flex items-center gap-2">
-        {lastMessage?.author?.name && (
-          <span className="hidden md:inline text-[11px] text-muted-foreground">
-            {lastMessage.author.name} ·
-          </span>
-        )}
-        <span>
-          {thread.messages.length} {replyLabel}
-        </span>
-        <span>·</span>
-        <TimeLabel date={thread.updatedAt} />
-      </p>
-    </button>
-  );
+  return {
+    id: thread.id,
+    target: {
+      kind: "node",
+      nodeId: thread.anchor.nodeId,
+      nodePath: thread.anchor.nodePath,
+      nodeType: thread.anchor.nodeType,
+      label: thread.anchor.textSnippet || thread.anchor.nodeType,
+    },
+    body: lastMessage?.body ?? "",
+    authorName: lastMessage?.author?.name,
+    updatedAt: thread.updatedAt,
+    replyCount: thread.messages.length,
+    status: thread.status,
+    isActive: activeThreadId === thread.id,
+  };
 }
 
 function ThreadDetail({ thread }: { thread: AnnotationThread }) {
@@ -1127,35 +1046,6 @@ function CreateThreadComposer() {
         />
       </div>
     </div>
-  );
-}
-
-function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
-  if (status === "resolved") {
-    return (
-      <>
-        <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-          <CheckCircle2 className="size-3" />
-          <span>Resolved</span>
-        </span>
-        <Badge variant="secondary" className="gap-1 md:hidden">
-          <CheckCircle2 className="size-3" />
-          Resolved
-        </Badge>
-      </>
-    );
-  }
-  return (
-    <>
-      <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-        <span className="inline-block h-2 w-2 rounded-full bg-clay" />
-        <span>Open</span>
-      </span>
-      <Badge variant="outline" className="gap-1 md:hidden">
-        <Circle className="size-3" />
-        Open
-      </Badge>
-    </>
   );
 }
 

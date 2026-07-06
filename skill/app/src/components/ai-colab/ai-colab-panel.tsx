@@ -1,38 +1,22 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { AlertTriangle, ArrowLeft, Check, Copy, MessageSquare, Plus, Trash2, X } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Check, Copy, MessageSquare, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { CommentCard } from "@/components/annotations/comment-card"
+import type { CommentListItem } from "@/components/annotations/comment-list-item"
+import { scrollToNode } from "@/components/annotations"
 import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
 import { cn } from "@/lib/utils"
 import type { AIColabComment } from "@/lib/ai-colab/types"
 
-function formatTime(dateInput: string): string {
-  const date = new Date(dateInput)
-  if (isNaN(date.getTime())) return dateInput
-  return date.toLocaleString()
-}
-
 export function AIColabPanel() {
   const ctx = useAIColabContext()
-  const desktopCloseRef = useRef<HTMLButtonElement>(null)
-  const mobileCloseRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!ctx.isAIColabMode || ctx.isPickingNode) return
-    const isDesktop =
-      typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches
-    if (isDesktop) {
-      desktopCloseRef.current?.focus()
-    } else {
-      mobileCloseRef.current?.focus()
-    }
-  }, [ctx.isAIColabMode, ctx.isPickingNode])
 
   return (
     <aside
@@ -48,23 +32,17 @@ export function AIColabPanel() {
       role={ctx.isAIColabMode && !ctx.isPickingNode ? "complementary" : undefined}
       aria-label="AI Colab panel"
     >
-      <AIColabPanelHeader desktopCloseRef={desktopCloseRef} mobileCloseRef={mobileCloseRef} />
+      <AIColabPanelHeader />
       <AIColabPanelContent />
     </aside>
   )
 }
 
-function AIColabPanelHeader({
-  desktopCloseRef,
-  mobileCloseRef,
-}: {
-  desktopCloseRef: React.RefObject<HTMLButtonElement | null>
-  mobileCloseRef: React.RefObject<HTMLButtonElement | null>
-}) {
+function AIColabPanelHeader() {
   const ctx = useAIColabContext()
 
   if (ctx.panelView === "node" && ctx.selectedNode) {
-    return <NodePanelHeader desktopCloseRef={desktopCloseRef} mobileCloseRef={mobileCloseRef} />
+    return <NodePanelHeader />
   }
 
   return (
@@ -80,17 +58,6 @@ function AIColabPanelHeader({
           {ctx.copyError && (
             <span className="text-xs text-destructive">{ctx.copyError}</span>
           )}
-          <Button
-            ref={desktopCloseRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeAIColab}
-            aria-label="Close AI Colab panel"
-            title="Close AI Colab panel"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close AI Colab panel</span>
-          </Button>
         </div>
       </div>
 
@@ -105,29 +72,13 @@ function AIColabPanelHeader({
           {ctx.copyError && (
             <span className="text-xs text-destructive">{ctx.copyError}</span>
           )}
-          <Button
-            ref={mobileCloseRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeAIColab}
-            aria-label="Close AI Colab panel"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close AI Colab panel</span>
-          </Button>
         </div>
       </div>
     </>
   )
 }
 
-function NodePanelHeader({
-  desktopCloseRef,
-  mobileCloseRef,
-}: {
-  desktopCloseRef: React.RefObject<HTMLButtonElement | null>
-  mobileCloseRef: React.RefObject<HTMLButtonElement | null>
-}) {
+function NodePanelHeader() {
   const ctx = useAIColabContext()
   const selectedNode = ctx.selectedNode
   const isPresent = useAnchorPresence(
@@ -153,20 +104,6 @@ function NodePanelHeader({
     </button>
   )
 
-  const closeButton = (
-    <Button
-      ref={desktopCloseRef}
-      variant="ghost"
-      size="icon-xs"
-      onClick={ctx.closeAIColab}
-      aria-label="Close AI Colab panel"
-      title="Close AI Colab panel"
-    >
-      <X data-icon="only" />
-      <span className="sr-only">Close AI Colab panel</span>
-    </Button>
-  )
-
   return (
     <DetailPanelHeader
       title="New note"
@@ -176,28 +113,8 @@ function NodePanelHeader({
       isPresent={isPresent}
       onBack={ctx.goToList}
       backLabel="Back to comments"
-      desktopActions={
-        <>
-          {changeButton}
-          {closeButton}
-        </>
-      }
-      mobileActions={
-        <>
-          {changeButton}
-          <Button
-            ref={mobileCloseRef}
-            variant="ghost"
-            size="icon-xs"
-            onClick={ctx.closeAIColab}
-            aria-label="Close AI Colab panel"
-            title="Close AI Colab panel"
-          >
-            <X data-icon="only" />
-            <span className="sr-only">Close AI Colab panel</span>
-          </Button>
-        </>
-      }
+      desktopActions={changeButton}
+      mobileActions={changeButton}
     />
   )
 }
@@ -278,14 +195,28 @@ function AIColabPanelContent() {
 
 function CommentList() {
   const ctx = useAIColabContext()
-  const artifactComments = useMemo(
-    () => ctx.comments.filter((c) => c.target.kind === "artifact"),
+  const artifactItems = useMemo(
+    () =>
+      ctx.comments
+        .filter((c) => c.target.kind === "artifact")
+        .map(aiColabCommentToListItem),
     [ctx.comments]
   )
-  const nodeComments = useMemo(
-    () => ctx.comments.filter((c) => c.target.kind === "node"),
+  const nodeItems = useMemo(
+    () =>
+      ctx.comments
+        .filter((c) => c.target.kind === "node")
+        .map(aiColabCommentToListItem),
     [ctx.comments]
   )
+
+  function handleClick(item: CommentListItem) {
+    if (item.target.kind === "node") {
+      scrollToNode(item.target.nodeId, item.target.nodePath ?? "")
+    } else if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -317,20 +248,32 @@ function CommentList() {
             </div>
           )}
 
-          {artifactComments.length > 0 && (
+          {artifactItems.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Artifact</p>
-              {artifactComments.map((comment) => (
-                <CommentCard key={comment.id} comment={comment} />
+              {artifactItems.map((item) => (
+                <CommentCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => handleClick(item)}
+                  onDelete={() => ctx.deleteComment(item.id)}
+                  ariaLabelPrefix="Comment"
+                />
               ))}
             </div>
           )}
 
-          {nodeComments.length > 0 && (
+          {nodeItems.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Components</p>
-              {nodeComments.map((comment) => (
-                <CommentCard key={comment.id} comment={comment} />
+              {nodeItems.map((item) => (
+                <CommentCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => handleClick(item)}
+                  onDelete={() => ctx.deleteComment(item.id)}
+                  ariaLabelPrefix="Comment"
+                />
               ))}
             </div>
           )}
@@ -340,43 +283,23 @@ function CommentList() {
   )
 }
 
-function CommentCard({ comment }: { comment: AIColabComment }) {
-  const ctx = useAIColabContext()
+function aiColabCommentToListItem(comment: AIColabComment): CommentListItem {
   const target = comment.target
-  const isNode = target.kind === "node"
-  const isPresent = useAnchorPresence(isNode ? target.nodeId : undefined, isNode ? target.nodePath : "")
-  const label = isNode
-    ? target.label ?? target.nodeType ?? "component"
-    : "Artifact"
-
-  return (
-    <div
-      className="group flex flex-col gap-2 rounded-xl border p-3 transition-all hover:border-muted-foreground/20 hover:bg-muted/50"
-      aria-label={`Comment on ${label}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className="line-clamp-1 text-xs font-medium text-foreground">{label}</span>
-          {!isPresent && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground" title="Component not found">
-              <AlertTriangle className="size-3" />
-            </span>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => ctx.deleteComment(comment.id)}
-          className="text-muted-foreground transition-colors hover:text-destructive"
-          aria-label="Delete comment"
-          title="Delete comment"
-        >
-          <Trash2 className="size-3.5" />
-        </button>
-      </div>
-      <p className="whitespace-pre-wrap text-sm text-foreground">{comment.body}</p>
-      <p className="text-[10px] text-muted-foreground">{comment.createdAt ? formatTime(comment.createdAt) : ""}</p>
-    </div>
-  )
+  return {
+    id: comment.id,
+    target: {
+      kind: target.kind,
+      nodeId: target.kind === "node" ? target.nodeId : undefined,
+      nodePath: target.kind === "node" ? target.nodePath : undefined,
+      nodeType: target.kind === "node" ? target.nodeType : undefined,
+      label:
+        target.kind === "node"
+          ? (target.label ?? target.nodeType ?? "component")
+          : "Artifact",
+    },
+    body: comment.body,
+    createdAt: comment.createdAt,
+  }
 }
 
 function ArtifactComposer() {

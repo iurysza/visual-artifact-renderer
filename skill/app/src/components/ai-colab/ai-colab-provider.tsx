@@ -11,7 +11,7 @@ import {
   copyAIColabMarkdown,
 } from "@/lib/ai-colab/ai-colab-store"
 import { artifactDataPath } from "@/lib/artifacts/paths"
-import { findAnchorElement, type NodeIdentity } from "@/components/annotations"
+import { scrollToNode, type NodeIdentity } from "@/components/annotations"
 import type { AIColabPanelView } from "./types"
 
 interface AIColabContextValue {
@@ -288,11 +288,4 @@ export function useOptionalAIColabContext(): AIColabContextValue | null {
   return useContext(AIColabContext)
 }
 
-function scrollToNode(nodeId: string | undefined, nodePath: string): void {
-  if (typeof document === "undefined") return
-  const element = findAnchorElement(nodeId, nodePath)
-  if (!element) return
-  const reducedMotion =
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  element.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" })
-}
+
