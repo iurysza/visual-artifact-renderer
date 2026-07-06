@@ -1,4 +1,4 @@
-import type { NodeIdentity } from "@/components/annotation-helpers"
+import type { NodeIdentity } from "@/components/annotations"
 import type { VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 import { formatArtifactForAI } from "./formatter"
 import type { AIColabComment, AIColabCommentTarget } from "./types"

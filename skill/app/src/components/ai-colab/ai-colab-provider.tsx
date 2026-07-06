@@ -11,7 +11,7 @@ import {
   copyAIColabMarkdown,
 } from "@/lib/ai-colab/ai-colab-store"
 import { artifactDataPath } from "@/lib/artifacts/paths"
-import { findAnchorElement, type NodeIdentity } from "@/components/annotation-helpers"
+import { findAnchorElement, type NodeIdentity } from "@/components/annotations"
 import type { AIColabPanelView } from "./types"
 
 interface AIColabContextValue {

@@ -7,10 +7,10 @@ import type { ArtifactNode, VisualArtifactSpec } from "@/lib/contract/artifact-s
 import { componentRegistry } from "@/components/component-registry"
 import type { ArtifactRenderContext, RenderNodes } from "@/components/artifact-types"
 import { cn } from "@/lib/utils"
-import { useAnnotationContext } from "@/components/annotation-provider"
-import { AnnotationPanel } from "@/components/annotation-panel"
-import { NodePickHUD } from "@/components/node-pick-hud"
-import type { NodeIdentity } from "@/components/annotation-helpers"
+import { useAnnotationContext, AnnotationPanel, NodePickHUD, type NodeIdentity } from "@/components/annotations"
+import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
+import { AIColabPanel } from "@/components/ai-colab/ai-colab-panel"
+import { AIColabHUD } from "@/components/ai-colab/ai-colab-hud"
 
 export function VisualArtifactRenderer({
   spec,
@@ -38,14 +38,17 @@ function VisualArtifactRendererContent({
   const nodeCount = countNodes(spec.nodes)
   const componentCount = collectNodeTypes(spec.nodes).size
   const ctx = useAnnotationContext()
+  const aiColabCtx = useAIColabContext()
 
   return (
     <main
       data-comments-open={ctx.isCommentMode ? "true" : undefined}
+      data-ai-colab-open={aiColabCtx.isAIColabMode ? "true" : undefined}
       className={cn(
         "mx-auto w-full max-w-7xl space-y-10 px-5 py-10 sm:px-8 lg:py-14",
         "transition-[padding] duration-[var(--va-annotation-panel)] ease-[var(--va-annotation-ease)]",
         "data-[comments-open=true]:md:pr-[var(--va-annotation-panel-width)]",
+        "data-[ai-colab-open=true]:md:pr-[var(--va-annotation-panel-width)]",
       )}
     >
       <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
@@ -88,6 +91,8 @@ function VisualArtifactRendererContent({
 
       <AnnotationPanel />
       <NodePickHUD />
+      <AIColabPanel />
+      <AIColabHUD />
     </main>
   )
 }
@@ -119,22 +124,28 @@ function NodeBoundary({
   children: ReactNode
 }) {
   const ctx = useAnnotationContext()
+  const aiColabCtx = useAIColabContext()
   const nodeId = node.metadata?.id
   const threadCount = ctx.getThreadCount(nodeId, nodePath)
   const isCommentActive = ctx.isCommentMode
+  const isAIColabActive = aiColabCtx.isAIColabMode || aiColabCtx.isPickingNode
+  const isPickingNode = ctx.isPickingNode || aiColabCtx.isPickingNode
   const isHovered =
     (ctx.hoveredNode?.nodeId === nodeId && ctx.hoveredNode?.nodePath === nodePath) ||
-    (ctx.previewNode?.nodeId === nodeId && ctx.previewNode?.nodePath === nodePath)
+    (ctx.previewNode?.nodeId === nodeId && ctx.previewNode?.nodePath === nodePath) ||
+    (aiColabCtx.hoveredNode?.nodeId === nodeId && aiColabCtx.hoveredNode?.nodePath === nodePath)
   const isCandidate =
-    (ctx.pickCandidateNode?.nodeId === nodeId && ctx.pickCandidateNode?.nodePath === nodePath)
+    (ctx.pickCandidateNode?.nodeId === nodeId && ctx.pickCandidateNode?.nodePath === nodePath) ||
+    (aiColabCtx.pickCandidateNode?.nodeId === nodeId && aiColabCtx.pickCandidateNode?.nodePath === nodePath)
   const isSelected =
     (ctx.selectedNode?.nodeId === nodeId && ctx.selectedNode?.nodePath === nodePath) ||
     (ctx.highlightedNode?.nodeId === nodeId && ctx.highlightedNode?.nodePath === nodePath) ||
+    (aiColabCtx.selectedNode?.nodeId === nodeId && aiColabCtx.selectedNode?.nodePath === nodePath) ||
     isCandidate
   const hasThread = threadCount > 0
 
   const annotationState = isSelected ? "selected" : isHovered ? "hovered" : hasThread ? "has-thread" : "idle"
-  const isClickable = isCommentActive || ctx.isPickingNode
+  const isClickable = isCommentActive || ctx.isPickingNode || isAIColabActive
 
   // Local suppression flag used to prevent nested interactive activation after
   // we selected a node during pointer/key capture. Pointer/key capture sets
@@ -171,8 +182,24 @@ function NodeBoundary({
     }
   }
 
+  function selectFoundNode(found: NodeIdentity) {
+    if (aiColabCtx.isAIColabMode || aiColabCtx.isPickingNode) {
+      aiColabCtx.selectNode(found)
+    } else {
+      ctx.selectNodeForComment(found)
+    }
+  }
+
+  function setPickCandidate(found: NodeIdentity) {
+    if (aiColabCtx.isPickingNode) {
+      aiColabCtx.setPickCandidateNode(found)
+    } else {
+      ctx.setPickCandidateNode(found)
+    }
+  }
+
   function handlePointerDownCapture(event: PointerEvent<HTMLDivElement>) {
-    if (!ctx.isPickingNode) return
+    if (!isPickingNode) return
 
     const found = findClosestVaNodeFromEventTarget(event.target)
 
@@ -195,11 +222,11 @@ function NodeBoundary({
     event.preventDefault()
     event.stopPropagation()
 
-    ctx.selectNodeForComment(found)
+    selectFoundNode(found)
   }
 
   function handleKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
-    if (!ctx.isPickingNode) return
+    if (!isPickingNode) return
     if (event.key !== "Enter" && event.key !== " ") return
 
     const found = findClosestVaNodeFromEventTarget(event.target)
@@ -211,13 +238,13 @@ function NodeBoundary({
     event.preventDefault()
     event.stopPropagation()
 
-    ctx.selectNodeForComment(found)
+    selectFoundNode(found)
   }
 
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
     // Only intervene for explicit pick mode or when a prior capture set the
     // suppression flag. Otherwise, let nested interactive elements handle clicks.
-    if (!ctx.isPickingNode && !clickSuppressedRef.current) return
+    if (!ctx.isPickingNode && !aiColabCtx.isPickingNode && !clickSuppressedRef.current) return
 
     // If a prior capture already processed selection (pointer/key), consume
     // the suppression flag and fully stop the click so nested controls don't
@@ -234,7 +261,7 @@ function NodeBoundary({
     // deepest VA node now in capture and suppress nested activation. This
     // handles click-only (mouse/assistive) activation which otherwise would
     // be prevented by the original preventDefault and lost in bubble phase.
-    if (ctx.isPickingNode) {
+    if (ctx.isPickingNode || aiColabCtx.isPickingNode) {
       const pointerType = lastPointerTypeRef.current
 
       // If the last pointer was touch, treat this click as a touch tap. Only
@@ -268,7 +295,7 @@ function NodeBoundary({
           // suppression causes the next tap to be swallowed.
           event.preventDefault()
           event.stopPropagation()
-          ctx.setPickCandidateNode(found)
+          setPickCandidate(found)
           return
         }
 
@@ -281,7 +308,7 @@ function NodeBoundary({
       if (found) {
         event.preventDefault()
         event.stopPropagation()
-        ctx.selectNodeForComment(found)
+        selectFoundNode(found)
         return
       }
 
@@ -298,7 +325,7 @@ function NodeBoundary({
 
     const target = event.target as Element
     // In pick mode selection should win; otherwise preserve nested interactive guard.
-    if (!ctx.isPickingNode && isInsideInteractive(target)) return
+    if (!ctx.isPickingNode && !aiColabCtx.isPickingNode && isInsideInteractive(target)) return
 
     const found = findClosestVaNodeFromEventTarget(event.target)
     if (!found) return
@@ -306,7 +333,7 @@ function NodeBoundary({
     event.preventDefault()
     event.stopPropagation()
 
-    ctx.selectNodeForComment(found)
+    selectFoundNode(found)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -315,25 +342,35 @@ function NodeBoundary({
     if ((event as unknown as { defaultPrevented?: boolean }).defaultPrevented) return
 
     const target = event.target as Element
-    if (!ctx.isPickingNode && isInsideInteractive(target)) return
+    if (!ctx.isPickingNode && !aiColabCtx.isPickingNode && isInsideInteractive(target)) return
 
     const found = findClosestVaNodeFromEventTarget(event.target)
     if (!found) return
 
     event.preventDefault()
 
-    ctx.selectNodeForComment(found)
+    selectFoundNode(found)
   }
 
   function handleMouseEnter() {
     if (!isClickable) return
     ctx.setHoveredNode({ nodeId, nodePath })
+    aiColabCtx.setHoveredNode({ nodeId, nodePath })
   }
 
   function handleMouseLeave() {
     if (!isClickable) return
     ctx.setHoveredNode(null)
+    aiColabCtx.setHoveredNode(null)
   }
+
+  const ariaLabel = isPickingNode
+    ? `Pick ${node.type} component`
+    : isCommentActive
+    ? `Comment on ${node.type} node`
+    : aiColabCtx.isAIColabMode
+    ? `Comment on ${node.type} for AI Colab`
+    : undefined
 
   return (
     <div
@@ -353,15 +390,13 @@ function NodeBoundary({
       onKeyDown={handleKeyDown}
       onPointerDownCapture={handlePointerDownCapture}
       onKeyDownCapture={handleKeyDownCapture}
-      tabIndex={ctx.isPickingNode ? 0 : undefined}
-      role={ctx.isPickingNode ? "button" : undefined}
-      aria-label={
-        ctx.isPickingNode ? `Pick ${node.type} component` : isCommentActive ? `Comment on ${node.type} node` : undefined
-      }
+      tabIndex={isPickingNode ? 0 : undefined}
+      role={isPickingNode ? "button" : undefined}
+      aria-label={ariaLabel}
     >
       <div
         className={cn(
-          "pointer-events-none absolute inset-0 rounded-[var(--radius-xl)] transition-all",
+          "pointer-events-none absolute inset-0 rounded-[var(--radius-2xl)] transition-all",
           "duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)]",
           annotationState === "idle" && "opacity-0",
           annotationState === "hovered" && "opacity-100 ring-2 ring-clay/60 bg-clay/[0.06] shadow-sm",

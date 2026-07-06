@@ -22,7 +22,7 @@ import {
   getThreadCount,
   getThreadsForNode,
   type NodeIdentity,
-} from "@/components/annotation-helpers"
+} from "./annotation-helpers"
 
 export type ThreadFilter = "all" | "open" | "resolved"
 export type PanelView = "list" | "node" | "thread"
@@ -84,6 +84,8 @@ interface AnnotationContextValue {
   isSaving: boolean
   createThread: (anchor: AnnotationAnchor, body: string) => Promise<void>
   addReply: (threadId: string, body: string) => Promise<void>
+  deleteMessage: (threadId: string, messageId: string) => Promise<void>
+  editMessage: (threadId: string, messageId: string, body: string) => Promise<void>
   resolveThread: (threadId: string) => Promise<void>
   reopenThread: (threadId: string) => Promise<void>
   selectThread: (threadId: string) => void
@@ -400,6 +402,49 @@ function AnnotationProviderInner({
     [makeMessage, withOptimisticMutation],
   )
 
+  const deleteMessage = useCallback(
+    async (threadId: string, messageId: string) => {
+      await withOptimisticMutation(
+        (current) => ({
+          ...current,
+          threads: current.threads
+            .map((thread) => {
+              if (thread.id !== threadId) return thread
+              const messages = thread.messages.filter((m) => m.id !== messageId)
+              if (messages.length === 0) return null
+              return { ...thread, messages, updatedAt: new Date().toISOString() }
+            })
+            .filter((thread): thread is AnnotationThread => thread !== null),
+        }),
+        [{ type: "deleteMessage", threadId, messageId }],
+      )
+    },
+    [withOptimisticMutation],
+  )
+
+  const editMessage = useCallback(
+    async (threadId: string, messageId: string, body: string) => {
+      const trimmed = body.trim()
+      if (!trimmed) return
+      const updatedAt = new Date().toISOString()
+
+      await withOptimisticMutation(
+        (current) => ({
+          ...current,
+          threads: current.threads.map((thread) => {
+            if (thread.id !== threadId) return thread
+            const messages = thread.messages.map((m) =>
+              m.id === messageId ? { ...m, body: trimmed, updatedAt } : m,
+            )
+            return { ...thread, messages, updatedAt }
+          }),
+        }),
+        [{ type: "editMessage", threadId, messageId, body: trimmed, updatedAt }],
+      )
+    },
+    [withOptimisticMutation],
+  )
+
   const resolveThread = useCallback(
     async (threadId: string) => {
       await withOptimisticMutation(
@@ -541,6 +586,8 @@ function AnnotationProviderInner({
       isSaving,
       createThread,
       addReply,
+      deleteMessage,
+      editMessage,
       resolveThread,
       reopenThread,
       selectThread,
@@ -592,6 +639,8 @@ function AnnotationProviderInner({
       isSaving,
       createThread,
       addReply,
+      deleteMessage,
+      editMessage,
       resolveThread,
       reopenThread,
       selectThread,

@@ -2,17 +2,17 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { format, formatDistanceToNowStrict, isValid } from "date-fns"
-import { AlertTriangle, CheckCircle2, Circle, Crosshair, MessageSquare, RefreshCcw, Send, X } from "lucide-react"
+import { AlertTriangle, Check, CheckCircle2, Circle, Crosshair, MessageSquare, Pencil, RefreshCcw, Send, Trash2, X } from "lucide-react"
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAnnotationContext, type AuthorStatus, type PanelView } from "@/components/annotation-provider"
+import { useAnnotationContext, type AuthorStatus, type PanelView } from "./annotation-provider"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
-import { threadNodeIdentity } from "@/components/annotation-helpers"
-import { NodePickToggle } from "@/components/annotation-toggle"
+import { threadNodeIdentity } from "./annotation-helpers"
+import { NodePickToggle } from "./annotation-toggle"
 import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
 import { cn } from "@/lib/utils"
 
@@ -107,12 +107,17 @@ export function AnnotationPanel() {
 function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLButtonElement | null> }) {
   const ctx = useAnnotationContext()
   const activeThread = ctx.activeThreadId ? ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId) : null
+
+  if (ctx.panelView === "thread" && activeThread) {
+    return <ThreadPanelHeader thread={activeThread} closeButtonRef={closeButtonRef} />
+  }
+
   const title =
+    ctx.panelView === "node" && ctx.selectedNode ? "Comment on selection" : "Review comments"
+  const nodeThreads =
     ctx.panelView === "node" && ctx.selectedNode
-      ? "Comment on selection"
-      : ctx.panelView === "thread" && activeThread
-      ? "Thread"
-      : "Review comments"
+      ? ctx.getThreadsForNode(ctx.selectedNode.nodeId, ctx.selectedNode.nodePath)
+      : []
 
   return (
     <>
@@ -123,11 +128,15 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
             <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
             {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
           </div>
-          {activeThread && (
+          {ctx.panelView === "node" && ctx.selectedNode && (
             <div className="text-xs text-muted-foreground mt-1">
-              <span className="font-medium text-foreground">{activeThread.anchor.textSnippet || activeThread.anchor.nodeType}</span>
-              <span className="ml-2">{activeThread.anchor.nodeType}</span>
-              <span className="ml-2">· {activeThread.messages.length} thread{activeThread.messages.length === 1 ? "" : "s"}</span>
+              <span className="font-medium text-foreground">
+                {ctx.selectedNode.textSnippet || ctx.selectedNode.nodeType}
+              </span>
+              <span className="ml-2">{ctx.selectedNode.nodeType}</span>
+              <span className="ml-2">
+                · {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}
+              </span>
             </div>
           )}
         </div>
@@ -138,10 +147,10 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
               Selecting component
             </span>
           )}
-          {ctx.isSaving && (
-            <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
-          )}
-          <NodePickToggle />
+          {ctx.isSaving && <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />}
+          <div className="md:hidden">
+            <NodePickToggle />
+          </div>
           <Button
             ref={closeButtonRef}
             variant="ghost"
@@ -170,11 +179,128 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
           <h3 className="font-serif text-base font-medium tracking-tight">
             {ctx.panelView === "node" && ctx.selectedNode ? "New comment" : "Comments"}
           </h3>
-          {ctx.totalThreadCount > 0 && <Badge variant="secondary" className="ml-2">{ctx.totalThreadCount}</Badge>}
+          {ctx.totalThreadCount > 0 && (
+            <Badge variant="secondary" className="ml-2">
+              {ctx.totalThreadCount}
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          {/* On mobile, keep node pick toggle as icon-only */}
           <NodePickToggle />
+          <Button
+            ref={closeButtonRef}
+            variant="ghost"
+            size="icon-xs"
+            onClick={ctx.closeComments}
+            aria-label="Close comments"
+            title="Close comments"
+          >
+            <X data-icon="only" />
+            <span className="sr-only">Close comments</span>
+          </Button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function ThreadPanelHeader({
+  thread,
+  closeButtonRef,
+}: {
+  thread: AnnotationThread
+  closeButtonRef: React.RefObject<HTMLButtonElement | null>
+}) {
+  const ctx = useAnnotationContext()
+  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
+  const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
+
+  return (
+    <>
+      {/* Desktop thread header */}
+      <div className="hidden md:flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={ctx.navigateBack}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif text-base font-medium tracking-tight">Thread</h3>
+              <Badge variant="secondary">{thread.messages.length}</Badge>
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              <span className="font-medium text-foreground">{snippet}</span>
+              <span className="ml-2">{thread.anchor.nodeType}</span>
+              {!isPresent && (
+                <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-muted-foreground" title="Anchor not found">
+                  <AlertTriangle className="size-3" />
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {thread.status === "resolved" ? (
+            <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
+              Reopen
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => ctx.resolveThread(thread.id)}>
+              <CheckCircle2 data-icon="inline-start" />
+              Resolve
+            </Button>
+          )}
+          <ThreadStatusBadge status={thread.status} />
+          <Button
+            ref={closeButtonRef}
+            variant="ghost"
+            size="icon-xs"
+            onClick={ctx.closeComments}
+            aria-label="Close comments"
+            title="Close comments"
+          >
+            <X data-icon="only" />
+            <span className="sr-only">Close comments</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile thread header */}
+      <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={ctx.navigateBack}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <h3 className="font-serif text-base font-medium tracking-tight">Thread</h3>
+          <Badge variant="secondary">{thread.messages.length}</Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          {thread.status === "resolved" ? (
+            <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
+              Reopen
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon-xs"
+              onClick={() => ctx.resolveThread(thread.id)}
+              aria-label="Resolve"
+              title="Resolve"
+            >
+              <CheckCircle2 className="size-3" />
+              <span className="sr-only">Resolve</span>
+            </Button>
+          )}
           <Button
             ref={closeButtonRef}
             variant="ghost"
@@ -391,9 +517,6 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
   const ctx = useAnnotationContext()
   const [replyText, setReplyText] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
-  const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
-  const backLabel = ctx.returnView === "node" ? "← Back to selected node" : "← Back to threads"
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -427,45 +550,10 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="border-b px-4 py-4">
-        <button
-          type="button"
-          onClick={ctx.navigateBack}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {backLabel}
-        </button>
-        <div className="mt-3 flex items-start justify-between gap-2">
-          <div>
-            <p className="line-clamp-1 text-sm font-medium text-foreground">{snippet}</p>
-            <p className="text-xs text-muted-foreground">{thread.anchor.nodeType}</p>
-            {!isPresent && (
-              <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-                <AlertTriangle className="size-3" />
-                Anchor not found; this thread may have moved.
-              </p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {thread.status === "resolved" ? (
-              <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
-                Reopen
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => ctx.resolveThread(thread.id)}>
-                <CheckCircle2 data-icon="inline-start" />
-                Resolve
-              </Button>
-            )}
-            <ThreadStatusBadge status={thread.status} />
-          </div>
-        </div>
-      </div>
-
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 p-4">
           {thread.messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble key={message.id} threadId={thread.id} message={message} />
           ))}
         </div>
       </ScrollArea>
@@ -508,18 +596,137 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
   )
 }
 
-function MessageBubble({ message }: { message: AnnotationMessage }) {
+function MessageBubble({ threadId, message }: { threadId: string; message: AnnotationMessage }) {
+  const ctx = useAnnotationContext()
   const isFallback =
     message.author.name === LOCAL_ANONYMOUS_AUTHOR.name &&
     message.author.email === LOCAL_ANONYMOUS_AUTHOR.email
+  const isAuthor =
+    ctx.authorStatus !== "loading" && message.author.email === ctx.author.email
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState(message.body)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+
+  function handleStartEdit() {
+    setEditText(message.body)
+    setIsEditing(true)
+    setIsConfirmingDelete(false)
+  }
+
+  function handleSave() {
+    const trimmed = editText.trim()
+    if (!trimmed || trimmed === message.body) {
+      setIsEditing(false)
+      return
+    }
+    ctx.editMessage(threadId, message.id, trimmed)
+    setIsEditing(false)
+  }
+
+  function handleCancelEdit() {
+    setIsEditing(false)
+    setEditText(message.body)
+  }
+
+  function handleConfirmDelete() {
+    ctx.deleteMessage(threadId, message.id)
+    setIsConfirmingDelete(false)
+  }
+
+  function handleEditKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault()
+      handleSave()
+    } else if (event.key === "Escape") {
+      event.preventDefault()
+      handleCancelEdit()
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <AuthorLabel author={message.author} isFallback={isFallback} />
+          <span className="shrink-0 text-[10px] text-muted-foreground">
+            <TimeLabel date={message.updatedAt} />
+          </span>
+        </div>
+        <Textarea
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onKeyDown={handleEditKeyDown}
+          placeholder="Edit comment..."
+          className="min-h-20"
+          aria-label="Edit comment"
+        />
+        <div className="flex items-center justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={!editText.trim()}>
+            Save
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-start justify-between gap-2">
         <AuthorLabel author={message.author} isFallback={isFallback} />
-        <span className="shrink-0 text-[10px] text-muted-foreground">
-          <TimeLabel date={message.createdAt} />
-        </span>
+        <div className="flex items-center gap-2">
+          {isAuthor && !isConfirmingDelete && (
+            <>
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Edit comment"
+                title="Edit comment"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(true)}
+                className="text-muted-foreground transition-colors hover:text-destructive"
+                aria-label="Delete comment"
+                title="Delete comment"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </>
+          )}
+          {isConfirmingDelete && (
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground">Delete?</span>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="text-destructive transition-colors hover:text-destructive/80"
+                aria-label="Confirm delete"
+                title="Confirm delete"
+              >
+                <Check className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(false)}
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Cancel delete"
+                title="Cancel delete"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          )}
+          <span className="shrink-0 text-[10px] text-muted-foreground">
+            <TimeLabel date={message.createdAt} />
+          </span>
+        </div>
       </div>
       <p className="whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
     </div>

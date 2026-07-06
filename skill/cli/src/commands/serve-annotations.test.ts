@@ -140,4 +140,63 @@ describe("serveApi annotations endpoint", () => {
       await rm(dir, { recursive: true, force: true })
     }
   })
+
+  test("POST editMessage updates message body", async () => {
+    const dir = await makeTempDir("visualizer-serve-api-")
+    try {
+      const createReq = new Request("http://localhost/api/annotations/example-project/example-artifact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validMutation),
+      })
+      await serveApi(createReq, "/api/annotations/example-project/example-artifact", dir, "/api/annotations")
+
+      const editReq = new Request("http://localhost/api/annotations/example-project/example-artifact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "editMessage",
+          threadId: validThread.id,
+          messageId: validThread.messages[0].id,
+          body: "Updated wording.",
+          updatedAt: "2026-07-04T00:00:00.000Z",
+        }),
+      })
+      const response = await serveApi(editReq, "/api/annotations/example-project/example-artifact", dir, "/api/annotations")
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.threads[0].messages[0].body).toBe("Updated wording.")
+      expect(body.threads[0].messages[0].updatedAt).toBe("2026-07-04T00:00:00.000Z")
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("POST deleteMessage removes message and deletes empty thread", async () => {
+    const dir = await makeTempDir("visualizer-serve-api-")
+    try {
+      const createReq = new Request("http://localhost/api/annotations/example-project/example-artifact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validMutation),
+      })
+      await serveApi(createReq, "/api/annotations/example-project/example-artifact", dir, "/api/annotations")
+
+      const deleteReq = new Request("http://localhost/api/annotations/example-project/example-artifact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "deleteMessage",
+          threadId: validThread.id,
+          messageId: validThread.messages[0].id,
+        }),
+      })
+      const response = await serveApi(deleteReq, "/api/annotations/example-project/example-artifact", dir, "/api/annotations")
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.threads).toHaveLength(0)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
 })

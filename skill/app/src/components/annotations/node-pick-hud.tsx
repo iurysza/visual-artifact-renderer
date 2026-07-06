@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useAnnotationContext } from "@/components/annotation-provider"
+import { useAnnotationContext } from "./annotation-provider"
 
 export function NodePickHUD() {
   const ctx = useAnnotationContext()

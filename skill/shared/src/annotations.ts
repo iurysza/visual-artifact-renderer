@@ -98,11 +98,31 @@ const ReopenThreadMutationSchema = z
   })
   .strict()
 
+const DeleteMessageMutationSchema = z
+  .object({
+    type: z.literal("deleteMessage"),
+    threadId: z.string().min(1),
+    messageId: z.string().min(1),
+  })
+  .strict()
+
+const EditMessageMutationSchema = z
+  .object({
+    type: z.literal("editMessage"),
+    threadId: z.string().min(1),
+    messageId: z.string().min(1),
+    body: z.string().min(1),
+    updatedAt: z.string().datetime(),
+  })
+  .strict()
+
 export const AnnotationMutationSchema = z.discriminatedUnion("type", [
   CreateThreadMutationSchema,
   AddMessageMutationSchema,
   ResolveThreadMutationSchema,
   ReopenThreadMutationSchema,
+  DeleteMessageMutationSchema,
+  EditMessageMutationSchema,
 ])
 
 export type AnnotationMutation = z.infer<typeof AnnotationMutationSchema>

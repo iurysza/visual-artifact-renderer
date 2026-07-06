@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 
 import { SiteHeader } from "@/components/site-header"
-import { AnnotationProvider } from "@/components/annotation-provider"
+import { AnnotationProvider } from "@/components/annotations"
 import { ClientArtifactLoader } from "@/components/client-artifact-loader"
 import { artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/artifacts/paths"
 import type { VisualArtifactSpec } from "@/lib/contract/artifact-schema"

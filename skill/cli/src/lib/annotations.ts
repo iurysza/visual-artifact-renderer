@@ -153,6 +153,49 @@ function applyMutation(threads: AnnotationThread[], mutation: AnnotationMutation
       updated[index] = { ...updated[index], status: "open" }
       return updated
     }
+    case "deleteMessage": {
+      const threadIndex = threads.findIndex((t) => t.id === mutation.threadId)
+      if (threadIndex === -1) {
+        throw new Error(`Thread ${mutation.threadId} not found`)
+      }
+      const updated = [...threads]
+      const thread = updated[threadIndex]
+      const messages = thread.messages.filter((m) => m.id !== mutation.messageId)
+      if (messages.length === 0) {
+        updated.splice(threadIndex, 1)
+      } else {
+        updated[threadIndex] = {
+          ...thread,
+          messages,
+          updatedAt: new Date().toISOString(),
+        }
+      }
+      return updated
+    }
+    case "editMessage": {
+      const threadIndex = threads.findIndex((t) => t.id === mutation.threadId)
+      if (threadIndex === -1) {
+        throw new Error(`Thread ${mutation.threadId} not found`)
+      }
+      const updated = [...threads]
+      const thread = updated[threadIndex]
+      const messageIndex = thread.messages.findIndex((m) => m.id === mutation.messageId)
+      if (messageIndex === -1) {
+        throw new Error(`Message ${mutation.messageId} not found in thread ${thread.id}`)
+      }
+      const messages = [...thread.messages]
+      messages[messageIndex] = {
+        ...messages[messageIndex],
+        body: mutation.body,
+        updatedAt: mutation.updatedAt,
+      }
+      updated[threadIndex] = {
+        ...thread,
+        messages,
+        updatedAt: mutation.updatedAt,
+      }
+      return updated
+    }
   }
 }
 

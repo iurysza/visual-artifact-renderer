@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-import { findAnchorElement, isAnchorOrphaned } from "@/components/annotation-helpers"
+import { findAnchorElement, isAnchorOrphaned } from "@/components/annotations"
 
 export function useAnchorPresence(nodeId: string | undefined, nodePath: string): boolean {
   const [present, setPresent] = useState(() => {

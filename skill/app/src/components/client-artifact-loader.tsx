@@ -5,6 +5,8 @@ import { VisualArtifactRenderer } from "@/components/visual-artifact-renderer"
 import { VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 import { artifactDataUrl, artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/artifacts/paths"
 
+import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
+
 interface ClientArtifactLoaderProps {
   project?: string
   slug?: string
@@ -19,6 +21,11 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
   }, [project, slug])
   const [spec, setSpec] = useState<VisualArtifactSpec | null>(initialSpec || null)
   const [error, setError] = useState<string | null>(null)
+  const { setSpec: setAIColabSpec } = useAIColabContext()
+
+  useEffect(() => {
+    if (initialSpec) setAIColabSpec(initialSpec)
+  }, [initialSpec, setAIColabSpec])
 
   useEffect(() => {
     if (!params) return
@@ -38,6 +45,7 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
           throw new Error(`Invalid artifact: ${parsed.error.issues[0]?.message ?? "schema validation failed"}`)
         }
         setSpec(parsed.data)
+        setAIColabSpec(parsed.data)
         setError(null)
       })
       .catch(err => {
@@ -49,7 +57,7 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
           console.warn(`[ClientArtifactLoader] Failed to refresh artifact from ${url}:`, err.message)
         }
       })
-  }, [params, initialSpec])
+  }, [params, initialSpec, setAIColabSpec])
 
   if (!params && !spec) {
     // During SSR the shell doesn't know the URL yet; show a loading state so

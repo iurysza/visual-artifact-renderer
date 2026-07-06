@@ -124,6 +124,22 @@ describe("parseAnnotationMutation", () => {
     expect(parseAnnotationMutation(mutation)).toEqual(mutation)
   })
 
+  test("accepts deleteMessage mutation", () => {
+    const mutation = { type: "deleteMessage" as const, threadId: "thr_123", messageId: "msg_123" }
+    expect(parseAnnotationMutation(mutation)).toEqual(mutation)
+  })
+
+  test("accepts editMessage mutation", () => {
+    const mutation = {
+      type: "editMessage" as const,
+      threadId: "thr_123",
+      messageId: "msg_123",
+      body: "Updated.",
+      updatedAt: "2026-07-04T00:00:00.000Z",
+    }
+    expect(parseAnnotationMutation(mutation)).toEqual(mutation)
+  })
+
   test("rejects unknown mutation type", () => {
     expect(() => parseAnnotationMutation({ type: "deleteThread", threadId: "thr_123" })).toThrow(/type/)
   })
@@ -176,6 +192,46 @@ describe("applyMutations", () => {
     expect(resolved.threads[0].status).toBe("resolved")
     const reopened = applyMutations(resolved, [{ type: "reopenThread", threadId: "thr_123" }])
     expect(reopened.threads[0].status).toBe("open")
+  })
+
+  test("edits message body and updatedAt", () => {
+    const doc = { ...validDocument }
+    const updated = applyMutations(doc, [
+      {
+        type: "editMessage",
+        threadId: "thr_123",
+        messageId: "msg_123",
+        body: "Updated wording.",
+        updatedAt: "2026-07-04T00:00:00.000Z",
+      },
+    ])
+    expect(updated.threads[0].messages[0].body).toBe("Updated wording.")
+    expect(updated.threads[0].messages[0].updatedAt).toBe("2026-07-04T00:00:00.000Z")
+  })
+
+  test("deletes message and removes empty thread", () => {
+    const doc = { ...validDocument }
+    const updated = applyMutations(doc, [
+      { type: "deleteMessage", threadId: "thr_123", messageId: "msg_123" },
+    ])
+    expect(updated.threads).toHaveLength(0)
+  })
+
+  test("deletes message and keeps thread with remaining messages", () => {
+    const doc = { ...validDocument }
+    const withReply = applyMutations(doc, [
+      {
+        type: "addMessage",
+        threadId: "thr_123",
+        message: { ...validMessage, id: "msg_456", body: "Agreed." },
+      },
+    ])
+    const updated = applyMutations(withReply, [
+      { type: "deleteMessage", threadId: "thr_123", messageId: "msg_123" },
+    ])
+    expect(updated.threads).toHaveLength(1)
+    expect(updated.threads[0].messages).toHaveLength(1)
+    expect(updated.threads[0].messages[0].id).toBe("msg_456")
   })
 
   test("fails when thread not found", () => {
