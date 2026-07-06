@@ -2,6 +2,10 @@ export interface FileTreeItem {
   name: string
   type?: "file" | "directory"
   children?: FileTreeItem[]
+  /** File contents; when present the file is tappable and renders in a code-block. */
+  content?: string
+  /** Shiki language hint for the code-block (e.g. typescript, bash, json). */
+  language?: string
 }
 
 export type GitStatusValue =

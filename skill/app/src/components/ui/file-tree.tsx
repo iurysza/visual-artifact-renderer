@@ -14,6 +14,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
+import { CodeBlock } from "@/components/ui/code-block"
 import {
   Collapsible,
   CollapsibleContent,
@@ -89,15 +90,61 @@ function fileIcon(name: string, iconSet: FileTreeIconSet) {
   return File
 }
 
+/** Infer a Shiki language hint from a filename when the item omits one. */
+function inferLanguage(name: string): string {
+  const ext = name.slice(name.lastIndexOf(".") + 1).toLowerCase()
+  const map: Record<string, string> = {
+    ts: "typescript",
+    tsx: "tsx",
+    js: "javascript",
+    jsx: "jsx",
+    mjs: "javascript",
+    cjs: "javascript",
+    py: "python",
+    go: "go",
+    rs: "rust",
+    rb: "ruby",
+    sh: "bash",
+    bash: "bash",
+    zsh: "bash",
+    yml: "yaml",
+    yaml: "yaml",
+    json: "json",
+    md: "markdown",
+    mdx: "markdown",
+    html: "html",
+    css: "css",
+    sql: "sql",
+    toml: "toml",
+    xml: "xml",
+  }
+  return map[ext] ?? "text"
+}
+
 function StatusBadge({
   status,
   density,
+  reserveSpace,
 }: {
   status: GitStatus | undefined
   density: FileTreeDensity
+  reserveSpace?: boolean
 }) {
   const indicator = getStatusIndicator(status)
-  if (!indicator.label) return null
+  if (!indicator.label) {
+    // Reserve the badge slot so rows align within git-aware trees.
+    return reserveSpace ? (
+      <span
+        className={cn(
+          "ml-auto inline-block",
+          density === "compact" && "size-3.5",
+          density === "default" && "size-4",
+          density === "relaxed" && "size-4.5"
+        )}
+        aria-hidden="true"
+      />
+    ) : null
+  }
 
   const toneClasses = {
     muted: "bg-muted text-muted-foreground",
@@ -126,11 +173,11 @@ function StatusBadge({
 
 export function FileTree({
   items,
-  flattenEmpty = false,
+  flattenEmpty = true,
   searchable = false,
   gitStatus,
   density = "default",
-  iconSet = "minimal",
+  iconSet = "standard",
   defaultExpanded = true,
   className,
 }: FileTreeProps) {
@@ -157,6 +204,12 @@ export function FileTree({
 
   const focusedRef = React.useRef<HTMLDivElement | null>(null)
   const [focusedPath, setFocusedPath] = React.useState<string | null>(null)
+  const [selectedPath, setSelectedPath] = React.useState<string | null>(null)
+
+  const selectedItem = React.useMemo(
+    () => (selectedPath ? flatItems.find((i) => i.path === selectedPath) : null),
+    [flatItems, selectedPath]
+  )
 
   const displayItems = React.useMemo(() => {
     const byPath = new Map<string, DisplayItem>()
@@ -286,6 +339,7 @@ export function FileTree({
   }
 
   const densityStyles = DENSITY_CLASSES[density]
+  const reserveStatusSpace = Boolean(gitStatus)
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -380,7 +434,7 @@ export function FileTree({
                         />
                         <Icon className={iconClasses} />
                         <span className="truncate">{item.displayName}</span>
-                        <StatusBadge status={status} density={density} />
+                        <StatusBadge status={status} density={density} reserveSpace={reserveStatusSpace} />
                       </CollapsibleTrigger>
                     <CollapsibleContent>
                       {/* children rendered by the flat displayItems list */}
@@ -390,6 +444,22 @@ export function FileTree({
               )
             }
 
+            const hasContent = typeof item.content === "string"
+            const isSelected = selectedPath === item.path
+            const fileRowClasses = cn(
+              rowClasses,
+              hasContent &&
+                "cursor-pointer select-none ring-inset",
+              hasContent && isSelected &&
+                "bg-primary/10 text-foreground ring-1 ring-primary/30",
+              !hasContent && "cursor-default"
+            )
+
+            const handleFileActivate = () => {
+              if (!hasContent) return
+              setSelectedPath(isSelected ? null : item.path)
+            }
+
             return (
               <div
                 key={item.id}
@@ -397,23 +467,38 @@ export function FileTree({
                 aria-level={item.depth + 1}
                 aria-posinset={index + 1}
                 aria-setsize={displayItems.length}
-                  aria-selected={focusedPath === item.path ? "true" : "false"}
+                aria-selected={focusedPath === item.path ? "true" : "false"}
                 data-tree-path={item.path}
                 tabIndex={focusedPath === item.path ? 0 : -1}
                 onFocus={() => setFocusedPath(item.path)}
-                className={rowClasses}
+                onClick={handleFileActivate}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    handleFileActivate()
+                  }
+                }}
+                className={fileRowClasses}
                 style={{
                   paddingLeft: `${item.depth * 1.25 + 0.5}rem`,
                 }}
               >
                 <Icon className={iconClasses} />
                 <span className="truncate">{item.displayName}</span>
-                <StatusBadge status={status} density={density} />
+                <StatusBadge status={status} density={density} reserveSpace={reserveStatusSpace} />
               </div>
             )
           })
         )}
       </div>
+      {selectedItem && typeof selectedItem.content === "string" && (
+        <CodeBlock
+          code={selectedItem.content}
+          language={selectedItem.language ?? inferLanguage(selectedItem.name)}
+          title={selectedItem.flattenedName ?? selectedItem.name}
+          className="mt-2"
+        />
+      )}
     </div>
   )
 }

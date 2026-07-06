@@ -91,6 +91,8 @@ const FileTreeItemSchema: z.ZodType<FileTreeItem> = z.lazy(() =>
     name: z.string().min(1),
     type: z.enum(["file", "directory"]).optional(),
     children: z.array(FileTreeItemSchema).optional(),
+    content: z.string().optional(),
+    language: z.string().min(1).optional(),
   })
 )
 

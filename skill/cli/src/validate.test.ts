@@ -109,6 +109,28 @@ describe("validateSpec contract parity", () => {
     expect(result.nodes).toHaveLength(1)
   })
 
+  test("accepts file-tree items with content + language for tap-to-view", () => {
+    const result = validateSpec(
+      specWith({
+        type: "file-tree",
+        props: {
+          items: [
+            {
+              name: "src",
+              type: "directory",
+              children: [
+                { name: "index.ts", type: "file", content: "export default 1", language: "typescript" },
+              ],
+            },
+          ],
+        },
+      }),
+      contract,
+    )
+
+    expect(result.nodes).toHaveLength(1)
+  })
+
   test("rejects flow diagrams with too few items", () => {
     expectInvalid(
       {

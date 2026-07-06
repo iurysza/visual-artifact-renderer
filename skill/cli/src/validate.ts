@@ -169,10 +169,16 @@ function validateFileTreeItems(value: unknown, label: string, requireNonEmpty: b
   value.forEach((item, index) => {
     const itemLabel = `${label}[${index}]`
     const itemObj = assertPlainObject(item, itemLabel)
-    validateNoExtraKeys(itemObj, ["name", "type", "children"], itemLabel)
+    validateNoExtraKeys(itemObj, ["name", "type", "children", "content", "language"], itemLabel)
     assertString(itemObj.name, `${itemLabel}.name`)
     if (itemObj.type !== undefined) {
       validateEnum(itemObj.type, '"file" | "directory"', `${itemLabel}.type`)
+    }
+    if (itemObj.content !== undefined) {
+      assertString(itemObj.content, `${itemLabel}.content`)
+    }
+    if (itemObj.language !== undefined) {
+      assertString(itemObj.language, `${itemLabel}.language`)
     }
     if (itemObj.children !== undefined) {
       validateFileTreeItems(itemObj.children, `${itemLabel}.children`, false)
