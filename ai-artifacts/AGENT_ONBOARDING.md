@@ -74,6 +74,7 @@ CLI:
 ```bash
 cd skill/cli
 bun install
+bun test
 bun run typecheck
 bun run build
 bun run install:binary
@@ -154,6 +155,7 @@ pnpm verify:artifacts
 pnpm build
 
 cd ../cli
+bun test
 bun run typecheck
 bun run build
 ```

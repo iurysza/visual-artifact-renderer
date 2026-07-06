@@ -77,6 +77,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 - **Local-first storage** — generated artifacts stay under the installed skill root unless overridden.
 - **CLI + Pi extension/tool** — use `visual-artifact` directly or let Pi call `create_visual_artifact`.
 - **Static renderer, live JSON** — the renderer is built once; new artifacts appear without rebuilding.
+- **Annotations and AI Colab** — node-level comment threads with resolve/reopen, plus an in-memory AI Colab mode for reviewing formatter comments and exporting them as Markdown.
 - **Safe rendering boundary** — validation before write, Zod parse before render, adapter-only UI.
 
 ## Quick start
@@ -239,12 +240,12 @@ Node reference: [`docs/nodes.md`](./docs/nodes.md).
 
 ## Annotations
 
-Artifacts support node-level annotation threads. Open any artifact page and click the **Comments** toggle in the header to enter annotation mode.
+Artifacts support node-level annotation threads and an in-memory AI Colab mode. Open any artifact page and choose **Comments** or **Colab** from the segmented toggle in the header.
 
 ### Creating a comment
 
 1. Enable comment mode with the **Comments** toggle.
-2. Hover over a rendered node to see a subtle outline; click the node to select it.
+2. Hover over a rendered node to see a subtle outline; click the node to select it (on touch, tap to preview, tap again to confirm).
 3. Write a comment in the right sidebar composer and click **Post**.
 4. The thread is anchored to the node and saved to the bundle's `annotations.json`.
 
@@ -254,6 +255,16 @@ Artifacts support node-level annotation threads. Open any artifact page and clic
 - Click **Resolve thread** to mark a thread as resolved.
 - Click **Reopen** on a resolved thread to continue the discussion.
 - The thread count badge on each node updates in real time.
+
+### AI Colab
+
+AI Colab lets a formatter or agent attach suggested comments to an artifact without persisting them.
+
+1. Enable **Colab** from the header toggle.
+2. Review, edit, add, or delete AI comments in the right sidebar.
+3. Click **Copy Markdown** to export the artifact plus all current colab comments as a sparse Markdown block.
+
+Colab comments live only in browser state. They are not written to `annotations.json` unless you explicitly convert them to persistent annotations.
 
 ### Sharing
 

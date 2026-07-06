@@ -25,6 +25,8 @@ CLI changes:
 
 ```bash
 cd skill/cli
+bun install
+bun test
 bun run typecheck
 bun run build
 ```
@@ -45,8 +47,10 @@ visual-artifact create spec.json --no-serve
 | `pnpm export:contract` | Regenerates `skill/artifact-contract.json` from schema + manifest. |
 | `pnpm verify:artifacts` | Saved specs parse, filenames match slugs, manifest/contract node sets match. |
 | `pnpm build` | Next.js static export to `skill/app/out`. |
+| `bun test` | CLI unit tests for path/scan/create/serve commands. |
 | `bun run typecheck` | CLI TypeScript compile check. |
 | `bun run build` | Bundles contract/static assets and compiles CLI binary. |
+| `visual-artifact bootstrap` | Builds renderer and CLI, installs shared dependencies, and installs the binary/skill/extension copies. |
 | `visual-artifact doctor` | Binary/deps/contract/out-dir/artifacts-dir/server health. |
 
 ## Visual QA
