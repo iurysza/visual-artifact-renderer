@@ -265,291 +265,181 @@
       },
       "props": {
         "title": "Key files and responsibilities",
-        "description": "Where each concern lives in the codebase. Side-by-side: the basic file-tree (left) vs the enhanced Pierre-style renderer with git-status badges, search, density, and icon sets (right)."
+        "description": "Where each concern lives in the codebase. Tap a file to preview its source; git badges reflect the current branch state."
       },
       "children": [
         {
-          "type": "grid",
+          "type": "prose",
           "props": {
-            "columns": 2
-          },
-          "metadata": {
-            "id": "key-files-comparison"
-          },
-          "children": [
-            {
-              "type": "card",
-              "props": {
-                "title": "Basic file-tree (legacy props)",
-                "description": "items + defaultExpanded only. No badges, no search, default density/icons.",
-                "tone": "default"
-              },
-              "children": [
-                {
-                  "type": "file-tree",
-                  "props": {
-                    "items": [
+            "content": "The system is split into four layers. **Annotation state** lives in `annotation-provider.tsx` (React context, mutations, persistence) and `annotation-panel.tsx` (thread list, message bubbles, edit/delete). **AI Colab state** mirrors that split: `ai-colab-provider.tsx` holds context + pick state, `ai-colab-panel.tsx` renders the composer + comment list, and `ai-colab-store.ts` builds targets and copies Markdown. **Formatting** is isolated in `lib/ai-colab/formatter.ts` (spec → Markdown) with its `types.ts`. **Shared contracts** — the Zod schemas for threads, messages, anchors, and mutations — live in `skill/shared/src/annotations.ts`, consumed by both the app and the CLI. The CLI's `skill/cli/src/lib/annotations.ts` applies mutations to the on-disk document. `site-header.tsx` hosts the Comments/Colab toggle group; `visual-artifact-renderer.tsx` owns node selection and overlays both panels."
+          }
+        },
+        {
+          "type": "file-tree",
+          "props": {
+            "items": [
+              {
+                "name": "skill/app/src/components/",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "annotation-provider.tsx",
+                    "type": "file",
+                    "src": "skill/app/src/components/annotations/annotation-provider.tsx"
+                  },
+                  {
+                    "name": "annotation-panel.tsx",
+                    "type": "file",
+                    "src": "skill/app/src/components/annotations/annotation-panel.tsx"
+                  },
+                  {
+                    "name": "annotation-toggle.tsx",
+                    "type": "file",
+                    "src": "skill/app/src/components/annotations/annotation-toggle.tsx"
+                  },
+                  {
+                    "name": "ai-colab/",
+                    "type": "directory",
+                    "children": [
                       {
-                        "name": "skill/app/src/components/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "annotation-provider.tsx",
-                            "type": "file"
-                          },
-                          {
-                            "name": "annotation-panel.tsx",
-                            "type": "file"
-                          },
-                          {
-                            "name": "annotation-toggle.tsx",
-                            "type": "file"
-                          },
-                          {
-                            "name": "ai-colab/",
-                            "type": "directory",
-                            "children": [
-                              {
-                                "name": "ai-colab-provider.tsx",
-                                "type": "file"
-                              },
-                              {
-                                "name": "ai-colab-panel.tsx",
-                                "type": "file"
-                              },
-                              {
-                                "name": "ai-colab-store.ts",
-                                "type": "file"
-                              }
-                            ]
-                          },
-                          {
-                            "name": "site-header.tsx",
-                            "type": "file"
-                          },
-                          {
-                            "name": "visual-artifact-renderer.tsx",
-                            "type": "file"
-                          }
-                        ]
+                        "name": "ai-colab-provider.tsx",
+                        "type": "file",
+                        "src": "skill/app/src/components/ai-colab/ai-colab-provider.tsx"
                       },
                       {
-                        "name": "skill/app/src/lib/ai-colab/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "formatter.ts",
-                            "type": "file"
-                          },
-                          {
-                            "name": "types.ts",
-                            "type": "file"
-                          }
-                        ]
+                        "name": "ai-colab-panel.tsx",
+                        "type": "file",
+                        "src": "skill/app/src/components/ai-colab/ai-colab-panel.tsx"
                       },
                       {
-                        "name": "skill/shared/src/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "annotations.ts",
-                            "type": "file"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "skill/cli/src/lib/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "annotations.ts",
-                            "type": "file"
-                          }
-                        ]
+                        "name": "ai-colab-store.ts",
+                        "type": "file",
+                        "src": "skill/app/src/lib/ai-colab/ai-colab-store.ts"
                       }
-                    ],
-                    "defaultExpanded": true
+                    ]
+                  },
+                  {
+                    "name": "site-header.tsx",
+                    "type": "file",
+                    "src": "skill/app/src/components/site-header.tsx"
+                  },
+                  {
+                    "name": "visual-artifact-renderer.tsx",
+                    "type": "file",
+                    "src": "skill/app/src/components/visual-artifact-renderer.tsx"
                   }
-                }
-              ]
-            },
-            {
-              "type": "card",
-              "props": {
-                "title": "Enhanced file-tree (Pierre-style)",
-                "description": "gitStatus badges reflect the real feature/artifact-annotations branch state. Searchable, compact density, complete icon set, empty dirs flattened.",
-                "tone": "accent"
+                ]
               },
-              "children": [
-                {
-                  "type": "file-tree",
-                  "props": {
-                    "items": [
-                      {
-                        "name": "skill/app/src/components/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "annotation-provider.tsx",
-                            "type": "file"
-                          },
-                          {
-                            "name": "annotation-panel.tsx",
-                            "type": "file"
-                          },
-                          {
-                            "name": "annotation-toggle.tsx",
-                            "type": "file",
-                            "language": "tsx",
-                            "content": "\"use client\"\n\nimport { Crosshair, MessageSquare } from \"lucide-react\"\nimport { Button } from \"@/components/ui/button\"\nimport { useAIColabContext } from \"@/components/ai-colab/ai-colab-provider\"\nimport { useAnnotationContext } from \"@/components/annotation-provider\"\n\nexport function AnnotationToggle() {\n  const ctx = useAnnotationContext()\n  const aiColabCtx = useAIColabContext()\n  const active = ctx.isCommentMode\n  // Toggles human comment mode; closes AI Colab when opening comments.\n  return (\n    <Button variant={active ? \"secondary\" : \"outline\"} size=\"sm\"\n      onClick={() => active ? ctx.closeComments() : (aiColabCtx.closeAIColab(), ctx.openComments())}\n      aria-pressed={active}>\n      <MessageSquare data-icon=\"inline-start\" />\n    </Button>\n  )\n}\n"
-                          },
-                          {
-                            "name": "ai-colab/",
-                            "type": "directory",
-                            "children": [
-                              {
-                                "name": "ai-colab-provider.tsx",
-                                "type": "file"
-                              },
-                              {
-                                "name": "ai-colab-panel.tsx",
-                                "type": "file"
-                              },
-                              {
-                                "name": "ai-colab-store.ts",
-                                "type": "file"
-                              }
-                            ]
-                          },
-                          {
-                            "name": "site-header.tsx",
-                            "type": "file",
-                            "language": "tsx",
-                            "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { usePathname } from \"next/navigation\"\nimport { ToggleGroup, ToggleGroupItem } from \"@/components/ui/toggle-group\"\nimport { useOptionalAnnotationContext } from \"@/components/annotation-provider\"\nimport { useOptionalAIColabContext } from \"@/components/ai-colab/ai-colab-provider\"\n\n// Renders the Comments/Colab ToggleGroup. Selecting one closes the other.\nexport function SiteHeader() {\n  const pathname = usePathname()\n  const annotationCtx = useOptionalAnnotationContext()\n  const aiColabCtx = useOptionalAIColabContext()\n  // breadcrumbs + theme toggle + ToggleGroup(Comments|Colab)\n}\n"
-                          },
-                          {
-                            "name": "visual-artifact-renderer.tsx",
-                            "type": "file"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "skill/app/src/lib/ai-colab/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "formatter.ts",
-                            "type": "file"
-                          },
-                          {
-                            "name": "types.ts",
-                            "type": "file"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "skill/shared/src/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "annotations.ts",
-                            "type": "file",
-                            "language": "typescript",
-                            "content": "import { z } from \"zod\"\n\nexport const ANNOTATION_VERSION = 1 as const\n\nexport const AnnotationAuthorSchema = z.object({\n  name: z.string().min(1),\n  email: z.string().email(),\n}).strict()\nexport type AnnotationAuthor = z.infer<typeof AnnotationAuthorSchema>\n\nexport const AnnotationAnchorSchema = z.object({\n  nodeId: z.string().min(1).optional(),\n  nodePath: z.string().min(1),\n  nodeType: z.string().min(1),\n  textSnippet: z.string().min(1).optional(),\n  x: z.number().min(0).max(1).optional(),\n  y: z.number().min(0).max(1).optional(),\n}).strict()\nexport type AnnotationAnchor = z.infer<typeof AnnotationAnchorSchema>\n\nexport const AnnotationMessageSchema = z.object({\n  id: z.string().min(1),\n  author: AnnotationAuthorSchema,\n  body: z.string().min(1),\n  createdAt: z.string().datetime(),\n  updatedAt: z.string().datetime(),\n}).strict()\n"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "skill/cli/src/lib/",
-                        "type": "directory",
-                        "children": [
-                          {
-                            "name": "annotations.ts",
-                            "type": "file",
-                            "language": "typescript",
-                            "content": "import { z } from \"zod\"\n\nexport const ANNOTATION_VERSION = 1 as const\n\nexport const AnnotationAuthorSchema = z.object({\n  name: z.string().min(1),\n  email: z.string().email(),\n}).strict()\nexport type AnnotationAuthor = z.infer<typeof AnnotationAuthorSchema>\n\nexport const AnnotationAnchorSchema = z.object({\n  nodeId: z.string().min(1).optional(),\n  nodePath: z.string().min(1),\n  nodeType: z.string().min(1),\n  textSnippet: z.string().min(1).optional(),\n  x: z.number().min(0).max(1).optional(),\n  y: z.number().min(0).max(1).optional(),\n}).strict()\nexport type AnnotationAnchor = z.infer<typeof AnnotationAnchorSchema>\n\nexport const AnnotationMessageSchema = z.object({\n  id: z.string().min(1),\n  author: AnnotationAuthorSchema,\n  body: z.string().min(1),\n  createdAt: z.string().datetime(),\n  updatedAt: z.string().datetime(),\n}).strict()\n"
-                          }
-                        ]
-                      }
-                    ],
-                    "flattenEmpty": true,
-                    "searchable": true,
-                    "density": "compact",
-                    "iconSet": "complete",
-                    "defaultExpanded": true,
-                    "gitStatus": {
-                      "skill/app/src/components/annotation-provider.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/annotation-panel.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/annotation-toggle.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/site-header.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/visual-artifact-renderer.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/artifact-page-shell.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/client-artifact-loader.tsx": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components/ai-colab": {
-                        "status": "added",
-                        "descendant": true
-                      },
-                      "skill/app/src/components/ai-colab/ai-colab-provider.tsx": {
-                        "status": "added"
-                      },
-                      "skill/app/src/components/ai-colab/ai-colab-panel.tsx": {
-                        "status": "added"
-                      },
-                      "skill/app/src/components/ai-colab/ai-colab-store.ts": {
-                        "status": "added"
-                      },
-                      "skill/app/src/lib/ai-colab": {
-                        "status": "added",
-                        "descendant": true
-                      },
-                      "skill/app/src/lib/ai-colab/formatter.ts": {
-                        "status": "added"
-                      },
-                      "skill/app/src/lib/ai-colab/types.ts": {
-                        "status": "added"
-                      },
-                      "skill/shared/src/annotations.ts": {
-                        "status": "modified"
-                      },
-                      "skill/cli/src/lib/annotations.ts": {
-                        "status": "modified"
-                      },
-                      "skill/app/src/components": {
-                        "status": "modified",
-                        "descendant": true
-                      },
-                      "skill/app/src": {
-                        "status": "modified",
-                        "descendant": true
-                      },
-                      "skill/shared/src": {
-                        "status": "modified",
-                        "descendant": true
-                      },
-                      "skill/cli/src/lib": {
-                        "status": "modified",
-                        "descendant": true
-                      }
-                    }
+              {
+                "name": "skill/app/src/lib/ai-colab/",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "formatter.ts",
+                    "type": "file",
+                    "src": "skill/app/src/lib/ai-colab/formatter.ts"
+                  },
+                  {
+                    "name": "types.ts",
+                    "type": "file",
+                    "src": "skill/app/src/lib/ai-colab/types.ts"
                   }
-                }
-              ]
+                ]
+              },
+              {
+                "name": "skill/shared/src/",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "annotations.ts",
+                    "type": "file",
+                    "src": "skill/shared/src/annotations.ts"
+                  }
+                ]
+              },
+              {
+                "name": "skill/cli/src/lib/",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "annotations.ts",
+                    "type": "file",
+                    "src": "skill/cli/src/lib/annotations.ts"
+                  }
+                ]
+              }
+            ],
+            "flattenEmpty": true,
+            "searchable": true,
+            "density": "compact",
+            "iconSet": "complete",
+            "defaultExpanded": true,
+            "gitStatus": {
+              "skill/app/src/components/annotation-provider.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/annotation-panel.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/annotation-toggle.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/site-header.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/visual-artifact-renderer.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/artifact-page-shell.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/client-artifact-loader.tsx": {
+                "status": "modified"
+              },
+              "skill/app/src/components/ai-colab": {
+                "status": "added",
+                "descendant": true
+              },
+              "skill/app/src/components/ai-colab/ai-colab-provider.tsx": {
+                "status": "added"
+              },
+              "skill/app/src/components/ai-colab/ai-colab-panel.tsx": {
+                "status": "added"
+              },
+              "skill/app/src/lib/ai-colab": {
+                "status": "added",
+                "descendant": true
+              },
+              "skill/app/src/lib/ai-colab/formatter.ts": {
+                "status": "added"
+              },
+              "skill/app/src/lib/ai-colab/types.ts": {
+                "status": "added"
+              },
+              "skill/shared/src/annotations.ts": {
+                "status": "modified"
+              },
+              "skill/cli/src/lib/annotations.ts": {
+                "status": "modified"
+              },
+              "skill/app/src/components": {
+                "status": "modified",
+                "descendant": true
+              },
+              "skill/app/src": {
+                "status": "modified",
+                "descendant": true
+              },
+              "skill/shared/src": {
+                "status": "modified",
+                "descendant": true
+              },
+              "skill/cli/src/lib": {
+                "status": "modified",
+                "descendant": true
+              }
             }
-          ]
+          }
         }
       ]
     },

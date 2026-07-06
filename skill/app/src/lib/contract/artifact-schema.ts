@@ -93,6 +93,8 @@ const FileTreeItemSchema: z.ZodType<FileTreeItem> = z.lazy(() =>
     children: z.array(FileTreeItemSchema).optional(),
     content: z.string().optional(),
     language: z.string().min(1).optional(),
+    /** Repo-relative or absolute path; `create` reads it and inlines `content`. */
+    src: z.string().min(1).optional(),
   })
 )
 

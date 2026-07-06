@@ -144,8 +144,8 @@ export const artifactManifest = {
   },
   "file-tree": {
     type: "file-tree",
-    description: "A collapsible file explorer tree. Defaults to the enhanced look: empty dirs are flattened, file-type icons (iconSet=standard), default density. Add gitStatus for status badges (rows auto-align), searchable for a filter box. File items may carry `content` + `language`; tapping such a file renders it in a code-block below the tree.",
-    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[], content?: string, language?: string }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"?', iconSet: '"minimal" | "standard" | "complete"?', defaultExpanded: "boolean?" },
+    description: "A collapsible file explorer tree. Defaults to the enhanced look: empty dirs are flattened, file-type icons (iconSet=standard), default density. Add gitStatus for status badges (rows auto-align), searchable for a filter box. File items may carry `content` + `language` (tapping renders a code-block below the tree) or `src` (a repo-relative or absolute path that `visual-artifact create` reads and inlines into `content` at save time).",
+    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[], content?: string, language?: string, src?: string }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"?', iconSet: '"minimal" | "standard" | "complete"?', defaultExpanded: "boolean?" },
     children: false,
     example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }], flattenEmpty: true, searchable: true } },
   },

@@ -1,5 +1,5 @@
-import { resolve } from "node:path"
-import { writeFile } from "node:fs/promises"
+import { resolve, isAbsolute } from "node:path"
+import { writeFile, readFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import { artifactBaseUrl, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, bundleDirPath } from "../lib/paths.ts"
@@ -68,6 +68,59 @@ async function ensureServer(log: Logger): Promise<void> {
   log.warn(`Renderer did not become ready at ${url} within 3 seconds`)
 }
 
+/**
+ * Walk a validated spec and expand file-tree `src` paths into inline `content`
+ * by reading the referenced file. Explicit `content` wins; `src` is only
+ * resolved when `content` is absent. Relative paths resolve against cwd.
+ * Throws on missing/unreadable files (hard fail).
+ */
+async function resolveFileTreeSources(spec: unknown, baseDir: string): Promise<void> {
+  const visit = async (node: unknown): Promise<void> => {
+    if (!node || typeof node !== "object") return
+    const obj = node as Record<string, unknown>
+
+    if (obj.type === "file-tree" && obj.props && typeof obj.props === "object") {
+      const walkItems = async (items: unknown): Promise<void> => {
+        if (!Array.isArray(items)) return
+        for (const item of items) {
+          if (!item || typeof item !== "object") continue
+          const itemObj = item as Record<string, unknown>
+          if (typeof itemObj.src === "string" && itemObj.content === undefined) {
+            const filePath = isAbsolute(itemObj.src) ? itemObj.src : resolve(baseDir, itemObj.src)
+            try {
+              itemObj.content = await readFile(filePath, "utf8")
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : String(error)
+              throw new ValidationError(
+                `file-tree src could not be read: ${itemObj.src} (${filePath}): ${msg}`,
+              )
+            }
+          }
+          if (Array.isArray(itemObj.children)) await walkItems(itemObj.children)
+        }
+      }
+      const propsObj = obj.props as Record<string, unknown>
+      await walkItems(propsObj.items)
+    }
+
+    // Recurse into container nodes.
+    if (Array.isArray(obj.children)) {
+      for (const child of obj.children) await visit(child)
+    }
+    // sections/cards/grids nest children under props too.
+    if (obj.props && typeof obj.props === "object") {
+      const propsObj = obj.props as Record<string, unknown>
+      if (Array.isArray(propsObj.children)) {
+        for (const child of propsObj.children) await visit(child)
+      }
+    }
+  }
+
+  if (spec && typeof spec === "object" && Array.isArray((spec as Record<string, unknown>).nodes)) {
+    for (const node of (spec as Record<string, unknown>).nodes as unknown[]) await visit(node)
+  }
+}
+
 export async function create(inputPath: string | undefined, opts: CreateOpts, log: Logger): Promise<number> {
   let raw: string
   try {
@@ -93,13 +146,16 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     const contract = await loadContract(contractPath)
     const spec = validateSpec(specJson, contract)
 
+    // Expand file-tree `src` paths into inline `content` before saving.
+    const projectPath = opts.project ? resolve(opts.project) : resolve(process.cwd())
+    await resolveFileTreeSources(specJson, projectPath)
+
     if (opts.dryRun) {
       log.output({ ok: true, slug: spec.slug, title: spec.title, message: "Spec is valid" })
       return 0
     }
 
     const config = loadConfig()
-    const projectPath = opts.project ? resolve(opts.project) : resolve(process.cwd())
     const projectName = deriveProjectName(projectPath)
     const bundleDir = bundleDirPath(config.artifactsDir, projectName, spec.slug)
     const filePath = artifactJsonPath(config.artifactsDir, projectName, spec.slug)

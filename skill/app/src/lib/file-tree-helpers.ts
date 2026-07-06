@@ -6,6 +6,8 @@ export interface FileTreeItem {
   content?: string
   /** Shiki language hint for the code-block (e.g. typescript, bash, json). */
   language?: string
+  /** Repo-relative or absolute path; `create` reads it and inlines `content`. */
+  src?: string
 }
 
 export type GitStatusValue =
