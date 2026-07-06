@@ -675,7 +675,7 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] md:pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
         {thread.status === "resolved" ? (
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
@@ -1031,7 +1031,7 @@ function CreateThreadComposer() {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] md:pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
         <MessageComposer
           value={draftText}
           onChange={setDraftText}
