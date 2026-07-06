@@ -120,7 +120,7 @@ export function AnnotationPanel() {
     <aside
       ref={panelRef}
       className={cn(
-        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
+        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] h-[calc(100dvh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
         // Hide the panel while the user is picking a node so the artifact canvas
         // becomes fully tappable on mobile. Keep comment mode active.
         ctx.isCommentMode && !ctx.isPickingNode
@@ -244,7 +244,7 @@ function NodePanelHeader() {
       snippet={snippet}
       nodeType={nodeType}
       isPresent={isPresent}
-      onBack={ctx.navigateBack}
+      onBack={ctx.goBack}
       backLabel="Back to comments"
       mobileActions={changeButton}
     />
@@ -384,7 +384,7 @@ function ThreadPanelHeader({ thread }: { thread: AnnotationThread }) {
       snippet={snippet}
       nodeType={thread.anchor.nodeType}
       isPresent={isPresent}
-      onBack={ctx.navigateBack}
+      onBack={ctx.goBack}
       backLabel="Back to comments"
       desktopActions={resolveButton}
       mobileActions={mobileResolveButton}

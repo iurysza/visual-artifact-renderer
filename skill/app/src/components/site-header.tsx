@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { usePanelParams } from "@/components/panel-params"
 import { Home, MessageSquare, Bot } from "lucide-react"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -32,6 +33,7 @@ export function SiteHeader() {
   const pathname = usePathname()
   const annotationCtx = useOptionalAnnotationContext()
   const aiColabCtx = useOptionalAIColabContext()
+  const [panelParams, setPanelParams] = usePanelParams()
   const routePath = pathname?.startsWith(BASE_PATH)
     ? pathname.slice(BASE_PATH.length) || "/"
     : pathname || "/"
@@ -95,28 +97,43 @@ export function SiteHeader() {
               size="sm"
               spacing={0}
               value={
-                annotationCtx.isCommentMode
+                panelParams.panel === "comments"
                   ? ["comments"]
-                  : aiColabCtx?.isAIColabMode
+                  : panelParams.panel === "colab"
                     ? ["colab"]
                     : undefined
               }
               onValueChange={(values: string[]) => {
-                const v = values[0]
-                if (v === "comments") {
-                  aiColabCtx?.closeAIColab()
-                  annotationCtx.openComments()
-                } else if (v === "colab") {
-                  annotationCtx.closeComments()
-                  aiColabCtx?.openAIColab()
-                } else {
-                  if (annotationCtx.isCommentMode) annotationCtx.closeComments()
-                  if (aiColabCtx?.isAIColabMode) aiColabCtx.closeAIColab()
+                const v = values[0] as "comments" | "colab" | undefined
+                // Deselecting the active panel collapses the toolbar entirely.
+                if (!v) {
+                  if (panelParams.panel) {
+                    setPanelParams(
+                      { panel: null, thread: null, node: null, pick: null },
+                      { history: "replace" },
+                    )
+                  }
+                  return
                 }
+                // Switching between panels replaces the current entry so back
+                // undoes the switch; opening from none pushes so back closes.
+                const switching = Boolean(panelParams.panel) && panelParams.panel !== v
+                const isDesktop =
+                  typeof window !== "undefined" &&
+                  !window.matchMedia("(pointer:coarse)").matches &&
+                  window.matchMedia("(min-width: 768px)").matches
+                const next =
+                  v === "comments"
+                    ? { panel: "comments" as const, thread: null, node: null, pick: null }
+                    : { panel: "colab" as const, thread: null, node: null, pick: (isDesktop ? null : "1") as "1" | null }
+                setPanelParams(next, { history: switching ? "replace" : "push" })
               }}
               aria-label="Annotation mode"
             >
-              <ToggleGroupItem value="comments">
+              <ToggleGroupItem
+                value="comments"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+              >
                 <MessageSquare data-icon="inline-start" />
                 <span className="hidden sm:inline">Comments</span>
                 {annotationCtx.totalThreadCount > 0 && (
@@ -126,7 +143,10 @@ export function SiteHeader() {
                 )}
               </ToggleGroupItem>
 
-              <ToggleGroupItem value="colab">
+              <ToggleGroupItem
+                value="colab"
+                className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+              >
                 <Bot data-icon="inline-start" />
                 <span className="hidden sm:inline">Colab</span>
                 {aiColabCtx && aiColabCtx.comments.length > 0 && (

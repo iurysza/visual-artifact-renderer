@@ -21,7 +21,7 @@ export function AIColabPanel() {
   return (
     <aside
       className={cn(
-        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
+        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] h-[calc(100dvh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
         ctx.isAIColabMode && !ctx.isPickingNode
           ? "va-panel-open visible translate-x-0 opacity-100"
           : "invisible translate-x-5 opacity-0 pointer-events-none",

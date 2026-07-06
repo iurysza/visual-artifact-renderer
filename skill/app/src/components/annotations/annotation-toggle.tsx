@@ -3,12 +3,10 @@
 import { Crosshair, MessageSquare } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
 import { useAnnotationContext } from "./annotation-provider"
 
 export function AnnotationToggle() {
   const ctx = useAnnotationContext()
-  const aiColabCtx = useAIColabContext()
   const active = ctx.isCommentMode
 
   return (
@@ -19,7 +17,6 @@ export function AnnotationToggle() {
         if (active) {
           ctx.closeComments()
         } else {
-          aiColabCtx.closeAIColab()
           ctx.openComments()
         }
       }}
@@ -40,7 +37,6 @@ export function AnnotationToggle() {
 
 export function NodePickToggle() {
   const ctx = useAnnotationContext()
-  const aiColabCtx = useAIColabContext()
   const active = ctx.isPickingNode
 
   return (
@@ -51,7 +47,6 @@ export function NodePickToggle() {
         if (active) {
           ctx.stopNodePick()
         } else {
-          aiColabCtx.closeAIColab()
           ctx.startNodePick()
         }
       }}

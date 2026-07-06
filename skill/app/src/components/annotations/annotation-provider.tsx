@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
@@ -17,6 +17,7 @@ import type {
   AnnotationMutations,
   AnnotationThread,
 } from "@/lib/artifacts/annotations"
+import { usePanelParams } from "@/components/panel-params"
 import {
   getThreadCount,
   getThreadsForNode,
@@ -26,7 +27,6 @@ import {
 
 export type ThreadFilter = "all" | "open" | "resolved"
 export type PanelView = "list" | "node" | "thread"
-export type ReturnView = "list" | "node"
 
 /**
  * Author resolution state.
@@ -61,7 +61,6 @@ interface AnnotationContextValue {
   activeThreadId: string | null
   setActiveThreadId: (id: string | null) => void
   panelView: PanelView
-  returnView: ReturnView
   filter: ThreadFilter
   setFilter: (filter: ThreadFilter) => void
   draftText: string
@@ -89,7 +88,7 @@ interface AnnotationContextValue {
   resolveThread: (threadId: string) => Promise<void>
   reopenThread: (threadId: string) => Promise<void>
   selectThread: (threadId: string) => void
-  navigateBack: () => void
+  goBack: () => void
   resetError: () => void
 }
 
@@ -120,20 +119,25 @@ function AnnotationProviderInner({
   slug: string
   children: React.ReactNode
 }) {
+  const [params, setParams] = usePanelParams()
+
   const [doc, setDoc] = useState<AnnotationDocument | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [isCommentMode, setIsCommentMode] = useState(false)
-  const [isPickingNode, setIsPickingNode] = useState(false)
+  // UI-only state (not in the URL): pick candidate, hover, highlight, preview
+  // identity, draft composer text, and the filter sort.
   const [pickCandidateNode, setPickCandidateNode] = useState<NodeIdentity | null>(null)
   const [hoveredNode, setHoveredNode] = useState<NodeIdentity | null>(null)
-  const [selectedNode, setSelectedNode] = useState<NodeIdentity | null>(null)
-  const [highlightedNode, setHighlightedNode] = useState<NodeIdentity | null>(null)
+  // Full node identity captured at click/pick time. The public `selectedNode`
+  // (derived below) mirrors the `node` URL param and reuses this when the
+  // path matches, so deep links get a minimal identity without losing the
+  // real one in the normal flow.
+  const [selectedNodeState, setSelectedNode] = useState<NodeIdentity | null>(null)
+  // Highlight anchor set on forward navigation into a thread; derived
+  // `highlightedNode` vanishes automatically when the thread param is gone.
+  const [highlightAnchor, setHighlightAnchor] = useState<NodeIdentity | null>(null)
   const [previewNode, setPreviewNode] = useState<NodeIdentity | null>(null)
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
-  const [panelView, setPanelView] = useState<PanelView>("list")
-  const [returnView, setReturnView] = useState<ReturnView>("list")
   const [filter, setFilter] = useState<ThreadFilter>("all")
   const [draftText, setDraftText] = useState("")
   // Start with the local fallback so `author` is never null and posting can
@@ -143,7 +147,29 @@ function AnnotationProviderInner({
   const [author, setAuthor] = useState<AnnotationAuthor>(LOCAL_ANONYMOUS_AUTHOR)
   const [authorStatus, setAuthorStatus] = useState<AuthorStatus>("loading")
 
+  // --- Panel state is derived from the URL -------------------------------
+  // `panel` selects which side panel is open; `thread`/`node` deepen the
+  // comments panel; `pick` enters node-picking. Forward transitions push a
+  // history entry, so the hardware back button walks the panel automatically.
+  const isCommentMode = params.panel === "comments"
+  const isPickingNode = isCommentMode && params.pick === "1"
+  const activeThreadId = params.thread
+  const panelView: PanelView = params.thread ? "thread" : params.node ? "node" : "list"
   const isFallbackAuthor = authorStatus === "fallback"
+  const setHighlightedNode = setHighlightAnchor
+
+  // selectedNode / highlightedNode are derived from the URL so back navigation
+  // clears them without setState-in-effect: the browser owns the stack.
+  const selectedNode = useMemo<NodeIdentity | null>(() => {
+    if (!params.node) return null
+    if (selectedNodeState && selectedNodeState.nodePath === params.node) return selectedNodeState
+    return { nodePath: params.node }
+  }, [params.node, selectedNodeState])
+
+  const highlightedNode = useMemo<NodeIdentity | null>(
+    () => (params.thread ? highlightAnchor : null),
+    [params.thread, highlightAnchor],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -169,8 +195,6 @@ function AnnotationProviderInner({
     resolveLocalAuthor()
       .then((a) => {
         if (cancelled) return
-        // If the server returned the local fallback author, the git identity
-        // was unset, so treat it as a fallback rather than a real identity.
         const isFallback =
           a.name === LOCAL_ANONYMOUS_AUTHOR.name && a.email === LOCAL_ANONYMOUS_AUTHOR.email
         setAuthor(a)
@@ -186,100 +210,83 @@ function AnnotationProviderInner({
     }
   }, [])
 
-  const resetPanelState = useCallback(() => {
-    setActiveThreadId(null)
-    setSelectedNode(null)
-    setHighlightedNode(null)
-    setPreviewNode(null)
-    setDraftText("")
-    setPanelView("list")
-    setReturnView("list")
-  }, [])
-
-  const clearSelection = useCallback(() => {
-    setSelectedNode(null)
-    setActiveThreadId(null)
-    setHighlightedNode(null)
-    setPreviewNode(null)
-    setDraftText("")
-    setPanelView("list")
-    setReturnView("list")
-  }, [])
-
   const openComments = useCallback(() => {
-    setIsCommentMode(true)
-    setIsPickingNode(false)
-    setPickCandidateNode(null)
-    resetPanelState()
-  }, [resetPanelState])
-
-  const closeComments = useCallback(() => {
-    setIsCommentMode(false)
-    setIsPickingNode(false)
+    setParams(
+      { panel: "comments", thread: null, node: null, pick: null },
+      { history: "push" },
+    )
     setPickCandidateNode(null)
     setError(null)
-    resetPanelState()
-  }, [resetPanelState])
+  }, [setParams])
+
+  const closeComments = useCallback(() => {
+    // Collapse in place (replace) so we never leave the site even on a deep
+    // link with no history below. HW back is unaffected; only this explicit
+    // toggle action uses replace.
+    setParams(
+      { panel: null, thread: null, node: null, pick: null },
+      { history: "replace" },
+    )
+    setPickCandidateNode(null)
+    setError(null)
+  }, [setParams])
 
   const startNodePick = useCallback(() => {
-    setIsCommentMode(true)
-    setIsPickingNode(true)
+    // Push a pick entry so back stops picking. Keep `node` so picking from
+    // the composer's "Change component" returns to the composer on back.
+    setParams({ panel: "comments", pick: "1", thread: null }, { history: "push" })
     setPickCandidateNode(null)
-    resetPanelState()
-  }, [resetPanelState])
+  }, [setParams])
 
   const stopNodePick = useCallback(() => {
-    setIsPickingNode(false)
+    // Replace — strip `pick` from the current entry.
+    setParams({ pick: null }, { history: "replace" })
     setPickCandidateNode(null)
-  }, [])
+  }, [setParams])
 
   const selectNodeForComment = useCallback(
     (node: NodeIdentity) => {
+      // Set full identity first so the sync effect keeps it (path matches).
       setSelectedNode(node)
-      setIsPickingNode(false)
       setPickCandidateNode(null)
       setDraftText("")
-      setActiveThreadId(null)
       setHighlightedNode(null)
       setPreviewNode(null)
-      setPanelView("node")
-      setReturnView("list")
+      // Consume the pick entry (replace) so back from the composer returns to
+      // the list rather than re-entering picking.
+      setParams(
+        { node: node.nodePath, thread: null, pick: null },
+        { history: "replace" },
+      )
       scrollToNode(node.nodeId, node.nodePath)
     },
-    [setSelectedNode, setIsPickingNode, setDraftText, setActiveThreadId, setHighlightedNode, setPreviewNode, setPanelView, setReturnView],
+    [setParams, setHighlightedNode],
   )
 
   const confirmNodePick = useCallback(() => {
     if (!pickCandidateNode) return
     selectNodeForComment(pickCandidateNode)
-    setPickCandidateNode(null)
   }, [pickCandidateNode, selectNodeForComment])
 
-  const stateRef = useRef({
-    draftText,
-    selectedNode,
-    activeThreadId,
-    panelView,
-    returnView,
-    isPickingNode,
-    isCommentMode,
-    closeComments,
-    navigateBack: () => {},
-  })
+  const clearSelection = useCallback(() => {
+    setParams({ thread: null, node: null, pick: null }, { history: "replace" })
+    setHighlightedNode(null)
+    setPreviewNode(null)
+    setDraftText("")
+  }, [setParams, setHighlightedNode])
 
-  useEffect(() => {
-    stateRef.current = {
-      draftText,
-      selectedNode,
-      activeThreadId,
-      panelView,
-      returnView,
-      isPickingNode,
-      isCommentMode,
-      closeComments,
-      navigateBack: stateRef.current.navigateBack,
-    }
-  })
+  const setActiveThreadId = useCallback(
+    (id: string | null) => {
+      setParams({ thread: id }, { history: id ? "push" : "replace" })
+    },
+    [setParams],
+  )
+
+  const goBack = useCallback(() => {
+    // The browser owns the stack; UI back / Escape just pops one entry, which
+    // is exactly what hardware back does.
+    window.history.back()
+  }, [])
 
   const getThreadsForNodeBound = useCallback(
     (nodeId: string | undefined, nodePath: string) => {
@@ -367,18 +374,19 @@ function AnnotationProviderInner({
         [{ type: "createThread", thread }],
       )
 
-      setActiveThreadId(thread.id)
-      setPanelView("thread")
-      setReturnView("node")
-      setHighlightedNode({
+      // Open the new thread over the current node composer. Keeping `node`
+      // means hardware back returns to the composer (returnView=node),
+      // matching the prior behavior.
+      setHighlightAnchor({
         nodeId: anchor.nodeId,
         nodePath: anchor.nodePath,
         nodeType: anchor.nodeType,
         textSnippet: anchor.textSnippet,
       })
+      setParams({ thread: thread.id }, { history: "push" })
       setDraftText("")
     },
-    [makeMessage, withOptimisticMutation, setActiveThreadId, setPanelView, setReturnView, setHighlightedNode, setDraftText],
+    [makeMessage, withOptimisticMutation, setParams, setHighlightAnchor],
   )
 
   const addReply = useCallback(
@@ -480,61 +488,37 @@ function AnnotationProviderInner({
       const thread = doc?.threads.find((t) => t.id === threadId)
       if (!thread) return
 
-      setActiveThreadId(threadId)
-      setPanelView("thread")
-      setReturnView(panelView === "node" ? "node" : "list")
-      setHighlightedNode({
+      setHighlightAnchor({
         nodeId: thread.anchor.nodeId,
         nodePath: thread.anchor.nodePath,
         nodeType: thread.anchor.nodeType,
         textSnippet: thread.anchor.textSnippet,
       })
       scrollToNode(thread.anchor.nodeId, thread.anchor.nodePath)
+      // Keeping `node` (if set) means back from a thread opened from the node
+      // composer returns to the composer; from the list, `node` is already
+      // null so back returns to the list.
+      setParams({ thread: threadId }, { history: "push" })
     },
-    [doc, panelView, setActiveThreadId, setPanelView, setReturnView, setHighlightedNode],
+    [doc, setParams, setHighlightAnchor],
   )
 
-  const navigateBack = useCallback(() => {
-    if (panelView === "thread") {
-      setActiveThreadId(null)
-      setHighlightedNode(null)
-      setPanelView(returnView)
-      if (returnView === "list") {
-        setSelectedNode(null)
-        setDraftText("")
-      }
-    } else if (panelView === "node") {
-      setPanelView("list")
-      setSelectedNode(null)
-      setHighlightedNode(null)
-      setDraftText("")
-    } else if (isPickingNode) {
-      setIsPickingNode(false)
-    } else {
-      closeComments()
-    }
-  }, [panelView, returnView, isPickingNode, closeComments, setActiveThreadId, setHighlightedNode, setPanelView, setSelectedNode, setDraftText, setIsPickingNode])
-
-  useEffect(() => {
-    stateRef.current.navigateBack = navigateBack
-  }, [navigateBack])
-
+  // Escape: clear draft first, then let the browser walk back one entry.
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return
-      if (!stateRef.current.isCommentMode) return
+      if (!isCommentMode) return
       event.preventDefault()
-      const { draftText } = stateRef.current
       if (draftText) {
         setDraftText("")
       } else {
-        stateRef.current.navigateBack()
+        window.history.back()
       }
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [isCommentMode, draftText])
 
   const resetError = useCallback(() => {
     setError(null)
@@ -563,7 +547,6 @@ function AnnotationProviderInner({
       activeThreadId,
       setActiveThreadId,
       panelView,
-      returnView,
       filter,
       setFilter,
       draftText,
@@ -591,7 +574,7 @@ function AnnotationProviderInner({
       resolveThread,
       reopenThread,
       selectThread,
-      navigateBack,
+      goBack,
       resetError,
     }),
     [
@@ -603,24 +586,15 @@ function AnnotationProviderInner({
       isCommentMode,
       isPickingNode,
       pickCandidateNode,
-      setPickCandidateNode,
       confirmNodePick,
       hoveredNode,
-      setHoveredNode,
       selectedNode,
-      setSelectedNode,
       highlightedNode,
-      setHighlightedNode,
       previewNode,
-      setPreviewNode,
       activeThreadId,
-      setActiveThreadId,
       panelView,
-      returnView,
       filter,
-      setFilter,
       draftText,
-      setDraftText,
       clearSelection,
       openComments,
       closeComments,
@@ -644,8 +618,11 @@ function AnnotationProviderInner({
       resolveThread,
       reopenThread,
       selectThread,
-      navigateBack,
+      setActiveThreadId,
+      goBack,
       resetError,
+      setHighlightedNode,
+      setSelectedNode,
     ],
   )
 
@@ -670,5 +647,3 @@ function generateId(): string {
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
-
-

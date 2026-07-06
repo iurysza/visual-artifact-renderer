@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai-colab/ai-colab-store"
 import { artifactDataPath } from "@/lib/artifacts/paths"
 import { scrollToNode, type NodeIdentity } from "@/components/annotations"
+import { usePanelParams } from "@/components/panel-params"
 import type { AIColabPanelView } from "./types"
 
 interface AIColabContextValue {
@@ -39,9 +40,8 @@ interface AIColabContextValue {
   deleteComment: (id: string) => void
   setSpec: (spec: VisualArtifactSpec | null) => void
   setHoveredNode: (node: NodeIdentity | null) => void
-  copyToClipboard: () => Promise<void>
-  setPanelView: (view: AIColabPanelView) => void
   goToList: () => void
+  copyToClipboard: () => Promise<void>
 }
 
 const AIColabContext = createContext<AIColabContextValue | null>(null)
@@ -55,75 +55,106 @@ export function AIColabProvider({
   project?: string
   slug?: string
 }) {
-  const [isAIColabMode, setIsAIColabMode] = useState(false)
-  const [isPickingNode, setIsPickingNode] = useState(false)
+  return (
+    <AIColabProviderInner project={project} slug={slug}>
+      {children}
+    </AIColabProviderInner>
+  )
+}
+
+function AIColabProviderInner({
+  children,
+  project,
+  slug,
+}: {
+  children: React.ReactNode
+  project?: string
+  slug?: string
+}) {
+  const [params, setParams] = usePanelParams()
+
   const [pickCandidateNode, setPickCandidateNode] = useState<NodeIdentity | null>(null)
-  const [selectedNode, setSelectedNode] = useState<NodeIdentity | null>(null)
   const [hoveredNode, setHoveredNode] = useState<NodeIdentity | null>(null)
+  // Full node identity captured at pick time. The public `selectedNode` is
+  // derived from the `node` URL param and reuses this when the path matches,
+  // so deep links get a minimal identity without losing the real one.
+  const [selectedNodeState, setSelectedNode] = useState<NodeIdentity | null>(null)
   const [draftText, setDraftText] = useState("")
   const [comments, setComments] = useState<AIColabComment[]>([])
-  const [panelView, setPanelView] = useState<AIColabPanelView>("list")
   const [spec, setSpec] = useState<VisualArtifactSpec | null>(null)
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState<string | null>(null)
   const copyTimeoutRef = useRef<number | null>(null)
 
+  // --- Panel state is derived from the URL -----------------------------
+  const isAIColabMode = params.panel === "colab"
+  const isPickingNode = isAIColabMode && params.pick === "1"
+  const panelView: AIColabPanelView = params.node ? "node" : "list"
+
+  const selectedNode = useMemo<NodeIdentity | null>(() => {
+    if (!params.node) return null
+    if (selectedNodeState && selectedNodeState.nodePath === params.node) return selectedNodeState
+    return { nodePath: params.node }
+  }, [params.node, selectedNodeState])
+
   const clearTransientState = useCallback(() => {
     setPickCandidateNode(null)
-    setSelectedNode(null)
     setHoveredNode(null)
     setDraftText("")
-    setPanelView("list")
     setCopyError(null)
   }, [])
 
   const openAIColab = useCallback(() => {
-    setIsAIColabMode(true)
     const isDesktop =
       typeof window !== "undefined" &&
       !window.matchMedia("(pointer:coarse)").matches &&
       window.matchMedia("(min-width: 768px)").matches
-    setIsPickingNode(!isDesktop)
+    setParams(
+      { panel: "colab", thread: null, node: null, pick: isDesktop ? null : "1" },
+      { history: "push" },
+    )
     clearTransientState()
-  }, [clearTransientState])
+  }, [setParams, clearTransientState])
 
   const closeAIColab = useCallback(() => {
-    setIsAIColabMode(false)
-    setIsPickingNode(false)
+    setParams(
+      { panel: null, thread: null, node: null, pick: null },
+      { history: "replace" },
+    )
     clearTransientState()
-  }, [clearTransientState])
+    setSelectedNode(null)
+  }, [setParams, clearTransientState])
 
   const startNodePick = useCallback(() => {
-    setIsAIColabMode(true)
-    setIsPickingNode(true)
+    // Push a pick entry so back stops picking. Keep `node` so picking from
+    // the composer's "Change component" returns to the composer on back.
+    setParams({ panel: "colab", pick: "1", thread: null }, { history: "push" })
     setPickCandidateNode(null)
-    setSelectedNode(null)
-    setHoveredNode(null)
-    setDraftText("")
-    setPanelView("list")
-  }, [])
+  }, [setParams])
 
   const stopNodePick = useCallback(() => {
-    setIsPickingNode(false)
+    setParams({ pick: null }, { history: "replace" })
     setPickCandidateNode(null)
-  }, [])
+  }, [setParams])
 
   const goToList = useCallback(() => {
-    setSelectedNode(null)
-    setHoveredNode(null)
-    setDraftText("")
-    setPanelView("list")
+    // The browser owns the stack; UI back just pops one entry.
+    window.history.back()
   }, [])
 
-  const selectNode = useCallback((node: NodeIdentity) => {
-    setSelectedNode(node)
-    setIsPickingNode(false)
-    setPickCandidateNode(null)
-    setHoveredNode(null)
-    setDraftText("")
-    setPanelView("node")
-    scrollToNode(node.nodeId, node.nodePath)
-  }, [])
+  const selectNode = useCallback(
+    (node: NodeIdentity) => {
+      setSelectedNode(node)
+      setPickCandidateNode(null)
+      setHoveredNode(null)
+      setDraftText("")
+      // Consume the pick entry (replace) so back from the composer returns to
+      // the list rather than re-entering picking.
+      setParams({ node: node.nodePath, thread: null, pick: null }, { history: "replace" })
+      scrollToNode(node.nodeId, node.nodePath)
+    },
+    [setParams],
+  )
 
   const confirmNodePick = useCallback(() => {
     if (!pickCandidateNode) return
@@ -137,9 +168,11 @@ export function AIColabProvider({
       if (nextComments === comments) return
       setComments(nextComments)
       setDraftText("")
-      setPanelView("list")
+      // After posting a node comment, return to the list by replacing the URL.
+      setParams({ node: null, thread: null, pick: null }, { history: "replace" })
+      setSelectedNode(null)
     },
-    [comments, selectedNode]
+    [comments, selectedNode, setParams],
   )
 
   const addArtifactComment = useCallback(
@@ -149,7 +182,7 @@ export function AIColabProvider({
       setComments(nextComments)
       setDraftText("")
     },
-    [comments]
+    [comments],
   )
 
   const deleteComment = useCallback((id: string) => {
@@ -182,14 +215,15 @@ export function AIColabProvider({
     setComments([])
     setSelectedNode(null)
     setDraftText("")
-    setPanelView("list")
-    setIsAIColabMode(false)
-    setIsPickingNode(false)
+    setPickCandidateNode(null)
+    setHoveredNode(null)
     if (copyTimeoutRef.current) window.clearTimeout(copyTimeoutRef.current)
-  }, [spec, project, slug])
+    // Close the panel via the URL without pushing a new history entry.
+    setParams({ panel: null, thread: null, node: null, pick: null }, { history: "replace" })
+  }, [spec, project, slug, setParams])
 
-  // Progressive Escape handling: clear draft, then stop picking, then close node
-  // composer, then close the mode.
+  // Progressive Escape handling: clear draft, then stop picking, then pop one
+  // history entry (node composer -> list, or list -> closed).
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return
@@ -199,8 +233,8 @@ export function AIColabProvider({
         setDraftText("")
       } else if (isPickingNode) {
         stopNodePick()
-      } else if (selectedNode) {
-        goToList()
+      } else if (params.node) {
+        window.history.back()
       } else {
         closeAIColab()
       }
@@ -208,7 +242,7 @@ export function AIColabProvider({
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isAIColabMode, isPickingNode, selectedNode, draftText, closeAIColab, stopNodePick, goToList])
+  }, [isAIColabMode, isPickingNode, params.node, draftText, closeAIColab, stopNodePick])
 
   useEffect(() => {
     return () => {
@@ -242,7 +276,6 @@ export function AIColabProvider({
       deleteComment,
       setSpec,
       setHoveredNode,
-      setPanelView,
       goToList,
       copyToClipboard,
     }),
@@ -268,9 +301,8 @@ export function AIColabProvider({
       addArtifactComment,
       deleteComment,
       goToList,
-      setPanelView,
       copyToClipboard,
-    ]
+    ],
   )
 
   return <AIColabContext.Provider value={value}>{children}</AIColabContext.Provider>
@@ -287,5 +319,3 @@ export function useAIColabContext(): AIColabContextValue {
 export function useOptionalAIColabContext(): AIColabContextValue | null {
   return useContext(AIColabContext)
 }
-
-
