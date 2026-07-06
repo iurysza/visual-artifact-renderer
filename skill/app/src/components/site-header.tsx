@@ -3,10 +3,11 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home } from "lucide-react"
+import { Home, MessageSquare, Bot } from "lucide-react"
 
-import { useOptionalAnnotationContext } from "@/components/annotation-provider"
-import { AnnotationToggle } from "@/components/annotation-toggle"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { useOptionalAnnotationContext } from "@/components/annotations"
+import { useOptionalAIColabContext } from "@/components/ai-colab/ai-colab-provider"
 
 import {
   Breadcrumb,
@@ -29,7 +30,8 @@ function humanize(slug: string) {
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const optionalCtx = useOptionalAnnotationContext()
+  const annotationCtx = useOptionalAnnotationContext()
+  const aiColabCtx = useOptionalAIColabContext()
   const routePath = pathname?.startsWith(BASE_PATH)
     ? pathname.slice(BASE_PATH.length) || "/"
     : pathname || "/"
@@ -86,10 +88,54 @@ export function SiteHeader() {
         </Breadcrumb>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {optionalCtx && (
-            <>
-              <AnnotationToggle />
-            </>
+          {annotationCtx && (
+            <ToggleGroup
+              multiple={false}
+              variant="outline"
+              size="sm"
+              spacing={0}
+              value={
+                annotationCtx.isCommentMode
+                  ? ["comments"]
+                  : aiColabCtx?.isAIColabMode
+                    ? ["colab"]
+                    : undefined
+              }
+              onValueChange={(values: string[]) => {
+                const v = values[0]
+                if (v === "comments") {
+                  aiColabCtx?.closeAIColab()
+                  annotationCtx.openComments()
+                } else if (v === "colab") {
+                  annotationCtx.closeComments()
+                  aiColabCtx?.openAIColab()
+                } else {
+                  if (annotationCtx.isCommentMode) annotationCtx.closeComments()
+                  if (aiColabCtx?.isAIColabMode) aiColabCtx.closeAIColab()
+                }
+              }}
+              aria-label="Annotation mode"
+            >
+              <ToggleGroupItem value="comments">
+                <MessageSquare data-icon="inline-start" />
+                <span className="hidden sm:inline">Comments</span>
+                {annotationCtx.totalThreadCount > 0 && (
+                  <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0 text-[10px] font-medium">
+                    {annotationCtx.totalThreadCount}
+                  </span>
+                )}
+              </ToggleGroupItem>
+
+              <ToggleGroupItem value="colab">
+                <Bot data-icon="inline-start" />
+                <span className="hidden sm:inline">Colab</span>
+                {aiColabCtx && aiColabCtx.comments.length > 0 && (
+                  <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0 text-[10px] font-medium">
+                    {aiColabCtx.comments.length}
+                  </span>
+                )}
+              </ToggleGroupItem>
+            </ToggleGroup>
           )}
           <ThemeToggle className="shrink-0" />
         </div>
