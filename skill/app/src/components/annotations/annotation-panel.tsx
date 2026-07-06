@@ -1,83 +1,127 @@
-"use client"
+"use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { format, formatDistanceToNowStrict, isValid } from "date-fns"
-import { AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Crosshair, MessageSquare, Pencil, RefreshCcw, Send, Trash2, X } from "lucide-react"
-import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { format, formatDistanceToNowStrict, isValid } from "date-fns";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Circle,
+  Crosshair,
+  MessageSquare,
+  Pencil,
+  RefreshCcw,
+  Send,
+  Trash2,
+  X,
+} from "lucide-react";
+import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations";
 
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAnnotationContext, type AuthorStatus, type PanelView } from "./annotation-provider"
-import { useAnchorPresence } from "@/hooks/use-anchor-presence"
-import { threadNodeIdentity } from "./annotation-helpers"
-import { NodePickToggle } from "./annotation-toggle"
-import type { AnnotationThread, AnnotationMessage, AnnotationAuthor } from "@/lib/artifacts/annotations"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  useAnnotationContext,
+  type AuthorStatus,
+  type PanelView,
+} from "./annotation-provider";
+import { useAnchorPresence } from "@/hooks/use-anchor-presence";
+import { threadNodeIdentity } from "./annotation-helpers";
+import { NodePickToggle } from "./annotation-toggle";
+import type {
+  AnnotationThread,
+  AnnotationMessage,
+  AnnotationAuthor,
+} from "@/lib/artifacts/annotations";
+import { cn } from "@/lib/utils";
 
 function formatAnnotationTime(dateInput: string): string {
-  const date = new Date(dateInput)
-  if (!isValid(date)) return dateInput
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  if (diffMs < 0) return format(date, "MMM d, yyyy")
-  if (diffMs < 60_000) return "just now"
-  const days = diffMs / (1000 * 60 * 60 * 24)
-  if (days < 7) return formatDistanceToNowStrict(date, { addSuffix: true })
-  return format(date, "MMM d, yyyy")
+  const date = new Date(dateInput);
+  if (!isValid(date)) return dateInput;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 0) return format(date, "MMM d, yyyy");
+  if (diffMs < 60_000) return "just now";
+  const days = diffMs / (1000 * 60 * 60 * 24);
+  if (days < 7) return formatDistanceToNowStrict(date, { addSuffix: true });
+  return format(date, "MMM d, yyyy");
 }
 
 function formatSaveError(error: string | null): string {
-  if (!error) return "Something went wrong."
+  if (!error) return "Something went wrong.";
   try {
-    const parsed = JSON.parse(error)
-    const raw = typeof parsed.error === "string" ? parsed.error : typeof parsed.message === "string" ? parsed.message : error
-    if (raw.includes("author.email") || raw.toLowerCase().includes("invalid email")) {
-      return "We couldn't save your comment. Check your Git author email and try again."
+    const parsed = JSON.parse(error);
+    const raw =
+      typeof parsed.error === "string"
+        ? parsed.error
+        : typeof parsed.message === "string"
+          ? parsed.message
+          : error;
+    if (
+      raw.includes("author.email") ||
+      raw.toLowerCase().includes("invalid email")
+    ) {
+      return "We couldn't save your comment. Check your Git author email and try again.";
     }
-    if (raw.includes("author.name") || raw.toLowerCase().includes("invalid name")) {
-      return "We couldn't save your comment. Check your Git author name and try again."
+    if (
+      raw.includes("author.name") ||
+      raw.toLowerCase().includes("invalid name")
+    ) {
+      return "We couldn't save your comment. Check your Git author name and try again.";
     }
-    return "We couldn't save your comment. Please try again."
+    return "We couldn't save your comment. Please try again.";
   } catch {
-    return "We couldn't save your comment. Please try again."
+    return "We couldn't save your comment. Please try again.";
   }
 }
 
-function ComposerAuthorLabel({ author, status }: { author: AnnotationAuthor; status: AuthorStatus }) {
+function ComposerAuthorLabel({
+  author,
+  status,
+}: {
+  author: AnnotationAuthor;
+  status: AuthorStatus;
+}) {
   if (status === "loading") {
     return (
       <span className="text-xs text-muted-foreground" aria-live="polite">
         Loading author…
       </span>
-    )
+    );
   }
   if (status === "fallback") {
     return (
-      <span className="text-xs text-muted-foreground" title="Git identity not set; using local fallback author.">
-        Posting as <span className="font-medium text-foreground">{author.name}</span> (local fallback)
+      <span
+        className="text-xs text-muted-foreground"
+        title="Git identity not set; using local fallback author."
+      >
+        Posting as{" "}
+        <span className="font-medium text-foreground">{author.name}</span>{" "}
+        (local fallback)
       </span>
-    )
+    );
   }
   return (
     <span className="text-xs text-muted-foreground">
-      Posting as <span className="font-medium text-foreground">{author.name}</span>
+      Posting as{" "}
+      <span className="font-medium text-foreground">{author.name}</span>
     </span>
-  )
+  );
 }
 
 export function AnnotationPanel() {
-  const ctx = useAnnotationContext()
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const panelRef = useRef<HTMLElement>(null)
+  const ctx = useAnnotationContext();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     // Focus the close button when comments open, but do not steal focus while
     // the user is actively picking a node (mobile pick HUD should be focusable).
-    if (!ctx.isCommentMode || ctx.isPickingNode) return
-    closeButtonRef.current?.focus()
-  }, [ctx.isCommentMode, ctx.isPickingNode])
+    if (!ctx.isCommentMode || ctx.isPickingNode) return;
+    closeButtonRef.current?.focus();
+  }, [ctx.isCommentMode, ctx.isPickingNode]);
 
   return (
     <aside
@@ -95,49 +139,49 @@ export function AnnotationPanel() {
       // Make the panel inert while hidden so screen readers and focus don't
       // interact with it during picking.
       inert={!(ctx.isCommentMode && !ctx.isPickingNode)}
-      role={ctx.isCommentMode && !ctx.isPickingNode ? "complementary" : undefined}
-      aria-label={ctx.isCommentMode && !ctx.isPickingNode ? "Annotation sidebar" : undefined}
+      role={
+        ctx.isCommentMode && !ctx.isPickingNode ? "complementary" : undefined
+      }
+      aria-label={
+        ctx.isCommentMode && !ctx.isPickingNode
+          ? "Annotation sidebar"
+          : undefined
+      }
     >
       <PanelHeader closeButtonRef={closeButtonRef} />
       <PanelContent />
     </aside>
-  )
+  );
 }
 
-function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLButtonElement | null> }) {
-  const ctx = useAnnotationContext()
-  const activeThread = ctx.activeThreadId ? ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId) : null
+function PanelHeader({
+  closeButtonRef,
+}: {
+  closeButtonRef: React.RefObject<HTMLButtonElement | null>;
+}) {
+  const ctx = useAnnotationContext();
+  const activeThread = ctx.activeThreadId
+    ? ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId)
+    : null;
 
   if (ctx.panelView === "thread" && activeThread) {
-    return <ThreadPanelHeader thread={activeThread} />
+    return <ThreadPanelHeader thread={activeThread} />;
   }
 
-  const title =
-    ctx.panelView === "node" && ctx.selectedNode ? "Comment on selection" : "Review comments"
-  const nodeThreads =
-    ctx.panelView === "node" && ctx.selectedNode
-      ? ctx.getThreadsForNode(ctx.selectedNode.nodeId, ctx.selectedNode.nodePath)
-      : []
+  if (ctx.panelView === "node" && ctx.selectedNode) {
+    return <NodePanelHeader closeButtonRef={closeButtonRef} />;
+  }
 
   return (
     <>
-      {/* Desktop header */}
+      {/* Desktop list header */}
       <div className="hidden md:flex items-center justify-between border-b px-4 py-3">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
-            {ctx.totalThreadCount > 0 && <Badge variant="secondary">{ctx.totalThreadCount}</Badge>}
-          </div>
-          {ctx.panelView === "node" && ctx.selectedNode && (
-            <div className="text-xs text-muted-foreground mt-1">
-              <span className="font-medium text-foreground">
-                {ctx.selectedNode.textSnippet || ctx.selectedNode.nodeType}
-              </span>
-              <span className="ml-2">{ctx.selectedNode.nodeType}</span>
-              <span className="ml-2">
-                · {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}
-              </span>
-            </div>
+        <div className="flex items-center gap-2">
+          <h3 className="font-serif text-base font-medium tracking-tight">
+            Review comments
+          </h3>
+          {ctx.totalThreadCount > 0 && (
+            <Badge variant="secondary">{ctx.totalThreadCount}</Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -147,7 +191,9 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
               Selecting component
             </span>
           )}
-          {ctx.isSaving && <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />}
+          {ctx.isSaving && (
+            <RefreshCcw className="size-3.5 animate-spin text-muted-foreground" />
+          )}
           <div className="md:hidden">
             <NodePickToggle />
           </div>
@@ -165,12 +211,11 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
         </div>
       </div>
 
-      {/* Mobile header: single app bar, dynamic title */}
+      {/* Mobile list header */}
       <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <BackButton onClick={ctx.navigateBack} label="Back" />
           <h3 className="font-serif text-base font-medium tracking-tight">
-            {ctx.panelView === "node" && ctx.selectedNode ? "New comment" : "Comments"}
+            Comments
           </h3>
           {ctx.totalThreadCount > 0 && (
             <Badge variant="secondary" className="ml-2">
@@ -194,85 +239,222 @@ function PanelHeader({ closeButtonRef }: { closeButtonRef: React.RefObject<HTMLB
         </div>
       </div>
     </>
-  )
+  );
 }
 
-function ThreadPanelHeader({
-  thread,
+function NodePanelHeader({
+  closeButtonRef,
 }: {
-  thread: AnnotationThread
+  closeButtonRef: React.RefObject<HTMLButtonElement | null>;
 }) {
-  const ctx = useAnnotationContext()
-  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
-  const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
+  const ctx = useAnnotationContext();
+  const selectedNode = ctx.selectedNode;
+  const isPresent = useAnchorPresence(
+    selectedNode?.nodeId,
+    selectedNode?.nodePath ?? "",
+  );
+
+  if (!selectedNode) return null;
+
+  const nodeThreads = ctx.getThreadsForNode(
+    selectedNode.nodeId,
+    selectedNode.nodePath,
+  );
+  const snippet =
+    selectedNode.textSnippet || selectedNode.nodeType || "Selected component";
+  const nodeType = selectedNode.nodeType || "node";
+
+  const changeButton = (
+    <button
+      type="button"
+      onClick={() => ctx.startNodePick()}
+      className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+    >
+      Change component
+    </button>
+  );
+
+  const closeButton = (
+    <Button
+      ref={closeButtonRef}
+      variant="ghost"
+      size="icon-xs"
+      onClick={ctx.closeComments}
+      aria-label="Close comments"
+      title="Close comments"
+    >
+      <X data-icon="only" />
+      <span className="sr-only">Close comments</span>
+    </Button>
+  );
 
   return (
+    <DetailPanelHeader
+      title="New comment"
+      count={nodeThreads.length}
+      snippet={snippet}
+      nodeType={nodeType}
+      isPresent={isPresent}
+      onBack={ctx.navigateBack}
+      backLabel="Back to comments"
+      mobileActions={
+        <>
+          {changeButton}
+          {closeButton}
+        </>
+      }
+    />
+  );
+}
+
+function DetailPanelHeader({
+  title,
+  count,
+  snippet,
+  nodeType,
+  isPresent,
+  onBack,
+  backLabel = "Back",
+  desktopActions,
+  mobileActions,
+}: {
+  title: string;
+  count?: number;
+  snippet: string;
+  nodeType: string;
+  isPresent: boolean;
+  onBack: () => void;
+  backLabel?: string;
+  desktopActions?: React.ReactNode;
+  mobileActions?: React.ReactNode;
+}) {
+  return (
     <>
-      {/* Desktop thread header */}
+      {/* Desktop header */}
       <div className="hidden md:flex flex-col gap-2 border-b px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <BackButton onClick={ctx.navigateBack} label="Back to comments" />
+            <BackButton onClick={onBack} label={backLabel} />
             <div className="flex items-center gap-2">
-              <h3 className="font-serif text-base font-medium tracking-tight">Thread</h3>
-              <Badge variant="secondary">{thread.messages.length}</Badge>
+              <h3 className="font-serif text-base font-medium tracking-tight">
+                {title}
+              </h3>
+              {typeof count === "number" && (
+                <Badge variant="secondary">{count}</Badge>
+              )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {thread.status === "resolved" ? (
-              <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
-                Reopen
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => ctx.resolveThread(thread.id)}>
-                <CheckCircle2 data-icon="inline-start" />
-                Resolve
-              </Button>
-            )}
-          </div>
+          {desktopActions && (
+            <div className="flex shrink-0 items-center gap-2">
+              {desktopActions}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">{snippet}</span>
-          <span>{thread.anchor.nodeType}</span>
+          <span>{nodeType}</span>
           {!isPresent && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground" title="Anchor not found">
+            <span
+              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
+              title="Anchor not found"
+            >
               <AlertTriangle className="size-3" />
             </span>
           )}
         </div>
       </div>
 
-      {/* Mobile thread header */}
+      {/* Mobile header */}
       <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <BackButton onClick={ctx.navigateBack} label="Back" />
-          <h3 className="font-serif text-base font-medium tracking-tight">Thread</h3>
-          <Badge variant="secondary">{thread.messages.length}</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          {thread.status === "resolved" ? (
-            <Button variant="outline" size="sm" onClick={() => ctx.reopenThread(thread.id)}>
-              Reopen
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="icon-xs"
-              onClick={() => ctx.resolveThread(thread.id)}
-              aria-label="Resolve"
-              title="Resolve"
-            >
-              <CheckCircle2 className="size-3" />
-              <span className="sr-only">Resolve</span>
-            </Button>
+          <BackButton onClick={onBack} label="Back" />
+          <h3 className="font-serif text-base font-medium tracking-tight">
+            {title}
+          </h3>
+          {typeof count === "number" && (
+            <Badge variant="secondary">{count}</Badge>
           )}
         </div>
+        {mobileActions && (
+          <div className="flex items-center gap-2">{mobileActions}</div>
+        )}
       </div>
     </>
-  )
+  );
 }
 
-function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
+function ThreadPanelHeader({ thread }: { thread: AnnotationThread }) {
+  const ctx = useAnnotationContext();
+  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType;
+  const isPresent = useAnchorPresence(
+    thread.anchor.nodeId,
+    thread.anchor.nodePath,
+  );
+
+  const resolveButton =
+    thread.status === "resolved" ? (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => ctx.reopenThread(thread.id)}
+      >
+        Reopen
+      </Button>
+    ) : (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => ctx.resolveThread(thread.id)}
+      >
+        <CheckCircle2 data-icon="inline-start" />
+        Resolve
+      </Button>
+    );
+
+  const mobileResolveButton =
+    thread.status === "resolved" ? (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => ctx.reopenThread(thread.id)}
+      >
+        Reopen
+      </Button>
+    ) : (
+      <Button
+        variant="outline"
+        size="icon-xs"
+        onClick={() => ctx.resolveThread(thread.id)}
+        aria-label="Resolve"
+        title="Resolve"
+      >
+        <CheckCircle2 className="size-3" />
+        <span className="sr-only">Resolve</span>
+      </Button>
+    );
+
+  return (
+    <DetailPanelHeader
+      title="Thread"
+      count={thread.messages.length}
+      snippet={snippet}
+      nodeType={thread.anchor.nodeType}
+      isPresent={isPresent}
+      onBack={ctx.navigateBack}
+      backLabel="Back to comments"
+      desktopActions={resolveButton}
+      mobileActions={mobileResolveButton}
+    />
+  );
+}
+
+function BackButton({
+  onClick,
+  label,
+}: {
+  onClick: () => void;
+  label: string;
+}) {
   return (
     <button
       type="button"
@@ -284,22 +466,24 @@ function BackButton({ onClick, label }: { onClick: () => void; label: string }) 
       <ArrowLeft className="size-4" />
       <span className="sr-only">{label}</span>
     </button>
-  )
+  );
 }
 
 function PanelContent() {
-  const ctx = useAnnotationContext()
-  const { isLoading, error, panelView } = ctx
+  const ctx = useAnnotationContext();
+  const { isLoading, error, panelView } = ctx;
 
-  if (isLoading) return <LoadingState />
-  if (error) return <ErrorState />
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState />;
 
   return (
     <ViewSwitcher view={panelView}>
       {panelView === "thread" && ctx.activeThreadId ? (
         (() => {
-          const thread = ctx.doc?.threads.find((t) => t.id === ctx.activeThreadId)
-          return thread ? <ThreadDetail thread={thread} /> : <ThreadList />
+          const thread = ctx.doc?.threads.find(
+            (t) => t.id === ctx.activeThreadId,
+          );
+          return thread ? <ThreadDetail thread={thread} /> : <ThreadList />;
         })()
       ) : panelView === "node" ? (
         <CreateThreadComposer />
@@ -307,39 +491,59 @@ function PanelContent() {
         <ThreadList />
       )}
     </ViewSwitcher>
-  )
+  );
 }
 
-function ViewSwitcher({ view, children }: { view: PanelView; children: React.ReactNode }) {
-  const lastViewRef = useRef<PanelView>(view)
-  const lastChildrenRef = useRef<React.ReactNode>(children)
-  const [exiting, setExiting] = useState<{ view: PanelView; children: React.ReactNode } | null>(null)
+function ViewSwitcher({
+  view,
+  children,
+}: {
+  view: PanelView;
+  children: React.ReactNode;
+}) {
+  const lastViewRef = useRef<PanelView>(view);
+  const lastChildrenRef = useRef<React.ReactNode>(children);
+  const [exiting, setExiting] = useState<{
+    view: PanelView;
+    children: React.ReactNode;
+  } | null>(null);
 
   useLayoutEffect(() => {
     if (view !== lastViewRef.current) {
       // capture the previous view/children and show exit overlay
-      setExiting({ view: lastViewRef.current, children: lastChildrenRef.current })
-      lastViewRef.current = view
-      lastChildrenRef.current = children
-      const id = window.setTimeout(() => setExiting(null), 140)
-      return () => window.clearTimeout(id)
+      setExiting({
+        view: lastViewRef.current,
+        children: lastChildrenRef.current,
+      });
+      lastViewRef.current = view;
+      lastChildrenRef.current = children;
+      const id = window.setTimeout(() => setExiting(null), 140);
+      return () => window.clearTimeout(id);
     }
     // keep the last children up to date when view hasn't changed
-    lastChildrenRef.current = children
-  }, [view, children])
+    lastChildrenRef.current = children;
+  }, [view, children]);
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
       {exiting && (
-        <div key={`exit-${exiting.view}`} className="va-view-exit absolute inset-0 z-0" aria-hidden="true" inert>
+        <div
+          key={`exit-${exiting.view}`}
+          className="va-view-exit absolute inset-0 z-0"
+          aria-hidden="true"
+          inert
+        >
           {exiting.children}
         </div>
       )}
-      <div key={`enter-${view}`} className="va-view-enter relative z-10 flex flex-1 flex-col">
+      <div
+        key={`enter-${view}`}
+        className="va-view-enter relative z-10 flex flex-1 flex-col"
+      >
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 function LoadingState() {
@@ -350,11 +554,11 @@ function LoadingState() {
         Loading comments...
       </p>
     </div>
-  )
+  );
 }
 
 function ErrorState() {
-  const ctx = useAnnotationContext()
+  const ctx = useAnnotationContext();
   return (
     <div className="flex flex-1 flex-col gap-3 p-4">
       <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
@@ -364,23 +568,39 @@ function ErrorState() {
         Dismiss
       </Button>
     </div>
-  )
+  );
 }
 
 function ThreadList() {
-  const ctx = useAnnotationContext()
-  const { filteredThreads, openThreadCount, resolvedThreadCount, filter, setFilter, isPickingNode } = ctx
+  const ctx = useAnnotationContext();
+  const {
+    filteredThreads,
+    openThreadCount,
+    resolvedThreadCount,
+    filter,
+    setFilter,
+    isPickingNode,
+  } = ctx;
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex items-center gap-1 border-b px-4 py-2">
-        <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
+        <FilterButton
+          active={filter === "all"}
+          onClick={() => setFilter("all")}
+        >
           All {ctx.totalThreadCount > 0 && `(${ctx.totalThreadCount})`}
         </FilterButton>
-        <FilterButton active={filter === "open"} onClick={() => setFilter("open")}>
+        <FilterButton
+          active={filter === "open"}
+          onClick={() => setFilter("open")}
+        >
           Open {openThreadCount > 0 && `(${openThreadCount})`}
         </FilterButton>
-        <FilterButton active={filter === "resolved"} onClick={() => setFilter("resolved")}>
+        <FilterButton
+          active={filter === "resolved"}
+          onClick={() => setFilter("resolved")}
+        >
           Resolved {resolvedThreadCount > 0 && `(${resolvedThreadCount})`}
         </FilterButton>
       </div>
@@ -407,7 +627,7 @@ function ThreadList() {
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }
 
 function FilterButton({
@@ -415,9 +635,9 @@ function FilterButton({
   onClick,
   children,
 }: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
@@ -432,17 +652,20 @@ function FilterButton({
     >
       {children}
     </button>
-  )
+  );
 }
 
 function ThreadListItem({ thread }: { thread: AnnotationThread }) {
-  const ctx = useAnnotationContext()
-  const lastMessage = thread.messages[thread.messages.length - 1]
-  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType
-  const isPresent = useAnchorPresence(thread.anchor.nodeId, thread.anchor.nodePath)
-  const isActive = ctx.activeThreadId === thread.id
-  const identity = threadNodeIdentity(thread)
-  const replyLabel = thread.messages.length === 1 ? "reply" : "replies"
+  const ctx = useAnnotationContext();
+  const lastMessage = thread.messages[thread.messages.length - 1];
+  const snippet = thread.anchor.textSnippet || thread.anchor.nodeType;
+  const isPresent = useAnchorPresence(
+    thread.anchor.nodeId,
+    thread.anchor.nodePath,
+  );
+  const isActive = ctx.activeThreadId === thread.id;
+  const identity = threadNodeIdentity(thread);
+  const replyLabel = thread.messages.length === 1 ? "reply" : "replies";
 
   return (
     <button
@@ -458,7 +681,9 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-1 text-sm md:text-sm font-medium text-foreground">{snippet}</span>
+        <span className="line-clamp-1 text-sm md:text-sm font-medium text-foreground">
+          {snippet}
+        </span>
         <div className="flex shrink-0 items-center gap-2">
           {!isPresent && (
             <span
@@ -471,50 +696,50 @@ function ThreadListItem({ thread }: { thread: AnnotationThread }) {
           <ThreadStatusBadge status={thread.status} />
         </div>
       </div>
-      <p className="line-clamp-2 text-xs text-muted-foreground md:truncate md:overflow-hidden">{lastMessage?.body}</p>
+      <p className="line-clamp-2 text-xs text-muted-foreground md:truncate md:overflow-hidden">
+        {lastMessage?.body}
+      </p>
       <p className="text-[10px] text-muted-foreground flex items-center gap-2">
-        {lastMessage?.author?.name && <span className="hidden md:inline text-[11px] text-muted-foreground">{lastMessage.author.name} ·</span>}
-        <span>{thread.messages.length} {replyLabel}</span>
+        {lastMessage?.author?.name && (
+          <span className="hidden md:inline text-[11px] text-muted-foreground">
+            {lastMessage.author.name} ·
+          </span>
+        )}
+        <span>
+          {thread.messages.length} {replyLabel}
+        </span>
         <span>·</span>
         <TimeLabel date={thread.updatedAt} />
       </p>
     </button>
-  )
+  );
 }
 
 function ThreadDetail({ thread }: { thread: AnnotationThread }) {
-  const ctx = useAnnotationContext()
-  const [replyText, setReplyText] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const ctx = useAnnotationContext();
+  const [replyText, setReplyText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
+      if (event.key !== "Escape") return;
       if (replyText.trim()) {
-        event.preventDefault()
-        event.stopPropagation()
-        setReplyText("")
+        event.preventDefault();
+        event.stopPropagation();
+        setReplyText("");
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown, true)
-    return () => window.removeEventListener("keydown", handleKeyDown, true)
-  }, [replyText])
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [replyText]);
 
-  async function handleSubmit(event?: React.FormEvent) {
-    event?.preventDefault()
-    if (!replyText.trim() || isSubmitting) return
-    setIsSubmitting(true)
-    await ctx.addReply(thread.id, replyText)
-    setReplyText("")
-    setIsSubmitting(false)
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-      event.preventDefault()
-      handleSubmit()
-    }
+  async function handleSubmit() {
+    if (!replyText.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    await ctx.addReply(thread.id, replyText);
+    setReplyText("");
+    setIsSubmitting(false);
   }
 
   return (
@@ -522,7 +747,11 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 p-4">
           {thread.messages.map((message) => (
-            <MessageBubble key={message.id} threadId={thread.id} message={message} />
+            <MessageBubble
+              key={message.id}
+              threadId={thread.id}
+              message={message}
+            />
           ))}
         </div>
       </ScrollArea>
@@ -530,86 +759,79 @@ function ThreadDetail({ thread }: { thread: AnnotationThread }) {
       <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
         {thread.status === "resolved" ? (
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">This thread is resolved.</p>
+            <p className="text-xs text-muted-foreground">
+              This thread is resolved.
+            </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <ComposerAuthorLabel author={ctx.author} status={ctx.authorStatus} />
-            </div>
-            <Textarea
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Reply..."
-              className="min-h-20"
-              aria-label="Reply"
-              id="thread-reply-textarea"
-              aria-disabled={ctx.authorStatus === "loading"}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <span className="text-[10px] text-muted-foreground hidden md:inline">{shortcutLabel()} to reply</span>
-              <Button
-                size="sm"
-                disabled={ctx.authorStatus === "loading" || !replyText.trim() || isSubmitting}
-                onClick={() => handleSubmit()}
-              >
-                <Send data-icon="inline-start" />
-                Reply
-              </Button>
-            </div>
-          </div>
+          <MessageComposer
+            value={replyText}
+            onChange={setReplyText}
+            onSubmit={() => handleSubmit()}
+            placeholder="Reply..."
+            buttonLabel="Reply"
+            shortcutSuffix="reply"
+            isSubmitting={isSubmitting}
+            textareaId="thread-reply-textarea"
+            ariaLabel="Reply"
+          />
         )}
       </div>
     </div>
-  )
+  );
 }
 
-function MessageBubble({ threadId, message }: { threadId: string; message: AnnotationMessage }) {
-  const ctx = useAnnotationContext()
+function MessageBubble({
+  threadId,
+  message,
+}: {
+  threadId: string;
+  message: AnnotationMessage;
+}) {
+  const ctx = useAnnotationContext();
   const isFallback =
     message.author.name === LOCAL_ANONYMOUS_AUTHOR.name &&
-    message.author.email === LOCAL_ANONYMOUS_AUTHOR.email
+    message.author.email === LOCAL_ANONYMOUS_AUTHOR.email;
   const isAuthor =
-    ctx.authorStatus !== "loading" && message.author.email === ctx.author.email
+    ctx.authorStatus !== "loading" && message.author.email === ctx.author.email;
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [editText, setEditText] = useState(message.body)
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.body);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   function handleStartEdit() {
-    setEditText(message.body)
-    setIsEditing(true)
-    setIsConfirmingDelete(false)
+    setEditText(message.body);
+    setIsEditing(true);
+    setIsConfirmingDelete(false);
   }
 
   function handleSave() {
-    const trimmed = editText.trim()
+    const trimmed = editText.trim();
     if (!trimmed || trimmed === message.body) {
-      setIsEditing(false)
-      return
+      setIsEditing(false);
+      return;
     }
-    ctx.editMessage(threadId, message.id, trimmed)
-    setIsEditing(false)
+    ctx.editMessage(threadId, message.id, trimmed);
+    setIsEditing(false);
   }
 
   function handleCancelEdit() {
-    setIsEditing(false)
-    setEditText(message.body)
+    setIsEditing(false);
+    setEditText(message.body);
   }
 
   function handleConfirmDelete() {
-    ctx.deleteMessage(threadId, message.id)
-    setIsConfirmingDelete(false)
+    ctx.deleteMessage(threadId, message.id);
+    setIsConfirmingDelete(false);
   }
 
   function handleEditKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-      event.preventDefault()
-      handleSave()
+      event.preventDefault();
+      handleSave();
     } else if (event.key === "Escape") {
-      event.preventDefault()
-      handleCancelEdit()
+      event.preventDefault();
+      handleCancelEdit();
     }
   }
 
@@ -639,7 +861,7 @@ function MessageBubble({ threadId, message }: { threadId: string; message: Annot
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -697,22 +919,26 @@ function MessageBubble({ threadId, message }: { threadId: string; message: Annot
           </span>
         </div>
       </div>
-      <p className="whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
+      <p className="whitespace-pre-wrap text-sm text-foreground">
+        {message.body}
+      </p>
     </div>
-  )
+  );
 }
 
 function AuthorLabel({
   author,
   isFallback,
 }: {
-  author: AnnotationAuthor
-  isFallback?: boolean
+  author: AnnotationAuthor;
+  isFallback?: boolean;
 }) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-foreground">{author.name}</span>
+        <span className="text-xs font-medium text-foreground">
+          {author.name}
+        </span>
         {isFallback && (
           <span
             className="text-[10px] text-muted-foreground"
@@ -724,22 +950,91 @@ function AuthorLabel({
       </div>
       <span className="text-[10px] text-muted-foreground">{author.email}</span>
     </div>
-  )
+  );
+}
+
+interface MessageComposerProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void | Promise<void>;
+  placeholder: string;
+  buttonLabel: string;
+  shortcutSuffix: "reply" | "post";
+  isSubmitting?: boolean;
+  textareaId?: string;
+  ariaLabel: string;
+  size?: "compact" | "comfortable";
+}
+
+function MessageComposer({
+  value,
+  onChange,
+  onSubmit,
+  placeholder,
+  buttonLabel,
+  shortcutSuffix,
+  isSubmitting = false,
+  textareaId,
+  ariaLabel,
+  size = "compact",
+}: MessageComposerProps) {
+  const ctx = useAnnotationContext();
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      onSubmit();
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <ComposerAuthorLabel author={ctx.author} status={ctx.authorStatus} />
+      </div>
+      <Textarea
+        id={textareaId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className={cn(
+          size === "comfortable" ? "min-h-20 md:min-h-28" : "min-h-20",
+        )}
+        aria-label={ariaLabel}
+        aria-disabled={ctx.authorStatus === "loading"}
+      />
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-[10px] text-muted-foreground hidden md:inline">
+          {shortcutLabel()} to {shortcutSuffix}
+        </span>
+        <Button
+          size="sm"
+          disabled={
+            ctx.authorStatus === "loading" || !value.trim() || isSubmitting
+          }
+          onClick={() => onSubmit()}
+        >
+          <Send data-icon="inline-start" />
+          {buttonLabel}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function CreateThreadComposer() {
-  const ctx = useAnnotationContext()
-  const { selectedNode, draftText, setDraftText, createThread } = ctx
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const ctx = useAnnotationContext();
+  const { selectedNode, draftText, setDraftText, createThread } = ctx;
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const nodeThreads = useMemo(() => {
-    if (!selectedNode) return []
-    return ctx.getThreadsForNode(selectedNode.nodeId, selectedNode.nodePath)
-  }, [ctx, selectedNode])
+    if (!selectedNode) return [];
+    return ctx.getThreadsForNode(selectedNode.nodeId, selectedNode.nodePath);
+  }, [ctx, selectedNode]);
 
-  async function handleSubmit(event?: React.FormEvent) {
-    event?.preventDefault()
-    if (!selectedNode || !draftText.trim() || isSubmitting) return
-    setIsSubmitting(true)
+  async function handleSubmit() {
+    if (!selectedNode || !draftText.trim() || isSubmitting) return;
+    setIsSubmitting(true);
 
     await createThread(
       {
@@ -749,15 +1044,8 @@ function CreateThreadComposer() {
         textSnippet: selectedNode.textSnippet,
       },
       draftText,
-    )
-    setIsSubmitting(false)
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-      event.preventDefault()
-      handleSubmit()
-    }
+    );
+    setIsSubmitting(false);
   }
 
   // focus and ensure visibility of the composer on mobile when a node is
@@ -765,73 +1053,54 @@ function CreateThreadComposer() {
   // We only do this for small/coarse-pointer devices to avoid stealing focus
   // on desktop.
   useEffect(() => {
-    const isClient = typeof window !== "undefined"
-    if (!isClient) return
-    const isMobile = window.matchMedia ? window.matchMedia("(pointer:coarse)").matches || window.innerWidth <= 768 : window.innerWidth <= 768
-    if (!isMobile) return
+    const isClient = typeof window !== "undefined";
+    if (!isClient) return;
+    const isMobile = window.matchMedia
+      ? window.matchMedia("(pointer:coarse)").matches ||
+        window.innerWidth <= 768
+      : window.innerWidth <= 768;
+    if (!isMobile) return;
 
     const id = setTimeout(() => {
-      const el = document.getElementById("create-thread-textarea") as HTMLTextAreaElement | null
+      const el = document.getElementById(
+        "create-thread-textarea",
+      ) as HTMLTextAreaElement | null;
       if (el) {
         try {
-          el.focus()
+          el.focus();
         } catch {}
         // try to bring it into view
         try {
-          el.scrollIntoView({ behavior: "smooth", block: "center" })
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
         } catch {}
       }
-    }, 220)
+    }, 220);
 
-    return () => clearTimeout(id)
-  }, [selectedNode])
+    return () => clearTimeout(id);
+  }, [selectedNode]);
 
-  if (!selectedNode) return null
+  if (!selectedNode) return null;
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="border-b px-4 py-4 hidden md:block">
-        <div className="flex items-center justify-between">
-          <BackButton onClick={ctx.navigateBack} label="Back to all comments" />
-          <div>
-            <button
-              type="button"
-              onClick={() => ctx.startNodePick()}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-            >
-              Change component
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <p className="line-clamp-1 text-sm font-medium text-foreground">
-            {selectedNode.textSnippet ?? "Selected component"}
-          </p>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground">{selectedNode.nodeType ?? "node"}</p>
-            <span className="text-[10px] text-muted-foreground">
-              · {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <ScrollArea className="max-h-[40vh] md:max-h-none md:flex-1">
+      <ScrollArea className="flex-1">
         <div className="flex flex-col gap-3 p-4">
           {nodeThreads.map((thread) => (
             <button
               key={thread.id}
               type="button"
               onClick={() => ctx.selectThread(thread.id)}
-              onMouseEnter={() => ctx.setPreviewNode(threadNodeIdentity(thread))}
+              onMouseEnter={() =>
+                ctx.setPreviewNode(threadNodeIdentity(thread))
+              }
               onMouseLeave={() => ctx.setPreviewNode(null)}
               aria-label={`Open thread on ${selectedNode.textSnippet ?? selectedNode.nodeType}, ${thread.status}, ${thread.messages.length} ${thread.messages.length === 1 ? "reply" : "replies"}`}
               className="group flex flex-col gap-2 rounded-xl border p-4 text-left transition-all duration-[var(--va-annotation-fast)] ease-[var(--va-annotation-ease-standard)] hover:border-muted-foreground/20 hover:bg-muted/50"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-foreground">
-                  {thread.messages.length} {thread.messages.length === 1 ? "reply" : "replies"}
+                  {thread.messages.length}{" "}
+                  {thread.messages.length === 1 ? "reply" : "replies"}
                 </span>
                 <ThreadStatusBadge status={thread.status} />
               </div>
@@ -844,65 +1113,21 @@ function CreateThreadComposer() {
       </ScrollArea>
 
       <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:sticky md:bottom-0 md:z-10 md:bg-card">
-        <div className="flex flex-col gap-3">
-          {/* Mobile compact target chip */}
-          <div className="flex items-center justify-between gap-2 rounded-lg border p-2 md:hidden">
-            <div className="min-w-0">
-              <p className="line-clamp-1 text-sm font-medium text-foreground">{selectedNode.textSnippet ?? "Selected component"}</p>
-              <p className="text-xs text-muted-foreground">{selectedNode.nodeType ?? "node"} · {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}</p>
-            </div>
-            <div>
-              <button type="button" onClick={() => ctx.startNodePick()} className="text-xs text-muted-foreground underline-offset-2 hover:underline">
-                Change
-              </button>
-            </div>
-          </div>
-
-          {/* Desktop target summary */}
-          <div className="rounded-lg border bg-muted/40 p-3 hidden md:block">
-            <p className="text-xs font-medium text-foreground">
-              Commenting on{" "}
-              <span className="text-clay">{selectedNode.textSnippet ?? "selected component"}</span>
-            </p>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="capitalize">{selectedNode.nodeType ?? "node"}</span>
-              <span>·</span>
-              <span>
-                {nodeThreads.length} thread{nodeThreads.length === 1 ? "" : "s"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <ComposerAuthorLabel author={ctx.author} status={ctx.authorStatus} />
-            </div>
-            <Textarea
-              id="create-thread-textarea"
-              value={draftText}
-              onChange={(e) => setDraftText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Start a comment..."
-              className="min-h-20 md:min-h-28"
-              aria-label="Start a comment"
-              aria-disabled={ctx.authorStatus === "loading"}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <span className="text-[10px] text-muted-foreground hidden md:inline">{shortcutLabel()} to post</span>
-              <Button
-                size="sm"
-                disabled={ctx.authorStatus === "loading" || !draftText.trim() || isSubmitting}
-                onClick={() => handleSubmit()}
-              >
-                <Send data-icon="inline-start" />
-                Post
-              </Button>
-            </div>
-          </div>
-        </div>
+        <MessageComposer
+          value={draftText}
+          onChange={setDraftText}
+          onSubmit={() => handleSubmit()}
+          placeholder="Start a comment..."
+          buttonLabel="Post"
+          shortcutSuffix="post"
+          isSubmitting={isSubmitting}
+          textareaId="create-thread-textarea"
+          ariaLabel="Start a comment"
+          size="comfortable"
+        />
       </div>
     </div>
-  )
+  );
 }
 
 function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
@@ -918,7 +1143,7 @@ function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
           Resolved
         </Badge>
       </>
-    )
+    );
   }
   return (
     <>
@@ -931,16 +1156,19 @@ function ThreadStatusBadge({ status }: { status: "open" | "resolved" }) {
         Open
       </Badge>
     </>
-  )
+  );
 }
 
 function TimeLabel({ date }: { date: string }) {
-  return useMemo(() => formatAnnotationTime(date), [date])
+  return useMemo(() => formatAnnotationTime(date), [date]);
 }
 
 function shortcutLabel(): string {
-  if (typeof navigator !== "undefined" && navigator.platform?.toLowerCase().includes("mac")) {
-    return "⌘ + Enter"
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.platform?.toLowerCase().includes("mac")
+  ) {
+    return "⌘ + Enter";
   }
-  return "Ctrl + Enter"
+  return "Ctrl + Enter";
 }

@@ -62,68 +62,42 @@ function AIColabPanelHeader({
   mobileCloseRef: React.RefObject<HTMLButtonElement | null>
 }) {
   const ctx = useAIColabContext()
-  const isNodeView = ctx.panelView === "node" && ctx.selectedNode
-  const title = isNodeView ? "Comment on selection" : "AI Colab"
+
+  if (ctx.panelView === "node" && ctx.selectedNode) {
+    return <NodePanelHeader desktopCloseRef={desktopCloseRef} mobileCloseRef={mobileCloseRef} />
+  }
 
   return (
     <>
-      {/* Desktop header */}
-      <div
-        className={cn(
-          "hidden border-b px-4 py-3 md:flex",
-          isNodeView ? "flex-col gap-2" : "items-center justify-between",
-        )}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {isNodeView && <BackButton onClick={() => ctx.goToList()} label="Back to comments" />}
-            <div className="flex items-center gap-2">
-              <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
-              {ctx.comments.length > 0 && <Badge variant="secondary">{ctx.comments.length}</Badge>}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {isNodeView && (
-              <button
-                type="button"
-                onClick={() => ctx.startNodePick()}
-                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-              >
-                Change component
-              </button>
-            )}
-            <CopyMarkdownButton />
-            {ctx.copyError && (
-              <span className="text-xs text-destructive">{ctx.copyError}</span>
-            )}
-            <Button
-              ref={desktopCloseRef}
-              variant="ghost"
-              size="icon-xs"
-              onClick={ctx.closeAIColab}
-              aria-label="Close AI Colab panel"
-              title="Close AI Colab panel"
-            >
-              <X data-icon="only" />
-              <span className="sr-only">Close AI Colab panel</span>
-            </Button>
-          </div>
+      {/* Desktop list header */}
+      <div className="hidden items-center justify-between border-b px-4 py-3 md:flex">
+        <div className="flex items-center gap-2">
+          <h3 className="font-serif text-base font-medium tracking-tight">AI Colab</h3>
+          {ctx.comments.length > 0 && <Badge variant="secondary">{ctx.comments.length}</Badge>}
         </div>
-        {isNodeView && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">
-              {ctx.selectedNode?.textSnippet ?? "Selected component"}
-            </span>
-            <span>{ctx.selectedNode?.nodeType ?? "node"}</span>
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          <CopyMarkdownButton />
+          {ctx.copyError && (
+            <span className="text-xs text-destructive">{ctx.copyError}</span>
+          )}
+          <Button
+            ref={desktopCloseRef}
+            variant="ghost"
+            size="icon-xs"
+            onClick={ctx.closeAIColab}
+            aria-label="Close AI Colab panel"
+            title="Close AI Colab panel"
+          >
+            <X data-icon="only" />
+            <span className="sr-only">Close AI Colab panel</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Mobile header */}
+      {/* Mobile list header */}
       <div className="flex items-center justify-between border-b px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
-          {isNodeView && <BackButton onClick={() => ctx.goToList()} label="Back" />}
-          <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
+          <h3 className="font-serif text-base font-medium tracking-tight">AI Colab</h3>
           {ctx.comments.length > 0 && <Badge variant="secondary">{ctx.comments.length}</Badge>}
         </div>
         <div className="flex items-center gap-2">
@@ -142,6 +116,151 @@ function AIColabPanelHeader({
             <span className="sr-only">Close AI Colab panel</span>
           </Button>
         </div>
+      </div>
+    </>
+  )
+}
+
+function NodePanelHeader({
+  desktopCloseRef,
+  mobileCloseRef,
+}: {
+  desktopCloseRef: React.RefObject<HTMLButtonElement | null>
+  mobileCloseRef: React.RefObject<HTMLButtonElement | null>
+}) {
+  const ctx = useAIColabContext()
+  const selectedNode = ctx.selectedNode
+  const isPresent = useAnchorPresence(
+    selectedNode?.nodeId,
+    selectedNode?.nodePath ?? "",
+  )
+
+  if (!selectedNode) return null
+
+  const nodeCommentCount = ctx.comments.filter(
+    (c) => c.target.kind === "node" && c.target.nodePath === selectedNode.nodePath,
+  ).length
+  const snippet = selectedNode.textSnippet || selectedNode.nodeType || "Selected component"
+  const nodeType = selectedNode.nodeType || "node"
+
+  const changeButton = (
+    <button
+      type="button"
+      onClick={() => ctx.startNodePick()}
+      className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+    >
+      Change component
+    </button>
+  )
+
+  const closeButton = (
+    <Button
+      ref={desktopCloseRef}
+      variant="ghost"
+      size="icon-xs"
+      onClick={ctx.closeAIColab}
+      aria-label="Close AI Colab panel"
+      title="Close AI Colab panel"
+    >
+      <X data-icon="only" />
+      <span className="sr-only">Close AI Colab panel</span>
+    </Button>
+  )
+
+  return (
+    <DetailPanelHeader
+      title="New note"
+      count={nodeCommentCount}
+      snippet={snippet}
+      nodeType={nodeType}
+      isPresent={isPresent}
+      onBack={ctx.goToList}
+      backLabel="Back to comments"
+      desktopActions={
+        <>
+          {changeButton}
+          {closeButton}
+        </>
+      }
+      mobileActions={
+        <>
+          {changeButton}
+          <Button
+            ref={mobileCloseRef}
+            variant="ghost"
+            size="icon-xs"
+            onClick={ctx.closeAIColab}
+            aria-label="Close AI Colab panel"
+            title="Close AI Colab panel"
+          >
+            <X data-icon="only" />
+            <span className="sr-only">Close AI Colab panel</span>
+          </Button>
+        </>
+      }
+    />
+  )
+}
+
+function DetailPanelHeader({
+  title,
+  count,
+  snippet,
+  nodeType,
+  isPresent,
+  onBack,
+  backLabel = "Back",
+  desktopActions,
+  mobileActions,
+}: {
+  title: string
+  count?: number
+  snippet: string
+  nodeType: string
+  isPresent: boolean
+  onBack: () => void
+  backLabel?: string
+  desktopActions?: React.ReactNode
+  mobileActions?: React.ReactNode
+}) {
+  return (
+    <>
+      {/* Desktop header */}
+      <div className="hidden flex-col gap-2 border-b px-4 py-3 md:flex">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <BackButton onClick={onBack} label={backLabel} />
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
+              {typeof count === "number" && <Badge variant="secondary">{count}</Badge>}
+            </div>
+          </div>
+          {desktopActions && (
+            <div className="flex shrink-0 items-center gap-2">{desktopActions}</div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{snippet}</span>
+          <span>{nodeType}</span>
+          {!isPresent && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
+              title="Anchor not found"
+            >
+              <AlertTriangle className="size-3" />
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile header */}
+      <div className="flex items-center justify-between border-b px-4 py-3 md:hidden">
+        <div className="flex items-center gap-2">
+          <BackButton onClick={onBack} label="Back" />
+          <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
+          {typeof count === "number" && <Badge variant="secondary">{count}</Badge>}
+        </div>
+        {mobileActions && <div className="flex items-center gap-2">{mobileActions}</div>}
       </div>
     </>
   )
@@ -374,22 +493,6 @@ function NodeCommentComposer() {
     <div className="flex flex-1 flex-col">
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-3 p-4">
-          <div className="flex items-center justify-between gap-2 rounded-lg border p-2 md:hidden">
-            <div className="min-w-0">
-              <p className="line-clamp-1 text-sm font-medium text-foreground">
-                {selectedNode.textSnippet ?? "Selected component"}
-              </p>
-              <p className="text-xs text-muted-foreground">{selectedNode.nodeType ?? "node"}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => ctx.startNodePick()}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-            >
-              Change
-            </button>
-          </div>
-
           <div className="flex flex-col gap-2">
             <Textarea
               id="ai-colab-node-textarea"
