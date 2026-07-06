@@ -8,6 +8,8 @@ import { ClientArtifactLoader } from "@/components/client-artifact-loader"
 import { artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/artifacts/paths"
 import type { VisualArtifactSpec } from "@/lib/contract/artifact-schema"
 
+import { AIColabProvider } from "@/components/ai-colab/ai-colab-provider"
+
 export function ArtifactPageShell({
   project,
   slug,
@@ -18,10 +20,12 @@ export function ArtifactPageShell({
   initialSpec?: VisualArtifactSpec
 }) {
   return (
-    <AnnotationProvider project={project} slug={slug}>
-      <SiteHeader />
-      <ClientArtifactLoader project={project} slug={slug} initialSpec={initialSpec} />
-    </AnnotationProvider>
+    <AIColabProvider project={project} slug={slug}>
+      <AnnotationProvider project={project} slug={slug}>
+        <SiteHeader />
+        <ClientArtifactLoader project={project} slug={slug} initialSpec={initialSpec} />
+      </AnnotationProvider>
+    </AIColabProvider>
   )
 }
 
