@@ -12,6 +12,14 @@ Quick reference index for all architectural decisions. Read this file first to i
 | [0004](./ADR-0004-compiled-bun-cli.md) | Compiled Bun CLI replacing bash wrappers | CLI, build, installation | 2026-06-27 |
 | [0005](./ADR-0005-pi-extension-delegates-to-cli.md) | Pi extension delegates to CLI via spawn | Pi extension, CLI interface | 2026-06-27 |
 | [0006](./ADR-0006-adapter-registry-node-rendering.md) | Adapter registry for node rendering | Renderer, adapters, registry | 2026-06-11 |
+| [0007](./ADR-0007-artifact-bundle-storage.md) | Artifact bundle storage | CLI storage, paths, annotations, assets | 2026-07-06 |
+| [0008](./ADR-0008-local-first-annotation-persistence.md) | Local-first annotation persistence | Annotation schema, CLI API, renderer, static hosting | 2026-07-06 |
+
+## Proposed Decisions
+
+| ADR | Decision | Impact | Date |
+|-----|----------|--------|------|
+| [0009](./ADR-0009-cloudflare-workers-r2-remote-publishing.md) | Cloudflare Workers and R2 for remote artifact publishing | Hosted deployment, CLI publish, R2, cache, auth | 2026-07-06 |
 
 ## Superseded Decisions
 
@@ -30,3 +38,10 @@ Quick reference index for all architectural decisions. Read this file first to i
 - [ADR-0003](./ADR-0003-self-contained-skill-directory.md): Self-contained skill directory
 - [ADR-0004](./ADR-0004-compiled-bun-cli.md): Compiled Bun CLI replacing bash wrappers
 - [ADR-0005](./ADR-0005-pi-extension-delegates-to-cli.md): Pi extension delegates to CLI via spawn
+
+### Storage & Annotations
+- [ADR-0007](./ADR-0007-artifact-bundle-storage.md): Artifact bundle storage
+- [ADR-0008](./ADR-0008-local-first-annotation-persistence.md): Local-first annotation persistence
+
+### Hosted Publishing
+- [ADR-0009](./ADR-0009-cloudflare-workers-r2-remote-publishing.md): Cloudflare Workers and R2 for remote artifact publishing (Proposed)
