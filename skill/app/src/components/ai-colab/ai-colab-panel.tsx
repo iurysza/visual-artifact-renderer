@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { AlertTriangle, ArrowLeft, Check, Copy, MessageSquare, Plus } from "lucide-react"
+import { Check, Copy, MessageSquare, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,30 +11,22 @@ import { CommentCard } from "@/components/annotations/comment-card"
 import type { CommentListItem } from "@/components/annotations/comment-list-item"
 import { scrollToNode } from "@/components/annotations"
 import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
+import { DetailPanelHeader } from "@/components/panel-shell/detail-panel-header"
+import { PanelShell } from "@/components/panel-shell/panel-shell"
+import { shortcutLabel } from "@/components/panel-shell/shortcut-label"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
-import { cn } from "@/lib/utils"
+import { useMobileTextareaFocus } from "@/hooks/use-mobile-textarea-focus"
 import type { AIColabComment } from "@/lib/ai-colab/types"
 
 export function AIColabPanel() {
   const ctx = useAIColabContext()
+  const open = ctx.isAIColabMode && !ctx.isPickingNode
 
   return (
-    <aside
-      className={cn(
-        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] h-[calc(100dvh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
-        ctx.isAIColabMode && !ctx.isPickingNode
-          ? "va-panel-open visible translate-x-0 opacity-100"
-          : "invisible translate-x-5 opacity-0 pointer-events-none",
-      )}
-      data-state={ctx.isAIColabMode && !ctx.isPickingNode ? "open" : "closed"}
-      aria-hidden={!(ctx.isAIColabMode && !ctx.isPickingNode)}
-      inert={!(ctx.isAIColabMode && !ctx.isPickingNode)}
-      role={ctx.isAIColabMode && !ctx.isPickingNode ? "complementary" : undefined}
-      aria-label="AI Colab panel"
-    >
+    <PanelShell open={open} ariaLabel="AI Colab panel">
       <AIColabPanelHeader />
       <AIColabPanelContent />
-    </aside>
+    </PanelShell>
   )
 }
 
@@ -116,70 +108,6 @@ function NodePanelHeader() {
       desktopActions={changeButton}
       mobileActions={changeButton}
     />
-  )
-}
-
-function DetailPanelHeader({
-  title,
-  count,
-  snippet,
-  nodeType,
-  isPresent,
-  onBack,
-  backLabel = "Back",
-  desktopActions,
-  mobileActions,
-}: {
-  title: string
-  count?: number
-  snippet: string
-  nodeType: string
-  isPresent: boolean
-  onBack: () => void
-  backLabel?: string
-  desktopActions?: React.ReactNode
-  mobileActions?: React.ReactNode
-}) {
-  return (
-    <>
-      {/* Desktop header */}
-      <div className="hidden flex-col gap-2 border-b px-4 py-3 md:flex">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <BackButton onClick={onBack} label={backLabel} />
-            <div className="flex items-center gap-2">
-              <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
-              {typeof count === "number" && <Badge variant="secondary">{count}</Badge>}
-            </div>
-          </div>
-          {desktopActions && (
-            <div className="flex shrink-0 items-center gap-2">{desktopActions}</div>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{snippet}</span>
-          <span>{nodeType}</span>
-          {!isPresent && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
-              title="Anchor not found"
-            >
-              <AlertTriangle className="size-3" />
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile header */}
-      <div className="flex items-center justify-between border-b px-4 py-3 md:hidden">
-        <div className="flex items-center gap-2">
-          <BackButton onClick={onBack} label="Back" />
-          <h3 className="font-serif text-base font-medium tracking-tight">{title}</h3>
-          {typeof count === "number" && <Badge variant="secondary">{count}</Badge>}
-        </div>
-        {mobileActions && <div className="flex items-center gap-2">{mobileActions}</div>}
-      </div>
-    </>
   )
 }
 
@@ -373,27 +301,7 @@ function NodeCommentComposer() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!selectedNode) return
-    const isMobile =
-      typeof window !== "undefined" &&
-      (window.matchMedia("(pointer:coarse)").matches || window.innerWidth <= 768)
-    if (!isMobile) return
-
-    const id = window.setTimeout(() => {
-      const el = document.getElementById("ai-colab-node-textarea") as HTMLTextAreaElement | null
-      if (el) {
-        try {
-          el.focus()
-        } catch {}
-        try {
-          el.scrollIntoView({ behavior: "smooth", block: "center" })
-        } catch {}
-      }
-    }, 220)
-
-    return () => clearTimeout(id)
-  }, [selectedNode])
+  useMobileTextareaFocus("ai-colab-node-textarea", [selectedNode])
 
   if (!selectedNode) return null
 
@@ -445,21 +353,6 @@ function NodeCommentComposer() {
   )
 }
 
-function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      aria-label={label}
-      title={label}
-    >
-      <ArrowLeft className="size-4" />
-      <span className="sr-only">{label}</span>
-    </button>
-  )
-}
-
 function CopyMarkdownButton() {
   const ctx = useAIColabContext()
   const disabled = !ctx.spec || ctx.comments.length === 0
@@ -488,9 +381,4 @@ function CopyMarkdownButton() {
   )
 }
 
-function shortcutLabel(): string {
-  if (typeof navigator !== "undefined" && navigator.platform?.toLowerCase().includes("mac")) {
-    return "⌘ + Enter"
-  }
-  return "Ctrl + Enter"
-}
+

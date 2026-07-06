@@ -2,9 +2,9 @@
 
 import { useMemo } from "react"
 import { AlertTriangle, CheckCircle2, Circle, Trash2 } from "lucide-react"
-import { format, formatDistanceToNowStrict, isValid } from "date-fns"
 
 import { Badge } from "@/components/ui/badge"
+import { formatAnnotationTime } from "@/components/panel-shell/format-annotation-time"
 import { useAnchorPresence } from "@/hooks/use-anchor-presence"
 import { cn } from "@/lib/utils"
 import type { CommentListItem } from "./comment-list-item"
@@ -16,18 +16,6 @@ interface CommentCardProps {
   onMouseLeave?: () => void
   onDelete?: () => void
   ariaLabelPrefix?: string
-}
-
-function formatAnnotationTime(dateInput: string): string {
-  const date = new Date(dateInput)
-  if (!isValid(date)) return dateInput
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  if (diffMs < 0) return format(date, "MMM d, yyyy")
-  if (diffMs < 60_000) return "just now"
-  const days = diffMs / (1000 * 60 * 60 * 24)
-  if (days < 7) return formatDistanceToNowStrict(date, { addSuffix: true })
-  return format(date, "MMM d, yyyy")
 }
 
 export function CommentCard({

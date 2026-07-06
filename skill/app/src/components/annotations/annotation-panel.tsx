@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { format, formatDistanceToNowStrict, isValid } from "date-fns";
 import {
-  AlertTriangle,
-  ArrowLeft,
   Check,
   CheckCircle2,
   Crosshair,
@@ -27,6 +24,11 @@ import {
   type PanelView,
 } from "./annotation-provider";
 import { useAnchorPresence } from "@/hooks/use-anchor-presence";
+import { useMobileTextareaFocus } from "@/hooks/use-mobile-textarea-focus";
+import { DetailPanelHeader } from "@/components/panel-shell/detail-panel-header";
+import { PanelShell } from "@/components/panel-shell/panel-shell";
+import { formatAnnotationTime } from "@/components/panel-shell/format-annotation-time";
+import { shortcutLabel } from "@/components/panel-shell/shortcut-label";
 import { threadNodeIdentity } from "./annotation-helpers";
 import { NodePickToggle } from "./annotation-toggle";
 import { CommentCard, ThreadStatusBadge } from "./comment-card";
@@ -37,18 +39,6 @@ import type {
   AnnotationAuthor,
 } from "@/lib/artifacts/annotations";
 import { cn } from "@/lib/utils";
-
-function formatAnnotationTime(dateInput: string): string {
-  const date = new Date(dateInput);
-  if (!isValid(date)) return dateInput;
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  if (diffMs < 0) return format(date, "MMM d, yyyy");
-  if (diffMs < 60_000) return "just now";
-  const days = diffMs / (1000 * 60 * 60 * 24);
-  if (days < 7) return formatDistanceToNowStrict(date, { addSuffix: true });
-  return format(date, "MMM d, yyyy");
-}
 
 function formatSaveError(error: string | null): string {
   if (!error) return "Something went wrong.";
@@ -114,36 +104,13 @@ function ComposerAuthorLabel({
 
 export function AnnotationPanel() {
   const ctx = useAnnotationContext();
-  const panelRef = useRef<HTMLElement>(null);
+  const open = ctx.isCommentMode && !ctx.isPickingNode;
 
   return (
-    <aside
-      ref={panelRef}
-      className={cn(
-        "va-panel fixed right-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] h-[calc(100dvh-3.5rem)] w-full flex-col border-l bg-card/95 shadow-sm backdrop-blur-sm md:w-[var(--va-annotation-panel-width)]",
-        // Hide the panel while the user is picking a node so the artifact canvas
-        // becomes fully tappable on mobile. Keep comment mode active.
-        ctx.isCommentMode && !ctx.isPickingNode
-          ? "va-panel-open visible translate-x-0 opacity-100"
-          : "invisible translate-x-5 opacity-0 pointer-events-none",
-      )}
-      data-state={ctx.isCommentMode && !ctx.isPickingNode ? "open" : "closed"}
-      aria-hidden={!(ctx.isCommentMode && !ctx.isPickingNode)}
-      // Make the panel inert while hidden so screen readers and focus don't
-      // interact with it during picking.
-      inert={!(ctx.isCommentMode && !ctx.isPickingNode)}
-      role={
-        ctx.isCommentMode && !ctx.isPickingNode ? "complementary" : undefined
-      }
-      aria-label={
-        ctx.isCommentMode && !ctx.isPickingNode
-          ? "Annotation sidebar"
-          : undefined
-      }
-    >
+    <PanelShell open={open} ariaLabel="Annotation sidebar">
       <PanelHeader />
       <PanelContent />
-    </aside>
+    </PanelShell>
   );
 }
 
@@ -251,82 +218,6 @@ function NodePanelHeader() {
   );
 }
 
-function DetailPanelHeader({
-  title,
-  count,
-  snippet,
-  nodeType,
-  isPresent,
-  onBack,
-  backLabel = "Back",
-  desktopActions,
-  mobileActions,
-}: {
-  title: string;
-  count?: number;
-  snippet: string;
-  nodeType: string;
-  isPresent: boolean;
-  onBack: () => void;
-  backLabel?: string;
-  desktopActions?: React.ReactNode;
-  mobileActions?: React.ReactNode;
-}) {
-  return (
-    <>
-      {/* Desktop header */}
-      <div className="hidden md:flex flex-col gap-2 border-b px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <BackButton onClick={onBack} label={backLabel} />
-            <div className="flex items-center gap-2">
-              <h3 className="font-serif text-base font-medium tracking-tight">
-                {title}
-              </h3>
-              {typeof count === "number" && (
-                <Badge variant="secondary">{count}</Badge>
-              )}
-            </div>
-          </div>
-          {desktopActions && (
-            <div className="flex shrink-0 items-center gap-2">
-              {desktopActions}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{snippet}</span>
-          <span>{nodeType}</span>
-          {!isPresent && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
-              title="Anchor not found"
-            >
-              <AlertTriangle className="size-3" />
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile header */}
-      <div className="flex md:hidden items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <BackButton onClick={onBack} label="Back" />
-          <h3 className="font-serif text-base font-medium tracking-tight">
-            {title}
-          </h3>
-          {typeof count === "number" && (
-            <Badge variant="secondary">{count}</Badge>
-          )}
-        </div>
-        {mobileActions && (
-          <div className="flex items-center gap-2">{mobileActions}</div>
-        )}
-      </div>
-    </>
-  );
-}
-
 function ThreadPanelHeader({ thread }: { thread: AnnotationThread }) {
   const ctx = useAnnotationContext();
   const snippet = thread.anchor.textSnippet || thread.anchor.nodeType;
@@ -392,26 +283,6 @@ function ThreadPanelHeader({ thread }: { thread: AnnotationThread }) {
   );
 }
 
-function BackButton({
-  onClick,
-  label,
-}: {
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      aria-label={label}
-      title={label}
-    >
-      <ArrowLeft className="size-4" />
-      <span className="sr-only">{label}</span>
-    </button>
-  );
-}
 
 function PanelContent() {
   const ctx = useAnnotationContext();
@@ -967,36 +838,7 @@ function CreateThreadComposer() {
     setIsSubmitting(false);
   }
 
-  // focus and ensure visibility of the composer on mobile when a node is
-  // selected so the textarea isn't hidden behind the keyboard or chrome.
-  // We only do this for small/coarse-pointer devices to avoid stealing focus
-  // on desktop.
-  useEffect(() => {
-    const isClient = typeof window !== "undefined";
-    if (!isClient) return;
-    const isMobile = window.matchMedia
-      ? window.matchMedia("(pointer:coarse)").matches ||
-        window.innerWidth <= 768
-      : window.innerWidth <= 768;
-    if (!isMobile) return;
-
-    const id = setTimeout(() => {
-      const el = document.getElementById(
-        "create-thread-textarea",
-      ) as HTMLTextAreaElement | null;
-      if (el) {
-        try {
-          el.focus();
-        } catch {}
-        // try to bring it into view
-        try {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-        } catch {}
-      }
-    }, 220);
-
-    return () => clearTimeout(id);
-  }, [selectedNode]);
+  useMobileTextareaFocus("create-thread-textarea", [selectedNode]);
 
   if (!selectedNode) return null;
 
@@ -1053,12 +895,4 @@ function TimeLabel({ date }: { date: string }) {
   return useMemo(() => formatAnnotationTime(date), [date]);
 }
 
-function shortcutLabel(): string {
-  if (
-    typeof navigator !== "undefined" &&
-    navigator.platform?.toLowerCase().includes("mac")
-  ) {
-    return "⌘ + Enter";
-  }
-  return "Ctrl + Enter";
-}
+
