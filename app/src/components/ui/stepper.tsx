@@ -23,7 +23,10 @@ function Stepper({ className, items, ...props }: StepperProps) {
       className={cn("w-full", className)}
       {...props}
     >
-      <ol className="flex w-full list-none">
+      <ol
+        className="flex w-full list-none overflow-x-auto snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        tabIndex={0}
+      >
         {items.map((item, index) => {
           const status = item.status ?? "pending"
           const isComplete = status === "complete"
@@ -34,7 +37,7 @@ function Stepper({ className, items, ...props }: StepperProps) {
           return (
             <li
               key={index}
-              className="relative flex flex-1 flex-col items-center"
+              className="relative flex min-w-[85%] snap-center flex-col items-center sm:min-w-0 sm:flex-1"
               aria-current={isCurrent ? "step" : undefined}
             >
               {!isLast && (
@@ -72,7 +75,7 @@ function Stepper({ className, items, ...props }: StepperProps) {
                   {item.title}
                 </p>
                 {item.description && (
-                  <p className="min-w-0 break-words text-sm leading-6 text-muted-foreground">
+                  <p className="min-w-0 break-all text-sm leading-6 text-muted-foreground">
                     {item.description}
                   </p>
                 )}
