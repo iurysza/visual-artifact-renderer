@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { program } from "commander"
+import { loadEnvFile } from "./env.ts"
 import { Logger } from "./logger.ts"
 import type { GlobalOpts } from "./types.ts"
 import { create } from "./commands/create.ts"
@@ -174,6 +175,7 @@ program
   })
 
 async function main(): Promise<void> {
+  await loadEnvFile()
   await program.parseAsync(process.argv)
 }
 

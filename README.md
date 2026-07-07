@@ -228,10 +228,17 @@ http://127.0.0.1:9998/artifacts/my-project/demo-report/
 Visualizer supports BYO Cloudflare publishing so artifacts get durable public URLs under your own account. One-time setup:
 
 ```bash
-export VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID=...
-export VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY=...
 visual-artifact setup cloudflare --account-id <id> --bucket <name> --workers-dev-subdomain <subdomain>
 ```
+
+The CLI reads R2 secrets from environment variables. For local development you can put them in a `.env` file in the working directory:
+
+```text
+VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID=...
+VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY=...
+```
+
+`.env` is optional and never loaded if the variables are already set in the shell.
 
 Then publish from `create`:
 

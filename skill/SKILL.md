@@ -125,6 +125,8 @@ If no profile exists, the CLI will tell the user to run `visual-artifact setup c
 - `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID`
 - `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY`
 
+For local development these may be placed in a `.env` file in the working directory; the CLI loads it automatically without overriding shell variables. `.env` is gitignored by default.
+
 Hosted annotations are read-only in MVP; do not rely on remote comment persistence.
 
 ## Node choice
