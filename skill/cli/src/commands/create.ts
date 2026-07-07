@@ -6,6 +6,7 @@ import { artifactJsonPath, assetsDirPath, bundleDirPath } from "../lib/paths.ts"
 import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
+import { validateMermaidNodes } from "../mermaid.ts"
 import { deriveProjectName, ensureDir, readStdinOrFile } from "../util.ts"
 import type { GlobalOpts } from "../types.ts"
 
@@ -145,6 +146,11 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
       : undefined
     const contract = await loadContract(contractPath)
     const spec = validateSpec(specJson, contract)
+
+    // Validate Mermaid diagram content before writing. Structural validation
+    // above only checks node shape; this runs the real `mermaid.parse()` so a
+    // broken graph fails fast with a clear error instead of rendering blank.
+    await validateMermaidNodes(spec)
 
     // Expand file-tree `src` paths into inline `content` before saving.
     const projectPath = opts.project ? resolve(opts.project) : resolve(process.cwd())

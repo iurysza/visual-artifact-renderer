@@ -3,7 +3,10 @@ import { homedir } from "node:os"
 import { dirname, resolve } from "node:path"
 import type { Config } from "./types.ts"
 
-export const DEFAULT_PORT = 9999
+// Static-preview server port. The Next.js dev server (pnpm dev) owns :9999
+// with HMR for live iteration; the CLI static server uses :9998 so the two
+// never collide. See AGENTS.md "Server roles".
+export const DEFAULT_PORT = 9998
 export const DEFAULT_HOST = "127.0.0.1"
 export const DEFAULT_MOUNT_PATH = "/artifacts"
 export const DEFAULT_DATA_PATH = "/data/artifacts"
@@ -23,12 +26,9 @@ function getEntryPath(): string {
 }
 
 function isSkillRoot(path: string): boolean {
-  return (
-    existsSync(resolve(path, "SKILL.md")) &&
-    existsSync(resolve(path, "app")) &&
-    existsSync(resolve(path, "cli")) &&
-    existsSync(resolve(path, "artifact-contract.json"))
-  )
+  // The installed skill target only contains SKILL.md and artifacts/; dev roots
+  // also have app/, cli/, shared/, etc. The single invariant is SKILL.md.
+  return existsSync(resolve(path, "SKILL.md"))
 }
 
 export function findSkillRoot(): string | null {
@@ -66,14 +66,22 @@ export function defaultArtifactsDir(): string {
 }
 
 export function defaultOutDir(): string {
+  const envDir = process.env.VISUAL_ARTIFACT_OUT_DIR
+  if (envDir) return resolve(envDir)
+  const dataDir = resolve(homedir(), ".local", "share", "visual-artifact", "app", "out")
+  if (existsSync(dataDir)) return dataDir
   const skillRoot = findSkillRoot()
   if (skillRoot) return resolve(skillRoot, "app", "out")
-  return resolve(homedir(), ".pi", "skills", "visual-artifact", "app", "out")
+  return dataDir
 }
 
 export function defaultContractPath(): string | undefined {
   const skillRoot = findSkillRoot()
-  return skillRoot ? resolve(skillRoot, "artifact-contract.json") : undefined
+  if (!skillRoot) return undefined
+  const contractPath = resolve(skillRoot, "artifact-contract.json")
+  // In the installed skill target the contract is not shipped; the CLI binary
+  // bundles its own copy. Use a generated skill-root contract only when present.
+  return existsSync(contractPath) ? contractPath : undefined
 }
 
 export function expandHome(path: string): string {

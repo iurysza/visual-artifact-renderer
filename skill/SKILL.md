@@ -107,7 +107,7 @@ The project name is derived from the caller's git root or directory.
 Default URL:
 
 ```text
-http://127.0.0.1:9999/artifacts/<project>/<slug>/
+http://127.0.0.1:9998/artifacts/<project>/<slug>/
 ```
 
 Set `VISUAL_ARTIFACT_BASE_URL` when serving through a proxy/tunnel/tailnet route. Include the `/artifacts` mount path.

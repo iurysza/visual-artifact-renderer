@@ -12,8 +12,7 @@ import { openArtifact } from "./commands/open.ts"
 import { doctor } from "./commands/doctor.ts"
 import { bootstrap } from "./commands/bootstrap.ts"
 import { contract } from "./commands/contract.ts"
-
-const VERSION = "1.0.0"
+import { VERSION } from "./version.ts"
 
 function buildLogger(opts: GlobalOpts): Logger {
   return new Logger(opts)

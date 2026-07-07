@@ -18,7 +18,6 @@ Ask your agent for a visual artifact when the answer would be easier to scan:
 - `Compare these two solutions using a visual artifact`
 - `Walk me through these code changes using a visual artifact`
 
-
 ## What problem this solves
 
 HTML articles are a good way to explain complex work, but generating full HTML from an LLM is inconsistent, awkward to constrain, and burns tokens. Visual Artifact Renderer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page.
@@ -96,9 +95,14 @@ visual-artifact doctor
 
 `bootstrap` builds the renderer and CLI, then installs the pieces agents need:
 
-- CLI binary: `~/.local/bin/visual-artifact`
-- global skill copy: `~/.agents/skills/visual-artifact`
-- Pi extension copy, only when Pi is detected: `~/.pi/agent/extensions/visual-artifact.ts`
+| Piece | Installed location |
+| ----- | ------------------ |
+| CLI binary | `~/.local/bin/visual-artifact` |
+| App static export | `~/.local/share/visual-artifact/app/out` |
+| Skill files | `~/.agents/skills/visual-artifact/` (only `SKILL.md` + `artifacts/`) |
+| Pi extension | `~/.pi/agent/extensions/visual-artifact.ts`, registered in `~/.pi/agent/settings.json` |
+
+The artifact contract is bundled into the CLI; it is no longer shipped as a static file in the skill target. Run `visual-artifact contract` to print it.
 
 For Pi, run `/reload` or restart Pi after install. The extension loads the global skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
 
@@ -147,7 +151,7 @@ Minimal spec:
 The CLI returns a URL like:
 
 ```text
-http://127.0.0.1:9999/artifacts/my-project/demo-report/
+http://127.0.0.1:9998/artifacts/my-project/demo-report/
 ```
 
 By default, artifacts are written as bundles to:
@@ -169,18 +173,18 @@ visual-artifact [global flags] <command>
 
 Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-input`.
 
-| Command | Purpose |
-|---|---|
-| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
-| `visual-artifact create [spec.json or -] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled. |
-| `visual-artifact validate [spec.json or -]` | Validate without writing. |
-| `visual-artifact contract` | Print the current artifact contract to stdout. |
-| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve static renderer plus live artifact JSON. |
-| `visual-artifact serve status` | Check server health. |
-| `visual-artifact serve stop` | Best-effort stop; manually kill externally started servers. |
-| `visual-artifact list [project]` | List projects or artifacts. |
-| `visual-artifact open [project/slug]` | Open the index or one artifact. |
-| `visual-artifact doctor` | Diagnose install/runtime state. |
+| Command                                                                 | Purpose                                                                              |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `visual-artifact bootstrap [--dry-run]`                                 | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
+| `visual-artifact create [spec.json or -] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled.                  |
+| `visual-artifact validate [spec.json or -]`                             | Validate without writing.                                                            |
+| `visual-artifact contract`                                              | Print the current artifact contract to stdout.                                       |
+| `visual-artifact serve [--port n] [--host addr] [--no-open]`            | Serve static renderer plus live artifact JSON.                                       |
+| `visual-artifact serve status`                                          | Check server health.                                                                 |
+| `visual-artifact serve stop`                                            | Best-effort stop; manually kill externally started servers.                          |
+| `visual-artifact list [project]`                                        | List projects or artifacts.                                                          |
+| `visual-artifact open [project/slug]`                                   | Open the index or one artifact.                                                      |
+| `visual-artifact doctor`                                                | Diagnose install/runtime state.                                                      |
 
 Machine-readable output:
 
@@ -196,13 +200,15 @@ Renderer:
 ```bash
 cd skill/app
 pnpm install
-pnpm dev              # http://localhost:9999/artifacts/
+pnpm dev              # http://localhost:9999/artifacts/  (dev + HMR; live mode uses this)
 pnpm build            # static export to skill/app/out
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
 pnpm visual:qa        # optional adapter/styling QA
 ```
+
+**Server roles:** `pnpm dev` on `:9999` is the dev/HMR server (also used for live mode). `visual-artifact serve` defaults to `:9998` for the static-export preview and is what `create` auto-starts.
 
 CLI:
 
@@ -276,18 +282,18 @@ Static-hosted artifacts can **serve** `artifact.json` and `annotations.json`, bu
 
 Authors are inferred from local git config (`user.name` and `user.email`), with a fallback to a local anonymous author when git identity is unavailable.
 
-| Variable | Default | Description |
-|---|---|---|
-| `VISUAL_ARTIFACT_SKILL_ROOT` | auto-detected | Override skill root lookup. |
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts` | Runtime artifact JSON store. |
-| `VISUAL_ARTIFACT_OUT_DIR` | `<skill-root>/app/out` | Static renderer export. |
-| `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
-| `VISUAL_ARTIFACT_HOST` | `127.0.0.1` | Server bind host. |
-| `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
-| `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint under the mount path. |
-| `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
-| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
-| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<skill-root>/artifact-contract.json` | Override contract path. |
+| Variable                        | Default                               | Description                                                                  |
+| ------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
+| `VISUAL_ARTIFACT_SKILL_ROOT`    | auto-detected                         | Override skill root lookup.                                                  |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts`              | Runtime artifact JSON store.                                                 |
+| `VISUAL_ARTIFACT_OUT_DIR`       | `~/.local/share/visual-artifact/app/out` | Static renderer export.                                                   |
+| `VISUAL_ARTIFACT_PORT`          | `9998`                                | Static-preview server port.                                                  |
+| `VISUAL_ARTIFACT_HOST`          | `127.0.0.1`                           | Server bind host.                                                            |
+| `VISUAL_ARTIFACT_MOUNT_PATH`    | `/artifacts`                          | Public route prefix.                                                         |
+| `VISUAL_ARTIFACT_DATA_PATH`     | `/data/artifacts`                     | JSON data endpoint under the mount path.                                     |
+| `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
+| `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
+| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<skill-root>/artifact-contract.json` | Override contract path.                                                      |
 
 ## Repository layout
 

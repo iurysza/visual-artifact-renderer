@@ -1,5 +1,5 @@
 {
-  "files": ["src/app/layout.tsx"],
+  "files": ["skill/app/src/app/layout.tsx"],
   "insertBefore": "</body>",
   "commentSyntax": "jsx",
   "cspChecked": true
