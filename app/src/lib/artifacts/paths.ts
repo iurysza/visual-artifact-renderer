@@ -80,6 +80,16 @@ export function resolveBasePath(): string {
   return ""
 }
 
+/** Absolute public URL to the live home index JSON, resolved at runtime. */
+export function artifactIndexUrl(): string {
+  return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/index.json`
+}
+
+/** Absolute public URL to the live project index JSON, resolved at runtime. */
+export function projectIndexUrl(project: string): string {
+  return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/${project}/index.json`
+}
+
 /** Absolute public URL to a bundled artifact JSON payload, resolved at runtime. */
 export function artifactDataUrl(project: string, slug: string): string {
   return `${resolveBasePath()}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/artifact.json`
