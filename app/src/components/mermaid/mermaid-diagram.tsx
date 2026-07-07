@@ -2,9 +2,13 @@
 
 import { useEffect, useId, useMemo, useState } from "react"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-import { Figure } from "@/components/artifact-primitives"
 import { MermaidViewport } from "./mermaid-viewport"
 
 let mermaidRenderQueue: Promise<unknown> = Promise.resolve()
@@ -47,13 +51,11 @@ function enqueueMermaidRender<T>(renderFn: () => Promise<T>): Promise<T> {
 
 export function MermaidDiagram({
   code,
-  title,
   caption,
   height = 420,
 }: {
   code: string
-  title?: string
-  caption?: string
+  caption: string
   height?: number
 }) {
   const rawId = useId()
@@ -64,6 +66,7 @@ export function MermaidDiagram({
   const [theme, setTheme] = useState<"default" | "dark">("default")
   const [svg, setSvg] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [isMaximized, setIsMaximized] = useState(false)
 
   const normalizedCode = useMemo(
     () =>
@@ -133,45 +136,38 @@ export function MermaidDiagram({
   }, [normalizedCode, diagramId, theme])
 
   return (
-    <Figure
-      title={title}
-      caption={caption}
-      error={error ?? undefined}
-      loading={!svg && !error}
-      loadingLabel="Rendering Mermaid…"
-      height={height}
-    >
-      <ZoomableMermaidViewport
-        height={height}
-        instructionsId={`${diagramId}-instructions`}
-        svg={svg}
-        error={error}
-      />
-    </Figure>
-  )
-}
+    <figure className="flex flex-col gap-3">
+      {error ? (
+        <pre className="whitespace-pre-wrap rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </pre>
+      ) : !svg ? (
+        <div
+          className="rounded-2xl border bg-background/60 p-4"
+          style={{ minHeight: height }}
+        >
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            Rendering Mermaid…
+          </p>
+        </div>
+      ) : (
+        <div
+          className="relative rounded-2xl bg-white p-2 shadow-[var(--shadow-card-sm)]"
+          style={{ height }}
+        >
+          <MermaidViewport
+            svg={svg}
+            height={height - 16}
+            instructionsId={`${diagramId}-instructions`}
+            onToggleMaximize={() => setIsMaximized(true)}
+          />
+        </div>
+      )}
 
-function ZoomableMermaidViewport({
-  svg,
-  height,
-  instructionsId,
-  error,
-}: {
-  svg: string
-  height: number
-  instructionsId: string
-  error: string | null
-}) {
-  const [isMaximized, setIsMaximized] = useState(false)
+      <figcaption className="break-words px-1 text-sm leading-6 text-muted-foreground">
+        {caption}
+      </figcaption>
 
-  return (
-    <>
-      <MermaidViewport
-        svg={svg}
-        height={height}
-        instructionsId={instructionsId}
-        onToggleMaximize={() => setIsMaximized(true)}
-      />
       <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
         <DialogContent
           className="gap-0 overflow-hidden rounded-2xl p-0"
@@ -184,7 +180,7 @@ function ZoomableMermaidViewport({
           showCloseButton={false}
         >
           <DialogHeader className="sr-only">
-            <DialogTitle>Maximized Mermaid diagram</DialogTitle>
+            <DialogTitle>{caption}</DialogTitle>
           </DialogHeader>
           <div className="flex h-full min-h-0 flex-col gap-3 p-2">
             {error ? (
@@ -192,17 +188,19 @@ function ZoomableMermaidViewport({
                 {error}
               </pre>
             ) : (
-              <MermaidViewport
-                svg={svg}
-                height="100%"
-                instructionsId={`${instructionsId}-maximized`}
-                isMaximized
-                onToggleMaximize={() => setIsMaximized(false)}
-              />
+              <div className="relative flex-1 rounded-2xl bg-white p-2">
+                <MermaidViewport
+                  svg={svg}
+                  height="100%"
+                  instructionsId={`${diagramId}-instructions-maximized`}
+                  isMaximized
+                  onToggleMaximize={() => setIsMaximized(false)}
+                />
+              </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </figure>
   )
 }

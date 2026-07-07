@@ -187,7 +187,7 @@ describe("validateSpec contract parity", () => {
     expectInvalid(
       {
         type: "mermaid",
-        props: { code: "flowchart LR\n  A --> B", height: 240.5 },
+        props: { caption: "Flowchart", code: "flowchart LR\n  A --> B", height: 240.5 },
       },
       "must be an integer",
     )

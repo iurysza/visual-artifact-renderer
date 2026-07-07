@@ -107,7 +107,7 @@
     ] },
 
     { "type": "section", "props": { "title": "Diagrams: mermaid", "description": "Client-rendered Mermaid diagrams. svg-diagram omitted (requires full HTML document)." }, "children": [
-      { "type": "mermaid", "props": { "title": "Node registry", "code": "flowchart TD\n  Spec[VisualArtifactSpec] --> Reg[componentRegistry]\n  Reg --> Adapters[adapters/]\n  Adapters --> UI[components/ui/]" } }
+      { "type": "mermaid", "props": { "caption": "Node registry", "code": "flowchart TD\n  Spec[VisualArtifactSpec] --> Reg[componentRegistry]\n  Reg --> Adapters[adapters/]\n  Adapters --> UI[components/ui/]" } }
     ] },
 
     { "type": "section", "props": { "title": "Code & data: code-block, file-tree, diff, log", "description": "Code snippets, file structure, diffs, and log output." }, "children": [

@@ -34,9 +34,6 @@ function VisualArtifactRendererContent({
   slug: string
 }) {
   const context: ArtifactRenderContext = { project, slug, data: spec.data }
-  const datasetCount = Object.keys(spec.data ?? {}).length
-  const nodeCount = countNodes(spec.nodes)
-  const componentCount = collectNodeTypes(spec.nodes).size
   const ctx = useAnnotationContext()
   const aiColabCtx = useAIColabContext()
 
@@ -51,37 +48,25 @@ function VisualArtifactRendererContent({
         "data-[ai-colab-open=true]:md:pr-[calc(var(--va-annotation-panel-width)+var(--va-annotation-panel-gap))]",
       )}
     >
-      <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)]">
-        <div className="border-b bg-muted/45 px-5 py-3 sm:px-7">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <HeroPill>
-              {datasetCount} dataset{datasetCount === 1 ? "" : "s"}
-            </HeroPill>
-            <HeroPill>{nodeCount} nodes</HeroPill>
-          </div>
-        </div>
-
-        <div className="grid gap-7 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_270px] lg:p-9">
-          <div className="space-y-4">
-            <p className="flex items-center gap-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground before:h-px before:w-7 before:bg-clay">
+      <header className="overflow-hidden rounded-[var(--radius-2xl)] border-[1.5px] bg-card/95 shadow-[var(--shadow-card)] p-5 sm:p-7 lg:p-9">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="flex items-center gap-3 before:h-px before:w-7 before:bg-clay">
               Visual Artifact
-            </p>
-            <h1 className="max-w-5xl break-words font-serif text-4xl font-medium leading-[1.03] tracking-[-0.04em] text-foreground sm:text-6xl">
-              {spec.title}
-            </h1>
-            {spec.description && (
-              <p className="max-w-3xl break-words text-lg leading-8 text-muted-foreground">{spec.description}</p>
+            </span>
+            {spec.createdAt && (
+              <>
+                <span aria-hidden="true" className="text-muted-foreground/40">·</span>
+                <time dateTime={spec.createdAt}>{formatCreatedAt(spec.createdAt)}</time>
+              </>
             )}
           </div>
-
-          <aside className="rounded-2xl border bg-background/45 p-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Spec profile</p>
-            <dl className="mt-4 grid grid-cols-3 gap-3 lg:grid-cols-1">
-              <HeroStat label="Data" value={datasetCount} />
-              <HeroStat label="Nodes" value={nodeCount} />
-              <HeroStat label="Components" value={componentCount} />
-            </dl>
-          </aside>
+          <h1 className="max-w-5xl break-words font-serif text-4xl font-medium leading-[1.03] tracking-[-0.04em] text-foreground sm:text-6xl">
+            {spec.title}
+          </h1>
+          {spec.description && (
+            <p className="max-w-3xl break-words text-lg leading-8 text-muted-foreground">{spec.description}</p>
+          )}
         </div>
       </header>
 
@@ -97,21 +82,15 @@ function VisualArtifactRendererContent({
   )
 }
 
-function HeroPill({ children }: { children: ReactNode }) {
-  return (
-    <span className="rounded-full border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-      {children}
-    </span>
-  )
-}
+function formatCreatedAt(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
 
-function HeroStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</dt>
-      <dd className="mt-1 font-serif text-3xl font-medium tracking-[-0.04em] text-foreground">{value}</dd>
-    </div>
-  )
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
 }
 
 function NodeBoundary({
@@ -453,32 +432,6 @@ function nodeLabel(node: ArtifactNode): string | undefined {
   }
 
   return undefined
-}
-
-function countNodes(nodes: ArtifactNode[] | undefined): number {
-  return (
-    nodes?.reduce((total, node) => {
-      if ("children" in node && node.children) return total + 1 + countNodes(node.children)
-      if (node.type === "tabs")
-        return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
-      if (node.type === "accordion")
-        return total + 1 + node.props.items.reduce((sum, item) => sum + countNodes(item.nodes), 0)
-
-      return total + 1
-    }, 0) ?? 0
-  )
-}
-
-function collectNodeTypes(nodes: ArtifactNode[] | undefined, types = new Set<ArtifactNode["type"]>()) {
-  nodes?.forEach((node) => {
-    types.add(node.type)
-
-    if ("children" in node && node.children) collectNodeTypes(node.children, types)
-    if (node.type === "tabs") node.props.items.forEach((item) => collectNodeTypes(item.nodes, types))
-    if (node.type === "accordion") node.props.items.forEach((item) => collectNodeTypes(item.nodes, types))
-  })
-
-  return types
 }
 
 function gridClass(columns: 1 | 2 | 3 | 4) {

@@ -13,6 +13,7 @@ const contract = {
     slug: ARTIFACT_SPEC_CONSTRAINTS.slug,
     title: ARTIFACT_SPEC_CONSTRAINTS.title,
     description: ARTIFACT_SPEC_CONSTRAINTS.description,
+    createdAt: ARTIFACT_SPEC_CONSTRAINTS.createdAt,
     layout: {
       type: {
         enum: Array.from(ARTIFACT_SPEC_CONSTRAINTS.layout.type.enum),

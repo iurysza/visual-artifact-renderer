@@ -433,6 +433,14 @@ export function validateSpec(spec: unknown, contract: ArtifactContract): Artifac
     validateStringLength(description, "description", contract.spec.description)
   }
 
+  let createdAt: string | undefined
+  if (obj.createdAt === undefined) {
+    if (!contract.spec.createdAt.optional) throw new ValidationError("createdAt is required")
+  } else {
+    createdAt = assertString(obj.createdAt, "createdAt")
+    validateStringLength(createdAt, "createdAt", contract.spec.createdAt)
+  }
+
   let layout: { type?: "default" | "grid"; columns?: number } | undefined
   if (obj.layout !== undefined) {
     const layoutObj = assertPlainObject(obj.layout, "layout")
@@ -471,5 +479,5 @@ export function validateSpec(spec: unknown, contract: ArtifactContract): Artifac
   const nodes = obj.nodes as unknown[]
   nodes.forEach((node, index) => validateNode(node, data, `nodes[${index}]`, contract))
 
-  return { slug, title, description, layout, data, nodes }
+  return { slug, title, description, createdAt, layout, data, nodes }
 }

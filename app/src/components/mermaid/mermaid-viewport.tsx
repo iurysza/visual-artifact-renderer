@@ -264,7 +264,7 @@ export function MermaidViewport({
         aria-describedby={instructionsId}
         aria-label={isMaximized ? "Maximized Mermaid diagram" : "Zoomable Mermaid diagram"}
         className={cn(
-          "absolute inset-x-0 bottom-0 top-14 overflow-hidden rounded-xl border bg-background/60 p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
+          "absolute inset-x-0 bottom-0 top-14 overflow-hidden rounded-xl bg-white p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
           isDragging ? "cursor-grabbing" : "cursor-grab"
         )}
         onKeyDown={handleKeyDown}
@@ -283,7 +283,7 @@ export function MermaidViewport({
         />
       </div>
       <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center px-2">
-        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-background/80 px-2 py-1 shadow-sm backdrop-blur-sm">
+        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-white px-2 py-1 shadow-sm">
           <Badge variant="outline" className="tabular-nums">
             {Math.round(zoomScale * 100)}%
           </Badge>

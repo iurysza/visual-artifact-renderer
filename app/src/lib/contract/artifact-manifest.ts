@@ -27,7 +27,7 @@ export const artifactPatternExamples = {
       {
         type: "mermaid",
         props: {
-          title: "Runtime topology",
+          caption: "Runtime topology",
           code: "flowchart LR\n  Client[Mobile client] --> API[FastAPI route]\n  API --> ADK[ADK sequential agent]\n  ADK --> Chroma[(ChromaDB)]\n  ADK --> TTS[Cloud TTS]",
         },
       },
@@ -151,10 +151,10 @@ export const artifactManifest = {
   },
   "image": {
     type: "image",
-    description: "An image with optional caption and aspect ratio. Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path like \"hero.png\". Use absolute HTTPS URLs for external images. Never use file:// URLs.",
-    props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"?' },
+    description: "An image with optional caption, aspect ratio, and click-to-zoom modal. Place sidecar image files next to the artifact JSON under ~/.pi/artifacts/<project>/ and use a relative path like \"hero.png\". Use absolute HTTPS URLs for external images. Never use file:// URLs.",
+    props: { src: "string", alt: "string", caption: "string?", aspect: '"auto" | "square" | "video" | "wide"?', zoom: "boolean?" },
     children: false,
-    example: { type: "image", props: { src: "hero.png", alt: "Placeholder" } },
+    example: { type: "image", props: { src: "hero.png", alt: "Placeholder", zoom: true } },
   },
   "pie-chart": {
     type: "pie-chart",
@@ -272,10 +272,10 @@ export const artifactManifest = {
   },
   mermaid: {
     type: "mermaid",
-    description: "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
-    props: { code: "string", title: "string?", caption: "string?", height: "integer? 240-1600" },
+    description: "Client-rendered zoomable/pannable Mermaid diagram with wheel, pinch, drag, keyboard, and fit controls. Provide a required caption that describes the diagram. Use for quick architecture, sequence, flowchart, ERD, state, class, and C4 diagrams from Mermaid text.",
+    props: { code: "string", caption: "string", height: "integer? 240-1600" },
     children: false,
-    example: { type: "mermaid", props: { title: "Request flow", code: "flowchart LR\n  Client --> API\n  API --> DB" } },
+    example: { type: "mermaid", props: { caption: "Request flow", code: "flowchart LR\n  Client --> API\n  API --> DB" } },
   },
   "svg-diagram": {
     type: "svg-diagram",
