@@ -49,10 +49,7 @@ export default function RootLayout({
             <AppChrome>{children}</AppChrome>
           </ScrollActiveProvider>
         </ThemeProvider>
-      {/* impeccable-live-start */}
-<script src="http://localhost:8400/live.js"></script>
-{/* impeccable-live-end */}
-</body>
+      </body>
     </html>
   )
 }

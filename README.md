@@ -2,7 +2,7 @@
 
 ![Visual Artifact Renderer cover](./assets/cover.jpg)
 
-Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
+Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries. The result is a shared surface both AI and humans can read, comment on, and iterate together.
 
 The idea is simple: **agents emit JSON, not HTML or React.**
 
@@ -59,7 +59,6 @@ flowchart TB
 The core flow:
 
 1. Agent runs `visual-artifact contract` to see the available node types, then builds a `VisualArtifactSpec`.
-2. Pi tool `create_visual_artifact` delegates to the `visual-artifact` CLI.
 3. CLI validates the spec against the exported contract.
 4. CLI writes `<skill-root>/artifacts/<project>/<slug>.json`.
 5. CLI starts the renderer if needed.
@@ -74,7 +73,8 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 - **30+ node types** — prose, stat cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, diffs, and more.
 - **Data-backed components** — tables, charts, status grids, and timelines reference datasets by `dataKey`.
 - **Local-first storage** — generated artifacts stay under the installed skill root unless overridden.
-- **CLI + Pi extension/tool** — use `visual-artifact` directly or let Pi call `create_visual_artifact`.
+- **CLI** — use `visual-artifact` directly.
+- **Pi extension/tool** — let Pi call `create_visual_artifact` from inside a session.
 - **Static renderer, live JSON** — the renderer is built once; new artifacts appear without rebuilding.
 - **Annotations and AI Colab** — node-level comment threads with resolve/reopen, plus an in-memory AI Colab mode for reviewing formatter comments and exporting them as Markdown.
 - **Safe rendering boundary** — validation before write, Zod parse before render, adapter-only UI.
@@ -107,12 +107,15 @@ visual-artifact doctor
 | ----- | ------------------ |
 | CLI binary | `~/.local/bin/visual-artifact` |
 | App static export | `~/.local/share/visual-artifact/app/out` |
-| Skill files | `~/.agents/skills/visual-artifact/` (only `SKILL.md` + `artifacts/`) |
+| Skill files | `~/.agents/skills/visual-artifact/` (`SKILL.md` + `references/` + `artifacts/`) |
+| Artifact storage | `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/` (or `<project-root>/artifacts/` in this repo) |
 | Pi extension | `~/.pi/agent/extensions/visual-artifact.ts`, registered in `~/.pi/agent/settings.json` |
 
 The artifact contract is bundled into the CLI; it is no longer shipped as a static file in the skill target. Run `visual-artifact contract` to print it.
 
 For Pi, run `/reload` or restart Pi after install. The extension loads the global skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
+
+For maintainer release instructions, see [`ai-artifacts/docs/RELEASE.md`](./ai-artifacts/docs/RELEASE.md).
 
 If `visual-artifact` is already on PATH, future updates are just:
 
@@ -121,6 +124,57 @@ visual-artifact bootstrap
 ```
 
 Custom harness note: `bootstrap` installs the skill into the common global skill folder. It does not discover arbitrary harness-specific skill roots. If your agent does not read `~/.agents/skills`, copy `~/.agents/skills/visual-artifact` into that harness's skill directory and wire its tool layer to call `visual-artifact create`.
+
+## Annotations
+
+Artifacts support node-level annotation threads and an in-memory AI Colab mode. Open any artifact page and choose **Comments** or **Colab** from the segmented toggle in the header.
+
+### Creating a comment
+
+1. Enable comment mode with the **Comments** toggle.
+2. Hover over a rendered node to see a subtle outline; click the node to select it (on touch, tap to preview, tap again to confirm).
+3. Write a comment in the right sidebar composer and click **Post**.
+4. The thread is anchored to the node and saved to the bundle's `annotations.json`.
+
+### Replying, resolving, and reopening
+
+- Click a thread in the sidebar to view its messages and reply.
+- Click **Resolve thread** to mark a thread as resolved.
+- Click **Reopen** on a resolved thread to continue the discussion.
+- The thread count badge on each node updates in real time.
+
+### AI Colab
+
+AI Colab lets a formatter or agent attach suggested comments to an artifact without persisting them.
+
+1. Enable **Colab** from the header toggle.
+2. Review, edit, add, or delete AI comments in the right sidebar.
+3. Click **Copy Markdown** to export the artifact plus all current colab comments as a sparse Markdown block.
+
+Colab comments live only in browser state. They are not written to `annotations.json` unless you explicitly convert them to persistent annotations.
+
+### Sharing
+
+Use the **Copy link** button in the sidebar header to copy the canonical artifact page URL.
+
+### Local-only writes
+
+Static-hosted artifacts can **serve** `artifact.json` and `annotations.json`, but they cannot **write** edits back to disk from browser JavaScript. The local `visual-artifact serve` CLI can persist annotations because it runs on your machine and has filesystem access. Hosted comment editing requires a writable backend, Git-backed flow, or similar service in the future.
+
+Authors are inferred from local git config (`user.name` and `user.email`), with a fallback to a local anonymous author when git identity is unavailable.
+
+| Variable                        | Default                               | Description                                                                  |
+| ------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
+| `VISUAL_ARTIFACT_SKILL_ROOT`    | auto-detected                         | Override skill root lookup.                                                  |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` or `<skill-root>/artifacts` | Runtime artifact JSON store.                                                 |
+| `VISUAL_ARTIFACT_OUT_DIR`       | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export.                                                   |
+| `VISUAL_ARTIFACT_PORT`          | `9998`                                | Static-preview server port.                                                  |
+| `VISUAL_ARTIFACT_HOST`          | `127.0.0.1`                           | Server bind host.                                                            |
+| `VISUAL_ARTIFACT_MOUNT_PATH`    | `/artifacts`                          | Public route prefix.                                                         |
+| `VISUAL_ARTIFACT_DATA_PATH`     | `/data/artifacts`                     | JSON data endpoint under the mount path.                                     |
+| `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
+| `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
+| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path.                                                      |
 
 ## Create an artifact
 
@@ -252,57 +306,6 @@ pnpm verify:artifacts
 
 Node reference: [`ai-artifacts/docs/nodes.md`](./ai-artifacts/docs/nodes.md).
 
-## Annotations
-
-Artifacts support node-level annotation threads and an in-memory AI Colab mode. Open any artifact page and choose **Comments** or **Colab** from the segmented toggle in the header.
-
-### Creating a comment
-
-1. Enable comment mode with the **Comments** toggle.
-2. Hover over a rendered node to see a subtle outline; click the node to select it (on touch, tap to preview, tap again to confirm).
-3. Write a comment in the right sidebar composer and click **Post**.
-4. The thread is anchored to the node and saved to the bundle's `annotations.json`.
-
-### Replying, resolving, and reopening
-
-- Click a thread in the sidebar to view its messages and reply.
-- Click **Resolve thread** to mark a thread as resolved.
-- Click **Reopen** on a resolved thread to continue the discussion.
-- The thread count badge on each node updates in real time.
-
-### AI Colab
-
-AI Colab lets a formatter or agent attach suggested comments to an artifact without persisting them.
-
-1. Enable **Colab** from the header toggle.
-2. Review, edit, add, or delete AI comments in the right sidebar.
-3. Click **Copy Markdown** to export the artifact plus all current colab comments as a sparse Markdown block.
-
-Colab comments live only in browser state. They are not written to `annotations.json` unless you explicitly convert them to persistent annotations.
-
-### Sharing
-
-Use the **Copy link** button in the sidebar header to copy the canonical artifact page URL.
-
-### Local-only writes
-
-Static-hosted artifacts can **serve** `artifact.json` and `annotations.json`, but they cannot **write** edits back to disk from browser JavaScript. The local `visual-artifact serve` CLI can persist annotations because it runs on your machine and has filesystem access. Hosted comment editing requires a writable backend, Git-backed flow, or similar service in the future.
-
-Authors are inferred from local git config (`user.name` and `user.email`), with a fallback to a local anonymous author when git identity is unavailable.
-
-| Variable                        | Default                               | Description                                                                  |
-| ------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
-| `VISUAL_ARTIFACT_SKILL_ROOT`    | auto-detected                         | Override skill root lookup.                                                  |
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` or `<skill-root>/artifacts` | Runtime artifact JSON store.                                                 |
-| `VISUAL_ARTIFACT_OUT_DIR`       | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export.                                                   |
-| `VISUAL_ARTIFACT_PORT`          | `9998`                                | Static-preview server port.                                                  |
-| `VISUAL_ARTIFACT_HOST`          | `127.0.0.1`                           | Server bind host.                                                            |
-| `VISUAL_ARTIFACT_MOUNT_PATH`    | `/artifacts`                          | Public route prefix.                                                         |
-| `VISUAL_ARTIFACT_DATA_PATH`     | `/data/artifacts`                     | JSON data endpoint under the mount path.                                     |
-| `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
-| `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
-| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path.                                                      |
-
 ## Repository layout
 
 ```text
@@ -314,9 +317,5 @@ pi-extension/
 skill/                 # agent-facing skill bundle
   SKILL.md
   references/          # model-facing usage notes
-ai-artifacts/
-  docs/                # architecture/product/reliability/design docs + node catalog
-    nodes.md           # node catalog and composition patterns
-    decisions/         # ADRs
 artifacts/             # local generated JSON, gitignored
 ```
