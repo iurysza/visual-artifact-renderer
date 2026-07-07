@@ -156,18 +156,36 @@ main() {
       cp "$ext_src" "$EXTENSION_TARGET"
       log "installed Pi extension to ${EXTENSION_TARGET}"
 
-      # Try to register the extension in Pi settings.json
+      # Try to register the extension in Pi settings.json, deduplicating by realpath.
       settings_file="$PI_AGENT_DIR/settings.json"
       if [ -f "$settings_file" ]; then
         registered=0
-        if command -v jq >/dev/null 2>&1; then
-          if ! jq -e --arg ext "$EXTENSION_TARGET" '.extensions // [] | index($ext)' "$settings_file" >/dev/null 2>&1; then
-            jq --arg ext "$EXTENSION_TARGET" '.extensions = ((.extensions // []) + [$ext])' "$settings_file" > "${settings_file}.tmp" && mv "${settings_file}.tmp" "$settings_file"
+        if command -v python3 >/dev/null 2>&1; then
+          if python3 - "$settings_file" "$EXTENSION_TARGET" <<'PY' 2>/dev/null; then
+import json, os, sys
+p, ext = sys.argv[1], sys.argv[2]
+try:
+    ext_rp = os.path.realpath(ext)
+except OSError:
+    ext_rp = ext
+with open(p) as f:
+    d = json.load(f)
+extensions = d.get("extensions", [])
+keep = [e for e in extensions if os.path.realpath(e) != ext_rp]
+if ext not in keep:
+    keep.append(ext)
+    d["extensions"] = keep
+    with open(p, "w") as f:
+        json.dump(d, f, indent=2)
+        f.write("\n")
+    sys.exit(0)
+sys.exit(1)
+PY
             registered=1
           fi
-        elif command -v python3 >/dev/null 2>&1; then
-          if ! python3 -c "import json,sys; d=json.load(open('$settings_file')); sys.exit(0 if '$EXTENSION_TARGET' in d.get('extensions',[]) else 1)" 2>/dev/null; then
-            python3 -c "import json; p='$settings_file'; d=json.load(open(p)); d['extensions']=d.get('extensions',[])+['$EXTENSION_TARGET']; json.dump(d,open(p,'w'),indent=2); print()" 2>/dev/null
+        elif command -v jq >/dev/null 2>&1; then
+          if ! jq -e --arg ext "$EXTENSION_TARGET" '.extensions // [] | index($ext)' "$settings_file" >/dev/null 2>&1; then
+            jq --arg ext "$EXTENSION_TARGET" '.extensions = ((.extensions // []) + [$ext])' "$settings_file" > "${settings_file}.tmp" && mv "${settings_file}.tmp" "$settings_file"
             registered=1
           fi
         fi
