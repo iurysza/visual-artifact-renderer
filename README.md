@@ -175,11 +175,11 @@ Authors are inferred from local git config (`user.name` and `user.email`), with 
 | `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
 | `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path.                                                      |
-| `VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET` | — | R2 bucket name for publishing.                                               |
+| `VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET` | `visual-artifact-renderer` | R2 bucket name for publishing. Run `setup cloudflare` to sync `worker/wrangler.jsonc`. |
 | `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID` | — | R2 S3-compatible access key ID.                                              |
 | `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY` | — | R2 S3-compatible secret access key.                                          |
 | `VISUAL_ARTIFACT_CLOUDFLARE_ACCOUNT_ID` | — | Cloudflare account ID.                                                       |
-| `VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL` | — | Public base URL for published artifacts; `/artifacts` is appended when missing. |
+| `VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL` | — | Public base URL for published artifacts (e.g. `https://<worker>.<subdomain>.workers.dev`). |
 | `VISUAL_ARTIFACT_CLOUDFLARE_WORKERS_DEV_SUBDOMAIN` | — | workers.dev subdomain for quickstart base URL.                               |
 | `VISUAL_ARTIFACT_CLOUD_ROUTE_STRATEGY` | `zero-pages` | Cloud build dynamic-route strategy: `zero-pages` or `placeholder`.           |
 
@@ -225,28 +225,53 @@ http://127.0.0.1:9998/artifacts/my-project/demo-report/
 
 ### Publishing to Cloudflare
 
-Visualizer supports BYO Cloudflare publishing so artifacts get durable public URLs under your own account. One-time setup:
+Visualizer supports BYO Cloudflare publishing so artifacts get durable public URLs under your own account.
+
+Default bucket name is `visual-artifact-renderer`. Use it, or override with `--bucket <name>` or `VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET` in your `.env`.
+
+One-time setup (secrets are read from `.env` or shell env):
 
 ```bash
-visual-artifact setup cloudflare --account-id <id> --bucket <name> --workers-dev-subdomain <subdomain>
+cp .env.example .env
+# fill in VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID and _SECRET_ACCESS_KEY
+
+visual-artifact setup cloudflare \
+  --account-id <id> \
+  --workers-dev-subdomain <subdomain>
 ```
 
-The CLI reads R2 secrets from environment variables. For local development you can put them in a `.env` file in the working directory:
+`setup cloudflare` also patches `worker/wrangler.jsonc` so the Worker's R2 binding matches the chosen bucket. If you change the bucket later, rerun setup.
 
-```text
-VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID=...
-VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY=...
+Build and deploy the renderer:
+
+```bash
+cd app
+pnpm build:cloud
+cd ../worker
+bun install
+bun run deploy
 ```
 
-`.env` is optional and never loaded if the variables are already set in the shell.
-
-Then publish from `create`:
+Then publish artifacts:
 
 ```bash
 visual-artifact create my-spec.json --publish
 ```
 
-On success the JSON output's `url` field is the remote public page. `localUrl` is also included for debugging, and a local `publish.json` sidecar is written beside `artifact.json` with non-secret publish state. Secrets are read from environment variables only; the saved profile contains non-secret config and is stored under `~/.config/visual-artifact/publish-profiles/` with mode `0600`.
+On success the JSON output's `url` field is the remote public page, served from the Worker's root path:
+
+```text
+https://<worker>.<subdomain>.workers.dev/<project>/<slug>/
+```
+
+`localUrl` is also included for debugging, and a local `publish.json` sidecar is written beside `artifact.json` with non-secret publish state. Secrets are read from environment variables only; the saved profile contains non-secret config and is stored under `~/.config/visual-artifact/publish-profiles/` with mode `0600`.
+
+Run the deploy smoke test after deploying:
+
+```bash
+cd worker
+bun run smoke:deploy https://<worker>.<subdomain>.workers.dev
+```
 
 Hosted annotations are read-only in MVP; the Worker returns `501 Not Implemented` for annotation mutation posts.
 

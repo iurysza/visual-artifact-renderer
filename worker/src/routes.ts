@@ -6,7 +6,6 @@ export interface Env {
   BUCKET: R2Bucket
 }
 
-const BASE_PATH = "/artifacts"
 const DATA_SEGMENT = "data/artifacts"
 const API_SEGMENT = "api/annotations"
 
@@ -14,25 +13,21 @@ const JSON_HEADERS = { "Content-Type": "application/json" }
 
 export async function handleRequest(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url)
+  const pathname = url.pathname
 
-  if (!url.pathname.startsWith(BASE_PATH)) {
-    return notFound()
-  }
-
-  const relative = url.pathname.slice(BASE_PATH.length) || "/"
-
-  // Data endpoints
-  if (relative.startsWith(`/${DATA_SEGMENT}/`)) {
-    return handleDataRequest(request.method, relative.slice(`/${DATA_SEGMENT}/`.length), env)
+  // Data endpoints at root so the same renderer can be mounted locally under
+  // `/artifacts` and on Workers.dev at root without path rewriting.
+  if (pathname.startsWith(`/${DATA_SEGMENT}/`)) {
+    return handleDataRequest(request.method, pathname.slice(`/${DATA_SEGMENT}/`.length), env)
   }
 
   // Annotation mutation endpoint (read-only in MVP)
-  if (relative.startsWith(`/${API_SEGMENT}/`)) {
-    return handleApiRequest(request.method, relative.slice(`/${API_SEGMENT}/`.length))
+  if (pathname.startsWith(`/${API_SEGMENT}/`)) {
+    return handleApiRequest(request.method, pathname.slice(`/${API_SEGMENT}/`.length))
   }
 
-  // Static assets and shell fallbacks
-  return handlePageOrAssetRequest(request, env, relative)
+  // Static assets and shell fallbacks are served from the Worker's root.
+  return handlePageOrAssetRequest(request, env, pathname)
 }
 
 async function handleDataRequest(method: string, path: string, env: Env): Promise<Response> {
@@ -94,19 +89,18 @@ async function handleApiRequest(method: string, path: string): Promise<Response>
   return methodNotAllowed()
 }
 
-async function handlePageOrAssetRequest(request: Request, env: Env, relative: string): Promise<Response> {
-  const segments = relative.split("/").filter(Boolean)
+async function handlePageOrAssetRequest(request: Request, env: Env, pathname: string): Promise<Response> {
+  const segments = pathname.split("/").filter(Boolean)
 
   // Root index
   if (segments.length === 0) {
-    return env.ASSETS.fetch(newShellRequest(request, "/"))
+    return env.ASSETS.fetch(newShellRequest(request, "/index.html"))
   }
 
-  // Static assets under _next, favicon, etc. Next.js cloud builds are compiled
-  // with basePath "/artifacts", so asset links arrive prefixed with /artifacts
-  // even though the Worker serves static assets from root. Rewrite to root.
+  // Static assets served from the Worker's root. Next.js cloud builds use an
+  // empty basePath, so asset links are already root-relative.
   if (segments[0].startsWith("_") || segments[0].includes(".") || segments[0] === "404") {
-    return env.ASSETS.fetch(stripArtifactsPrefix(request))
+    return env.ASSETS.fetch(new Request(request.url, request))
   }
 
   // Project index shell
@@ -125,17 +119,8 @@ async function handlePageOrAssetRequest(request: Request, env: Env, relative: st
 
 function newShellRequest(request: Request, shellPath: string): Request {
   const url = new URL(request.url)
-  // Static assets are served from the Worker's root, not under /artifacts.
   const shellUrl = new URL(shellPath, `${url.protocol}//${url.host}`)
   return new Request(shellUrl, request)
-}
-
-function stripArtifactsPrefix(request: Request): Request {
-  const url = new URL(request.url)
-  if (url.pathname.startsWith(`${BASE_PATH}/`)) {
-    url.pathname = url.pathname.slice(BASE_PATH.length)
-  }
-  return new Request(url, request)
 }
 
 async function getR2Object(bucket: R2Bucket, key: string): Promise<Response> {

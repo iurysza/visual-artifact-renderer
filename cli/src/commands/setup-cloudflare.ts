@@ -3,13 +3,16 @@ import { stdin as input, stderr as output } from "node:process"
 
 import type { Logger } from "../logger.ts"
 import type { GlobalOpts } from "../types.ts"
+import { findProjectRoot } from "../config.ts"
 import {
   DEFAULT_CLOUDFLARE_PROFILE_NAME,
   DEFAULT_CLOUDFLARE_WORKER_NAME,
+  DEFAULT_CLOUDFLARE_R2_BUCKET,
   cloudflarePermissionHint,
   missingCloudflareSecretNames,
   resolveCloudflareProfile,
   writeCloudflareProfile,
+  syncCloudflareWorkerConfig,
   CLOUD_BUILD_ROUTE_STRATEGIES,
   DEFAULT_CLOUD_BUILD_ROUTE_STRATEGY,
   type CloudflareProfileInput,
@@ -58,12 +61,20 @@ export async function setupCloudflare(opts: SetupCloudflareOpts, log: Logger): P
       return 2
     }
 
+    let workerConfigPath: string | undefined
     const profilePath = opts.dryRun
       ? resolved.profilePath
       : await writeCloudflareProfile(resolved.profile, profileName)
 
+    if (!opts.dryRun) {
+      const projectRoot = findProjectRoot()
+      if (projectRoot) {
+        workerConfigPath = await syncCloudflareWorkerConfig(resolved.profile.bucketName, projectRoot)
+      }
+    }
+
     if (opts.json) {
-      log.output({
+      const output: Record<string, unknown> = {
         ok: true,
         provider: "cloudflare",
         dryRun: opts.dryRun ?? false,
@@ -72,16 +83,19 @@ export async function setupCloudflare(opts: SetupCloudflareOpts, log: Logger): P
         profile: resolved.profile,
         secretStatus: secretStatusFor(resolved.secrets),
         warnings: [],
-      })
+      }
+      if (workerConfigPath) output.workerConfigPath = workerConfigPath
+      log.output(output)
       return 0
     }
 
     log.success(opts.dryRun ? "Cloudflare setup looks valid" : "Cloudflare publish profile saved")
-    log.log(`  profile: ${profilePath}`)
+    log.log(`  profile: ${resolved.profilePath}`)
     log.log(`  bucket:  ${resolved.profile.bucketName}`)
     log.log(`  worker:  ${resolved.profile.workerName}`)
     log.log(`  url:     ${resolved.profile.baseUrl}`)
     log.log(`  routes:  ${resolved.profile.cloudBuildRouteStrategy}`)
+    if (workerConfigPath) log.log(`  worker config: ${workerConfigPath}`)
     log.log("  secrets: env-only; no credentials were written to disk")
     return 0
   } catch (error) {
@@ -99,8 +113,11 @@ async function promptForMissingProfileValues(inputValues: CloudflareProfileInput
     if (!current.profile.accountId) {
       inputValues.accountId = await promptValue(rl, "Cloudflare account ID")
     }
-    if (!current.profile.bucketName) {
-      inputValues.bucketName = await promptValue(rl, "R2 bucket name")
+    if (!current.profile.bucketName || current.profile.bucketName === DEFAULT_CLOUDFLARE_R2_BUCKET) {
+      const answer = await promptValue(rl, "R2 bucket name", DEFAULT_CLOUDFLARE_R2_BUCKET)
+      if (answer && answer !== current.profile.bucketName) {
+        inputValues.bucketName = answer
+      }
     }
     if (!inputValues.workerName && current.profile.workerName === DEFAULT_CLOUDFLARE_WORKER_NAME) {
       inputValues.workerName = await promptValue(rl, "Worker name", DEFAULT_CLOUDFLARE_WORKER_NAME)

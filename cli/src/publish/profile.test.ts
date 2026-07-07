@@ -78,7 +78,7 @@ describe("Cloudflare publish profiles", () => {
       expect(resolved.profile.accountId).toBe("flag-account")
       expect(resolved.profile.bucketName).toBe("env-bucket")
       expect(resolved.profile.workerName).toBe("env-worker")
-      expect(resolved.profile.baseUrl).toBe("https://env-worker.flag-subdomain.workers.dev/artifacts")
+      expect(resolved.profile.baseUrl).toBe("https://env-worker.flag-subdomain.workers.dev")
       expect(resolved.profile.cloudBuildRouteStrategy).toBe("placeholder")
       expect(resolved.profile.createdAt).toBe("2026-01-01T00:00:00.000Z")
       expect(resolved.profile.updatedAt).toBe("2026-02-01T00:00:00.000Z")
@@ -88,10 +88,10 @@ describe("Cloudflare publish profiles", () => {
     })
   })
 
-  test("normalizes custom base URLs to the artifacts mount", () => {
-    expect(normalizeBaseUrl("https://viz.example.com")).toBe("https://viz.example.com/artifacts")
+  test("normalizes custom base URLs without adding an artifacts mount", () => {
+    expect(normalizeBaseUrl("https://viz.example.com")).toBe("https://viz.example.com")
     expect(normalizeBaseUrl("https://viz.example.com/artifacts/")).toBe("https://viz.example.com/artifacts")
-    expect(normalizeBaseUrl("https://viz.example.com/viewer")).toBe("https://viz.example.com/viewer/artifacts")
+    expect(normalizeBaseUrl("https://viz.example.com/viewer")).toBe("https://viz.example.com/viewer")
   })
 
   test("reports missing required profile fields", async () => {
@@ -99,10 +99,10 @@ describe("Cloudflare publish profiles", () => {
       const resolved = await resolveCloudflareProfile({}, { env })
       expect(resolved.missing).toEqual([
         "account id (--account-id or CLOUDFLARE_ACCOUNT_ID)",
-        "R2 bucket (--bucket or VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET)",
         "base URL (--base-url or --workers-dev-subdomain)",
       ])
       expect(resolved.profile.workerName).toBe("visual-artifact")
+      expect(resolved.profile.bucketName).toBe("visual-artifact-renderer")
       expect(resolved.profile.cloudBuildRouteStrategy).toBe("zero-pages")
     })
   })

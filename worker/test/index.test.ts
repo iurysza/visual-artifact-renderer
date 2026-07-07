@@ -57,14 +57,14 @@ describe("Worker routes", () => {
   test("serves artifact JSON from R2", async () => {
     const objects = new Map([["artifacts/demo/hello/artifact.json", { body: '{"title":"Hello"}', uploaded: new Date() }]])
     const env = envWithObjects(objects)
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/demo/hello/artifact.json"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/demo/hello/artifact.json"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
     expect(await response.text()).toBe('{"title":"Hello"}')
   })
 
   test("synthesizes empty annotations.json when missing", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/demo/hello/annotations.json"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/demo/hello/annotations.json"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
     const body = await response.json()
     expect(body).toEqual({ version: 1, project: "demo", slug: "hello", threads: [] })
@@ -75,13 +75,13 @@ describe("Worker routes", () => {
       ["artifacts/demo/hello/assets/diagrams/flow.svg", { body: "<svg/>", uploaded: new Date() }],
     ])
     const env = envWithObjects(objects)
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/demo/hello/assets/diagrams/flow.svg"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/demo/hello/assets/diagrams/flow.svg"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
   })
 
   test("rejects path traversal in asset paths", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/demo/hello/assets/../secret.json"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/demo/hello/assets/../secret.json"), env, {} as ExecutionContext)
     expect(response.status).toBe(404)
   })
 
@@ -91,12 +91,13 @@ describe("Worker routes", () => {
       ["artifacts/demo/world/artifact.json", { body: '{"title":"World"}', uploaded: new Date("2026-01-01T00:00:00Z") }],
     ])
     const env = envWithObjects(objects)
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/index.json"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/index.json"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
-    const body = (await response.json()) as { projects: Array<{ name: string; artifactCount: number }> }
+    const body = (await response.json()) as { projects: Array<{ name: string; artifactCount: number }>; recent: unknown[] }
     expect(body.projects).toHaveLength(1)
     expect(body.projects[0].name).toBe("demo")
     expect(body.projects[0].artifactCount).toBe(2)
+    expect(body.recent).toHaveLength(2)
   })
 
   test("generates project index from R2 list", async () => {
@@ -104,7 +105,7 @@ describe("Worker routes", () => {
       ["artifacts/demo/hello/artifact.json", { body: '{"title":"Hello"}', uploaded: new Date("2026-01-02T00:00:00Z") }],
     ])
     const env = envWithObjects(objects)
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/demo/index.json"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/demo/index.json"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
     const body = (await response.json()) as { project: string; artifacts: Array<{ slug: string; title: string }> }
     expect(body.project).toBe("demo")
@@ -114,27 +115,47 @@ describe("Worker routes", () => {
 
   test("returns 501 for annotation mutations", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/artifacts/api/annotations/demo/hello", { method: "POST" }), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/api/annotations/demo/hello", { method: "POST" }), env, {} as ExecutionContext)
     expect(response.status).toBe(501)
+  })
+
+  test("serves home shell at root", async () => {
+    const env = envWithObjects(new Map())
+    const response = await handleRequest(new Request("https://example.com/"), env, {} as ExecutionContext)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe("asset:/index.html")
   })
 
   test("serves shell page for artifact route", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/artifacts/demo/hello/"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/demo/hello/"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
     expect(await response.text()).toBe("asset:/shell-artifact/")
   })
 
   test("serves shell page for project route", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/artifacts/demo/"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/demo/"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
     expect(await response.text()).toBe("asset:/shell-project/")
   })
 
+  test("serves static assets from root", async () => {
+    const env = envWithObjects(new Map())
+    const response = await handleRequest(new Request("https://example.com/_next/static/chunks/main.js"), env, {} as ExecutionContext)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe("asset:/_next/static/chunks/main.js")
+  })
+
   test("rejects invalid project/slug segments", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/artifacts/data/artifacts/bad_project/hello/artifact.json"), env, {} as ExecutionContext)
+    const response = await handleRequest(new Request("https://example.com/data/artifacts/bad_project/hello/artifact.json"), env, {} as ExecutionContext)
+    expect(response.status).toBe(404)
+  })
+
+  test("returns 404 for old /artifacts prefix", async () => {
+    const env = envWithObjects(new Map())
+    const response = await handleRequest(new Request("https://example.com/artifacts/demo/hello/"), env, {} as ExecutionContext)
     expect(response.status).toBe(404)
   })
 })

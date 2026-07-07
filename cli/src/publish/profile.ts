@@ -6,6 +6,7 @@ import { resolve } from "node:path"
 export const CLOUDFLARE_PROVIDER = "cloudflare" as const
 export const DEFAULT_CLOUDFLARE_PROFILE_NAME = "default"
 export const DEFAULT_CLOUDFLARE_WORKER_NAME = "visual-artifact"
+export const DEFAULT_CLOUDFLARE_R2_BUCKET = "visual-artifact-renderer"
 export const DEFAULT_CLOUD_BUILD_ROUTE_STRATEGY = "zero-pages" as const
 export const CLOUD_BUILD_ROUTE_STRATEGIES = ["zero-pages", "placeholder"] as const
 export type CloudBuildRouteStrategy = (typeof CLOUD_BUILD_ROUTE_STRATEGIES)[number]
@@ -78,6 +79,25 @@ export async function writeCloudflareProfile(
   return path
 }
 
+/**
+ * Patch `worker/wrangler.jsonc` so its R2 bucket binding matches the profile.
+ *
+ * This keeps bucket name in one place: the profile (populated from env/flags).
+ * The regex preserves JSONC comments and only touches the `bucket_name` value.
+ */
+export async function syncCloudflareWorkerConfig(
+  bucketName: string,
+  projectRoot: string,
+): Promise<string | undefined> {
+  const configPath = resolve(projectRoot, "worker", "wrangler.jsonc")
+  if (!existsSync(configPath)) return undefined
+  const raw = await readFile(configPath, "utf8")
+  const updated = raw.replace(/("bucket_name"\s*:\s*)"[^"]*"/, `$1"${bucketName}"`)
+  if (updated === raw) return configPath
+  await writeFile(configPath, updated, "utf8")
+  return configPath
+}
+
 export async function resolveCloudflareProfile(
   input: CloudflareProfileInput,
   options: { profileName?: string; env?: NodeJS.ProcessEnv; now?: Date } = {},
@@ -112,7 +132,14 @@ export async function resolveCloudflareProfile(
     version: 1,
     provider: CLOUDFLARE_PROVIDER,
     accountId: firstValue(input.accountId, env.CLOUDFLARE_ACCOUNT_ID, env.VISUAL_ARTIFACT_CLOUDFLARE_ACCOUNT_ID, saved?.accountId) ?? "",
-    bucketName: firstValue(input.bucketName, env.VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET, env.CLOUDFLARE_R2_BUCKET, saved?.bucketName) ?? "",
+    bucketName:
+      firstValue(
+        input.bucketName,
+        env.VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET,
+        env.CLOUDFLARE_R2_BUCKET,
+        saved?.bucketName,
+        DEFAULT_CLOUDFLARE_R2_BUCKET,
+      ) ?? DEFAULT_CLOUDFLARE_R2_BUCKET,
     workerName,
     baseUrl: baseUrl ?? "",
     cloudBuildRouteStrategy,
@@ -177,21 +204,18 @@ export function normalizeBaseUrl(value: string | undefined): string | undefined 
     throw new Error(`Cloudflare base URL must start with http:// or https://: ${value}`)
   }
 
-  url.pathname = appendArtifactsMount(url.pathname)
+  url.pathname = url.pathname.replace(/\/+$/, "") || "/"
   return url.toString().replace(/\/+$/, "")
 }
 
-function appendArtifactsMount(pathname: string): string {
-  const trimmed = pathname.replace(/\/+$/, "")
-  if (trimmed === "/artifacts" || trimmed.endsWith("/artifacts")) return trimmed
-  if (!trimmed || trimmed === "/") return "/artifacts"
-  return `${trimmed}/artifacts`
-}
-
 export function workersDevBaseUrl(workerName: string, workersDevSubdomain: string | undefined): string | undefined {
-  const subdomain = workersDevSubdomain?.trim()
+  let subdomain = workersDevSubdomain?.trim()
   if (!subdomain) return undefined
-  return `https://${workerName}.${subdomain}.workers.dev/artifacts`
+  // Be forgiving if the user passes the full workers.dev host instead of just
+  // the account subdomain.
+  subdomain = subdomain.replace(/\.workers\.dev\/?$/i, "")
+  if (!subdomain) return undefined
+  return `https://${workerName}.${subdomain}.workers.dev`
 }
 
 function parseCloudflareProfile(value: unknown, path: string): CloudflarePublishProfile {

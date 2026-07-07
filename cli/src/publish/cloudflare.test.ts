@@ -9,7 +9,7 @@ function profile(overrides: Partial<CloudflarePublishProfile> = {}): CloudflareP
     accountId: "acct",
     bucketName: "bucket",
     workerName: "visual-artifact",
-    baseUrl: "https://visual-artifact.demo.workers.dev/artifacts",
+    baseUrl: "https://visual-artifact.demo.workers.dev",
     cloudBuildRouteStrategy: "zero-pages",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -39,13 +39,13 @@ describe("Cloudflare R2 publisher keys", () => {
 
   test("remoteArtifactPageUrl appends project and slug with trailing slash", () => {
     expect(remoteArtifactPageUrl(profile(), "my-project", "my-slug")).toBe(
-      "https://visual-artifact.demo.workers.dev/artifacts/my-project/my-slug/",
+      "https://visual-artifact.demo.workers.dev/my-project/my-slug/",
     )
   })
 
   test("remoteArtifactPageUrl strips extra trailing slashes from base", () => {
-    const p = profile({ baseUrl: "https://example.com/artifacts/" })
-    expect(remoteArtifactPageUrl(p, "p", "s")).toBe("https://example.com/artifacts/p/s/")
+    const p = profile({ baseUrl: "https://example.com/" })
+    expect(remoteArtifactPageUrl(p, "p", "s")).toBe("https://example.com/p/s/")
   })
 
   test("localArtifactPageUrl points at default static server", () => {
@@ -73,7 +73,7 @@ describe("Cloudflare R2 publisher keys", () => {
         ok: true,
         project: "demo",
         slug: "hello",
-        url: "https://visual-artifact.demo.workers.dev/artifacts/demo/hello/",
+        url: "https://visual-artifact.demo.workers.dev/demo/hello/",
         localUrl: "http://127.0.0.1:9998/artifacts/demo/hello/",
         remoteObjects: ["artifacts/demo/hello/artifact.json"],
       },

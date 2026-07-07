@@ -61,16 +61,23 @@ export function projectIndexPath(project: string): string {
  * On the server we return the constant. On the client we prefer the basePath
  * injected by Next.js, then fall back to inferring it from `window.location`.
  * This keeps the fetch URL correct whether the app is served by Next.js dev,
- * the static export server, or another host/proxy.
+ * the static export server, or another host/proxy — including Cloudflare
+ * Workers.dev deployments that serve the renderer at root.
  */
 export function resolveBasePath(): string {
   if (typeof window === "undefined") return BASE_PATH
 
   const nextData = (window as { __NEXT_DATA__?: { basePath?: string } }).__NEXT_DATA__
-  if (nextData?.basePath) return nextData.basePath
+  if (nextData && typeof nextData.basePath === "string") {
+    return nextData.basePath
+  }
 
-  const match = window.location.pathname.match(/^(\/[^/]+)\//)
-  return match ? match[1] : BASE_PATH
+  const pathname = window.location.pathname
+  if (pathname === BASE_PATH || pathname.startsWith(`${BASE_PATH}/`)) {
+    return BASE_PATH
+  }
+
+  return ""
 }
 
 /** Absolute public URL to a bundled artifact JSON payload, resolved at runtime. */
