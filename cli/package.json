@@ -12,6 +12,7 @@
     "build": "bun run scripts/build.ts",
     "clean": "rm -rf dist node_modules src/assets/contract.json && rm -f .*.bun-build",
     "install:binary": "bun run scripts/install.ts",
+    "release": "bun run scripts/release.ts",
     "test": "bun test"
   },
   "dependencies": {

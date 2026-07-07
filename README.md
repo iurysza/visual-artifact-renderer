@@ -81,9 +81,17 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Quick start
 
-Requirements: Bun, pnpm, Node.js 20+. Pi is optional; if present, bootstrap installs the Pi extension too.
+The fastest way to install is with the curl-to-sh installer. It downloads a prebuilt binary plus the renderer static export, skill bundle, and Pi extension for your platform:
 
-Install the agent integration from this repo:
+```bash
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+visual-artifact doctor
+```
+
+Requirements for source builds: Bun, pnpm, Node.js 20+. Pi is optional; if present, the installer installs the Pi extension too.
+
+Install from this repo instead:
 
 ```bash
 cd cli

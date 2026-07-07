@@ -26,7 +26,9 @@
 /build
 /app/build
 /cli/dist/
+/cli/src/assets/
 /shared/dist/
+/releases/
 
 # misc
 .DS_Store

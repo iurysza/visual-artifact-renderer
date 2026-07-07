@@ -7,8 +7,8 @@ import { VERSION } from "../src/version.ts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, "..")
-const SKILL_ROOT = resolve(ROOT, "..")
-const REPO_ROOT = resolve(SKILL_ROOT, "..")
+const REPO_ROOT = resolve(ROOT, "..")
+const SKILL_ROOT = resolve(REPO_ROOT, "skill")
 const DIST = resolve(ROOT, "dist")
 const BINARY = resolve(DIST, "visual-artifact")
 
