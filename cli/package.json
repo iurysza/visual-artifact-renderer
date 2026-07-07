@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@agents/visual-artifact-annotations": "file:../shared",
+    "@aws-sdk/client-s3": "^3.1080.0",
     "commander": "^12.1.0"
   },
   "devDependencies": {

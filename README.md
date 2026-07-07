@@ -175,6 +175,13 @@ Authors are inferred from local git config (`user.name` and `user.email`), with 
 | `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
 | `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path.                                                      |
+| `VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET` | — | R2 bucket name for publishing.                                               |
+| `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID` | — | R2 S3-compatible access key ID.                                              |
+| `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY` | — | R2 S3-compatible secret access key.                                          |
+| `VISUAL_ARTIFACT_CLOUDFLARE_ACCOUNT_ID` | — | Cloudflare account ID.                                                       |
+| `VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL` | — | Public base URL for published artifacts; `/artifacts` is appended when missing. |
+| `VISUAL_ARTIFACT_CLOUDFLARE_WORKERS_DEV_SUBDOMAIN` | — | workers.dev subdomain for quickstart base URL.                               |
+| `VISUAL_ARTIFACT_CLOUD_ROUTE_STRATEGY` | `zero-pages` | Cloud build dynamic-route strategy: `zero-pages` or `placeholder`.           |
 
 ## Create an artifact
 
@@ -216,12 +223,35 @@ The CLI returns a URL like:
 http://127.0.0.1:9998/artifacts/my-project/demo-report/
 ```
 
+### Publishing to Cloudflare
+
+Visualizer supports BYO Cloudflare publishing so artifacts get durable public URLs under your own account. One-time setup:
+
+```bash
+export VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID=...
+export VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY=...
+visual-artifact setup cloudflare --account-id <id> --bucket <name> --workers-dev-subdomain <subdomain>
+```
+
+Then publish from `create`:
+
+```bash
+visual-artifact create my-spec.json --publish
+```
+
+On success the JSON output's `url` field is the remote public page. `localUrl` is also included for debugging, and a local `publish.json` sidecar is written beside `artifact.json` with non-secret publish state. Secrets are read from environment variables only; the saved profile contains non-secret config and is stored under `~/.config/visual-artifact/publish-profiles/` with mode `0600`.
+
+Hosted annotations are read-only in MVP; the Worker returns `501 Not Implemented` for annotation mutation posts.
+
+To build the renderer for Cloudflare, use `cd app && pnpm build:cloud`. This exports only shared shells and runs a leak verifier so no local artifact pages are baked into the deploy.
+
 By default, artifacts are written as bundles to:
 
 ```text
 <skill-root>/artifacts/<project>/<slug>/
   artifact.json
   annotations.json
+  publish.json   # present after successful --publish
   assets/
 ```
 
@@ -238,7 +268,7 @@ Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-i
 | Command                                                                 | Purpose                                                                              |
 | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `visual-artifact bootstrap [--dry-run]`                                 | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
-| `visual-artifact create [spec.json or -] [--project path] [--no-serve]` | Validate, write artifact JSON, auto-start renderer unless disabled.                  |
+| `visual-artifact create [spec.json or -] [--project path] [--no-serve] [--publish [profile]]` | Validate, write artifact JSON, auto-start renderer, optionally publish to Cloudflare. |
 | `visual-artifact validate [spec.json or -]`                             | Validate without writing.                                                            |
 | `visual-artifact contract`                                              | Print the current artifact contract to stdout.                                       |
 | `visual-artifact serve [--port n] [--host addr] [--no-open]`            | Serve static renderer plus live artifact JSON.                                       |
@@ -264,9 +294,11 @@ cd app
 pnpm install
 pnpm dev              # http://localhost:9999/artifacts/  (dev + HMR; live mode uses this)
 pnpm build            # static export to app/out
+pnpm build:cloud      # shell-only export for Cloudflare
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
+pnpm verify:cloud-build
 pnpm visual:qa        # optional adapter/styling QA
 ```
 

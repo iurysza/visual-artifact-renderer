@@ -71,7 +71,7 @@ visual-artifact [global flags] <command>
 | Command | What it does |
 |---|---|
 | `bootstrap` | Build renderer, compile CLI, install the global skill, and copy the optional Pi extension. |
-| `create [spec.json|-]` | Validate, save, and auto-start renderer unless `--no-serve`. |
+| `create [spec.json|-]` | Validate, save, and auto-start renderer unless `--no-serve`. Add `--publish [profile]` to publish to Cloudflare. |
 | `validate [spec.json|-]` | Validate without writing. |
 | `serve` | Serve static renderer + live artifact JSON. |
 | `serve status` | Check renderer server health. |
@@ -111,6 +111,21 @@ http://127.0.0.1:9998/artifacts/<project>/<slug>/
 ```
 
 Set `VISUAL_ARTIFACT_BASE_URL` when serving through a proxy/tunnel/tailnet route. Include the `/artifacts` mount path.
+
+### Publishing to Cloudflare
+
+When the user wants a shareable public URL and BYO Cloudflare is configured, run `visual-artifact create` with `--publish [profile]`. On success, the CLI JSON `url` field is the remote public page. The local URL is returned as `localUrl`, and a non-secret `publish.json` sidecar is written beside `artifact.json`.
+
+```bash
+visual-artifact create spec.json --publish
+```
+
+If no profile exists, the CLI will tell the user to run `visual-artifact setup cloudflare`. Do not attempt to publish without a configured profile and the required environment variables:
+
+- `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID`
+- `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY`
+
+Hosted annotations are read-only in MVP; do not rely on remote comment persistence.
 
 ## Node choice
 

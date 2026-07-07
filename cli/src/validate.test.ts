@@ -6,7 +6,7 @@ import type { ArtifactContract, ArtifactSpec } from "./types.ts"
 import { validateSpec, ValidationError } from "./validate.ts"
 
 const contract = JSON.parse(
-  readFileSync(resolve(import.meta.dir, "..", "..", "artifact-contract.json"), "utf8"),
+  readFileSync(resolve(import.meta.dir, "..", "assets", "contract.json"), "utf8"),
 ) as ArtifactContract
 
 function specWith(node: unknown): ArtifactSpec {

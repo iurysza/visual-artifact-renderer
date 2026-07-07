@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev -p 9999",
     "build": "next build",
+    "build:cloud": "VISUAL_ARTIFACT_CLOUD_BUILD=1 next build && pnpm verify:cloud-build",
     "start": "next start",
     "lint": "eslint",
     "verify:artifacts": "tsx scripts/verify/verify-artifacts.ts",
+    "verify:cloud-build": "tsx scripts/verify/cloud-build-leaks.ts",
     "export:contract": "tsx scripts/contract/export-contract.ts",
     "visual:qa": "node scripts/qa/visual-qa.mjs",
     "health-check": "node scripts/qa/health-check.mjs",

@@ -5,6 +5,7 @@ export const BUNDLE_FILES = {
   artifact: "artifact.json",
   annotations: "annotations.json",
   assets: "assets",
+  publish: "publish.json",
 } as const
 
 export interface BundleRoute {
@@ -56,6 +57,11 @@ export function annotationsJsonPath(artifactsDir: string, project: string, slug:
 /** Absolute path to the assets directory inside a bundle. */
 export function assetsDirPath(artifactsDir: string, project: string, slug: string): string {
   return resolve(artifactsDir, project, slug, BUNDLE_FILES.assets)
+}
+
+/** Absolute path to publish metadata inside a bundle. */
+export function publishJsonPath(artifactsDir: string, project: string, slug: string): string {
+  return resolve(artifactsDir, project, slug, BUNDLE_FILES.publish)
 }
 
 /**
