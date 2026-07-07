@@ -95,7 +95,7 @@ export function renderTimeline({ node, context }: AdapterArgs<"timeline">) {
                     <StatusChip value={statusVal} className="shrink-0 justify-start" />
                   )}
                 </div>
-                <p className="mt-2 min-w-0 break-words text-sm leading-6 text-muted-foreground">
+                <p className="mt-2 min-w-0 break-all text-sm leading-6 text-muted-foreground">
                   {formatCell(description)}
                 </p>
               </PanelCard>
@@ -154,7 +154,7 @@ export function renderStatusGrid({ node, context }: AdapterArgs<"status-grid">) 
                 )}
               </div>
               {description !== undefined && (
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                <p className="mt-3 break-all text-sm leading-6 text-muted-foreground">
                   {formatCell(description)}
                 </p>
               )}
@@ -216,7 +216,7 @@ function TableBlock({
                 className={cn(
                   dense ? "py-2.5" : undefined,
                   columnIndex === 0 && "font-medium text-foreground",
-                  comparison && "align-top whitespace-normal"
+                  comparison && "break-all align-top whitespace-normal"
                 )}
               >
                 {statusKey === column.key ? (
@@ -265,7 +265,7 @@ function MobileRecord({
         <div>
           {primary && (
             <>
-              <p className="break-words font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
+              <p className="break-all font-serif text-lg font-medium leading-snug tracking-[-0.015em] text-foreground">
                 {formatCell(primaryValue)}
               </p>
               <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -286,7 +286,7 @@ function MobileRecord({
               <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {column.label}
               </dt>
-              <dd className="break-words text-sm leading-6 text-foreground">
+              <dd className="break-all text-sm leading-6 text-foreground">
                 {formatCell(row[column.key])}
               </dd>
             </div>

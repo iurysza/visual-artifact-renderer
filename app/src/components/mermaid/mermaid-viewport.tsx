@@ -264,7 +264,7 @@ export function MermaidViewport({
         aria-describedby={instructionsId}
         aria-label={isMaximized ? "Maximized Mermaid diagram" : "Zoomable Mermaid diagram"}
         className={cn(
-          "absolute inset-x-0 bottom-0 top-12 overflow-hidden rounded-xl border bg-background/60 p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
+          "absolute inset-x-0 bottom-0 top-14 overflow-hidden rounded-xl border bg-background/60 p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
           isDragging ? "cursor-grabbing" : "cursor-grab"
         )}
         onKeyDown={handleKeyDown}
