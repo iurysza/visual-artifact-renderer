@@ -1,5 +1,12 @@
 import { isSafeAssetPath, parseArtifactPath, parseProjectPath } from "./paths.ts"
 import { buildHomeIndex, buildProjectIndex } from "./indexes.ts"
+import {
+  applyMutations,
+  emptyAnnotationDocument,
+  LOCAL_ANONYMOUS_AUTHOR,
+  parseAnnotationMutations,
+  type AnnotationDocument,
+} from "./annotations.ts"
 
 export interface Env {
   ASSETS: Fetcher
@@ -21,9 +28,9 @@ export async function handleRequest(request: Request, env: Env, _ctx: ExecutionC
     return handleDataRequest(request.method, pathname.slice(`/${DATA_SEGMENT}/`.length), env)
   }
 
-  // Annotation mutation endpoint (read-only in MVP)
+  // Annotation mutation endpoint
   if (pathname.startsWith(`/${API_SEGMENT}/`)) {
-    return handleApiRequest(request.method, pathname.slice(`/${API_SEGMENT}/`.length))
+    return handleApiRequest(request, request.method, pathname.slice(`/${API_SEGMENT}/`.length), env)
   }
 
   // Static assets and shell fallbacks are served from the Worker's root.
@@ -72,18 +79,44 @@ async function handleDataRequest(method: string, path: string, env: Env): Promis
   return notFound()
 }
 
-async function handleApiRequest(method: string, path: string): Promise<Response> {
+async function handleApiRequest(
+  request: Request,
+  method: string,
+  path: string,
+  env: Env,
+): Promise<Response> {
   const segments = path.split("/").filter(Boolean)
+
+  // GET /api/annotations/author returns the remote fallback author. The
+  // client uses this to label comments on deployments that have no git
+  // identity available.
+  if (segments.length === 1 && segments[0] === "author") {
+    if (method !== "GET") return methodNotAllowed()
+    return jsonResponse(LOCAL_ANONYMOUS_AUTHOR)
+  }
+
   if (segments.length !== 2) return notFound()
 
   const parsed = parseArtifactPath(segments)
   if (!parsed) return notFound()
 
   if (method === "POST") {
-    return new Response(
-      JSON.stringify({ error: "Remote annotation mutations are not implemented in this version." }),
-      { status: 501, headers: JSON_HEADERS },
-    )
+    let mutations: ReturnType<typeof parseAnnotationMutations>
+    try {
+      const body = await request.json()
+      mutations = parseAnnotationMutations(body)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid request body"
+      return jsonResponse({ error: message }, 400)
+    }
+
+    const key = `artifacts/${parsed.project}/${parsed.slug}/annotations.json`
+    const doc = await loadAnnotationDocument(env.BUCKET, parsed.project, parsed.slug)
+    const updated = applyMutations(doc, mutations)
+    await env.BUCKET.put(key, JSON.stringify(updated), {
+      httpMetadata: new Headers({ "Content-Type": "application/json" }),
+    })
+    return jsonResponse(updated)
   }
 
   return methodNotAllowed()
@@ -132,16 +165,20 @@ async function getR2Object(bucket: R2Bucket, key: string): Promise<Response> {
   return new Response(object.body, { headers })
 }
 
-async function getR2ObjectOrEmptyAnnotations(bucket: R2Bucket, project: string, slug: string): Promise<Response> {
+async function loadAnnotationDocument(bucket: R2Bucket, project: string, slug: string): Promise<AnnotationDocument> {
   const key = `artifacts/${project}/${slug}/annotations.json`
   const object = await bucket.get(key)
   if (object) {
-    const headers = new Headers()
-    object.writeHttpMetadata(headers)
-    headers.set("etag", object.httpEtag)
-    return new Response(object.body, { headers })
+    const text = await object.text()
+    const parsed = JSON.parse(text) as AnnotationDocument
+    return parsed
   }
-  return jsonResponse({ version: 1, project, slug, threads: [] })
+  return emptyAnnotationDocument(project, slug)
+}
+
+async function getR2ObjectOrEmptyAnnotations(bucket: R2Bucket, project: string, slug: string): Promise<Response> {
+  const doc = await loadAnnotationDocument(bucket, project, slug)
+  return jsonResponse(doc)
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

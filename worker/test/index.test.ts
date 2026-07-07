@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { handleRequest } from "../src/routes.ts"
 import type { Env } from "../src/routes.ts"
+import { LOCAL_ANONYMOUS_AUTHOR } from "../src/annotations.ts"
 
 function mockR2Bucket(objects: Map<string, { body: string; uploaded: Date }>): R2Bucket {
   return {
@@ -36,6 +37,25 @@ function mockR2Bucket(objects: Map<string, { body: string; uploaded: Date }>): R
         text: async () => obj.body,
         writeHttpMetadata: (headers: Headers) => headers.set("Content-Type", "application/json"),
       } as unknown as R2ObjectBody
+    },
+    put: async (key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob | null) => {
+      let body: string
+      if (value === null) {
+        objects.delete(key)
+        return
+      }
+      if (typeof value === "string") {
+        body = value
+      } else if (value instanceof Blob) {
+        body = await value.text()
+      } else if (ArrayBuffer.isView(value)) {
+        body = new TextDecoder().decode(value)
+      } else if (value instanceof ArrayBuffer) {
+        body = new TextDecoder().decode(value)
+      } else {
+        body = await new Response(value).text()
+      }
+      objects.set(key, { body, uploaded: new Date() })
     },
   } as unknown as R2Bucket
 }
@@ -113,10 +133,64 @@ describe("Worker routes", () => {
     expect(body.artifacts[0].title).toBe("Hello")
   })
 
-  test("returns 501 for annotation mutations", async () => {
+  test("returns fallback author", async () => {
     const env = envWithObjects(new Map())
-    const response = await handleRequest(new Request("https://example.com/api/annotations/demo/hello", { method: "POST" }), env, {} as ExecutionContext)
-    expect(response.status).toBe(501)
+    const response = await handleRequest(new Request("https://example.com/api/annotations/author"), env, {} as ExecutionContext)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(LOCAL_ANONYMOUS_AUTHOR)
+  })
+
+  test("persists annotation mutations", async () => {
+    const env = envWithObjects(new Map())
+    const mutation = {
+      type: "createThread",
+      thread: {
+        id: "thread-1",
+        anchor: { nodePath: "nodes.0", nodeType: "text" },
+        status: "open",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+        messages: [
+          {
+            id: "msg-1",
+            author: LOCAL_ANONYMOUS_AUTHOR,
+            body: "first comment",
+            createdAt: "2026-01-01T00:00:00Z",
+            updatedAt: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+    }
+    const response = await handleRequest(
+      new Request("https://example.com/api/annotations/demo/hello", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([mutation]),
+      }),
+      env,
+      {} as ExecutionContext,
+    )
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.threads).toHaveLength(1)
+    expect(body.threads[0].messages[0].body).toBe("first comment")
+
+    const saved = env.BUCKET.get("artifacts/demo/hello/annotations.json")
+    expect(saved).not.toBeNull()
+  })
+
+  test("rejects invalid annotation mutations", async () => {
+    const env = envWithObjects(new Map())
+    const response = await handleRequest(
+      new Request("https://example.com/api/annotations/demo/hello", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([{ type: "unknown" }]),
+      }),
+      env,
+      {} as ExecutionContext,
+    )
+    expect(response.status).toBe(400)
   })
 
   test("serves home shell at root", async () => {
