@@ -114,6 +114,8 @@ The artifact contract is bundled into the CLI; it is no longer shipped as a stat
 
 For Pi, run `/reload` or restart Pi after install. The extension loads the global skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
 
+For maintainer release instructions, see [`ai-artifacts/docs/RELEASE.md`](./ai-artifacts/docs/RELEASE.md).
+
 If `visual-artifact` is already on PATH, future updates are just:
 
 ```bash

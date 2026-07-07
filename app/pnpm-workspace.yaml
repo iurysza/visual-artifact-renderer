@@ -1,8 +1,5 @@
-packages:
-  - "."
-
 allowBuilds:
-  esbuild: true
-  koffi: true
-  sharp: true
-  unrs-resolver: true
+  esbuild: set this to true or false
+  koffi: set this to true or false
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
