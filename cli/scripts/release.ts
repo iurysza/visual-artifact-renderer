@@ -9,6 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, "..")
 const PROJECT_ROOT = resolve(ROOT, "..")
 const APP_DIR = resolve(PROJECT_ROOT, "app")
+const SHARED_DIR = resolve(PROJECT_ROOT, "shared")
 const SKILL_DIR = resolve(PROJECT_ROOT, "skill")
 const PI_EXTENSION_DIR = resolve(PROJECT_ROOT, "pi-extension")
 const RELEASES_DIR = resolve(PROJECT_ROOT, "releases")
@@ -63,11 +64,19 @@ async function cleanReleasesDir(): Promise<void> {
   await mkdir(RELEASES_DIR, { recursive: true })
 }
 
-async function buildApp(): Promise<void> {
+async function installDependencies(): Promise<void> {
   if (!commandExists("pnpm")) {
     throw new Error("pnpm is required to build the renderer")
   }
+  if (!commandExists("bun")) {
+    throw new Error("bun is required to compile the CLI")
+  }
   exec("pnpm install", APP_DIR)
+  exec("bun install", SHARED_DIR)
+  exec("bun install", ROOT)
+}
+
+async function buildApp(): Promise<void> {
   exec("pnpm build", APP_DIR)
   exec("pnpm export:contract", APP_DIR)
 }
@@ -113,6 +122,7 @@ async function main(): Promise<void> {
   const repoSlug = gitRepoSlug()
   console.log(`[release] Repository: ${repoSlug}`)
 
+  await installDependencies()
   await buildApp()
   await cleanReleasesDir()
 
