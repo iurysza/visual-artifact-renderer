@@ -39,7 +39,7 @@ visual-artifact validate visual-artifact-spec.json
 Or from the source tree:
 
 ```bash
-cd skill/cli
+cd cli
 bun run src/main.ts validate /path/to/visual-artifact-spec.json
 ```
 

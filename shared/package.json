@@ -1,0 +1,15 @@
+{
+  "name": "@agents/visual-artifact-annotations",
+  "version": "0.1.0",
+  "description": "Shared annotation schema and parsers for the visual-artifact CLI and renderer.",
+  "type": "module",
+  "exports": {
+    ".": "./src/annotations.ts",
+    "./mermaid-validator": "./src/mermaid-validator.ts"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.12",
+    "mermaid": "^11.15.0",
+    "zod": "^4.4.3"
+  }
+}

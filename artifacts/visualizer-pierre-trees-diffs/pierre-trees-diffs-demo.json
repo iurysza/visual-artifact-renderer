@@ -1,0 +1,106 @@
+{
+  "slug": "pierre-trees-diffs-demo",
+  "title": "Pierre Trees & Diffs Demo",
+  "description": "Experimental showcase of the enhanced file-tree and diff components.",
+  "nodes": [
+    {
+      "type": "text",
+      "props": {
+        "text": "Trees and Diffs adapted to the Visualizer system. Below: a searchable file tree with git status, and two diff views.",
+        "size": "lg"
+      }
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "heading",
+      "props": { "text": "File tree with git status", "level": 2 }
+    },
+    {
+      "type": "file-tree",
+      "props": {
+        "items": [
+          {
+            "name": "src",
+            "type": "directory",
+            "children": [
+              {
+                "name": "components",
+                "type": "directory",
+                "children": [
+                  { "name": "button.tsx", "type": "file" },
+                  { "name": "card.tsx", "type": "file" }
+                ]
+              },
+              {
+                "name": "lib",
+                "type": "directory",
+                "children": [
+                  { "name": "utils.ts", "type": "file" },
+                  { "name": "diff-parser.ts", "type": "file" }
+                ]
+              },
+              { "name": "app.tsx", "type": "file" }
+            ]
+          },
+          { "name": "README.md", "type": "file" },
+          { "name": "package.json", "type": "file" },
+          { "name": ".gitignore", "type": "file" }
+        ],
+        "flattenEmpty": true,
+        "searchable": true,
+        "density": "default",
+        "iconSet": "standard",
+        "defaultExpanded": true,
+        "gitStatus": {
+          "src/components/button.tsx": { "status": "modified" },
+          "src/lib/diff-parser.ts": { "status": "added" },
+          "src/app.tsx": { "status": "deleted" },
+          "README.md": { "status": "renamed" },
+          "package.json": { "status": "untracked" },
+          ".gitignore": { "status": "ignored" },
+          "src/components": { "status": "modified", "descendant": true },
+          "src": { "status": "modified", "descendant": true }
+        }
+      }
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "heading",
+      "props": { "text": "Diff from raw unified diff string", "level": 2 }
+    },
+    {
+      "type": "diff",
+      "props": {
+        "title": "utils.ts",
+        "language": "typescript",
+        "mode": "unified",
+        "indicators": "plus-minus",
+        "highlightInline": true,
+        "content": "diff --git a/utils.ts b/utils.ts\n--- a/utils.ts\n+++ b/utils.ts\n@@ -1,5 +1,5 @@\n export function greet(name: string) {\n-  return `Hello, ${name}`;\n+  return `Hello, ${name}!`;\n }\n \n-export const VERSION = '1.0.0';\n+export const VERSION = '1.1.0';\n"
+      }
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "heading",
+      "props": { "text": "Diff from before/after (split mode)", "level": 2 }
+    },
+    {
+      "type": "diff",
+      "props": {
+        "title": "cache.go",
+        "language": "go",
+        "mode": "split",
+        "indicators": "bars",
+        "showLineNumbers": true,
+        "before": "func Get(key string) (*Item, bool) {\n    if !exists {\n        return nil, false\n    }\n\n    now := time.Now()\n    expired := now.After(item.ExpiresAt)\n    if expired {\n        return nil, false\n    }\n\n    return item.Value, true\n}",
+        "after": "func Get(key string) (*Item, bool) {\n    if !exists {\n        return nil, false\n    }\n\n    if time.Now().After(item.ExpiresAt) {\n        delete(c.items, key)\n        c.onEviction(key, item.Value)\n        return nil, false\n    }\n\n    return item.Value, true\n}"
+      }
+    }
+  ]
+}

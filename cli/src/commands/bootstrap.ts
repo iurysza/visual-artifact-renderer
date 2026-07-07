@@ -1,0 +1,157 @@
+import { execSync, spawnSync } from "node:child_process"
+import { existsSync } from "node:fs"
+import { homedir } from "node:os"
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import { findProjectRoot } from "../config.ts"
+import type { Logger } from "../logger.ts"
+
+function commandExists(cmd: string): boolean {
+  try {
+    execSync(`command -v ${cmd}`, { stdio: "ignore", timeout: 3000 })
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isProjectRoot(path: string): boolean {
+  return (
+    existsSync(resolve(path, "app")) &&
+    existsSync(resolve(path, "cli")) &&
+    existsSync(resolve(path, "shared")) &&
+    existsSync(resolve(path, "skill", "SKILL.md"))
+  )
+}
+
+function findProjectRootFromScript(): string | null {
+  // Search upward from cwd and from this script's location for the development
+  // source tree. The runtime packages (app, cli, shared) live at the repo root;
+  // skill metadata lives under `skill/`.
+  const startingPoints = [process.cwd(), dirname(fileURLToPath(import.meta.url))]
+  for (const start of startingPoints) {
+    let dir = start
+    for (let i = 0; i < 6; i++) {
+      if (isProjectRoot(dir)) return dir
+      const parent = resolve(dir, "..")
+      if (parent === dir) break
+      dir = parent
+    }
+  }
+  return null
+}
+
+function run(cmd: string, args: string[], cwd: string): number {
+  const result = spawnSync(cmd, args, {
+    cwd,
+    stdio: "inherit",
+    env: process.env,
+  })
+  return result.status ?? 1
+}
+
+export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promise<number> {
+  // Bootstrap must build from the development source tree, not from the
+  // installed skill target which only contains SKILL.md + artifacts/.
+  const projectRoot = findProjectRootFromScript()
+  if (!projectRoot) {
+    log.error("Could not find visual-artifact development source (app/ + cli/ + shared/ + skill/SKILL.md). Run this command from inside the visualizer repo.")
+    return 1
+  }
+
+  const appDir = resolve(projectRoot, "app")
+  const cliDir = resolve(projectRoot, "cli")
+  const sharedDir = resolve(projectRoot, "shared")
+  const outDir = resolve(appDir, "out")
+  const distBinary = resolve(cliDir, "dist", "visual-artifact")
+  const home = homedir()
+  const binPath = resolve(home, ".local", "bin", "visual-artifact")
+  const skillPath = resolve(home, ".agents", "skills", "visual-artifact")
+  const piAgentDir = resolve(home, ".pi", "agent")
+  const extensionPath = resolve(piAgentDir, "extensions", "visual-artifact.ts")
+
+  const hasBun = commandExists("bun")
+  const hasPnpm = commandExists("pnpm")
+  const appOutExists = existsSync(outDir)
+  const binaryExists = existsSync(distBinary)
+  const installed = existsSync(binPath)
+  const skillInstalled = existsSync(skillPath)
+  const piDetected = existsSync(piAgentDir)
+  const extensionInstalled = existsSync(extensionPath)
+
+  if (opts.dryRun) {
+    log.output({
+      projectRoot,
+      hasBun,
+      hasPnpm,
+      appOutExists,
+      binaryExists,
+      installed,
+      skillInstalled,
+      piDetected,
+      extensionInstalled,
+      plan: [
+        hasPnpm ? "pnpm install in app" : "skip: pnpm not found",
+        hasPnpm ? "pnpm build in app" : "skip: pnpm not found",
+        hasBun ? "bun install in shared" : "skip: bun not found",
+        hasBun ? "bun install in cli" : "skip: bun not found",
+        hasBun ? "bun run build in cli" : "skip: bun not found",
+        hasBun ? "bun run install:binary in cli (CLI to ~/.local/bin, skill to ~/.agents/skills, Pi extension if Pi is installed)" : "skip: bun not found",
+      ],
+    })
+    return hasBun && hasPnpm ? 0 : 1
+  }
+
+  if (!hasBun) {
+    log.error("bun is required to build the visual-artifact CLI")
+    return 1
+  }
+  if (!hasPnpm) {
+    log.error("pnpm is required to build the visual-artifact renderer")
+    return 1
+  }
+
+  log.info(`Bootstrapping visual-artifact from ${projectRoot}`)
+
+  let rc = run("pnpm", ["install"], appDir)
+  if (rc !== 0) {
+    log.error("renderer dependency install failed")
+    return rc
+  }
+
+  rc = run("pnpm", ["build"], appDir)
+  if (rc !== 0) {
+    log.error("renderer build failed")
+    return rc
+  }
+
+  rc = run("bun", ["install"], sharedDir)
+  if (rc !== 0) {
+    log.error("shared dependency install failed")
+    return rc
+  }
+
+  rc = run("bun", ["install"], cliDir)
+  if (rc !== 0) {
+    log.error("CLI dependency install failed")
+    return rc
+  }
+
+  rc = run("bun", ["run", "build"], cliDir)
+  if (rc !== 0) {
+    log.error("CLI build failed")
+    return rc
+  }
+
+  rc = run("bun", ["run", "install:binary"], cliDir)
+  if (rc !== 0) {
+    log.error("CLI binary install failed")
+    return rc
+  }
+
+  log.success(`visual-artifact installed: ${binPath}`)
+  if (existsSync(piAgentDir)) {
+    log.info("Run `/reload` in Pi, or restart Pi, to load the extension.")
+  }
+  return 0
+}
