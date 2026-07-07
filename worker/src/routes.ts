@@ -123,7 +123,8 @@ async function handlePageOrAssetRequest(request: Request, env: Env, relative: st
 
 function newShellRequest(request: Request, shellPath: string): Request {
   const url = new URL(request.url)
-  const shellUrl = new URL(`${BASE_PATH}${shellPath}`, `${url.protocol}//${url.host}`)
+  // Static assets are served from the Worker's root, not under /artifacts.
+  const shellUrl = new URL(shellPath, `${url.protocol}//${url.host}`)
   return new Request(shellUrl, request)
 }
 

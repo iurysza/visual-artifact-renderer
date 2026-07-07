@@ -9,7 +9,7 @@
   "r2_buckets": [
     {
       "binding": "BUCKET",
-      "bucket_name": "visual-artifact"
+      "bucket_name": "visual-artifact-renderer"
     }
   ]
 }

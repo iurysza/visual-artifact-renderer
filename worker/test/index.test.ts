@@ -122,14 +122,14 @@ describe("Worker routes", () => {
     const env = envWithObjects(new Map())
     const response = await handleRequest(new Request("https://example.com/artifacts/demo/hello/"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
-    expect(await response.text()).toBe("asset:/artifacts/shell-artifact/")
+    expect(await response.text()).toBe("asset:/shell-artifact/")
   })
 
   test("serves shell page for project route", async () => {
     const env = envWithObjects(new Map())
     const response = await handleRequest(new Request("https://example.com/artifacts/demo/"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
-    expect(await response.text()).toBe("asset:/artifacts/shell-project/")
+    expect(await response.text()).toBe("asset:/shell-project/")
   })
 
   test("rejects invalid project/slug segments", async () => {
