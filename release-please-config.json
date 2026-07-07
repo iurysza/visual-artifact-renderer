@@ -1,11 +1,16 @@
 {
   "packages": {
-    "cli": {
+    ".": {
       "release-type": "node",
-      "package-name": "visual-artifact",
+      "package-name": "visual-artifact-renderer",
       "include-component-in-tag": false,
       "include-v-in-tag": true,
-      "extra-files": ["src/version.ts", "../shared/package.json"]
+      "extra-files": [
+        "cli/package.json",
+        "cli/src/version.ts",
+        "shared/package.json",
+        "app/package.json"
+      ]
     }
   }
 }
