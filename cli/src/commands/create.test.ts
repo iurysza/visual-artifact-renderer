@@ -77,7 +77,7 @@ describe("create: file-tree src resolution", () => {
     const rc = await create(specPath, { dryRun: true, serve: false, contract: contractPath, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc).toBe(0)
     // dryRun resolves src into content in-memory but does not write. Re-run
-    // without dryRun to confirm the written artifact.json carries inlined content.
+    // without dryRun to confirm the written artifact JSON carries inlined content.
     log._logs.length = 0
     const rc2 = await create(specPath, { serve: false, contract: contractPath, json: true, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc2).toBe(0)
@@ -187,7 +187,7 @@ describe("create: mermaid content validation", () => {
         title: "broken mermaid",
         description: "x",
         nodes: [
-          { type: "mermaid", props: { code: "graph TD\n  A -- B" } },
+          { type: "mermaid", props: { caption: "Broken graph", code: "graph TD\n  A -- B" } }
         ],
       }),
       "utf8",
@@ -208,7 +208,7 @@ describe("create: mermaid content validation", () => {
         title: "valid mermaid",
         description: "x",
         nodes: [
-          { type: "mermaid", props: { code: "flowchart TD\n  A --> B" } },
+          { type: "mermaid", props: { caption: "Valid graph", code: "flowchart TD\n  A --> B" } }
         ],
       }),
       "utf8",

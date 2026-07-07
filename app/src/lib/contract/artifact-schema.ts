@@ -49,6 +49,11 @@ export const ARTIFACT_SPEC_CONSTRAINTS = {
     minLength: 1,
     optional: true,
   },
+  createdAt: {
+    type: "string",
+    minLength: 1,
+    optional: true,
+  },
   layout: {
     type: {
       enum: ["default", "grid"] as const,
@@ -160,7 +165,7 @@ export type ArtifactNode =
   }
   | {
       type: "image"
-      props: { src: string; alt: string; caption?: string; aspect?: "auto" | "square" | "video" | "wide" }
+      props: { src: string; alt: string; caption?: string; aspect?: "auto" | "square" | "video" | "wide"; zoom?: boolean }
     
     metadata?: { id?: string }
   }
@@ -288,7 +293,7 @@ export type ArtifactNode =
   }
   | {
       type: "mermaid"
-      props: { code: string; title?: string; caption?: string; height?: number }
+      props: { code: string; caption: string; height?: number }
     
     metadata?: { id?: string }
   }
@@ -408,6 +413,7 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       alt: z.string(),
       caption: z.string().optional(),
       aspect: z.enum(["auto", "square", "video", "wide"]).optional(),
+      zoom: z.boolean().optional(),
     }),
     leafSchema("alert", {
       title: z.string().min(1),
@@ -532,8 +538,7 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
     }),
     leafSchema("mermaid", {
       code: z.string().min(1),
-      title: z.string().min(1).optional(),
-      caption: z.string().min(1).optional(),
+      caption: z.string().min(1),
       height: DiagramHeightSchema.optional(),
     }),
     leafSchema("svg-diagram", {
@@ -619,6 +624,7 @@ export const VisualArtifactSpecSchema = z
     slug: ArtifactSlugSchema,
     title: z.string().min(1),
     description: z.string().min(1).optional(),
+    createdAt: z.string().min(1).optional(),
     layout: z
       .object({
         type: z.enum(["default", "grid"]).optional(),

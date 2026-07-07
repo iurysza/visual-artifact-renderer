@@ -17,14 +17,14 @@ describe("validateMermaidNodes", () => {
   test("accepts a valid flowchart", async () => {
     await validateMermaidNodes(
       specWith([
-        { type: "mermaid", props: { code: "flowchart TD\n  A --> B" } },
+        { type: "mermaid", props: { caption: "Flowchart", code: "flowchart TD\n  A --> B" } },
       ]),
     )
   })
 
   test("rejects an incomplete flowchart link (A -- B)", async () => {
     const spec = specWith([
-      { type: "mermaid", props: { code: "graph TD\n  A -- B" } },
+      { type: "mermaid", props: { caption: "Broken link", code: "graph TD\n  A -- B" } },
     ])
 
     await expect(validateMermaidNodes(spec)).rejects.toThrow(ValidationError)
@@ -38,7 +38,7 @@ describe("validateMermaidNodes", () => {
 
   test("rejects an unknown diagram type", async () => {
     const spec = specWith([
-      { type: "mermaid", props: { code: "archchart TD\n  A --> B" } },
+      { type: "mermaid", props: { caption: "Unknown type", code: "archchart TD\n  A --> B" } },
     ])
 
     await expect(validateMermaidNodes(spec)).rejects.toThrow(
@@ -56,7 +56,7 @@ describe("validateMermaidNodes", () => {
               value: "a",
               label: "A",
               nodes: [
-                { type: "mermaid", props: { code: "flowchart TD\n  A -- B" } },
+                { type: "mermaid", props: { caption: "Nested broken", code: "flowchart TD\n  A -- B" } },
               ],
             },
           ],
@@ -71,9 +71,9 @@ describe("validateMermaidNodes", () => {
 
   test("stops at the first broken diagram", async () => {
     const spec = specWith([
-      { type: "mermaid", props: { code: "flowchart TD\n  A --> B" } },
-      { type: "mermaid", props: { code: "graph TD\n  A -- B" } },
-      { type: "mermaid", props: { code: "flowchart TD\n  C --> D" } },
+      { type: "mermaid", props: { caption: "First", code: "flowchart TD\n  A --> B" } },
+      { type: "mermaid", props: { caption: "Second", code: "graph TD\n  A -- B" } },
+      { type: "mermaid", props: { caption: "Third", code: "flowchart TD\n  C --> D" } },
     ])
 
     await expect(validateMermaidNodes(spec)).rejects.toThrow(

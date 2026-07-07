@@ -14,6 +14,11 @@ export interface SpecConstraints {
     minLength: number
     optional: boolean
   }
+  createdAt: {
+    type: string
+    minLength: number
+    optional: boolean
+  }
   layout: {
     type: {
       enum: string[]
@@ -51,6 +56,7 @@ export interface ArtifactSpec {
   slug: string
   title: string
   description?: string
+  createdAt?: string
   layout?: {
     type?: "default" | "grid"
     columns?: number
