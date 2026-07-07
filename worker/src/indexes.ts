@@ -13,6 +13,15 @@ export interface ProjectListing {
 
 export interface HomeIndex {
   projects: ProjectListing[]
+  recent: RecentArtifact[]
+}
+
+export interface RecentArtifact {
+  slug: string
+  title: string
+  description?: string
+  modifiedAt: string
+  project: string
 }
 
 export interface ProjectIndex {
@@ -63,7 +72,8 @@ export async function buildHomeIndex(bucket: R2Bucket): Promise<HomeIndex> {
     }))
     .sort((a, b) => b.lastModifiedAt.localeCompare(a.lastModifiedAt))
 
-  return { projects: projectList }
+  const recent = await buildRecentArtifacts(bucket)
+  return { projects: projectList, recent }
 }
 
 export async function buildProjectIndex(bucket: R2Bucket, project: string): Promise<ProjectIndex> {
@@ -94,6 +104,27 @@ export async function buildProjectIndex(bucket: R2Bucket, project: string): Prom
     project,
     artifacts: artifactList.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt)),
   }
+}
+
+async function buildRecentArtifacts(bucket: R2Bucket, limit = 6): Promise<RecentArtifact[]> {
+  const list = await bucket.list({ prefix: BUNDLE_PREFIX })
+  const artifacts: RecentArtifact[] = []
+
+  for (const object of list.objects) {
+    const parsed = parseBundleKey(object.key)
+    if (!parsed || parsed.filename !== ARTIFACT_FILE) continue
+    const title = await readArtifactTitle(bucket, parsed.project, parsed.slug)
+    artifacts.push({
+      project: parsed.project,
+      slug: parsed.slug,
+      title: title ?? parsed.slug,
+      modifiedAt: object.uploaded.toISOString(),
+    })
+  }
+
+  return artifacts
+    .sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt))
+    .slice(0, limit)
 }
 
 async function readArtifactTitle(bucket: R2Bucket, project: string, slug: string): Promise<string | undefined> {
