@@ -7,14 +7,14 @@ Visualizer artifacts are built from a constrained node catalog. Agents never wri
 ## Sources of truth
 
 - `visual-artifact contract` — get the exported runtime contract used by the CLI and agents.
-- [`skill/artifact-contract.json`](../skill/artifact-contract.json) — exported runtime contract (source of truth on disk).
-- [`skill/app/src/lib/artifact-schema.ts`](../skill/app/src/lib/artifact-schema.ts) — Zod schema and TypeScript types.
-- [`skill/app/src/lib/artifact-manifest.ts`](../skill/app/src/lib/artifact-manifest.ts) — LLM-facing descriptions, examples, and props.
+- `visual-artifact contract` — exported runtime contract bundled into the CLI.
+- [`app/src/lib/contract/artifact-schema.ts`](../app/src/lib/contract/artifact-schema.ts) — Zod schema and TypeScript types.
+- [`app/src/lib/contract/artifact-manifest.ts`](../app/src/lib/contract/artifact-manifest.ts) — LLM-facing descriptions, examples, and props.
 
 Regenerate the contract after schema or manifest changes:
 
 ```bash
-cd skill/app
+cd app
 pnpm export:contract
 pnpm verify:artifacts
 ```
@@ -202,7 +202,7 @@ The renderer serves it as:
       "props": {
         "title": "Ship checks",
         "language": "bash",
-        "code": "cd skill/app\npnpm verify:artifacts\npnpm lint\npnpm build"
+        "code": "cd app\npnpm verify:artifacts\npnpm lint\npnpm build"
       }
     }
   ]

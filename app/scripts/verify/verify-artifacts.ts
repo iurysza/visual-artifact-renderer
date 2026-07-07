@@ -79,7 +79,7 @@ async function main() {
     throw new Error(`Code block node should pass validation: ${codeBlock.error.message}`)
   }
 
-  const contractPath = path.resolve(__dirname, "..", "..", "..", "artifact-contract.json")
+  const contractPath = path.resolve(__dirname, "..", "..", "..", "cli", "assets", "contract.json")
   const contractRaw = await fs.readFile(contractPath, "utf8")
   const contract = JSON.parse(contractRaw)
 

@@ -3,7 +3,7 @@
 **Infrastructure route. Do not delete. Do not add content here.**
 
 This page is a generic client-side shell served by `cli serve`
-(`skill/cli/src/commands/serve.ts`, `serveLiveArtifactShell`) when an artifact
+(`cli/src/commands/serve.ts`, `serveLiveArtifactShell`) when an artifact
 JSON exists on disk but was created **after the last `pnpm build`** — so new
 artifacts render without rebuilding the static export.
 

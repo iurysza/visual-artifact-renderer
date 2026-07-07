@@ -7,8 +7,8 @@ import { fileURLToPath } from "node:url"
 import { create } from "./create.ts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// skill/artifact-contract.json relative to skill/cli/src/commands/
-const CONTRACT_PATH = resolve(__dirname, "../../../artifact-contract.json")
+// cli/assets/contract.json relative to cli/src/commands/
+const CONTRACT_PATH = resolve(__dirname, "../../../assets/contract.json")
 
 // Minimal logger capturing output.
 function makeLogger() {

@@ -23,16 +23,16 @@ flowchart LR
 
 The project has four runtime faces:
 
-1. **Renderer** — `skill/app`, a Next.js app mounted at `/artifacts`.
-2. **CLI** — `skill/cli`, Bun binary that validates, writes, serves, lists, opens, and bootstraps artifacts.
+1. **Renderer** — `app/`, a Next.js app mounted at `/artifacts`.
+2. **CLI** — `cli/`, Bun binary that validates, writes, serves, lists, opens, and bootstraps artifacts.
 3. **Pi extension** — `pi-extension/visual-artifact.ts`, a thin tool wrapper around the CLI.
-4. **Skill docs** — `skill/SKILL.md` and references used by agents before creating artifacts.
+4. **Skill docs** — `skill/SKILL.md` and `skill/references/` used by agents before creating artifacts.
 
 The core constraint is still the product: **JSON, not generated React/HTML/CSS.**
 
 ## 2. Major components
 
-### 2.1 Renderer (`skill/app`)
+### 2.1 Renderer (`app/`)
 
 | Component | Responsibility | Key files |
 |---|---|---|
@@ -47,7 +47,7 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | Paths | URL/data-route helpers. | `src/lib/artifacts/paths.ts` |
 | Annotations | Thread state, UI, and API client. | `src/components/annotation-provider.tsx`, `src/components/annotation-panel.tsx`, `src/components/annotation-helpers.ts`, `src/lib/artifacts/annotations.ts` |
 
-### 2.2 CLI (`skill/cli`)
+### 2.2 CLI (`cli/`)
 
 | Command | Responsibility | Key file |
 |---|---|---|
@@ -61,9 +61,9 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 
 The CLI finds the skill root by walking from the binary/script path, then by checking `VISUAL_ARTIFACT_SKILL_ROOT`, `~/.agents/skills/visual-artifact`, and `~/.pi/skills/visual-artifact`.
 
-### 2.3 Shared annotation schema (`skill/shared`)
+### 2.3 Shared annotation schema (`shared/`)
 
-The `@agents/visual-artifact-annotations` package is the single source of truth for annotation data shapes and parsers. It lives in `skill/shared` and is linked into both the renderer and the CLI. It defines:
+The `@agents/visual-artifact-annotations` package is the single source of truth for annotation data shapes and parsers. It lives in `shared/` and is linked into both the renderer and the CLI. It defines:
 
 - `AnnotationAuthor` — name and email, with a local anonymous fallback.
 - `AnnotationAnchor` — `nodeId`, `nodePath`, `nodeType`, optional `textSnippet`, and optional `x`/`y` coordinates.
@@ -87,11 +87,10 @@ The extension registers:
 
 | Artifact | Source/writer | Reader |
 |---|---|---|
-| `skill/artifact-contract.json` | `skill/app/scripts/export-contract.ts` | CLI, Pi extension through CLI, agents via `visual-artifact contract`, docs |
-| `skill/cli/src/assets/contract.json` | CLI build copies contract | Compiled CLI fallback |
-| `VisualArtifactSpecSchema` | `skill/app/src/lib/contract/artifact-schema.ts` | Renderer and `verify-artifacts` |
-| `artifactManifest` | `skill/app/src/lib/contract/artifact-manifest.ts` | Contract exporter and docs |
-| `@agents/visual-artifact-annotations` | `skill/shared/src/annotations.ts` | Renderer and CLI for annotation data |
+| `cli/assets/contract.json` | `app/scripts/contract/export-contract.ts` | Compiled CLI fallback; generated build artifact, not committed |
+| `VisualArtifactSpecSchema` | `app/src/lib/contract/artifact-schema.ts` | Renderer and `verify-artifacts` |
+| `artifactManifest` | `app/src/lib/contract/artifact-manifest.ts` | Contract exporter and docs |
+| `@agents/visual-artifact-annotations` | `shared/src/annotations.ts` | Renderer and CLI for annotation data |
 
 ## 3. Runtime flows
 
@@ -136,8 +135,8 @@ Browser opens /artifacts/<project>/<slug>/
 ### 3.4 Static export + live JSON
 
 ```text
-cd skill/app && pnpm build
-  → exports static app to skill/app/out
+cd app && pnpm build
+  → exports static app to app/out
 
 visual-artifact serve
   → serves static files from <skill-root>/app/out
@@ -212,7 +211,7 @@ Annotation mutations are validated by the shared schema, applied by the CLI, and
 ## 6. Change hotspots
 
 - New node type: schema, manifest, adapter, registry, contract.
-- URL/path change: `skill/app/src/lib/paths.ts`, CLI serve/create/open, README/docs.
+- URL/path change: `app/src/lib/artifacts/paths.ts`, CLI serve/create/open, README/docs.
 - Storage change: CLI config, serve/list/open/create, docs, extension expectations.
 - Contract change: export contract, verify artifacts, rebuild CLI if bundled fallback matters.
 - Annotation change: update shared schema, then both renderer and CLI tests; keep boundary fixtures in sync.

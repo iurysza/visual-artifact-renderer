@@ -8,7 +8,7 @@ Visualizer artifacts should feel like polished technical reports: clear hierarch
 
 ## Token source
 
-Tokens live in `skill/app/src/app/globals.css`.
+Tokens live in `app/src/app/globals.css`.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
@@ -34,10 +34,10 @@ Headings use the editorial stack for report-like weight. Code and data use mono.
 
 ## Component foundation
 
-- Next.js + React renderer in `skill/app`.
-- shadcn/Base UI primitives in `skill/app/src/components/ui`.
+- Next.js + React renderer in `app/`.
+- shadcn/Base UI primitives in `app/src/components/ui`.
 - Lucide icons via `lucide-react`.
-- Artifact primitives in `skill/app/src/components/artifact-primitives.tsx`.
+- Artifact primitives in `app/src/components/artifact-primitives.tsx`.
 - Charts via Recharts.
 - Markdown via `react-markdown` + `remark-gfm`.
 - Code highlighting via Shiki.
@@ -60,8 +60,8 @@ Headings use the editorial stack for report-like weight. Code and data use mono.
 
 ## Sources of truth
 
-- Tokens/theme: `skill/app/src/app/globals.css`
-- shadcn config: `skill/app/components.json`
-- Node catalog: `skill/app/src/lib/artifact-manifest.ts`
-- Renderer primitives: `skill/app/src/components/artifact-primitives.tsx`
+- Tokens/theme: `app/src/app/globals.css`
+- shadcn config: `app/components.json`
+- Node catalog: `app/src/lib/contract/artifact-manifest.ts`
+- Renderer primitives: `app/src/components/artifact-primitives.tsx`
 - Diagram rules: [`design-docs/diagram-sandboxing.md`](./design-docs/diagram-sandboxing.md)

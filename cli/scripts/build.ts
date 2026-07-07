@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, readFile, writeFile } from "node:fs/promises"
+import { cp, mkdir, rm, readFile, readdir } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -9,25 +9,42 @@ const ROOT = resolve(__dirname, "..")
 const DIST = resolve(ROOT, "dist")
 const ASSETS_SRC = resolve(ROOT, "src", "assets")
 
-function findSkillRoot(): string {
+async function cleanStaleBunBuildFiles(): Promise<void> {
+  const files = await readdir(ROOT)
+  const stale = files.filter((f) => f.endsWith(".bun-build"))
+  if (stale.length === 0) return
+  console.log(`[build] Cleaning ${stale.length} stale .bun-build file(s)...`)
+  await Promise.all(stale.map((f) => rm(resolve(ROOT, f), { force: true })))
+}
+
+function findProjectRoot(): string {
   let dir = resolve(ROOT, "..")
-  for (let i = 0; i < 3; i++) {
-    if (existsSync(resolve(dir, "SKILL.md"))) return dir
+  for (let i = 0; i < 4; i++) {
+    if (
+      existsSync(resolve(dir, "app")) &&
+      existsSync(resolve(dir, "cli")) &&
+      existsSync(resolve(dir, "shared")) &&
+      existsSync(resolve(dir, "skill", "SKILL.md"))
+    ) {
+      return dir
+    }
     dir = resolve(dir, "..")
   }
-  throw new Error("Could not find skill root (SKILL.md). Build must run inside the skill directory.")
+  throw new Error("Could not find project root (app/ + cli/ + shared/ + skill/SKILL.md). Build must run inside the visualizer repo.")
 }
 
 async function main(): Promise<void> {
-  const skillRoot = findSkillRoot()
-  const contractSrc = resolve(skillRoot, "artifact-contract.json")
-  const outSrc = resolve(skillRoot, "app", "out")
+  const projectRoot = findProjectRoot()
+  const contractSrc = resolve(projectRoot, "cli", "assets", "contract.json")
+  const outSrc = resolve(projectRoot, "app", "out")
 
   console.log("[build] Cleaning dist...")
   await rm(DIST, { recursive: true, force: true })
   await mkdir(DIST, { recursive: true })
 
-  console.log(`[build] Skill root: ${skillRoot}`)
+  await cleanStaleBunBuildFiles()
+
+  console.log(`[build] Project root: ${projectRoot}`)
 
   await mkdir(ASSETS_SRC, { recursive: true })
 
@@ -36,8 +53,8 @@ async function main(): Promise<void> {
     await cp(contractSrc, resolve(ASSETS_SRC, "contract.json"), { force: true })
     console.log(`[build] Bundled contract: ${contractSrc}`)
   } catch {
-    console.error(`[build] artifact-contract.json not found at ${contractSrc}`)
-    console.error("        Run `pnpm export:contract` in the skill/app directory first.")
+    console.error(`[build] contract.json not found at ${contractSrc}`)
+    console.error("        Run `pnpm export:contract` in the app/ directory first.")
     process.exit(1)
   }
 
@@ -46,7 +63,7 @@ async function main(): Promise<void> {
     console.log(`[build] Copied static export: ${outSrc}`)
   } else {
     console.warn(`[build] Static export missing: ${outSrc}`)
-    console.warn("        The CLI will serve from skill/app/out by default. Build the app with `pnpm build` in skill/app.")
+    console.warn("        The CLI will serve from app/out by default. Build the app with `pnpm build` in app/.")
   }
 
   console.log("[build] Compiling binary...")
@@ -57,6 +74,8 @@ async function main(): Promise<void> {
     })
   } catch {
     process.exit(1)
+  } finally {
+    await cleanStaleBunBuildFiles()
   }
 
   console.log(`[build] Done: ${resolve(DIST, "visual-artifact")}`)

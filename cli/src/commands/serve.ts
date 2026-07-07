@@ -34,7 +34,7 @@ const MIME_TYPES: Record<string, string> = {
 
 // Live-fallback shells: static HTML pages served when an artifact exists on disk
 // but was created after the last `pnpm build`. The route folders live at
-// skill/app/src/app/shell-artifact and shell-project; do not delete them.
+// app/src/app/shell-artifact and shell-project; do not delete them.
 const LIVE_ARTIFACT_SHELL = "/shell-artifact"
 const LIVE_PROJECT_SHELL = "/shell-project"
 
@@ -89,7 +89,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
 
   if (!(await dirExists(outDir))) {
     log.error(`Static export directory missing: ${outDir}`)
-    log.error("Build the renderer app with `pnpm build` in skill/app, or set VISUAL_ARTIFACT_OUT_DIR.")
+    log.error("Build the renderer app with `pnpm build` in app/, or set VISUAL_ARTIFACT_OUT_DIR.")
     return 1
   }
 

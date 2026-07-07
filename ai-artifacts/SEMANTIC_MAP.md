@@ -6,20 +6,20 @@
 
 | Concept | Meaning | Source |
 |---|---|---|
-| Artifact | A rendered visual page backed by one JSON spec and optional annotation threads. | `skill/artifacts/<project>/<slug>/artifact.json` + `annotations.json` |
-| Artifact bundle | The directory holding `artifact.json`, `annotations.json`, and `assets/`. | `skill/artifacts/<project>/<slug>/` |
-| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `skill/app/src/lib/contract/artifact-schema.ts` |
+| Artifact | A rendered visual page backed by one JSON spec and optional annotation threads. | `artifacts/<project>/<slug>/artifact.json` + `annotations.json` |
+| Artifact bundle | The directory holding `artifact.json`, `annotations.json`, and `assets/`. | `artifacts/<project>/<slug>/` |
+| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `app/src/lib/contract/artifact-schema.ts` |
 | Node | One typed UI unit in `nodes[]`: text, stat-card, chart, Mermaid, etc. | schema + manifest |
 | Node type | Discriminated `type` value. The LLM chooses from the contract. | `ARTIFACT_NODE_TYPES` |
 | Node identity | `metadata.id` (preferred) or deterministic node path used to anchor comments. | rendered `data-va-node-*` attributes |
 | Data key | Name under `spec.data` referenced by data-backed nodes. | `dataKey` props |
-| Adapter | Trusted React renderer for one node type. | `skill/app/src/components/adapters/*` |
-| Registry | Node dispatch table. | `skill/app/src/components/component-registry.tsx` |
-| Contract | Exported JSON handshake used by agents and CLI validation. | `skill/artifact-contract.json` |
-| Project | URL/storage namespace derived from caller git root or directory. | `skill/cli/src/util.ts` |
-| Skill root | Directory containing `SKILL.md`, `app/`, `cli/`, and `artifact-contract.json`. | `skill/cli/src/config.ts` |
-| Renderer | Next.js app that renders saved specs. | `skill/app` |
-| CLI | Bun binary that validates, writes, serves, and opens artifacts. | `skill/cli` |
+| Adapter | Trusted React renderer for one node type. | `app/src/components/adapters/*` |
+| Registry | Node dispatch table. | `app/src/components/component-registry.tsx` |
+| Contract | Exported JSON handshake used by agents and CLI validation. | `cli/assets/contract.json` (generated build artifact) |
+| Project | URL/storage namespace derived from caller git root or directory. | `cli/src/util.ts` |
+| Skill root | Directory containing `SKILL.md` and `artifacts/` when installed. | `cli/src/config.ts` |
+| Renderer | Next.js app that renders saved specs. | `app/` |
+| CLI | Bun binary that validates, writes, serves, and opens artifacts. | `cli/` |
 | Pi extension | Pi tool wrapper that delegates to the CLI. | `pi-extension/visual-artifact.ts` |
 | Annotation document | Persisted thread collection for one artifact. | `annotations.json` |
 | Annotation thread | Anchored discussion with status and messages. | `@agents/visual-artifact-annotations` |
@@ -123,15 +123,15 @@ Browser mutation
 
 | Concern | File |
 |---|---|
-| Spec shape | `skill/app/src/lib/contract/artifact-schema.ts` |
-| LLM-facing node descriptions | `skill/app/src/lib/contract/artifact-manifest.ts` |
-| Exported runtime contract | `skill/artifact-contract.json` |
-| Shared annotation schema | `skill/shared/src/annotations.ts` |
-| URL/path math | `skill/app/src/lib/artifacts/paths.ts` |
-| CLI defaults and env vars | `skill/cli/src/config.ts` |
-| Project-name derivation | `skill/cli/src/util.ts` |
-| Node dispatch | `skill/app/src/components/component-registry.tsx` |
-| Theme tokens | `skill/app/src/app/globals.css` |
+| Spec shape | `app/src/lib/contract/artifact-schema.ts` |
+| LLM-facing node descriptions | `app/src/lib/contract/artifact-manifest.ts` |
+| Exported runtime contract | `cli/assets/contract.json` (generated build artifact) |
+| Shared annotation schema | `shared/src/annotations.ts` |
+| URL/path math | `app/src/lib/artifacts/paths.ts` |
+| CLI defaults and env vars | `cli/src/config.ts` |
+| Project-name derivation | `cli/src/util.ts` |
+| Node dispatch | `app/src/components/component-registry.tsx` |
+| Theme tokens | `app/src/app/globals.css` |
 
 ## 6. Invariants
 
@@ -139,7 +139,7 @@ Browser mutation
 - Top-level `nodes` must be non-empty and max 30 in CLI validation.
 - Data-backed nodes require array datasets.
 - Contract must be regenerated after schema or manifest changes.
-- Renderer commands run from `skill/app`; CLI commands run from `skill/cli` or the installed binary.
+- Renderer commands run from `app/`; CLI commands run from `cli/` or the installed binary.
 - The `/artifacts` base path is part of the public URL contract.
 - Annotation JSON is read with the shared Zod schema in both renderer and CLI.
 - Annotation mutations are written only by the local CLI server; static hosts cannot accept browser edits.

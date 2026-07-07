@@ -86,7 +86,7 @@ Requirements: Bun, pnpm, Node.js 20+. Pi is optional; if present, bootstrap inst
 Install the agent integration from this repo:
 
 ```bash
-cd skill/cli
+cd cli
 bun install
 bun run src/main.ts bootstrap
 export PATH="$HOME/.local/bin:$PATH"
@@ -163,7 +163,7 @@ By default, artifacts are written as bundles to:
   assets/
 ```
 
-In this source repo that is `skill/artifacts/`, which is intentionally gitignored except placeholders.
+In this source repo that is `artifacts/`, which is intentionally gitignored.
 
 ## CLI
 
@@ -198,10 +198,10 @@ visual-artifact --plain create my-spec.json --no-serve
 Renderer:
 
 ```bash
-cd skill/app
+cd app
 pnpm install
 pnpm dev              # http://localhost:9999/artifacts/  (dev + HMR; live mode uses this)
-pnpm build            # static export to skill/app/out
+pnpm build            # static export to app/out
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
@@ -213,7 +213,7 @@ pnpm visual:qa        # optional adapter/styling QA
 CLI:
 
 ```bash
-cd skill/cli
+cd cli
 bun install
 bun run typecheck
 bun run build
@@ -222,11 +222,11 @@ bun run install:binary
 
 ## Contract
 
-The contract is generated from renderer source:
+The contract is generated from renderer source and bundled into the CLI:
 
-- `skill/app/src/lib/artifact-schema.ts`
-- `skill/app/src/lib/artifact-manifest.ts`
-- `skill/artifact-contract.json`
+- `app/src/lib/contract/artifact-schema.ts`
+- `app/src/lib/contract/artifact-manifest.ts`
+- `cli/assets/contract.json` (generated build artifact, not committed)
 
 Inspect the current contract from the CLI:
 
@@ -237,7 +237,7 @@ visual-artifact contract
 After schema or manifest changes:
 
 ```bash
-cd skill/app
+cd app
 pnpm export:contract
 pnpm verify:artifacts
 ```
@@ -285,30 +285,30 @@ Authors are inferred from local git config (`user.name` and `user.email`), with 
 | Variable                        | Default                               | Description                                                                  |
 | ------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
 | `VISUAL_ARTIFACT_SKILL_ROOT`    | auto-detected                         | Override skill root lookup.                                                  |
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts`              | Runtime artifact JSON store.                                                 |
-| `VISUAL_ARTIFACT_OUT_DIR`       | `~/.local/share/visual-artifact/app/out` | Static renderer export.                                                   |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` or `<skill-root>/artifacts` | Runtime artifact JSON store.                                                 |
+| `VISUAL_ARTIFACT_OUT_DIR`       | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export.                                                   |
 | `VISUAL_ARTIFACT_PORT`          | `9998`                                | Static-preview server port.                                                  |
 | `VISUAL_ARTIFACT_HOST`          | `127.0.0.1`                           | Server bind host.                                                            |
 | `VISUAL_ARTIFACT_MOUNT_PATH`    | `/artifacts`                          | Public route prefix.                                                         |
 | `VISUAL_ARTIFACT_DATA_PATH`     | `/data/artifacts`                     | JSON data endpoint under the mount path.                                     |
 | `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
 | `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
-| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<skill-root>/artifact-contract.json` | Override contract path.                                                      |
+| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path.                                                      |
 
 ## Repository layout
 
 ```text
-skill/
-  SKILL.md
-  artifact-contract.json
-  app/                 # Next.js renderer source + static export
-  artifacts/           # local generated JSON, gitignored
-  cli/                 # Bun CLI source and compiled binary
-  references/          # model-facing usage notes
+app/                   # Next.js renderer source + static export
+cli/                   # Bun CLI source and compiled binary
+shared/                # shared annotation schema
 pi-extension/
   visual-artifact.ts   # Pi tool wrapper for create_visual_artifact
+skill/                 # agent-facing skill bundle
+  SKILL.md
+  references/          # model-facing usage notes
 docs/
   nodes.md             # node catalog and composition patterns
 ai-artifacts/
   docs/                # architecture/product/reliability/design docs
+artifacts/             # local generated JSON, gitignored
 ```

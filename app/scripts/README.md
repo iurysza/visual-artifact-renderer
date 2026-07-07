@@ -1,7 +1,7 @@
 # scripts/
 
 Dev tooling for the visualizer renderer. Grouped by concern. Run from
-`skill/app/` unless noted.
+`app/` unless noted.
 
 ## contract/
 

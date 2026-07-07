@@ -23,16 +23,16 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 ## Core principles
 
 1. **JSON, not code.** The agent surface is the exported contract. Run `visual-artifact contract` to see it. Never generate React, routes, JSX, imports, CSS, or full HTML for the renderer.
-2. **The contract is the handshake.** `skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` → `skill/artifact-contract.json`. Run `pnpm export:contract` after schema or manifest changes.
+2. **The contract is the handshake.** `app/src/lib/contract/artifact-schema.ts` + `app/src/lib/contract/artifact-manifest.ts` → `cli/assets/contract.json`. Run `pnpm export:contract` after schema or manifest changes.
 3. **Validate at boundaries.** CLI/Pi tool validates before writing; renderer parses with Zod before rendering.
-4. **Single sources of truth.** URL/path math lives in `skill/app/src/lib/paths.ts`. Default artifact storage is `<skill-root>/artifacts/<project>/<slug>.json`.
+4. **Single sources of truth.** URL/path math lives in `app/src/lib/artifacts/paths.ts`. Default artifact storage is `<project-root>/artifacts/<project>/<slug>.json` (or `<skill-root>/artifacts/...` when installed).
 5. **Small, well-named files.** Prefer scoped adapter files over monolithic registries.
 6. **Types are documentation.** Push semantic meaning into names. Use Zod to make illegal specs unrepresentable.
 
 ## Before committing renderer/schema changes
 
 ```bash
-cd skill/app
+cd app
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
@@ -54,26 +54,26 @@ Run `pnpm visual:qa` if you touched adapters or styling.
 `pnpm dev` and `visual-artifact serve` used to share `:9999` and collide. They are now split: dev/HMR on `:9999`, static preview on `:9998`. Live mode needs HMR, so it always targets `:9999` (`pnpm dev`).
 
 ```bash
-cd skill/app
+cd app
 pnpm dev          # http://localhost:9999/artifacts  (dev + HMR + live mode)
 
 cd ../cli
 bun run src/main.ts serve --no-open  # http://localhost:9998/artifacts  (static preview + live JSON)
 ```
 
-The CLI is self-contained under `skill/cli`. `visual-artifact bootstrap` builds `skill/app`, compiles the CLI, and symlinks the binary into `~/.pi/bin/`.
+The CLI is self-contained under `cli/`. `visual-artifact bootstrap` builds `app/`, compiles the CLI, and symlinks the binary into `~/.pi/bin/`.
 
 ## After landing new features
 
 New components, schema changes, or CLI behavior changes need to be rebuilt and reinstalled before the Pi extension and CLI reflect them. After the build checks pass, prompt the user to run:
 
 ```bash
-cd skill/app
+cd app
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
 pnpm build
-cd ../..
+cd ..
 visual-artifact bootstrap
 ```
 
@@ -115,7 +115,7 @@ Run inside herdr (`HERDR_ENV=1`). Each long-running process gets its own split p
 1. Split a pane for the dev server, run it, and wait until it is ready:
    ```bash
    DEV_PANE=$(herdr pane split "$MY_PANE" --direction right --no-focus | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
-   herdr pane run "$DEV_PANE" "cd skill/app && pnpm dev"
+   herdr pane run "$DEV_PANE" "cd app && pnpm dev"
    herdr wait output "$DEV_PANE" --match "ready|Local:.*9999" --regex --timeout 30000
    ```
 
@@ -157,7 +157,7 @@ Re-read pane ids with `herdr pane list` before closing if any split happened aft
 ## Decision defaults
 
 - **Adding a node type?** Follow [`ai-artifacts/docs/design-docs/node-design-principles.md`](./ai-artifacts/docs/design-docs/node-design-principles.md), then update schema, manifest, adapter, registry, and contract.
-- **Changing paths?** Update `skill/app/src/lib/paths.ts` and check dev + CLI static-server modes.
+- **Changing paths?** Update `app/src/lib/artifacts/paths.ts` and check dev + CLI static-server modes.
 - **Changing styles/theme?** Read [`ai-artifacts/docs/DESIGN.md`](./ai-artifacts/docs/DESIGN.md) and [`ai-artifacts/docs/design-docs/theme-system.md`](./ai-artifacts/docs/design-docs/theme-system.md).
 - **Adding diagram logic?** Respect [`ai-artifacts/docs/design-docs/diagram-sandboxing.md`](./ai-artifacts/docs/design-docs/diagram-sandboxing.md) and test Mermaid separately.
 - **Unsure where something belongs?** Read [`ai-artifacts/docs/index.md`](./ai-artifacts/docs/index.md) first.

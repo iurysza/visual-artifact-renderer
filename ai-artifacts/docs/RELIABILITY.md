@@ -4,9 +4,9 @@
 
 ## Validation layers
 
-1. **CLI pre-write** — `skill/cli/src/validate.ts` validates against the exported contract before writing.
-2. **Renderer post-read** — `skill/app/src/lib/artifact-schema.ts` parses with Zod before render.
-3. **Contract sync** — `skill/app/scripts/verify-artifacts.ts` checks schema, manifest, saved artifacts, and exported contract.
+1. **CLI pre-write** — `cli/src/validate.ts` validates against the exported contract before writing.
+2. **Renderer post-read** — `app/src/lib/contract/artifact-schema.ts` parses with Zod before render.
+3. **Contract sync** — `app/scripts/verify-artifacts.ts` checks schema, manifest, saved artifacts, and exported contract.
 4. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates to the CLI instead of duplicating validation.
 
 ## Core checks
@@ -14,7 +14,7 @@
 Renderer/schema changes:
 
 ```bash
-cd skill/app
+cd app
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
@@ -24,7 +24,7 @@ pnpm build
 CLI changes:
 
 ```bash
-cd skill/cli
+cd cli
 bun install
 bun test
 bun run typecheck
@@ -44,9 +44,9 @@ visual-artifact create spec.json --no-serve
 | Command | Checks |
 |---|---|
 | `pnpm lint` | ESLint over renderer source. |
-| `pnpm export:contract` | Regenerates `skill/artifact-contract.json` from schema + manifest. |
+| `pnpm export:contract` | Regenerates `cli/assets/contract.json` from schema + manifest. |
 | `pnpm verify:artifacts` | Saved specs parse, filenames match slugs, manifest/contract node sets match. |
-| `pnpm build` | Next.js static export to `skill/app/out`. |
+| `pnpm build` | Next.js static export to `app/out`. |
 | `bun test` | CLI unit tests for path/scan/create/serve commands. |
 | `bun run typecheck` | CLI TypeScript compile check. |
 | `bun run build` | Bundles contract/static assets and compiles CLI binary. |
@@ -56,7 +56,7 @@ visual-artifact create spec.json --no-serve
 ## Visual QA
 
 ```bash
-cd skill/app
+cd app
 pnpm visual:qa
 ```
 
@@ -65,7 +65,7 @@ Use after adapter, layout, theme, or typography changes. It captures light/dark/
 ## Mermaid checks
 
 ```bash
-cd skill/app
+cd app
 pnpm validate:mermaid path/to/diagram.mmd
 pnpm test:mermaid-validator
 ```

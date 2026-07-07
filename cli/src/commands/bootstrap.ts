@@ -3,7 +3,7 @@ import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { findSkillRoot } from "../config.ts"
+import { findProjectRoot } from "../config.ts"
 import type { Logger } from "../logger.ts"
 
 function commandExists(cmd: string): boolean {
@@ -15,26 +15,24 @@ function commandExists(cmd: string): boolean {
   }
 }
 
-function isDevSkillRoot(path: string): boolean {
+function isProjectRoot(path: string): boolean {
   return (
-    existsSync(resolve(path, "SKILL.md")) &&
     existsSync(resolve(path, "app")) &&
     existsSync(resolve(path, "cli")) &&
-    existsSync(resolve(path, "shared"))
+    existsSync(resolve(path, "shared")) &&
+    existsSync(resolve(path, "skill", "SKILL.md"))
   )
 }
 
-function findDevSkillRoot(): string | null {
-  // Search upward from cwd and from this script's location. At each ancestor,
-  // also check a `skill/` child directory, since the visualizer repo keeps the
-  // skill source at `<repo>/skill/`.
+function findProjectRootFromScript(): string | null {
+  // Search upward from cwd and from this script's location for the development
+  // source tree. The runtime packages (app, cli, shared) live at the repo root;
+  // skill metadata lives under `skill/`.
   const startingPoints = [process.cwd(), dirname(fileURLToPath(import.meta.url))]
   for (const start of startingPoints) {
     let dir = start
     for (let i = 0; i < 6; i++) {
-      if (isDevSkillRoot(dir)) return dir
-      const skillChild = resolve(dir, "skill")
-      if (isDevSkillRoot(skillChild)) return skillChild
+      if (isProjectRoot(dir)) return dir
       const parent = resolve(dir, "..")
       if (parent === dir) break
       dir = parent
@@ -55,15 +53,15 @@ function run(cmd: string, args: string[], cwd: string): number {
 export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promise<number> {
   // Bootstrap must build from the development source tree, not from the
   // installed skill target which only contains SKILL.md + artifacts/.
-  const skillRoot = findDevSkillRoot() ?? findSkillRoot()
-  if (!skillRoot || !isDevSkillRoot(skillRoot)) {
-    log.error("Could not find visual-artifact development source (SKILL.md + app/ + cli/ + shared/). Run this command from inside the visualizer repo.")
+  const projectRoot = findProjectRootFromScript()
+  if (!projectRoot) {
+    log.error("Could not find visual-artifact development source (app/ + cli/ + shared/ + skill/SKILL.md). Run this command from inside the visualizer repo.")
     return 1
   }
 
-  const appDir = resolve(skillRoot, "app")
-  const cliDir = resolve(skillRoot, "cli")
-  const sharedDir = resolve(skillRoot, "shared")
+  const appDir = resolve(projectRoot, "app")
+  const cliDir = resolve(projectRoot, "cli")
+  const sharedDir = resolve(projectRoot, "shared")
   const outDir = resolve(appDir, "out")
   const distBinary = resolve(cliDir, "dist", "visual-artifact")
   const home = homedir()
@@ -83,7 +81,7 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
 
   if (opts.dryRun) {
     log.output({
-      skillRoot,
+      projectRoot,
       hasBun,
       hasPnpm,
       appOutExists,
@@ -93,11 +91,12 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
       piDetected,
       extensionInstalled,
       plan: [
-        hasPnpm ? "pnpm install in skill/app" : "skip: pnpm not found",
-        hasPnpm ? "pnpm build in skill/app" : "skip: pnpm not found",
-        hasBun ? "bun install in skill/cli" : "skip: bun not found",
-        hasBun ? "bun run build in skill/cli" : "skip: bun not found",
-        hasBun ? "bun run install:binary in skill/cli (CLI to ~/.local/bin, skill to ~/.agents/skills, Pi extension if Pi is installed)" : "skip: bun not found",
+        hasPnpm ? "pnpm install in app" : "skip: pnpm not found",
+        hasPnpm ? "pnpm build in app" : "skip: pnpm not found",
+        hasBun ? "bun install in shared" : "skip: bun not found",
+        hasBun ? "bun install in cli" : "skip: bun not found",
+        hasBun ? "bun run build in cli" : "skip: bun not found",
+        hasBun ? "bun run install:binary in cli (CLI to ~/.local/bin, skill to ~/.agents/skills, Pi extension if Pi is installed)" : "skip: bun not found",
       ],
     })
     return hasBun && hasPnpm ? 0 : 1
@@ -112,7 +111,7 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
     return 1
   }
 
-  log.info(`Bootstrapping visual-artifact from ${skillRoot}`)
+  log.info(`Bootstrapping visual-artifact from ${projectRoot}`)
 
   let rc = run("pnpm", ["install"], appDir)
   if (rc !== 0) {

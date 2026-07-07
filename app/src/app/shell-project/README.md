@@ -3,7 +3,7 @@
 **Infrastructure route. Do not delete. Do not add content here.**
 
 This page is a generic client-side shell served by `cli serve`
-(`skill/cli/src/commands/serve.ts`, `serveLiveProjectIndexShell`) when a
+(`cli/src/commands/serve.ts`, `serveLiveProjectIndexShell`) when a
 project exists on disk but was created **after the last `pnpm build`** — so
 new project indexes render without rebuilding the static export.
 

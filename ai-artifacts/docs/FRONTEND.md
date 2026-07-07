@@ -11,25 +11,25 @@
 - shadcn/Base UI primitives.
 - Recharts, Mermaid, Shiki, `react-markdown`, `remark-gfm`, `date-fns`.
 
-All frontend source lives under `skill/app`.
+All frontend source lives under `app/`.
 
 ## Routes
 
-`skill/app/next.config.ts` sets `basePath: "/artifacts"`.
+`app/next.config.ts` sets `basePath: "/artifacts"`.
 
 | Public route | File | Purpose |
 |---|---|---|
-| `/artifacts` | `skill/app/src/app/page.tsx` | home index |
-| `/artifacts/<project>` | `skill/app/src/app/[project]/page.tsx` | project index |
-| `/artifacts/<project>/<slug>` | `skill/app/src/app/[project]/[slug]/page.tsx` | artifact shell |
-| `/artifacts/shell-artifact` | `skill/app/src/app/shell-artifact/page.tsx` | post-build artifact fallback shell |
-| `/artifacts/shell-project` | `skill/app/src/app/shell-project/page.tsx` | post-build project fallback shell |
+| `/artifacts` | `app/src/app/page.tsx` | home index |
+| `/artifacts/<project>` | `app/src/app/[project]/page.tsx` | project index |
+| `/artifacts/<project>/<slug>` | `app/src/app/[project]/[slug]/page.tsx` | artifact shell |
+| `/artifacts/shell-artifact` | `app/src/app/shell-artifact/page.tsx` | post-build artifact fallback shell |
+| `/artifacts/shell-project` | `app/src/app/shell-project/page.tsx` | post-build project fallback shell |
 
 Artifact JSON is fetched from `/artifacts/data/artifacts/<project>/<slug>/artifact.json` and annotation JSON from `/artifacts/data/artifacts/<project>/<slug>/annotations.json`. Mutations are posted to `/artifacts/api/annotations/<project>/<slug>`.
 
 ## Rendering flow
 
-1. CLI server serves a static shell from `skill/app/out`.
+1. CLI server serves a static shell from `app/out`.
 2. `ClientArtifactLoader` parses `{ project, slug }` from `window.location`.
 3. It fetches `/artifacts/data/artifacts/<project>/<slug>/artifact.json`.
 4. `VisualArtifactSpecSchema` parses the payload.
@@ -115,14 +115,14 @@ Comment and Colab modes both support touch devices, but node selection is more i
 
 ## Adding a node type
 
-1. Add TS type + Zod schema branch in `skill/app/src/lib/contract/artifact-schema.ts`.
-2. Add manifest entry in `skill/app/src/lib/contract/artifact-manifest.ts`.
-3. Implement adapter in `skill/app/src/components/adapters/`.
-4. Register it in `skill/app/src/components/component-registry.tsx`.
+1. Add TS type + Zod schema branch in `app/src/lib/contract/artifact-schema.ts`.
+2. Add manifest entry in `app/src/lib/contract/artifact-manifest.ts`.
+3. Implement adapter in `app/src/components/adapters/`.
+4. Register it in `app/src/components/component-registry.tsx`.
 5. Run:
 
 ```bash
-cd skill/app
+cd app
 pnpm export:contract
 pnpm verify:artifacts
 pnpm lint
@@ -132,20 +132,20 @@ pnpm build
 If the compiled CLI needs the new fallback contract, also run:
 
 ```bash
-cd skill/cli
+cd cli
 bun run build
 ```
 
 ## Theming
 
 - `next-themes` toggles `.dark` on `html`.
-- CSS variables live in `skill/app/src/app/globals.css`.
+- CSS variables live in `app/src/app/globals.css`.
 - Tailwind v4 maps tokens through `@theme inline`.
 - `svg-diagram` iframes do not inherit parent classes; they need their own theme script.
 
 ## Path conventions
 
-All app path math belongs in `skill/app/src/lib/paths.ts`.
+All app path math belongs in `app/src/lib/paths.ts`.
 
 Do not hand-assemble artifact URLs in components. Import helpers like:
 
@@ -157,12 +157,12 @@ Do not hand-assemble artifact URLs in components. Import helpers like:
 - `artifactParamsFromPath`
 - `projectParamsFromPath`
 
-CLI path/base URL logic lives in `skill/cli/src/config.ts` and command files.
+CLI path/base URL logic lives in `cli/src/config.ts` and command files.
 
 ## Static export + live reload
 
 ```bash
-cd skill/app
+cd app
 pnpm build
 
 cd ../cli

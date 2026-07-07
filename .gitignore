@@ -2,9 +2,9 @@
 
 # dependencies
 /node_modules
-/skill/app/node_modules
-/skill/cli/node_modules
-/skill/shared/node_modules
+/app/node_modules
+/cli/node_modules
+/shared/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -19,12 +19,14 @@
 # next.js
 /.next/
 /out/
-/skill/app/.next/
-/skill/app/out/
+/app/.next/
+/app/out/
 
 # production
 /build
-/skill/app/build
+/app/build
+/cli/dist/
+/shared/dist/
 
 # misc
 .DS_Store
@@ -44,17 +46,20 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-/skill/app/next-env.d.ts
+/app/next-env.d.ts
 next-env.d.ts
 
 # generated / local artifacts
 .pi/handoffs/
+.pi/skills-lock.json
 ai-artifacts/exec-plans/
 ai-artifacts/generated/
 ai-artifacts/goals/
 ai-artifacts/mermaid-graph-debug/
 ai-artifacts/mermaid-validator/
 ai-artifacts/skills/
+ai-artifacts/subagent-runs/
+ai-artifacts/reviews/
 ai-artifacts/visual-qa/
 ai-artifacts/agent-md-creation.md
 ai-artifacts/architecture-review-handoff.md

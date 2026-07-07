@@ -26,9 +26,18 @@ function getEntryPath(): string {
 }
 
 function isSkillRoot(path: string): boolean {
-  // The installed skill target only contains SKILL.md and artifacts/; dev roots
-  // also have app/, cli/, shared/, etc. The single invariant is SKILL.md.
+  // The installed skill target only contains SKILL.md and artifacts/.
   return existsSync(resolve(path, "SKILL.md"))
+}
+
+function isProjectRoot(path: string): boolean {
+  // Development source tree: runtime packages at the root plus skill metadata.
+  return (
+    existsSync(resolve(path, "app")) &&
+    existsSync(resolve(path, "cli")) &&
+    existsSync(resolve(path, "shared")) &&
+    existsSync(resolve(path, "skill", "SKILL.md"))
+  )
 }
 
 export function findSkillRoot(): string | null {
@@ -59,7 +68,35 @@ export function findSkillRoot(): string | null {
   return null
 }
 
+export function findProjectRoot(): string | null {
+  // Search upward from the binary/script path for a development source tree.
+  try {
+    const binaryPath = realpathSync(getEntryPath())
+    let dir = dirname(binaryPath)
+    for (let i = 0; i < 6; i++) {
+      if (isProjectRoot(dir)) return dir
+      const parent = dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+  } catch {}
+
+  // Also check cwd and the optional env override.
+  const candidates = [process.cwd(), process.env.VISUAL_ARTIFACT_SKILL_ROOT].filter(
+    (path): path is string => Boolean(path),
+  )
+  for (const candidate of candidates) {
+    if (isProjectRoot(candidate)) return candidate
+  }
+
+  return null
+}
+
 export function defaultArtifactsDir(): string {
+  const envDir = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
+  if (envDir) return resolve(envDir)
+  const projectRoot = findProjectRoot()
+  if (projectRoot) return resolve(projectRoot, "artifacts")
   const skillRoot = findSkillRoot()
   if (skillRoot) return resolve(skillRoot, "artifacts")
   return resolve(homedir(), ".pi", "skills", "visual-artifact", "artifacts")
@@ -70,18 +107,20 @@ export function defaultOutDir(): string {
   if (envDir) return resolve(envDir)
   const dataDir = resolve(homedir(), ".local", "share", "visual-artifact", "app", "out")
   if (existsSync(dataDir)) return dataDir
-  const skillRoot = findSkillRoot()
-  if (skillRoot) return resolve(skillRoot, "app", "out")
+  const projectRoot = findProjectRoot()
+  if (projectRoot) return resolve(projectRoot, "app", "out")
   return dataDir
 }
 
 export function defaultContractPath(): string | undefined {
-  const skillRoot = findSkillRoot()
-  if (!skillRoot) return undefined
-  const contractPath = resolve(skillRoot, "artifact-contract.json")
+  const projectRoot = findProjectRoot()
+  if (projectRoot) {
+    const contractPath = resolve(projectRoot, "cli", "assets", "contract.json")
+    if (existsSync(contractPath)) return contractPath
+  }
   // In the installed skill target the contract is not shipped; the CLI binary
-  // bundles its own copy. Use a generated skill-root contract only when present.
-  return existsSync(contractPath) ? contractPath : undefined
+  // bundles its own copy.
+  return undefined
 }
 
 export function expandHome(path: string): string {
