@@ -7,7 +7,6 @@
       "include-v-in-tag": true,
       "extra-files": [
         "cli/package.json",
-        "cli/src/version.ts",
         "shared/package.json",
         "app/package.json"
       ]

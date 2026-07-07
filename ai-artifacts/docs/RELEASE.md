@@ -1,6 +1,6 @@
 # Release process
 
-Releases are automated with [release-please](https://github.com/googleapis/release-please). Merging a release PR bumps the version, writes `CHANGELOG.md`, creates a git tag, and publishes a GitHub Release. A second workflow then builds cross-platform binaries and uploads them to that release.
+Releases are automated with [release-please](https://github.com/googleapis/release-please). Root `package.json` is the version source of truth; `cli/src/version.ts` reads from it at runtime. Merging a release PR bumps the version, writes `CHANGELOG.md`, creates a git tag, and publishes a GitHub Release. A second workflow then builds cross-platform binaries and uploads them to that release.
 
 ## Setup (one-time)
 
