@@ -102,9 +102,11 @@ async function handlePageOrAssetRequest(request: Request, env: Env, relative: st
     return env.ASSETS.fetch(newShellRequest(request, "/"))
   }
 
-  // Static assets under _next, favicon, etc.
+  // Static assets under _next, favicon, etc. Next.js cloud builds are compiled
+  // with basePath "/artifacts", so asset links arrive prefixed with /artifacts
+  // even though the Worker serves static assets from root. Rewrite to root.
   if (segments[0].startsWith("_") || segments[0].includes(".") || segments[0] === "404") {
-    return env.ASSETS.fetch(request)
+    return env.ASSETS.fetch(stripArtifactsPrefix(request))
   }
 
   // Project index shell
@@ -126,6 +128,14 @@ function newShellRequest(request: Request, shellPath: string): Request {
   // Static assets are served from the Worker's root, not under /artifacts.
   const shellUrl = new URL(shellPath, `${url.protocol}//${url.host}`)
   return new Request(shellUrl, request)
+}
+
+function stripArtifactsPrefix(request: Request): Request {
+  const url = new URL(request.url)
+  if (url.pathname.startsWith(`${BASE_PATH}/`)) {
+    url.pathname = url.pathname.slice(BASE_PATH.length)
+  }
+  return new Request(url, request)
 }
 
 async function getR2Object(bucket: R2Bucket, key: string): Promise<Response> {
