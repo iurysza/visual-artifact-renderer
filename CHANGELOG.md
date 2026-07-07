@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/iurysza/visual-artifact-renderer/compare/v0.1.2...v0.1.3) (2026-07-07)
+
+
+### Bug Fixes
+
+* **data-adapters:** break long URLs and paths on mobile ([ba1a368](https://github.com/iurysza/visual-artifact-renderer/commit/ba1a368961907f6e170aef498af4850fe3c9977a))
+
 ## [0.1.2](https://github.com/iurysza/visual-artifact-renderer/compare/v0.1.1...v0.1.2) (2026-07-07)
 
 
