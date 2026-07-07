@@ -1,0 +1,8 @@
+{
+  "version": "0.1.0-local",
+  "released_at": "2026-07-07T11:05:06.330Z",
+  "repository": "https://github.com/iurysza/visual-artifact-renderer",
+  "assets": {
+    "macos-aarch64": "http://localhost:8767/visual-artifact-macos-aarch64.tar.gz"
+  }
+}
