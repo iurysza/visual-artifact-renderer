@@ -1,0 +1,7 @@
+{
+  "name": "visual-artifact-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JSON-to-UI runtime for rendered artifacts",
+  "license": "MIT"
+}

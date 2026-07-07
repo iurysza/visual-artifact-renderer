@@ -15,8 +15,9 @@ release-please needs a PAT because the default `GITHUB_TOKEN` cannot trigger dow
 
 2. **Wait for the release PR.**
    The `Release Please` workflow opens a release PR that:
-   - Bumps `cli/package.json`, `cli/src/version.ts`, and `shared/package.json`
-   - Updates `cli/CHANGELOG.md`
+   - Bumps root `package.json`
+   - Bumps `cli/package.json`, `cli/src/version.ts`, `shared/package.json`, and `app/package.json`
+   - Updates `CHANGELOG.md`
    - Updates `.release-please-manifest.json`
 
 3. **Merge the release PR.**
