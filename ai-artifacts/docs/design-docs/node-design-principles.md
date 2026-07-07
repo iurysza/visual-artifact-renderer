@@ -34,7 +34,7 @@
 - [ ] Registered in `skill/app/src/components/component-registry.tsx`.
 - [ ] Contract regenerated with `cd skill/app && pnpm export:contract`.
 - [ ] Verification passes with `pnpm verify:artifacts`, `pnpm lint`, and `pnpm build`.
-- [ ] `docs/nodes.md` updated if the public catalog changes.
+- [ ] `ai-artifacts/docs/nodes.md` updated if the public catalog changes.
 
 ## Design smell test
 

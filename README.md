@@ -242,7 +242,7 @@ pnpm export:contract
 pnpm verify:artifacts
 ```
 
-Node reference: [`docs/nodes.md`](./docs/nodes.md).
+Node reference: [`ai-artifacts/docs/nodes.md`](./ai-artifacts/docs/nodes.md).
 
 ## Annotations
 
@@ -306,9 +306,9 @@ pi-extension/
 skill/                 # agent-facing skill bundle
   SKILL.md
   references/          # model-facing usage notes
-docs/
-  nodes.md             # node catalog and composition patterns
 ai-artifacts/
-  docs/                # architecture/product/reliability/design docs
+  docs/                # architecture/product/reliability/design docs + node catalog
+    nodes.md           # node catalog and composition patterns
+    decisions/         # ADRs
 artifacts/             # local generated JSON, gitignored
 ```

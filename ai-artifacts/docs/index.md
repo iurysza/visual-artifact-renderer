@@ -22,7 +22,7 @@
 | [`design-docs/`](./design-docs/index.md) | Deep-dives on nodes, themes, diagrams. | schema, adapters, CSS |
 | [`product-specs/`](./product-specs/index.md) | User journey and node catalog rationale. | README, contract, skill |
 | [`references/`](./references/) | LLM-facing extracts and historical notes. | contract, scripts |
-| [`../../docs/nodes.md`](../../docs/nodes.md) | Public node reference and composition patterns. | `visual-artifact contract` / `cli/assets/contract.json` |
+| [`../../ai-artifacts/docs/nodes.md`](../../ai-artifacts/docs/nodes.md) | Public node reference and composition patterns. | `visual-artifact contract` / `cli/assets/contract.json` |
 
 ## Current architecture facts
 

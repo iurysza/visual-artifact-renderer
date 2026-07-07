@@ -129,7 +129,7 @@ Prefer semantic nodes over generic containers:
 | Secondary detail | `accordion` |
 | Alternate views | `tabs` |
 
-Full reference: `docs/nodes.md` in the source repo, or `visual-artifact contract`.
+Full reference: `ai-artifacts/docs/nodes.md` in the source repo, or `visual-artifact contract`.
 
 ## Design rules
 

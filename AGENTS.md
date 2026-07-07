@@ -18,7 +18,7 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 | Testing and verification | [`ai-artifacts/docs/RELIABILITY.md`](./ai-artifacts/docs/RELIABILITY.md) |
 | User-facing setup and usage | [`README.md`](./README.md) |
 | Model-facing routing and tool usage | [`skill/SKILL.md`](./skill/SKILL.md) |
-| Node type reference | [`docs/nodes.md`](./docs/nodes.md) |
+| Node type reference | [`ai-artifacts/docs/nodes.md`](./ai-artifacts/docs/nodes.md) |
 
 ## Core principles
 
