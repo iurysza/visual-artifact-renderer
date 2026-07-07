@@ -137,7 +137,8 @@ describe("Worker routes", () => {
     const env = envWithObjects(new Map())
     const response = await handleRequest(new Request("https://example.com/api/annotations/author"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual(LOCAL_ANONYMOUS_AUTHOR)
+    const body = (await response.json()) as { name: string; email: string }
+    expect(body).toEqual(LOCAL_ANONYMOUS_AUTHOR)
   })
 
   test("persists annotation mutations", async () => {
@@ -171,7 +172,7 @@ describe("Worker routes", () => {
       {} as ExecutionContext,
     )
     expect(response.status).toBe(200)
-    const body = await response.json()
+    const body = (await response.json()) as { threads: Array<{ messages: Array<{ body: string }> }> }
     expect(body.threads).toHaveLength(1)
     expect(body.threads[0].messages[0].body).toBe("first comment")
 
