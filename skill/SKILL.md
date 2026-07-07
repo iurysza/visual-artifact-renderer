@@ -135,7 +135,7 @@ Default bucket name is `visual-artifact-renderer`; override with `--bucket <name
 
 For local development these may be placed in a `.env` file in the working directory; the CLI loads it automatically without overriding shell variables. `.env` is gitignored by default.
 
-Hosted annotations are read-only in MVP; do not rely on remote comment persistence.
+Published artifacts support remote comment persistence: the Worker stores annotation mutations in R2. The author is shown as a local fallback because the Worker has no access to the viewer's git identity.
 
 ## Node choice
 

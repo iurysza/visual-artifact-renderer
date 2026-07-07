@@ -15,13 +15,13 @@ The missing piece is product setup. The design must work for any user with their
 - Let CI and power users configure setup non-interactively.
 - Make `visual-artifact create --publish --json` return a remote shareable URL.
 - Keep local create/serve behavior unchanged.
-- Keep hosted annotations read-only for MVP.
+- Support writable hosted annotations persisted to R2.
 
 **Non-Goals:**
 
 - Managed Visualizer hosting.
 - Billing, accounts, auth, abuse handling, or a central service we operate.
-- Remote writable annotations in MVP.
+
 - Multi-provider publishing in the first pass.
 - Implementing Cloudflare publishing as part of this OPSX setup task.
 
@@ -57,11 +57,11 @@ The CLI uploads `artifact.json`, `annotations.json`, and `assets/*` directly to 
 
 Alternative considered: upload through a Worker endpoint. That can come later, but it adds auth and body handling before we need it.
 
-### Decision: hosted annotations are read-only in MVP
+### Decision: hosted annotations are writable in MVP
 
-Remote pages can load `annotations.json`, but mutation endpoints return `501 Not Implemented`. This avoids pretending browser comments were saved when no writable backend exists.
+Remote pages can load `annotations.json` and post mutations to `/api/annotations/<project>/<slug>`. The Worker reads the existing document, applies the mutations, and writes the updated document back to R2. Author identity falls back to a local anonymous author because the Worker has no access to the viewer's git config.
 
-Alternative considered: add remote writable annotations immediately. That needs auth, conflict handling, and write APIs; not MVP.
+Alternative considered: keep hosted annotations read-only. That makes shared artifacts second-class for collaboration; writable comments are small enough to implement safely in MVP using R2 put and the existing mutation schema.
 
 ## Risks / Trade-offs
 

@@ -35,7 +35,7 @@
 - [x] 5.2 Add `worker/wrangler.jsonc` with Static Assets and R2 bindings.
 - [x] 5.3 Add Worker route handling for artifact JSON, annotations JSON, assets, home index, and project indexes.
 - [x] 5.4 Generate indexes from R2 `list()` for MVP.
-- [x] 5.5 Return `501 Not Implemented` for hosted annotation mutations.
+- [x] 5.5 Persist hosted annotation mutations to R2 and return the updated document.
 - [x] 5.6 Add route validation tests for project, slug, and asset paths.
 
 ## 6. R2 publisher

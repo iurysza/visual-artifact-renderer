@@ -94,12 +94,21 @@ The CLI SHALL avoid writing credentials into repository files or logs.
 - **WHEN** required secret environment variables are present
 - **THEN** setup and publish use them without persisting them.
 
-### Requirement: Read-only hosted annotations in MVP
+### Requirement: Writable hosted annotations
 
-Hosted artifacts SHALL serve annotation documents but SHALL NOT allow remote annotation mutation in MVP.
+Hosted artifacts SHALL serve annotation documents and SHALL accept remote annotation mutations persisted to R2.
 
 #### Scenario: mutation attempted on hosted artifact
 
-- **WHEN** the browser posts to `/artifacts/api/annotations/<project>/<slug>` for a hosted artifact
-- **THEN** the Worker returns `501 Not Implemented`
-- **AND** the UI does not claim the comment was saved.
+- **WHEN** the browser posts a valid mutation array to `/artifacts/api/annotations/<project>/<slug>` for a hosted artifact
+- **THEN** the Worker reads the existing annotation document from R2
+- **AND** applies the mutations sequentially
+- **AND** writes the updated document back to R2
+- **AND** returns the updated annotation document
+- **AND** the UI reflects the saved comment.
+
+#### Scenario: author endpoint on hosted artifact
+
+- **WHEN** the browser requests `/artifacts/api/annotations/author`
+- **THEN** the Worker returns the local fallback author
+- **AND** the UI labels comments as local fallback.

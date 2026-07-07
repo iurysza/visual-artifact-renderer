@@ -273,7 +273,7 @@ cd worker
 bun run smoke:deploy https://<worker>.<subdomain>.workers.dev
 ```
 
-Hosted annotations are read-only in MVP; the Worker returns `501 Not Implemented` for annotation mutation posts.
+Comments posted on a published artifact are persisted by the Worker to R2, so shared URLs support threaded annotations. The author is labeled as a local fallback because the Worker has no access to the viewer's git identity.
 
 To build the renderer for Cloudflare, use `cd app && pnpm build:cloud`. This exports only shared shells and runs a leak verifier so no local artifact pages are baked into the deploy.
 
