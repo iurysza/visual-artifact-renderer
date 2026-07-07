@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.2.0...v0.3.0) (2026-07-07)
+
+
+### Features
+
+* **header/image/mermaid:** createdAt, zoom modal, caption redesign ([c8de872](https://github.com/iurysza/visual-artifact-renderer/commit/c8de872f79dcbb8132ffdd5d9edf1f7375e5253a))
+* **header/image/mermaid:** createdAt, zoom modal, caption redesign ([069852d](https://github.com/iurysza/visual-artifact-renderer/commit/069852da3dd02b43b52666857d5c85e0a7402333))
+
 ## [0.2.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.1.3...v0.2.0) (2026-07-07)
 
 
