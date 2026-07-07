@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.1.3...v0.2.0) (2026-07-07)
+
+
+### Features
+
+* **cloudflare:** BYO publishing with remote annotation persistence ([#4](https://github.com/iurysza/visual-artifact-renderer/issues/4)) ([bb4df35](https://github.com/iurysza/visual-artifact-renderer/commit/bb4df35a5f23a28ea23f8517d030d63cc00c0257))
+
 ## [0.1.3](https://github.com/iurysza/visual-artifact-renderer/compare/v0.1.2...v0.1.3) (2026-07-07)
 
 
