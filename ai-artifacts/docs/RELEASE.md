@@ -1,24 +1,29 @@
 # Release process
 
-Releases are fully automated via GitHub Actions. Pushing a `v*` tag builds cross-platform binaries and publishes them to GitHub Releases.
+Releases are automated with [release-please](https://github.com/googleapis/release-please). Merging a release PR bumps the version, writes `CHANGELOG.md`, creates a git tag, and publishes a GitHub Release. A second workflow then builds cross-platform binaries and uploads them to that release.
+
+## Setup (one-time)
+
+Create a fine-grained Personal Access Token (PAT) with `contents:write` and `pull-requests:write` permissions for this repository, then add it as the repository secret `RELEASE_PLEASE_TOKEN`.
+
+release-please needs a PAT because the default `GITHUB_TOKEN` cannot trigger downstream workflows on the release PR it creates.
 
 ## Cut a release
 
-1. **Bump the version** (optional — skip if you want to re-release the same version).
-   Edit `cli/src/version.ts`:
-   ```ts
-   export const VERSION = "0.2.0"
-   ```
-   Commit and push the change.
+1. **Merge changes to `main` using Conventional Commits.**
+   Use prefixes like `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, etc.
 
-2. **Tag and push**.
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
+2. **Wait for the release PR.**
+   The `Release Please` workflow opens a release PR that:
+   - Bumps `cli/package.json`, `cli/src/version.ts`, and `shared/package.json`
+   - Updates `cli/CHANGELOG.md`
+   - Updates `.release-please-manifest.json`
 
-3. **GitHub Actions builds and publishes**.
-   The workflow runs on `macos-latest` and produces:
+3. **Merge the release PR.**
+   release-please then creates a tag and GitHub Release with generated notes.
+
+4. **Assets upload automatically.**
+   The `Release` workflow triggers on the published release, builds on `macos-latest`, and uploads:
    - `install.sh`
    - `latest.json`
    - `visual-artifact-macos-aarch64.tar.gz`
@@ -26,9 +31,7 @@ Releases are fully automated via GitHub Actions. Pushing a `v*` tag builds cross
    - `visual-artifact-linux-aarch64.tar.gz`
    - `visual-artifact-linux-x86_64.tar.gz`
 
-   It then creates a GitHub release and uploads those files as release assets.
-
-4. **Share the install command**.
+5. **Share the install command.**
    ```bash
    curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
    ```
@@ -57,13 +60,11 @@ Output lands in `releases/`.
 
 ## Overriding a release
 
-If you need to replace an existing tag (e.g. fix `v0.1.0`):
+If a release needs fixing:
 
-```bash
-git tag -d v0.1.0
-git push --delete origin v0.1.0
-git tag v0.1.0
-git push origin v0.1.0
-```
+1. Revert or fix the problem on `main`.
+2. Delete the tag and GitHub release.
+3. Reset `.release-please-manifest.json` to the previous version if needed.
+4. Let release-please open a new release PR, then merge it.
 
-This deletes and recreates the GitHub release with fresh artifacts.
+Avoid force-pushing tags; release-please owns version bumps and tag creation.
