@@ -46,8 +46,20 @@ export function renderGrid({ node, children }: AdapterArgs<"grid">) {
   return <div className={cn("grid gap-5", columnsClass(columns))}>{children}</div>
 }
 
-export function renderSection({ node, children }: AdapterArgs<"section">) {
+export function renderSection({ node, context, renderNodes, nodePath }: AdapterArgs<"section">) {
   const props = node.props ?? {}
+  const sectionTitle = props.title?.trim()
+  const childNodes = node.children ?? []
+
+  // Drop a leading heading that just repeats the section title — the section
+  // already renders its own h2, so the duplicated heading only adds noise.
+  const firstChild = childNodes[0]
+  const filteredChildren =
+    sectionTitle &&
+    firstChild?.type === "heading" &&
+    firstChild.props.text.trim().toLowerCase() === sectionTitle.toLowerCase()
+      ? childNodes.slice(1)
+      : childNodes
 
   return (
     <section className="flex scroll-mt-8 flex-col gap-5">
@@ -64,7 +76,9 @@ export function renderSection({ node, children }: AdapterArgs<"section">) {
           )}
         </div>
       )}
-      <div className="flex flex-col gap-5">{children}</div>
+      <div className="flex flex-col gap-5">
+        {renderNodes(filteredChildren, context, `${nodePath}.children`)}
+      </div>
     </section>
   )
 }

@@ -106,6 +106,8 @@ export function MermaidDiagram({
             fontFamily: "var(--font-geist-sans)",
           })
 
+          await mermaid.parse(normalizedCode)
+
           return mermaid.render(`${diagramId}-${theme}`, normalizedCode)
         })
 
@@ -143,6 +145,7 @@ export function MermaidDiagram({
         height={height}
         instructionsId={`${diagramId}-instructions`}
         svg={svg}
+        error={error}
       />
     </Figure>
   )
@@ -152,10 +155,12 @@ function ZoomableMermaidViewport({
   svg,
   height,
   instructionsId,
+  error,
 }: {
   svg: string
   height: number
   instructionsId: string
+  error: string | null
 }) {
   const [isMaximized, setIsMaximized] = useState(false)
 
@@ -173,7 +178,7 @@ function ZoomableMermaidViewport({
           style={{
             width: "min(calc(100vw - 1rem), 80rem)",
             maxWidth: "calc(100vw - 1rem)",
-            height: "80dvh",
+            height: "calc(100dvh - 1rem)",
             maxHeight: "calc(100dvh - 1rem)",
           }}
           showCloseButton={false}
@@ -181,14 +186,20 @@ function ZoomableMermaidViewport({
           <DialogHeader className="sr-only">
             <DialogTitle>Maximized Mermaid diagram</DialogTitle>
           </DialogHeader>
-          <div className="flex h-full min-h-0 flex-col gap-3 p-3 sm:p-4">
-            <MermaidViewport
-              svg={svg}
-              height="100%"
-              instructionsId={`${instructionsId}-maximized`}
-              isMaximized
-              onToggleMaximize={() => setIsMaximized(false)}
-            />
+          <div className="flex h-full min-h-0 flex-col gap-3 p-2">
+            {error ? (
+              <pre className="whitespace-pre-wrap overflow-auto rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </pre>
+            ) : (
+              <MermaidViewport
+                svg={svg}
+                height="100%"
+                instructionsId={`${instructionsId}-maximized`}
+                isMaximized
+                onToggleMaximize={() => setIsMaximized(false)}
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>

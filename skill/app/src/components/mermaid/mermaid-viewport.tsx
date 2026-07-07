@@ -8,7 +8,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react"
-import { Maximize2Icon, Minimize2Icon } from "lucide-react"
+import { Maximize2Icon, XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -255,14 +255,38 @@ export function MermaidViewport({
   const fillsParent = height === "100%"
 
   return (
-    <div className={cn("flex flex-col gap-3", fillsParent && "h-full min-h-0")}>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
-        <p id={instructionsId} className="text-xs leading-5 text-muted-foreground">
-          ⌘/Ctrl + wheel or pinch to zoom. Drag to pan. Focus the diagram for arrows, +/−, and
-          0/F reset.
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{Math.round(zoomScale * 100)}%</Badge>
+    <div
+      className={cn("relative", fillsParent && "h-full min-h-0")}
+      style={{ height: fillsParent ? undefined : height }}
+    >
+      <div
+        ref={viewportRef}
+        aria-describedby={instructionsId}
+        aria-label={isMaximized ? "Maximized Mermaid diagram" : "Zoomable Mermaid diagram"}
+        className={cn(
+          "absolute inset-x-0 bottom-0 top-12 overflow-hidden rounded-xl border bg-background/60 p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
+          isDragging ? "cursor-grabbing" : "cursor-grab"
+        )}
+        onKeyDown={handleKeyDown}
+        onPointerCancel={handlePointerEnd}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        role="region"
+        style={{ touchAction: "none" }}
+        tabIndex={0}
+      >
+        <div
+          ref={svgMountRef}
+          className="h-full w-full select-none [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-none"
+          dangerouslySetInnerHTML={svgMarkup}
+        />
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center px-2">
+        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-background/80 px-2 py-1 shadow-sm backdrop-blur-sm">
+          <Badge variant="outline" className="tabular-nums">
+            {Math.round(zoomScale * 100)}%
+          </Badge>
           <Button
             type="button"
             variant="outline"
@@ -290,12 +314,12 @@ export function MermaidViewport({
               variant="outline"
               size="sm"
               aria-label={
-                isMaximized ? "Minimize Mermaid diagram" : "Maximize Mermaid diagram"
+                isMaximized ? "Close Mermaid diagram" : "Maximize Mermaid diagram"
               }
               onClick={onToggleMaximize}
             >
               {isMaximized ? (
-                <Minimize2Icon className="h-4 w-4" />
+                <XIcon className="h-4 w-4" />
               ) : (
                 <Maximize2Icon className="h-4 w-4" />
               )}
@@ -303,30 +327,10 @@ export function MermaidViewport({
           )}
         </div>
       </div>
-      <div
-        ref={viewportRef}
-        aria-describedby={instructionsId}
-        aria-label={isMaximized ? "Maximized Mermaid diagram" : "Zoomable Mermaid diagram"}
-        className={cn(
-          "overflow-hidden rounded-xl border bg-background/60 p-2 outline-none transition-shadow focus-visible:ring-3 focus-visible:ring-ring/50",
-          fillsParent && "min-h-0 flex-1",
-          isDragging ? "cursor-grabbing" : "cursor-grab"
-        )}
-        onKeyDown={handleKeyDown}
-        onPointerCancel={handlePointerEnd}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-        role="region"
-        style={{ height: fillsParent ? undefined : height, touchAction: "none" }}
-        tabIndex={0}
-      >
-        <div
-          ref={svgMountRef}
-          className="h-full w-full select-none [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-none"
-          dangerouslySetInnerHTML={svgMarkup}
-        />
-      </div>
+      <p id={instructionsId} className="sr-only">
+        ⌘/Ctrl + wheel or pinch to zoom. Drag to pan. Focus the diagram for arrows, +/−, and
+        0/F reset.
+      </p>
     </div>
   )
 }
