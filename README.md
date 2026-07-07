@@ -147,7 +147,7 @@ Minimal spec:
 The CLI returns a URL like:
 
 ```text
-http://127.0.0.1:9999/artifacts/my-project/demo-report/
+http://127.0.0.1:9998/artifacts/my-project/demo-report/
 ```
 
 By default, artifacts are written as bundles to:
@@ -196,13 +196,15 @@ Renderer:
 ```bash
 cd skill/app
 pnpm install
-pnpm dev              # http://localhost:9999/artifacts/
+pnpm dev              # http://localhost:9999/artifacts/  (dev + HMR; live mode uses this)
 pnpm build            # static export to skill/app/out
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
 pnpm visual:qa        # optional adapter/styling QA
 ```
+
+**Server roles:** `pnpm dev` on `:9999` is the dev/HMR server (also used for live mode). `visual-artifact serve` defaults to `:9998` for the static-export preview and is what `create` auto-starts.
 
 CLI:
 
@@ -281,7 +283,7 @@ Authors are inferred from local git config (`user.name` and `user.email`), with 
 | `VISUAL_ARTIFACT_SKILL_ROOT` | auto-detected | Override skill root lookup. |
 | `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts` | Runtime artifact JSON store. |
 | `VISUAL_ARTIFACT_OUT_DIR` | `<skill-root>/app/out` | Static renderer export. |
-| `VISUAL_ARTIFACT_PORT` | `9999` | Server port. |
+| `VISUAL_ARTIFACT_PORT` | `9998` | Static-preview server port. (`pnpm dev` stays on `9999`.) |
 | `VISUAL_ARTIFACT_HOST` | `127.0.0.1` | Server bind host. |
 | `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
 | `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint under the mount path. |

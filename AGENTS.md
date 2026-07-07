@@ -43,12 +43,22 @@ Run `pnpm visual:qa` if you touched adapters or styling.
 
 ## Fast dev environment
 
+### Server roles
+
+| Port | Server | When to use |
+|---|---|---|
+| `:9999` | `pnpm dev` (Next dev, HMR) | **Default dev server.** Editing renderer code, live mode, viewing artifacts with the latest source. |
+| `:9998` | `visual-artifact serve` (CLI static server) | **Static-export preview** of the built `out/`, and what `create` auto-starts to open a created artifact. |
+| `:8400` | Impeccable live helper | Live-mode control plane (bar + `/poll`). Independent of the app server. |
+
+`pnpm dev` and `visual-artifact serve` used to share `:9999` and collide. They are now split: dev/HMR on `:9999`, static preview on `:9998`. Live mode needs HMR, so it always targets `:9999` (`pnpm dev`).
+
 ```bash
 cd skill/app
-pnpm dev          # http://localhost:9999/artifacts
+pnpm dev          # http://localhost:9999/artifacts  (dev + HMR + live mode)
 
 cd ../cli
-bun run src/main.ts serve --no-open  # static export + live JSON after pnpm build
+bun run src/main.ts serve --no-open  # http://localhost:9998/artifacts  (static preview + live JSON)
 ```
 
 The CLI is self-contained under `skill/cli`. `visual-artifact bootstrap` builds `skill/app`, compiles the CLI, and symlinks the binary into `~/.pi/bin/`.
@@ -73,42 +83,76 @@ Then tell them to run `/reload` in Pi or restart Pi to load the updated extensio
 
 Use the Impeccable `live` command to iterate on UI in the browser. The helper runs in the background and injects a global bar into the page so the user can pick an element, request a design action, and get generated variants without leaving the browser.
 
+### When to use
+
+Use live mode only when the user wants to iterate on the renderer **in the browser** — pick a specific element they are looking at, request a design action, and get generated variants without leaving the page.
+
+Trigger it on phrases like:
+- "live iterate on this UI" / "use live mode" / "let me pick an element and redesign it"
+- "make *this* bolder/better/quieter" (pointing at an element they can see but will not describe in text)
+- "shape this element" / "redesign the thing I'm clicking"
+
+Do **not** use it for:
+- Static design critiques or audits → regular Impeccable skill.
+- Building new UI from scratch or reshaping whole pages → Impeccable skill, not live.
+- Backend or non-UI work.
+
+**Hard precondition:** this workflow is herdr-based. Only run it when `HERDR_ENV=1`. If you are not inside herdr, do not fake it with tmux — tell the user to launch it from a herdr pane, or fall back to the non-live Impeccable flow.
+
 ### Critical rule
 
 **The agent must be actively polling before the user clicks Go.** The browser queues events on the helper server; if no agent pulls them, the spinner spins forever. Start `live-poll.mjs` first, tell the user "ready", and only then let them use the bar.
 
 ### Start a live session
 
-1. Ensure the dev server is running:
+Run inside herdr (`HERDR_ENV=1`). Each long-running process gets its own split pane so you can keep your pane free and monitor siblings via `herdr pane read` / `herdr wait output`. Pane ids compact when panes close, so re-read them from `herdr pane list` or the split response — don't reuse stale ids.
+
+0. Find your focused pane:
    ```bash
-   tmux new-session -d -s visualizer-dev 'cd skill/app && pnpm dev'
+   MY_PANE=$(herdr pane list | python3 -c 'import sys,json; ps=json.load(sys.stdin)["result"]["panes"]; print(next(p["pane_id"] for p in ps if p.get("focused")))')
    ```
-2. Start the Impeccable live helper in the background:
+
+1. Split a pane for the dev server, run it, and wait until it is ready:
    ```bash
-   tmux new-session -d -s live-server 'node .pi/skills/impeccable/scripts/live-server.mjs start'
+   DEV_PANE=$(herdr pane split "$MY_PANE" --direction right --no-focus | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
+   herdr pane run "$DEV_PANE" "cd skill/app && pnpm dev"
+   herdr wait output "$DEV_PANE" --match "ready|Local:.*9999" --regex --timeout 30000
    ```
-3. Verify it is running:
+
+2. Split a pane for the Impeccable live helper, start it, and verify:
    ```bash
+   LIVE_PANE=$(herdr pane split "$MY_PANE" --direction right --no-focus | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
+   herdr pane run "$LIVE_PANE" "node .pi/skills/impeccable/scripts/live-server.mjs start"
+   herdr wait output "$LIVE_PANE" --match "ready|listening" --regex --timeout 15000
    node .pi/skills/impeccable/scripts/live-status.mjs
    curl -s http://localhost:9999/artifacts/ | rg 'http://localhost:8400/live\.js'
    ```
-4. Open the site in Zen (or the user's browser of choice):
+
+3. Open the site in Zen (or the user's browser of choice):
    ```bash
    open -a Zen 'http://localhost:9999/artifacts/'
    ```
-5. **Run the poll loop in the foreground** and keep it running:
+
+4. Start the poll loop in its own pane and wait for it to confirm it is polling. **This must be running before the user clicks Go** — the browser queues events on the helper server and the spinner spins forever if no agent pulls them.
    ```bash
-   node .pi/skills/impeccable/scripts/live-poll.mjs
+   POLL_PANE=$(herdr pane split "$MY_PANE" --direction down --no-focus | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
+   herdr pane run "$POLL_PANE" "node .pi/skills/impeccable/scripts/live-poll.mjs"
+   herdr wait output "$POLL_PANE" --match "polling|ready|waiting" --regex --timeout 15000
    ```
-6. Tell the user: "Live mode is ready. Pick an element and click Go."
+
+5. Tell the user: "Live mode is ready. Pick an element and click Go."
 
 ### Cleanup
 
 ```bash
 node .pi/skills/impeccable/scripts/live-server.mjs stop
-tmux kill-session -t live-server
+herdr pane close "$LIVE_PANE"   # live-server
+herdr pane close "$POLL_PANE"   # live-poll
+# Leave $DEV_PANE running only if you want to keep the dev server up; otherwise close it too.
 node .pi/skills/impeccable/scripts/live-inject.mjs --remove
 ```
+
+Re-read pane ids with `herdr pane list` before closing if any split happened after you captured them — ids compact on close.
 
 ## Decision defaults
 

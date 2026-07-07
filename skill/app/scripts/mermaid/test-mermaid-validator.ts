@@ -1,4 +1,4 @@
-import { validateMermaid, formatValidationReport } from "../../src/lib/mermaid/mermaid-validator";
+import { validateMermaid, formatValidationReport } from "@agents/visual-artifact-annotations/mermaid-validator";
 
 const cases = [
   {

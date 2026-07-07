@@ -1,17 +1,31 @@
-import mermaid from "mermaid";
+import type MermaidNS from "mermaid";
 
+let mermaidModule: typeof MermaidNS | null = null;
+
+// Mermaid's bundled DOMPurify calls `createDOMPurify()` at module load time,
+// using `getGlobal()` which returns `globalThis.window`. If a DOM isn't set
+// up before the import, DOMPurify is unsupported and `purify.sanitize` is
+// undefined. jsdom crashes in Bun, so we use linkedom (lighter, Bun-safe).
 async function ensureDom(): Promise<void> {
   if (typeof window !== "undefined" && typeof document !== "undefined") return;
   try {
-    const { JSDOM } = await import("jsdom");
-    const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
+    const { parseHTML } = await import("linkedom");
+    const dom = parseHTML("<!DOCTYPE html><html><body></body></html>");
     const g = globalThis as Record<string, unknown>;
     g.window = dom.window;
-    g.document = dom.window.document;
+    g.document = dom.document;
     g.HTMLElement = dom.window.HTMLElement;
   } catch {
-    // jsdom not available; class diagrams may fail with DOMPurify errors
+    // linkedom not available; DOMPurify-dependent diagrams may fail
   }
+}
+
+async function getMermaid(): Promise<typeof MermaidNS> {
+  if (!mermaidModule) {
+    await ensureDom();
+    mermaidModule = (await import("mermaid")).default;
+  }
+  return mermaidModule;
 }
 
 export interface MermaidValidationIssue {
@@ -363,7 +377,7 @@ export async function validateMermaid(
 
   // 4. Official Mermaid parser
   try {
-    await ensureDom();
+    const mermaid = await getMermaid();
     mermaid.initialize({
       securityLevel: "loose",
       startOnLoad: false,

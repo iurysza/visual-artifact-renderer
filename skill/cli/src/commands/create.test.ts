@@ -157,3 +157,65 @@ describe("create: file-tree src resolution", () => {
     expect(log._logs.some((l) => l.includes("could not be read"))).toBe(true)
   })
 })
+
+describe("create: mermaid content validation", () => {
+  let dir: string
+  let oldCwd: string
+  let oldArtifactsDir: string | undefined
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "va-create-mermaid-"))
+    oldCwd = process.cwd()
+    oldArtifactsDir = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
+    process.chdir(dir)
+    process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR = join(dir, "artifacts")
+  })
+
+  afterEach(async () => {
+    process.chdir(oldCwd)
+    if (oldArtifactsDir === undefined) delete process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
+    else process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR = oldArtifactsDir
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  test("rejects a broken mermaid graph before writing", async () => {
+    const specPath = join(dir, "spec.json")
+    await writeFile(
+      specPath,
+      JSON.stringify({
+        slug: "broken-mermaid",
+        title: "broken mermaid",
+        description: "x",
+        nodes: [
+          { type: "mermaid", props: { code: "graph TD\n  A -- B" } },
+        ],
+      }),
+      "utf8",
+    )
+
+    const log = makeLogger()
+    const rc = await create(specPath, { dryRun: true, serve: false, contract: CONTRACT_PATH, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    expect(rc).toBe(2)
+    expect(log._logs.some((l) => l.includes("Mermaid diagram at nodes[0]<mermaid> is invalid"))).toBe(true)
+  })
+
+  test("accepts a valid mermaid graph", async () => {
+    const specPath = join(dir, "spec.json")
+    await writeFile(
+      specPath,
+      JSON.stringify({
+        slug: "valid-mermaid",
+        title: "valid mermaid",
+        description: "x",
+        nodes: [
+          { type: "mermaid", props: { code: "flowchart TD\n  A --> B" } },
+        ],
+      }),
+      "utf8",
+    )
+
+    const log = makeLogger()
+    const rc = await create(specPath, { dryRun: true, serve: false, contract: CONTRACT_PATH, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    expect(rc).toBe(0)
+  })
+})
