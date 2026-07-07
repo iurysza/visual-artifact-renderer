@@ -7,6 +7,7 @@ Quick reference index for all architectural decisions. Read this file first to i
 | ADR | Decision | Impact | Date |
 |-----|----------|--------|------|
 | [0001](./ADR-0001-json-spec-and-exported-contract.md) | JSON spec and exported Zod contract | Agent surface, schema, manifest, contract, renderer | 2026-06-11 |
+| [0010](./ADR-0010-writable-remote-annotations-on-cloudflare-worker.md) | Writable remote annotations on Cloudflare Worker | Worker routes, R2 writes, annotation validation, published artifact UX | 2026-07-07 |
 | [0002](./ADR-0002-static-renderer-runtime-artifact-data.md) | Static renderer with runtime artifact data | Build, storage, routing, hosting | 2026-06-17 |
 | [0003](./ADR-0003-self-contained-skill-directory.md) | Self-contained skill directory | Repo structure, installation | 2026-06-27 |
 | [0004](./ADR-0004-compiled-bun-cli.md) | Compiled Bun CLI replacing bash wrappers | CLI, build, installation | 2026-06-27 |
@@ -45,3 +46,4 @@ Quick reference index for all architectural decisions. Read this file first to i
 
 ### Hosted Publishing
 - [ADR-0009](./ADR-0009-cloudflare-workers-r2-remote-publishing.md): Cloudflare Workers and R2 for remote artifact publishing (Proposed)
+- [ADR-0010](./ADR-0010-writable-remote-annotations-on-cloudflare-worker.md): Writable remote annotations on Cloudflare Worker
