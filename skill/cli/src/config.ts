@@ -3,7 +3,10 @@ import { homedir } from "node:os"
 import { dirname, resolve } from "node:path"
 import type { Config } from "./types.ts"
 
-export const DEFAULT_PORT = 9999
+// Static-preview server port. The Next.js dev server (pnpm dev) owns :9999
+// with HMR for live iteration; the CLI static server uses :9998 so the two
+// never collide. See AGENTS.md "Server roles".
+export const DEFAULT_PORT = 9998
 export const DEFAULT_HOST = "127.0.0.1"
 export const DEFAULT_MOUNT_PATH = "/artifacts"
 export const DEFAULT_DATA_PATH = "/data/artifacts"
@@ -66,9 +69,13 @@ export function defaultArtifactsDir(): string {
 }
 
 export function defaultOutDir(): string {
+  const envDir = process.env.VISUAL_ARTIFACT_OUT_DIR
+  if (envDir) return resolve(envDir)
+  const dataDir = resolve(homedir(), ".local", "share", "visual-artifact", "app", "out")
+  if (existsSync(dataDir)) return dataDir
   const skillRoot = findSkillRoot()
   if (skillRoot) return resolve(skillRoot, "app", "out")
-  return resolve(homedir(), ".pi", "skills", "visual-artifact", "app", "out")
+  return dataDir
 }
 
 export function defaultContractPath(): string | undefined {

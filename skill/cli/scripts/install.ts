@@ -1,8 +1,9 @@
-import { access, chmod, copyFile, cp, lstat, mkdir, readdir, realpath, rm } from "node:fs/promises"
+import { access, chmod, copyFile, cp, lstat, mkdir, readdir, realpath, rm, writeFile } from "node:fs/promises"
 import { constants, existsSync } from "node:fs"
 import { dirname, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { homedir } from "node:os"
+import { VERSION } from "../src/version.ts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, "..")
@@ -15,6 +16,9 @@ const HOME = homedir()
 const BIN_DIR = resolve(HOME, ".local", "bin")
 const BIN_PATH = resolve(BIN_DIR, "visual-artifact")
 const SKILL_TARGET = resolve(HOME, ".agents", "skills", "visual-artifact")
+const DATA_DIR = resolve(HOME, ".local", "share", "visual-artifact")
+const APP_OUT_DIR = resolve(DATA_DIR, "app", "out")
+const VERSION_PATH = resolve(DATA_DIR, "VERSION")
 const PI_AGENT_DIR = resolve(HOME, ".pi", "agent")
 const EXTENSION_TARGET = resolve(PI_AGENT_DIR, "extensions", "visual-artifact.ts")
 const INSTALLED_EXTENSION_SOURCE = resolve(SKILL_TARGET, "pi-extension", "visual-artifact.ts")
@@ -35,6 +39,7 @@ function shouldCopySkillPath(source: string): boolean {
   if (parts.includes("node_modules")) return false
   if (parts.includes(".next")) return false
   if (parts[0] === "artifacts") return parts.length === 1 || parts[1] === ".gitignore" || parts[1] === ".gitkeep"
+  if (parts[0] === "app" && parts[1] === "out") return false
   if (parts[0] === "cli" && parts[1] === "dist") return false
   return true
 }
@@ -69,14 +74,6 @@ async function samePath(a: string, b: string): Promise<boolean> {
     return (await realpath(a)) === (await realpath(b))
   } catch {
     return resolve(a) === resolve(b)
-  }
-}
-
-async function isSymlink(path: string): Promise<boolean> {
-  try {
-    return (await lstat(path)).isSymbolicLink()
-  } catch {
-    return false
   }
 }
 
@@ -122,14 +119,23 @@ async function copyExtensionIntoSkill(extensionSource: string): Promise<void> {
   await copyFile(extensionSource, INSTALLED_EXTENSION_SOURCE)
 }
 
+async function copyAppOut(): Promise<void> {
+  const source = resolve(DIST, "out")
+  await assertReadable(source, "App static export")
+  await rm(APP_OUT_DIR, { recursive: true, force: true })
+  await mkdir(DATA_DIR, { recursive: true })
+  await cp(source, APP_OUT_DIR, { recursive: true, force: true })
+  console.log(`[install] App static export: ${APP_OUT_DIR}`)
+}
+
+async function writeVersionStamp(): Promise<void> {
+  await mkdir(DATA_DIR, { recursive: true })
+  await writeFile(VERSION_PATH, `${VERSION}\n`)
+  console.log(`[install] Version stamp: ${VERSION_PATH}`)
+}
+
 async function installSkill(extensionSource: string): Promise<void> {
   await assertReadable(resolve(SKILL_ROOT, "SKILL.md"), "Skill")
-
-  if (!(await isSymlink(SKILL_TARGET)) && await samePath(SKILL_ROOT, SKILL_TARGET)) {
-    await copyExtensionIntoSkill(extensionSource)
-    console.log(`[install] Skill already installed: ${SKILL_TARGET}`)
-    return
-  }
 
   await prepareSkillTarget(SKILL_TARGET)
   await cp(SKILL_ROOT, SKILL_TARGET, {
@@ -158,6 +164,8 @@ async function main(): Promise<void> {
 
   await copyFileReplacing(BINARY, BIN_PATH, "CLI binary")
   await ensureExecutable(BIN_PATH)
+  await copyAppOut()
+  await writeVersionStamp()
   await installSkill(extensionSource)
 
   if (existsSync(PI_AGENT_DIR)) {
