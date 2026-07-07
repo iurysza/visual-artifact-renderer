@@ -8,7 +8,7 @@ import { create } from "./create.ts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 // cli/assets/contract.json relative to cli/src/commands/
-const CONTRACT_PATH = resolve(__dirname, "../../../assets/contract.json")
+const CONTRACT_PATH = resolve(__dirname, "../../assets/contract.json")
 
 // Minimal logger capturing output.
 function makeLogger() {

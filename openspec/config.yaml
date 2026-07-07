@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Visualizer is a JSON-to-UI runtime for agents. Agents emit constrained VisualArtifactSpec JSON; the renderer owns UI. Do not generate React, routes, JSX, imports, CSS, or full HTML for renderer changes.
+
+  Runtime layout:
+  - app/: Next.js static renderer mounted at /artifacts.
+  - cli/: Bun CLI for validate/create/serve/list/open/bootstrap.
+  - shared/: shared annotation schemas used by app and CLI.
+  - pi-extension/: Pi tool wrapper around the CLI.
+  - skill/: model-facing visual-artifact skill docs.
+
+  Artifact bundles live at artifacts/<project>/<slug>/ with artifact.json, annotations.json, and assets/. Public artifact pages are /artifacts/<project>/<slug>/. Public data is /artifacts/data/artifacts/<project>/<slug>/artifact.json and annotations.json.
+
+  Core constraints:
+  - JSON, not generated UI code.
+  - Validate at boundaries: CLI validates before write; renderer parses with Zod.
+  - URL/path math belongs in app/src/lib/artifacts/paths.ts and matching CLI helpers.
+  - Cloud/remote publishing is proposal-only unless explicitly requested. Do not implement Cloudflare publishing while only proposing OPSX changes.
+  - Existing BYO Cloudflare proposal reference: ai-artifacts/goals/cloudflare-r2-publishing/opsx/byo-cloudflare-setup/.
+
+rules:
+  proposal:
+    - Include clear Goals, Non-goals, and Capabilities.
+    - Keep Cloudflare publishing framed as BYO user-owned infrastructure, not an Iury-only deployment.
+  specs:
+    - Use SHALL/MUST for normative behavior.
+    - Every requirement must include at least one #### Scenario.
+    - Prefer behavior contracts over implementation details.
+  design:
+    - State why Worker Static Assets + R2 + direct CLI upload is chosen.
+    - Call out local-first behavior and read-only hosted annotations for MVP.
+  tasks:
+    - "Use numbered checkbox tasks only: - [ ] N.N task."
+    - Include verification commands for app, cli, worker, OpenSpec, and Pi integration.

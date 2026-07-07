@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { program } from "commander"
+import { loadEnvFile } from "./env.ts"
 import { Logger } from "./logger.ts"
 import type { GlobalOpts } from "./types.ts"
 import { create } from "./commands/create.ts"
@@ -12,6 +13,7 @@ import { openArtifact } from "./commands/open.ts"
 import { doctor } from "./commands/doctor.ts"
 import { bootstrap } from "./commands/bootstrap.ts"
 import { contract } from "./commands/contract.ts"
+import { setupCloudflare } from "./commands/setup-cloudflare.ts"
 import { VERSION } from "./version.ts"
 
 function buildLogger(opts: GlobalOpts): Logger {
@@ -31,6 +33,29 @@ program
   .option("--no-color", "Disable colored output")
   .option("--no-input", "Never prompt for input")
 
+const setupCmd = program
+  .command("setup")
+  .description("Configure visual artifact integrations.")
+
+setupCmd
+  .command("cloudflare")
+  .description("Configure BYO Cloudflare publishing.")
+  .option("--account-id <id>", "Cloudflare account ID (or CLOUDFLARE_ACCOUNT_ID)")
+  .option("--bucket <name>", "R2 bucket name (or VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET)")
+  .option("--worker-name <name>", "Worker name")
+  .option("--base-url <url>", "Public base URL, usually https://<worker>.<subdomain>.workers.dev/artifacts")
+  .option("--workers-dev-subdomain <name>", "Cloudflare workers.dev subdomain used to derive the base URL")
+  .option("--cloud-route-strategy <zero-pages|placeholder>", "Cloud build dynamic route export strategy")
+  .option("--profile <name>", "Publish profile name", "default")
+  .option("--non-interactive", "Fail instead of prompting for missing values")
+  .option("--dry-run", "Validate setup without writing the profile")
+  .action(async (opts) => {
+    const globalOpts = program.opts() as GlobalOpts
+    const log = buildLogger(globalOpts)
+    const exitCode = await setupCloudflare({ ...globalOpts, ...opts }, log)
+    process.exit(exitCode)
+  })
+
 program
   .command("create [spec]")
   .description("Validate and save an artifact spec. Reads from file or stdin. Starts the renderer if it is not running.")
@@ -38,6 +63,7 @@ program
   .option("-c, --contract <path>", "Path to artifact-contract.json")
   .option("--dry-run", "Validate only; do not write the artifact")
   .option("--no-serve", "Do not auto-start the renderer")
+  .option("--publish [profile]", "Publish the artifact to Cloudflare using the named profile")
   .action(async (spec, opts) => {
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)
@@ -149,6 +175,7 @@ program
   })
 
 async function main(): Promise<void> {
+  await loadEnvFile()
   await program.parseAsync(process.argv)
 }
 

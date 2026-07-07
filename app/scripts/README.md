@@ -14,6 +14,7 @@ Dev tooling for the visualizer renderer. Grouped by concern. Run from
 | Script | What | Run |
 |---|---|---|
 | `verify-artifacts.ts` | Validate every saved artifact spec against the schema + contract sync. | `pnpm verify:artifacts` |
+| `cloud-build-leaks.ts` | Ensure a Cloudflare build contains only shared shells, not local artifact routes. | `pnpm verify:cloud-build` |
 
 ## qa/
 
@@ -32,6 +33,7 @@ Dev tooling for the visualizer renderer. Grouped by concern. Run from
 ## Notes
 
 - `dev`, `build`, `start`, `lint` are standard Next.js scripts — not in this folder.
+- `build:cloud` runs `next build` with `VISUAL_ARTIFACT_CLOUD_BUILD=1`, then runs the cloud leak verifier.
 - `visual-qa` and `health-check` require a running renderer (`pnpm dev` or the
   static server). The other scripts are self-contained.
 - Capture-screenshot scripts were removed; screenshots are now produced via

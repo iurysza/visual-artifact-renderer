@@ -2,19 +2,22 @@ import { resolve, isAbsolute } from "node:path"
 import { writeFile, readFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import { artifactBaseUrl, loadConfig, localBaseUrl } from "../config.ts"
-import { artifactJsonPath, assetsDirPath, bundleDirPath } from "../lib/paths.ts"
+import { artifactJsonPath, assetsDirPath, bundleDirPath, publishJsonPath } from "../lib/paths.ts"
 import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
 import { validateMermaidNodes } from "../mermaid.ts"
 import { deriveProjectName, ensureDir, readStdinOrFile } from "../util.ts"
 import type { GlobalOpts } from "../types.ts"
+import { readCloudflareProfile } from "../publish/profile.ts"
+import { buildPublishMetadata, loadPublishContext, publishBundle, type PublishResult } from "../publish/cloudflare.ts"
 
 interface CreateOpts extends GlobalOpts {
   project?: string
   contract?: string
   dryRun?: boolean
   serve?: boolean
+  publish?: string | boolean
 }
 
 async function serverIsRunning(url: string): Promise<boolean> {
@@ -174,10 +177,30 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
       await ensureServer(log)
     }
 
-    const url = `${artifactBaseUrl(config)}/${projectName}/${spec.slug}/`
+    const localUrl = `${artifactBaseUrl(config)}/${projectName}/${spec.slug}/`
+    let publishResult: PublishResult | undefined
+    let publishProfileName: string | undefined
+    let publishMetadataPath: string | undefined
+
+    if (opts.publish !== undefined && opts.publish !== false) {
+      publishProfileName = typeof opts.publish === "string" ? opts.publish.trim() || "default" : "default"
+      const profile = await readCloudflareProfile(publishProfileName)
+      if (!profile) {
+        throw new Error(
+          `No Cloudflare publish profile named "${publishProfileName}". Run \`visual-artifact setup cloudflare\` first.`,
+        )
+      }
+      const context = await loadPublishContext(profile)
+      publishResult = { ...(await publishBundle(context, projectName, spec.slug, bundleDir)), localUrl }
+      publishMetadataPath = publishJsonPath(config.artifactsDir, projectName, spec.slug)
+      const metadata = buildPublishMetadata(context, publishResult, publishProfileName)
+      await writeFile(publishMetadataPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8")
+    }
+
+    const url = publishResult?.url ?? localUrl
 
     if (opts.json) {
-      log.output({
+      const output: Record<string, unknown> = {
         ok: true,
         slug: spec.slug,
         projectName,
@@ -185,7 +208,17 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
         path: filePath,
         bundleDir,
         url,
-      })
+        localUrl,
+      }
+      if (publishResult) {
+        output.published = {
+          provider: "cloudflare",
+          profileName: publishProfileName,
+          metadataPath: publishMetadataPath,
+          remoteObjects: publishResult.remoteObjects,
+        }
+      }
+      log.output(output)
     } else if (opts.plain) {
       log.outputText(filePath)
     } else {
@@ -193,6 +226,10 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
       log.log(`  bundle: ${bundleDir}`)
       log.log(`  path:   ${filePath}`)
       log.log(`  url:    ${url}`)
+      if (publishResult) {
+        log.log(`  local:  ${localUrl}`)
+        log.log(`  remote: ${publishResult.url}`)
+      }
     }
 
     return 0

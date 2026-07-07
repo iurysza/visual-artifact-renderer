@@ -5,6 +5,7 @@
 /app/node_modules
 /cli/node_modules
 /shared/node_modules
+/worker/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -26,6 +27,8 @@
 /build
 /app/build
 /cli/dist/
+/worker/dist/
+/worker/.wrangler/
 /cli/src/assets/
 /shared/dist/
 /releases/

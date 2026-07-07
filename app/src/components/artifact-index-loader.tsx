@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { artifactIndexPath, artifactPagePath, projectPagePath } from "@/lib/artifacts/paths"
+import { artifactIndexUrl, artifactPagePath, projectPagePath } from "@/lib/artifacts/paths"
 import { formatDate } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -35,7 +35,7 @@ export function ArtifactIndexLoader() {
 
     async function load() {
       try {
-        const res = await fetch(artifactIndexPath())
+        const res = await fetch(artifactIndexUrl())
         if (!res.ok) throw new Error(`Index not found (${res.status})`)
         const data = (await res.json()) as ArtifactIndex
         if (!cancelled) {

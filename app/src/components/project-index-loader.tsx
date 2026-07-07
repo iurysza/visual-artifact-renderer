@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { projectIndexPath, artifactPagePath, projectParamsFromPath } from "@/lib/artifacts/paths"
+import { projectIndexUrl, artifactPagePath, projectParamsFromPath } from "@/lib/artifacts/paths"
 import { formatDateTime } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
@@ -35,7 +35,7 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
 
     async function load() {
       try {
-        const res = await fetch(projectIndexPath(projectName))
+        const res = await fetch(projectIndexUrl(projectName))
         if (!res.ok) throw new Error(`Project index not found (${res.status})`)
         const data = (await res.json()) as ProjectIndex
         if (!cancelled) {

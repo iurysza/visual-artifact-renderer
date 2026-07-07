@@ -32,7 +32,15 @@ Workers Static Assets serves the static renderer under `/artifacts`; a Worker ha
 
 - **Positive**: Durable share URLs, no renderer rebuild per artifact, same `/artifacts` path model, cheap edge delivery.
 - **Negative**: Requires Cloudflare config, R2 credentials, cache invalidation, Worker routing knowledge, and handling of bundle files (artifact, annotations, assets).
-- **Requires**: A publish command/flag, R2 object layout for bundles, scoped API tokens, index update strategy, cache purge policy, and annotation API proxy if annotations are remote.
+- **Requires**: A publish command/flag, R2 object layout for bundles, scoped R2 access keys, index update strategy, cache purge policy, and annotation API proxy if annotations are remote.
+
+## Implementation notes
+
+- `visual-artifact setup cloudflare` is the BYO setup wizard. It stores a non-secret publish profile under `~/.config/visual-artifact/publish-profiles/cloudflare.json` (mode `0600`).
+- Secrets are env-only for MVP: `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID`, `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY`.
+- `visual-artifact create --publish [profile]` writes the local bundle first, then uploads `artifact.json`, `annotations.json`, and `assets/*` to R2. On success the CLI JSON `url` is the remote public page and a local non-secret `publish.json` sidecar records publish state.
+- The cloud build exports only shared shells; a leak verifier ensures no local artifact pages are baked into `app/out`.
+- The Worker serves static assets from Workers Static Assets, reads artifact bundles from R2, generates home/project indexes from R2 `list()`, and returns `501 Not Implemented` for hosted annotation mutations in MVP.
 
 ## Related
 
