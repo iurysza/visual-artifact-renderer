@@ -26,12 +26,9 @@ function getEntryPath(): string {
 }
 
 function isSkillRoot(path: string): boolean {
-  return (
-    existsSync(resolve(path, "SKILL.md")) &&
-    existsSync(resolve(path, "app")) &&
-    existsSync(resolve(path, "cli")) &&
-    existsSync(resolve(path, "artifact-contract.json"))
-  )
+  // The installed skill target only contains SKILL.md and artifacts/; dev roots
+  // also have app/, cli/, shared/, etc. The single invariant is SKILL.md.
+  return existsSync(resolve(path, "SKILL.md"))
 }
 
 export function findSkillRoot(): string | null {
@@ -80,7 +77,11 @@ export function defaultOutDir(): string {
 
 export function defaultContractPath(): string | undefined {
   const skillRoot = findSkillRoot()
-  return skillRoot ? resolve(skillRoot, "artifact-contract.json") : undefined
+  if (!skillRoot) return undefined
+  const contractPath = resolve(skillRoot, "artifact-contract.json")
+  // In the installed skill target the contract is not shipped; the CLI binary
+  // bundles its own copy. Use a generated skill-root contract only when present.
+  return existsSync(contractPath) ? contractPath : undefined
 }
 
 export function expandHome(path: string): string {

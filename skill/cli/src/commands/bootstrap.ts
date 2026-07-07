@@ -1,7 +1,8 @@
 import { execSync, spawnSync } from "node:child_process"
 import { existsSync } from "node:fs"
 import { homedir } from "node:os"
-import { resolve } from "node:path"
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import { findSkillRoot } from "../config.ts"
 import type { Logger } from "../logger.ts"
 
@@ -14,6 +15,34 @@ function commandExists(cmd: string): boolean {
   }
 }
 
+function isDevSkillRoot(path: string): boolean {
+  return (
+    existsSync(resolve(path, "SKILL.md")) &&
+    existsSync(resolve(path, "app")) &&
+    existsSync(resolve(path, "cli")) &&
+    existsSync(resolve(path, "shared"))
+  )
+}
+
+function findDevSkillRoot(): string | null {
+  // Search upward from cwd and from this script's location. At each ancestor,
+  // also check a `skill/` child directory, since the visualizer repo keeps the
+  // skill source at `<repo>/skill/`.
+  const startingPoints = [process.cwd(), dirname(fileURLToPath(import.meta.url))]
+  for (const start of startingPoints) {
+    let dir = start
+    for (let i = 0; i < 6; i++) {
+      if (isDevSkillRoot(dir)) return dir
+      const skillChild = resolve(dir, "skill")
+      if (isDevSkillRoot(skillChild)) return skillChild
+      const parent = resolve(dir, "..")
+      if (parent === dir) break
+      dir = parent
+    }
+  }
+  return null
+}
+
 function run(cmd: string, args: string[], cwd: string): number {
   const result = spawnSync(cmd, args, {
     cwd,
@@ -24,9 +53,11 @@ function run(cmd: string, args: string[], cwd: string): number {
 }
 
 export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promise<number> {
-  const skillRoot = findSkillRoot()
-  if (!skillRoot) {
-    log.error("Could not find skill root (SKILL.md). Run this command from inside the visual-artifact skill directory.")
+  // Bootstrap must build from the development source tree, not from the
+  // installed skill target which only contains SKILL.md + artifacts/.
+  const skillRoot = findDevSkillRoot() ?? findSkillRoot()
+  if (!skillRoot || !isDevSkillRoot(skillRoot)) {
+    log.error("Could not find visual-artifact development source (SKILL.md + app/ + cli/ + shared/). Run this command from inside the visualizer repo.")
     return 1
   }
 
