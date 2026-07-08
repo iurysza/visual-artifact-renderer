@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.1...v0.3.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* **release:** build shared package before renderer ([b4dde2c](https://github.com/iurysza/visual-artifact-renderer/commit/b4dde2c883d63cf2417d98568afcd819e954a78c))
+
 ## [0.3.1](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.0...v0.3.1) (2026-07-08)
 
 

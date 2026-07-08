@@ -1,6 +1,6 @@
 {
   "name": "@agents/visual-artifact-cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Fast self-contained CLI for creating and serving visual artifacts.",
   "type": "module",
   "bin": {
