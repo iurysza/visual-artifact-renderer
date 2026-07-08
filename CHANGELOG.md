@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.0...v0.3.1) (2026-07-08)
+
+
+### Bug Fixes
+
+* **cli:** compile contract from shared source ([2de260b](https://github.com/iurysza/visual-artifact-renderer/commit/2de260b46a4245492ad6b9ea29f496edaf12be10))
+
 ## [0.3.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.2.0...v0.3.0) (2026-07-07)
 
 
