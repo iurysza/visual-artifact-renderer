@@ -75,9 +75,17 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 - Optional Cloudflare publishing for durable public links.
 - Safe rendering boundary: CLI validation before write, Zod parse before render, adapter-only UI.
 
+## Choose your path
+
+Use the shell installer if you only want to create and view artifacts locally. It installs the CLI, static renderer, agent skill, and Pi extension. You do not need to clone this repo for local use.
+
+Clone the repo if you want to develop the renderer or deploy the Cloudflare Worker. First-time Cloudflare deployment needs the repo because the Worker source, wrangler config, and cloud build live here.
+
+If a Worker is already deployed and configured, the installed CLI can publish artifacts with `--publish`.
+
 ## Quick start
 
-Install the latest release:
+Install the latest release for local use:
 
 ```bash
 curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
@@ -87,7 +95,7 @@ visual-artifact doctor
 
 Requirements for source builds: Bun, pnpm, and Node.js 20+. Pi is optional; if present, the installer registers the Pi extension.
 
-Install from this repo instead:
+Install from this repo instead if you are developing or preparing a deployment:
 
 ```bash
 cd cli
@@ -164,7 +172,7 @@ visual-artifact create my-spec.json --publish
 
 Published artifacts use R2 for artifact bundles and a Worker for the static renderer, JSON endpoints, and hosted annotation writes.
 
-Setup and deployment: [`ai-artifacts/docs/publishing.md`](./ai-artifacts/docs/publishing.md).
+First-time deployment requires a cloned repo. Setup and deployment: [`ai-artifacts/docs/publishing.md`](./ai-artifacts/docs/publishing.md).
 
 ## CLI
 

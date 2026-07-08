@@ -24,6 +24,7 @@ Agents should also read [`AGENTS.md`](../../AGENTS.md), which is the repo operat
 | create or validate a spec | [`CLI`](./cli.md), then [`node reference`](./nodes.md) |
 | understand comments or AI Colab | [`Annotations`](./annotations.md) |
 | publish artifacts publicly | [`Publishing`](./publishing.md) |
+| check planned features | [`Roadmap`](./ROADMAP.md) |
 | add or change node types | [`Node reference`](./nodes.md), [`frontend guide`](./FRONTEND.md), [`reliability`](./RELIABILITY.md) |
 | change renderer routes, adapters, or theming | [`Frontend guide`](./FRONTEND.md), [`design`](./DESIGN.md) |
 | verify a change before shipping | [`Reliability`](./RELIABILITY.md) |
@@ -55,6 +56,8 @@ Agents should also read [`AGENTS.md`](../../AGENTS.md), which is the repo operat
 [`Design`](./DESIGN.md) records the visual system and node philosophy. Deep dives live under [`design docs`](./design-docs/index.md).
 
 [`Product specs`](./product-specs/index.md) preserve user-journey and node-catalog rationale.
+
+[`Roadmap`](./ROADMAP.md) tracks feature ideas worth keeping without turning the README into a promise list.
 
 [`Node reference`](./nodes.md) is the public component catalog. It should match `visual-artifact contract`.
 
