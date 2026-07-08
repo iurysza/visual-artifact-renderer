@@ -1,0 +1,64 @@
+name: Deploy Cloudflare Worker
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install worker dependencies
+        run: cd worker && bun install
+
+      - name: Run worker tests
+        run: cd worker && bun test
+
+      - name: Install app dependencies
+        run: cd app && pnpm install --frozen-lockfile
+
+      - name: Build cloud renderer
+        run: cd app && pnpm build:cloud
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          workingDirectory: worker
+          wranglerVersion: "4.12.0"
+
+      - name: Smoke test
+        if: env.VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL != ''
+        env:
+          VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL: ${{ secrets.VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL }}
+        run: |
+          curl -fsSL "${VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL}/" -o /dev/null
