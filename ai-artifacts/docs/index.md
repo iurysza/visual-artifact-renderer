@@ -1,44 +1,79 @@
-# Docs Index
+# Visualizer MOC
 
-> System of record for Visualizer knowledge. `AGENTS.md` is the map; this is the shelf.
+> Map of content for Visualizer knowledge. Start with the question you have, then follow the links.
+
+Visualizer is documented as a small knowledge base, not one giant manual. The [`README`](../../README.md) is the public landing page. This index is the map.
 
 ## Start here
 
-- [`README.md`](../../README.md) — user-facing problem, setup, CLI, and data flow.
-- [`AGENTS.md`](../../AGENTS.md) — agent map and repo conventions.
-- [`AGENT_ONBOARDING.md`](../AGENT_ONBOARDING.md) — hands-on maintainer handoff.
-- [`ARCHITECTURE.md`](../ARCHITECTURE.md) — component responsibilities and runtime flows.
-- [`SEMANTIC_MAP.md`](../SEMANTIC_MAP.md) — domain concepts and boundaries.
+If you are new to the project, read these in order:
 
-## Catalog
+1. [`README`](../../README.md) for what the tool does and the shortest path to a rendered artifact.
+2. [`Product`](./PRODUCT.md) for the problem, users, and product stance.
+3. [`Architecture`](../ARCHITECTURE.md) for the runtime boundaries between agent, CLI, storage, and renderer.
+4. [`Semantic map`](../SEMANTIC_MAP.md) for domain language and filesystem contracts.
+5. [`Agent onboarding`](../AGENT_ONBOARDING.md) for the maintainer handoff.
 
-| Doc | Purpose | Primary source |
-|---|---|---|
-| [`CORE_BELIEFS.md`](./CORE_BELIEFS.md) | Non-negotiable product/engineering principles. | schema, CLI, renderer |
-| [`PRODUCT.md`](./PRODUCT.md) | Problem, users, product purpose, brand stance. | README, skill, renderer |
-| [`DESIGN.md`](./DESIGN.md) | Visual design system and node philosophy. | `app/src/app/globals.css`, manifest |
-| [`FRONTEND.md`](./FRONTEND.md) | Next.js renderer, routes, adapters, theming. | `app/src/*` |
-| [`RELIABILITY.md`](./RELIABILITY.md) | Validation and verification commands. | app/CLI scripts |
-| [`design-docs/`](./design-docs/index.md) | Deep-dives on nodes, themes, diagrams. | schema, adapters, CSS |
-| [`product-specs/`](./product-specs/index.md) | User journey and node catalog rationale. | README, contract, skill |
-| [`references/`](./references/) | LLM-facing extracts and historical notes. | contract, scripts |
-| [`../../ai-artifacts/docs/nodes.md`](../../ai-artifacts/docs/nodes.md) | Public node reference and composition patterns. | `visual-artifact contract` / `cli/assets/contract.json` |
+Agents should also read [`AGENTS.md`](../../AGENTS.md), which is the repo operating map.
 
-## Current architecture facts
+## Task map
+
+| If you need to | Read |
+|---|---|
+| install, run, or script the CLI | [`CLI`](./cli.md) |
+| create or validate a spec | [`CLI`](./cli.md), then [`node reference`](./nodes.md) |
+| understand comments or AI Colab | [`Annotations`](./annotations.md) |
+| publish artifacts publicly | [`Publishing`](./publishing.md) |
+| add or change node types | [`Node reference`](./nodes.md), [`frontend guide`](./FRONTEND.md), [`reliability`](./RELIABILITY.md) |
+| change renderer routes, adapters, or theming | [`Frontend guide`](./FRONTEND.md), [`design`](./DESIGN.md) |
+| verify a change before shipping | [`Reliability`](./RELIABILITY.md) |
+| cut a release | [`Release`](./RELEASE.md), then [`publishing`](./publishing.md) |
+| understand why the product is constrained | [`Core beliefs`](./CORE_BELIEFS.md), [`product`](./PRODUCT.md) |
+
+## Core maps
+
+[`Core beliefs`](./CORE_BELIEFS.md) defines the non-negotiables: JSON, not arbitrary UI code; validation at boundaries; renderer-owned quality.
+
+[`Product`](./PRODUCT.md) explains who Visualizer is for and why constrained generative UI is the product shape.
+
+[`Architecture`](../ARCHITECTURE.md) is the system map. Use it when you need runtime flow, storage, URL contracts, or change hotspots.
+
+[`Semantic map`](../SEMANTIC_MAP.md) gives the vocabulary: artifact, bundle, contract, node, adapter, annotation, and publish profile.
+
+## Working docs
+
+[`CLI`](./cli.md) covers install, commands, runtime paths, server roles, configuration, and contract inspection.
+
+[`Annotations`](./annotations.md) covers persistent comments, AI Colab, local writes, hosted writes, authors, and sharing.
+
+[`Publishing`](./publishing.md) covers Cloudflare setup, Worker deploy, `--publish`, GitHub Actions, hosted comments, and publishing environment variables.
+
+[`Frontend guide`](./FRONTEND.md) covers Next.js routes, render flow, annotation components, AI Colab components, theming, path helpers, and adding node types.
+
+[`Reliability`](./RELIABILITY.md) lists the checks to run for schema, renderer, CLI, theme, Mermaid, and docs-only changes.
+
+[`Design`](./DESIGN.md) records the visual system and node philosophy. Deep dives live under [`design docs`](./design-docs/index.md).
+
+[`Product specs`](./product-specs/index.md) preserve user-journey and node-catalog rationale.
+
+[`Node reference`](./nodes.md) is the public component catalog. It should match `visual-artifact contract`.
+
+## Current facts
 
 - Source renderer lives under `app/`, not repo root.
-- CLI lives under `cli/` and is the runtime boundary for create/validate/serve.
-- Default artifact storage is `<skill-root>/artifacts/<project>/<slug>.json`.
+- CLI lives under `cli/` and is the runtime boundary for create, validate, serve, and publish.
+- Default artifact storage is `<skill-root>/artifacts/<project>/<slug>/artifact.json`.
 - Public pages are under `/artifacts`; public JSON is under `/artifacts/data/artifacts`.
-- The contract source of truth is `shared/src/contract.ts`; `pnpm export:contract` writes `cli/assets/contract.json` for docs/tooling. Inspect it with `visual-artifact contract`.
+- The contract source of truth is `shared/src/contract.ts`; `pnpm export:contract` writes `cli/assets/contract.json` for docs and tooling. Inspect it with `visual-artifact contract`.
 
-## Verification status
+## Verification quick map
 
-| Check | How to verify | Status |
-|---|---|---|
-| Contract sync | `cd app && pnpm export:contract && pnpm verify:artifacts` | current command |
-| Renderer build | `cd app && pnpm build` | current command |
-| CLI build | `cd cli && bun run typecheck && bun run build` | current command |
-| Node count | `visual-artifact contract` (or `jq '.["nodeTypes"] | length' cli/assets/contract.json`) | 30+ |
+| Check | Command |
+|---|---|
+| Contract sync | `cd app && pnpm export:contract && pnpm verify:artifacts` |
+| Renderer build | `cd app && pnpm build` |
+| CLI build | `cd cli && bun run typecheck && bun run build` |
+| Node count | `visual-artifact contract` |
+| Docs-only sanity | `git diff --check` and link check |
 
 When updating docs, update this index if paths, commands, storage, or architecture responsibilities change.

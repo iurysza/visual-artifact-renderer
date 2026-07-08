@@ -2,9 +2,9 @@
 
 ![Visual Artifact Renderer cover](./assets/cover.jpg)
 
-Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries. The result is a shared surface both AI and humans can read, comment on, and iterate together.
+Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
 
-The idea is simple: **agents emit JSON, not HTML or React.**
+The rule is simple: **agents emit JSON, not HTML or React.** The renderer owns layout, styling, validation, and interaction.
 
 ## Demo
 
@@ -12,17 +12,17 @@ https://github.com/user-attachments/assets/1fdc9a6e-9566-4ae6-904d-dee1b8ee5e05
 
 ## Try it with prompts
 
-Ask your agent for a visual artifact when the answer would be easier to scan:
+Ask your agent for a visual artifact when markdown would be hard to scan:
 
 - `Create a visual artifact explaining the authentication flow`
 - `Compare these two solutions using a visual artifact`
 - `Walk me through these code changes using a visual artifact`
 
-## What problem this solves
+## What it solves
 
-HTML articles are a good way to explain complex work, but generating full HTML from an LLM is inconsistent, awkward to constrain, and burns tokens. Visual Artifact Renderer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page.
+LLM-generated HTML is brittle. It burns tokens, drifts in style, and is hard to validate.
 
-Visual Artifact Renderer is a generative-UI, server-driven runtime for that gap. The model describes **what** to show; the renderer owns **how** it looks.
+Visual Artifact Renderer gives agents a smaller surface: pick known UI nodes, provide data, and let a trusted renderer handle the page. The model describes what to show; the renderer decides how it looks.
 
 ## How it works
 
@@ -30,18 +30,14 @@ Visual Artifact Renderer is a generative-UI, server-driven runtime for that gap.
 flowchart TB
   subgraph Agent["Agent"]
     A1["Inspect source code/data"]
-    A2["Get node catalog<br/>visual-artifact contract"]
+    A2["Read node contract"]
     A3["Build VisualArtifactSpec JSON"]
   end
 
   subgraph CLI["visual-artifact CLI"]
-    C1["Validate Spec"]
-    C2["Write artifact JSON"]
+    C1["Validate spec"]
+    C2["Write artifact bundle"]
     C3["Start server if needed"]
-  end
-
-  subgraph Store["Artifact store"]
-    S1["artifact JSON<br/>project / slug"]
   end
 
   subgraph Renderer["Next.js renderer"]
@@ -49,39 +45,39 @@ flowchart TB
     R2["Render trusted adapters"]
   end
 
-  A1 --> A2 --> A3 --> C1
+  subgraph Cloudflare["Optional Cloudflare publishing"]
+    P1["Upload bundle to R2"]
+    P2["Serve public URL via Worker"]
+  end
 
-  C1 -->|valid spec| C2 --> C3 --> S1 --> R1 --> R2
-
-  C1 -.->|invalid spec: return errors<br/>feedback to LLM to correct itself| A3
+  A1 --> A2 --> A3 --> C1 --> C2 --> C3 --> R1 --> R2
+  C1 -.->|invalid spec| A3
+  C2 -.->|--publish| P1 --> P2
 ```
 
-The core flow:
+The runtime path:
 
-1. Agent runs `visual-artifact contract` to see the available node types, then builds a `VisualArtifactSpec`.
-3. CLI validates the spec against the exported contract.
-4. CLI writes `<skill-root>/artifacts/<project>/<slug>.json`.
-5. CLI starts the renderer if needed.
-6. Browser opens `/artifacts/<project>/<slug>/`.
-7. The Next.js app fetches JSON and renders trusted adapters.
+1. The agent runs `visual-artifact contract` and builds a `VisualArtifactSpec`.
+2. The CLI validates the spec and writes an artifact bundle.
+3. The renderer fetches `artifact.json` and renders trusted adapters.
 
 The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Features
 
-- **Constrained JSON contract** — `slug`, `title`, optional `data`, and typed `nodes`.
-- **30+ node types** — prose, stat cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, diffs, and more.
-- **Data-backed components** — tables, charts, status grids, and timelines reference datasets by `dataKey`.
-- **Local-first storage** — generated artifacts stay under the installed skill root unless overridden.
-- **CLI** — use `visual-artifact` directly.
-- **Pi extension/tool** — let Pi call `create_visual_artifact` from inside a session.
-- **Static renderer, live JSON** — the renderer is built once; new artifacts appear without rebuilding.
-- **Annotations and AI Colab** — node-level comment threads with resolve/reopen, plus an in-memory AI Colab mode for reviewing formatter comments and exporting them as Markdown.
-- **Safe rendering boundary** — validation before write, Zod parse before render, adapter-only UI.
+- Constrained JSON contract for `slug`, `title`, optional `data`, and typed `nodes`.
+- 30+ node types for prose, cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, and diffs.
+- Data-backed components that reference shared datasets by `dataKey`.
+- Local-first storage under the installed skill root unless overridden.
+- Pi extension with the `create_visual_artifact` tool.
+- Static renderer with live JSON, so new artifacts appear without rebuilding.
+- Node-level annotations and in-memory AI Colab review mode.
+- Optional Cloudflare publishing for durable public links.
+- Safe rendering boundary: CLI validation before write, Zod parse before render, adapter-only UI.
 
 ## Quick start
 
-The fastest way to install is with the curl-to-sh installer. It downloads a prebuilt binary plus the renderer static export, skill bundle, and Pi extension for your platform:
+Install the latest release:
 
 ```bash
 curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
@@ -89,7 +85,7 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-Requirements for source builds: Bun, pnpm, Node.js 20+. Pi is optional; if present, the installer installs the Pi extension too.
+Requirements for source builds: Bun, pnpm, and Node.js 20+. Pi is optional; if present, the installer registers the Pi extension.
 
 Install from this repo instead:
 
@@ -101,87 +97,15 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-`bootstrap` builds the renderer and CLI, then installs the pieces agents need:
+If Pi is running, use `/reload` or restart Pi after install.
 
-| Piece | Installed location |
-| ----- | ------------------ |
-| CLI binary | `~/.local/bin/visual-artifact` |
-| App static export | `~/.local/share/visual-artifact/app/out` |
-| Skill files | `~/.agents/skills/visual-artifact/` (`SKILL.md` + `references/` + `artifacts/`) |
-| Artifact storage | `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/` (or `<project-root>/artifacts/` in this repo) |
-| Pi extension | `~/.pi/agent/extensions/visual-artifact.ts`, registered in `~/.pi/agent/settings.json` |
-
-The artifact contract is compiled into the CLI from a shared source; it is no longer shipped as a static file in the skill target. Run `visual-artifact contract` to print it.
-
-For Pi, run `/reload` or restart Pi after install. The extension loads the global skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
-
-For maintainer release instructions, see [`ai-artifacts/docs/RELEASE.md`](./ai-artifacts/docs/RELEASE.md).
-
-If `visual-artifact` is already on PATH, future updates are just:
+Update an existing install with:
 
 ```bash
 visual-artifact bootstrap
 ```
 
-Custom harness note: `bootstrap` installs the skill into the common global skill folder. It does not discover arbitrary harness-specific skill roots. If your agent does not read `~/.agents/skills`, copy `~/.agents/skills/visual-artifact` into that harness's skill directory and wire its tool layer to call `visual-artifact create`.
-
-## Annotations
-
-Artifacts support node-level annotation threads and an in-memory AI Colab mode. Open any artifact page and choose **Comments** or **Colab** from the segmented toggle in the header.
-
-### Creating a comment
-
-1. Enable comment mode with the **Comments** toggle.
-2. Hover over a rendered node to see a subtle outline; click the node to select it (on touch, tap to preview, tap again to confirm).
-3. Write a comment in the right sidebar composer and click **Post**.
-4. The thread is anchored to the node and saved to the bundle's `annotations.json`.
-
-### Replying, resolving, and reopening
-
-- Click a thread in the sidebar to view its messages and reply.
-- Click **Resolve thread** to mark a thread as resolved.
-- Click **Reopen** on a resolved thread to continue the discussion.
-- The thread count badge on each node updates in real time.
-
-### AI Colab
-
-AI Colab lets a formatter or agent attach suggested comments to an artifact without persisting them.
-
-1. Enable **Colab** from the header toggle.
-2. Review, edit, add, or delete AI comments in the right sidebar.
-3. Click **Copy Markdown** to export the artifact plus all current colab comments as a sparse Markdown block.
-
-Colab comments live only in browser state. They are not written to `annotations.json` unless you explicitly convert them to persistent annotations.
-
-### Sharing
-
-Use the **Copy link** button in the sidebar header to copy the canonical artifact page URL.
-
-### Local-only writes
-
-Static-hosted artifacts can **serve** `artifact.json` and `annotations.json`, but they cannot **write** edits back to disk from browser JavaScript. The local `visual-artifact serve` CLI can persist annotations because it runs on your machine and has filesystem access. Hosted comment editing requires a writable backend, Git-backed flow, or similar service in the future.
-
-Authors are inferred from local git config (`user.name` and `user.email`), with a fallback to a local anonymous author when git identity is unavailable.
-
-| Variable                        | Default                               | Description                                                                  |
-| ------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
-| `VISUAL_ARTIFACT_SKILL_ROOT`    | auto-detected                         | Override skill root lookup.                                                  |
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` or `<skill-root>/artifacts` | Runtime artifact JSON store.                                                 |
-| `VISUAL_ARTIFACT_OUT_DIR`       | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export.                                                   |
-| `VISUAL_ARTIFACT_PORT`          | `9998`                                | Static-preview server port.                                                  |
-| `VISUAL_ARTIFACT_HOST`          | `127.0.0.1`                           | Server bind host.                                                            |
-| `VISUAL_ARTIFACT_MOUNT_PATH`    | `/artifacts`                          | Public route prefix.                                                         |
-| `VISUAL_ARTIFACT_DATA_PATH`     | `/data/artifacts`                     | JSON data endpoint under the mount path.                                     |
-| `VISUAL_ARTIFACT_OPEN`          | `1`                                   | Open browser when serving. Set `0` to disable.                               |
-| `VISUAL_ARTIFACT_BASE_URL`      | local server URL                      | Base URL returned by `create`/`open`; include `/artifacts` if using a proxy. |
-| `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path.                                                      |
-| `VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET` | `visual-artifact-renderer` | R2 bucket name for publishing. Run `setup cloudflare` to sync `worker/wrangler.jsonc`. |
-| `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID` | — | R2 S3-compatible access key ID.                                              |
-| `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY` | — | R2 S3-compatible secret access key.                                          |
-| `VISUAL_ARTIFACT_CLOUDFLARE_ACCOUNT_ID` | — | Cloudflare account ID.                                                       |
-| `VISUAL_ARTIFACT_CLOUDFLARE_BASE_URL` | — | Public base URL for published artifacts (e.g. `https://<worker>.<subdomain>.workers.dev`). |
-| `VISUAL_ARTIFACT_CLOUDFLARE_WORKERS_DEV_SUBDOMAIN` | — | workers.dev subdomain for quickstart base URL.                               |
-| `VISUAL_ARTIFACT_CLOUD_ROUTE_STRATEGY` | `zero-pages` | Cloud build dynamic-route strategy: `zero-pages` or `placeholder`.           |
+More install and CLI detail: [`ai-artifacts/docs/cli.md`](./ai-artifacts/docs/cli.md).
 
 ## Create an artifact
 
@@ -194,7 +118,6 @@ visual-artifact create my-spec.json
 From stdin:
 
 ```bash
-cat my-spec.json | visual-artifact create
 visual-artifact create - < my-spec.json
 ```
 
@@ -217,138 +140,69 @@ Minimal spec:
 }
 ```
 
-The CLI returns a URL like:
+The CLI returns a local URL like:
 
 ```text
 http://127.0.0.1:9998/artifacts/my-project/demo-report/
 ```
 
-### Publishing to Cloudflare
+## Annotations and AI Colab
 
-Visualizer supports BYO Cloudflare publishing so artifacts get durable public URLs under your own account.
+Artifacts support node-level comment threads. Open an artifact and use **Comments** to select nodes, post replies, resolve threads, and copy a page link.
 
-Default bucket name is `visual-artifact-renderer`. Use it, or override with `--bucket <name>` or `VISUAL_ARTIFACT_CLOUDFLARE_R2_BUCKET` in your `.env`.
+**Colab** mode lets a formatter or agent attach suggested comments without persisting them. You can review, edit, delete, or export those comments as Markdown.
 
-One-time setup (secrets are read from `.env` or shell env):
+Details: [`ai-artifacts/docs/annotations.md`](./ai-artifacts/docs/annotations.md).
 
-```bash
-cp .env.example .env
-# fill in VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID and _SECRET_ACCESS_KEY
+## Publishing
 
-visual-artifact setup cloudflare \
-  --account-id <id> \
-  --workers-dev-subdomain <subdomain>
-```
-
-`setup cloudflare` also patches `worker/wrangler.jsonc` so the Worker's R2 binding matches the chosen bucket. If you change the bucket later, rerun setup.
-
-Build and deploy the renderer:
-
-```bash
-cd app
-pnpm build:cloud
-cd ../worker
-bun install
-bun run deploy
-```
-
-Then publish artifacts:
+Use `--publish` to create a durable public URL through your own Cloudflare account:
 
 ```bash
 visual-artifact create my-spec.json --publish
 ```
 
-On success the JSON output's `url` field is the remote public page, served from the Worker's root path:
+Published artifacts use R2 for artifact bundles and a Worker for the static renderer, JSON endpoints, and hosted annotation writes.
 
-```text
-https://<worker>.<subdomain>.workers.dev/<project>/<slug>/
-```
-
-`localUrl` is also included for debugging, and a local `publish.json` sidecar is written beside `artifact.json` with non-secret publish state. Secrets are read from environment variables only; the saved profile contains non-secret config and is stored under `~/.config/visual-artifact/publish-profiles/` with mode `0600`.
-
-Run the deploy smoke test after deploying:
-
-```bash
-cd worker
-bun run smoke:deploy https://<worker>.<subdomain>.workers.dev
-```
-
-### Auto-deploy via GitHub Actions
-
-The repo includes `.github/workflows/deploy-cloudflare.yml`. It deploys the Worker on every published release and can be triggered manually via `workflow_dispatch`.
-
-To set it up:
-
-1. Create a Cloudflare API token at [https://dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens).
-2. Use the **Edit Cloudflare Workers** template.
-3. In your GitHub repo, go to **Settings** → **Environments** → **production** and add:
-   - `CLOUDFLARE_API_TOKEN` — the token from step 1
-   - `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID
-
-After merging, the workflow appears under **Actions** → **Deploy Cloudflare Worker**.
-
-Comments posted on a published artifact are persisted by the Worker to R2, so shared URLs support threaded annotations. The author is labeled as a local fallback because the Worker has no access to the viewer's git identity.
-
-To build the renderer for Cloudflare, use `cd app && pnpm build:cloud`. This exports only shared shells and runs a leak verifier so no local artifact pages are baked into the deploy.
-
-By default, artifacts are written as bundles to:
-
-```text
-<skill-root>/artifacts/<project>/<slug>/
-  artifact.json
-  annotations.json
-  publish.json   # present after successful --publish
-  assets/
-```
-
-In this source repo that is `artifacts/`, which is intentionally gitignored.
+Setup and deployment: [`ai-artifacts/docs/publishing.md`](./ai-artifacts/docs/publishing.md).
 
 ## CLI
 
-```text
-visual-artifact [global flags] <command>
-```
-
-Global flags: `--json`, `--plain`, `--quiet`, `--verbose`, `--no-color`, `--no-input`.
-
-| Command                                                                 | Purpose                                                                              |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `visual-artifact bootstrap [--dry-run]`                                 | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
-| `visual-artifact create [spec.json or -] [--project path] [--no-serve] [--publish [profile]]` | Validate, write artifact JSON, auto-start renderer, optionally publish to Cloudflare. |
-| `visual-artifact validate [spec.json or -]`                             | Validate without writing.                                                            |
-| `visual-artifact contract`                                              | Print the current artifact contract to stdout.                                       |
-| `visual-artifact serve [--port n] [--host addr] [--no-open]`            | Serve static renderer plus live artifact JSON.                                       |
-| `visual-artifact serve status`                                          | Check server health.                                                                 |
-| `visual-artifact serve stop`                                            | Best-effort stop; manually kill externally started servers.                          |
-| `visual-artifact list [project]`                                        | List projects or artifacts.                                                          |
-| `visual-artifact open [project/slug]`                                   | Open the index or one artifact.                                                      |
-| `visual-artifact doctor`                                                | Diagnose install/runtime state.                                                      |
-
-Machine-readable output:
+Common commands:
 
 ```bash
-visual-artifact --json create my-spec.json --no-serve
-visual-artifact --plain create my-spec.json --no-serve
+visual-artifact contract
+visual-artifact validate my-spec.json
+visual-artifact create my-spec.json
+visual-artifact serve --no-open
+visual-artifact doctor
 ```
 
-## App development
+Full command reference: [`ai-artifacts/docs/cli.md`](./ai-artifacts/docs/cli.md).
+
+## Knowledge base
+
+The docs are split like a small wiki. Start at the [`docs index`](./ai-artifacts/docs/index.md), then follow the page that matches your task.
+
+- Use [`CLI`](./ai-artifacts/docs/cli.md) for install paths, command flags, server roles, and configuration.
+- Use [`Annotations`](./ai-artifacts/docs/annotations.md) for comments, AI Colab, local writes, and hosted writes.
+- Use [`Publishing`](./ai-artifacts/docs/publishing.md) for Cloudflare setup, deploys, `--publish`, and GitHub Actions.
+- Use [`Architecture`](./ai-artifacts/ARCHITECTURE.md) when changing boundaries, storage, routes, or data flow.
+- Use [`Node reference`](./ai-artifacts/docs/nodes.md) when composing specs or adding node types.
+
+## Development
 
 Renderer:
 
 ```bash
 cd app
 pnpm install
-pnpm dev              # http://localhost:9999/artifacts/  (dev + HMR; live mode uses this)
-pnpm build            # static export to app/out
-pnpm build:cloud      # shell-only export for Cloudflare
+pnpm dev              # http://localhost:9999/artifacts/
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
-pnpm verify:cloud-build
-pnpm visual:qa        # optional adapter/styling QA
+pnpm build
 ```
-
-**Server roles:** `pnpm dev` on `:9999` is the dev/HMR server (also used for live mode). `visual-artifact serve` defaults to `:9998` for the static-export preview and is what `create` auto-starts.
 
 CLI:
 
@@ -357,24 +211,24 @@ cd cli
 bun install
 bun run typecheck
 bun run build
-bun run install:binary
 ```
+
+Run `pnpm visual:qa` if you touch adapters or styling. Use [`Reliability`](./ai-artifacts/docs/RELIABILITY.md) for the full verification map and [`Release`](./ai-artifacts/docs/RELEASE.md) before publishing a new version.
 
 ## Contract
 
-The contract is generated from renderer source and bundled into the CLI:
+The contract is compiled into the CLI from a shared source:
 
-- `app/src/lib/contract/artifact-schema.ts`
-- `app/src/lib/contract/artifact-manifest.ts`
-- `cli/assets/contract.json` (generated build artifact, not committed)
+- `shared/src/contract.ts`
+- `cli/assets/contract.json` (generated for docs and tooling, not committed)
 
-Inspect the current contract from the CLI:
+Inspect it with:
 
 ```bash
 visual-artifact contract
 ```
 
-After schema or manifest changes:
+After contract changes:
 
 ```bash
 cd app
@@ -382,18 +236,13 @@ pnpm export:contract
 pnpm verify:artifacts
 ```
 
-Node reference: [`ai-artifacts/docs/nodes.md`](./ai-artifacts/docs/nodes.md).
-
 ## Repository layout
 
 ```text
 app/                   # Next.js renderer source + static export
 cli/                   # Bun CLI source and compiled binary
 shared/                # shared annotation schema
-pi-extension/
-  visual-artifact.ts   # Pi tool wrapper for create_visual_artifact
+pi-extension/          # Pi tool wrapper for create_visual_artifact
 skill/                 # agent-facing skill bundle
-  SKILL.md
-  references/          # model-facing usage notes
-artifacts/             # local generated JSON, gitignored
+artifacts/             # local generated bundles, gitignored
 ```
