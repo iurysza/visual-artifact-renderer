@@ -41,6 +41,11 @@
     "vaul": "^1.1.2",
     "zod": "^4.4.3"
   },
+  "dependenciesMeta": {
+    "@agents/visual-artifact-annotations": {
+      "injected": true
+    }
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",

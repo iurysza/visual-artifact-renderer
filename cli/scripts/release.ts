@@ -75,6 +75,7 @@ async function installDependencies(): Promise<void> {
   }
   exec("pnpm install", APP_DIR)
   exec("bun install", SHARED_DIR)
+  exec("bun run build", SHARED_DIR)
   exec("bun install", ROOT)
 }
 
@@ -89,6 +90,10 @@ async function buildCliBinary(target: Target, outPath: string): Promise<void> {
   }
   const entry = resolve(ROOT, "src", "main.ts")
   exec(`bun build --compile --target=${target.bunTarget} ${entry} --outfile ${outPath}`, ROOT)
+
+  console.log(`[release] Smoke testing ${target.id} binary...`)
+  execSync(`${outPath} contract --format summary`, { cwd: ROOT, stdio: "pipe" })
+  console.log(`[release] Smoke test passed for ${target.id}`)
 }
 
 async function copySupportingFiles(buildDir: string): Promise<void> {

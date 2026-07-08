@@ -33,40 +33,11 @@ const ChartKindSchema = z.enum(["line", "bar"])
 const ToneSchema = z.enum(["default", "accent", "success", "warning", "danger"])
 const GridColumnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
 
-export const ARTIFACT_SPEC_CONSTRAINTS = {
-  slug: {
-    type: "string",
-    format: "kebab-case",
-    minLength: 1,
-    maxLength: ARTIFACT_SLUG_MAX_LENGTH,
-  },
-  title: {
-    type: "string",
-    minLength: 1,
-  },
-  description: {
-    type: "string",
-    minLength: 1,
-    optional: true,
-  },
-  createdAt: {
-    type: "string",
-    minLength: 1,
-    optional: true,
-  },
-  layout: {
-    type: {
-      enum: ["default", "grid"] as const,
-    },
-    columns: {
-      enum: [1, 2, 3, 4] as const,
-    },
-  },
-  nodes: {
-    type: "array",
-    minItems: 1,
-  },
-} as const
+export {
+  ARTIFACT_SPEC_CONSTRAINTS,
+  ARTIFACT_NODE_TYPES,
+} from "@agents/visual-artifact-annotations/contract"
+
 const DiagramHeightSchema = z.number().int().min(240).max(1600)
 
 const FlowItemSchema = z
@@ -715,42 +686,3 @@ export const VisualArtifactSpecSchema = z
   })
 
 export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>
-
-export const ARTIFACT_NODE_TYPES = [
-  "alert",
-  "area-chart",
-  "radar-chart",
-  "scatter-chart",
-  "heatmap",
-  "log",
-  "definition-list",
-  "diff",
-  "donut-chart",
-  "file-tree",
-  "heading",
-  "image",
-  "pie-chart",
-  "stepper",
-  "text",
-  "card",
-  "metric",
-  "stat-card",
-  "badge",
-  "button",
-  "separator",
-  "table",
-  "data-table",
-  "comparison-table",
-  "chart",
-  "mermaid",
-  "svg-diagram",
-  "flow",
-  "timeline",
-  "code-block",
-  "status-grid",
-  "grid",
-  "section",
-  "tabs",
-  "accordion",
-  "prose",
-] as const satisfies readonly ArtifactNode["type"][]

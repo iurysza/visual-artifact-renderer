@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, readFile, readdir } from "node:fs/promises"
+import { cp, mkdir, rm, readdir } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -7,7 +7,6 @@ import { execSync } from "node:child_process"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, "..")
 const DIST = resolve(ROOT, "dist")
-const ASSETS_SRC = resolve(ROOT, "src", "assets")
 
 async function cleanStaleBunBuildFiles(): Promise<void> {
   const files = await readdir(ROOT)
@@ -35,7 +34,6 @@ function findProjectRoot(): string {
 
 async function main(): Promise<void> {
   const projectRoot = findProjectRoot()
-  const contractSrc = resolve(projectRoot, "cli", "assets", "contract.json")
   const outSrc = resolve(projectRoot, "app", "out")
 
   console.log("[build] Cleaning dist...")
@@ -46,18 +44,6 @@ async function main(): Promise<void> {
 
   console.log(`[build] Project root: ${projectRoot}`)
 
-  await mkdir(ASSETS_SRC, { recursive: true })
-
-  try {
-    await readFile(contractSrc)
-    await cp(contractSrc, resolve(ASSETS_SRC, "contract.json"), { force: true })
-    console.log(`[build] Bundled contract: ${contractSrc}`)
-  } catch {
-    console.error(`[build] contract.json not found at ${contractSrc}`)
-    console.error("        Run `pnpm export:contract` in the app/ directory first.")
-    process.exit(1)
-  }
-
   if (existsSync(outSrc)) {
     await cp(outSrc, resolve(DIST, "out"), { recursive: true, force: true })
     console.log(`[build] Copied static export: ${outSrc}`)
@@ -67,8 +53,9 @@ async function main(): Promise<void> {
   }
 
   console.log("[build] Compiling binary...")
+  const binaryPath = resolve(DIST, "visual-artifact")
   try {
-    execSync(`bun build --compile ${resolve(ROOT, "src", "main.ts")} --outfile ${resolve(DIST, "visual-artifact")}`, {
+    execSync(`bun build --compile ${resolve(ROOT, "src", "main.ts")} --outfile ${binaryPath}`, {
       cwd: ROOT,
       stdio: "inherit",
     })
@@ -78,7 +65,16 @@ async function main(): Promise<void> {
     await cleanStaleBunBuildFiles()
   }
 
-  console.log(`[build] Done: ${resolve(DIST, "visual-artifact")}`)
+  console.log("[build] Smoke testing compiled binary...")
+  try {
+    execSync(`${binaryPath} contract --format summary`, { cwd: ROOT, stdio: "pipe" })
+    console.log("[build] Smoke test passed")
+  } catch {
+    console.error("[build] Smoke test failed: compiled binary cannot print contract")
+    process.exit(1)
+  }
+
+  console.log(`[build] Done: ${binaryPath}`)
 }
 
 main().catch((error) => {
