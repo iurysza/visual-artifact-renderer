@@ -89,7 +89,7 @@ The extension registers:
 |---|---|---|
 | `cli/assets/contract.json` | `app/scripts/contract/export-contract.ts` | Compiled CLI fallback; generated build artifact, not committed |
 | `VisualArtifactSpecSchema` | `app/src/lib/contract/artifact-schema.ts` | Renderer and `verify-artifacts` |
-| `artifactManifest` | `app/src/lib/contract/artifact-manifest.ts` | Contract exporter and docs |
+| `artifactManifest` | `shared/src/contract.ts` (consumed by `app/src/lib/contract/artifact-manifest.ts`) | Contract exporter, CLI, and docs |
 | `@agents/visual-artifact-annotations` | `shared/src/annotations.ts` | Renderer and CLI for annotation data |
 
 ## 3. Runtime flows

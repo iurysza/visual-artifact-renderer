@@ -30,7 +30,7 @@
 - CLI lives under `cli/` and is the runtime boundary for create/validate/serve.
 - Default artifact storage is `<skill-root>/artifacts/<project>/<slug>.json`.
 - Public pages are under `/artifacts`; public JSON is under `/artifacts/data/artifacts`.
-- The contract is `cli/assets/contract.json`, generated from schema + manifest. Inspect it with `visual-artifact contract`.
+- The contract source of truth is `shared/src/contract.ts`; `pnpm export:contract` writes `cli/assets/contract.json` for docs/tooling. Inspect it with `visual-artifact contract`.
 
 ## Verification status
 

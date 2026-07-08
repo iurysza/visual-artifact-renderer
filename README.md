@@ -111,7 +111,7 @@ visual-artifact doctor
 | Artifact storage | `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/` (or `<project-root>/artifacts/` in this repo) |
 | Pi extension | `~/.pi/agent/extensions/visual-artifact.ts`, registered in `~/.pi/agent/settings.json` |
 
-The artifact contract is bundled into the CLI; it is no longer shipped as a static file in the skill target. Run `visual-artifact contract` to print it.
+The artifact contract is compiled into the CLI from a shared source; it is no longer shipped as a static file in the skill target. Run `visual-artifact contract` to print it.
 
 For Pi, run `/reload` or restart Pi after install. The extension loads the global skill and registers the `create_visual_artifact` tool plus `/visual-diff` and `/visual-recap`.
 

@@ -1,17 +1,13 @@
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
+import { createArtifactContract } from "@agents/visual-artifact-annotations/contract"
 import { defaultContractPath } from "./config.ts"
 import type { ArtifactContract } from "./types.ts"
 
 let contractCache: ArtifactContract | null = null
 
-async function loadBundledContract(): Promise<ArtifactContract | null> {
-  try {
-    const module = await import("./assets/contract.json", { assert: { type: "json" } })
-    return module.default as unknown as ArtifactContract
-  } catch {
-    return null
-  }
+async function loadBundledContract(): Promise<ArtifactContract> {
+  return createArtifactContract()
 }
 
 export async function loadContract(contractPath?: string): Promise<ArtifactContract> {
@@ -42,12 +38,8 @@ export async function loadContract(contractPath?: string): Promise<ArtifactContr
   }
 
   const bundledContract = await loadBundledContract()
-  if (bundledContract) {
-    contractCache = bundledContract
-    return contractCache
-  }
-
-  throw new Error("Could not find artifact contract. Run from inside the visual-artifact skill, set VISUAL_ARTIFACT_CONTRACT_PATH, or run `visual-artifact bootstrap`.")
+  contractCache = bundledContract
+  return contractCache
 }
 
 export function resetContractCache(): void {

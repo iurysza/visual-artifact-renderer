@@ -15,7 +15,7 @@ The agent emits a constrained `VisualArtifactSpec`. The Pi extension calls the `
 Key surfaces:
 
 - **Renderer** — `app/`, Next.js static export under `basePath: "/artifacts"`.
-- **Contract system** — `app/src/lib/contract/artifact-schema.ts` + `app/src/lib/contract/artifact-manifest.ts` → `cli/assets/contract.json`. Inspect it with `visual-artifact contract`.
+- **Contract system** — `shared/src/contract.ts` is the shared source of truth; `app/src/lib/contract/artifact-schema.ts` + `app/src/lib/contract/artifact-manifest.ts` consume it and `pnpm export:contract` writes `cli/assets/contract.json`. Inspect it with `visual-artifact contract`.
 - **CLI** — `cli/`, Bun binary for create/validate/serve/list/open/doctor/bootstrap.
 - **Pi extension** — `pi-extension/visual-artifact.ts`, registers `create_visual_artifact` and delegates to the CLI.
 - **Skill docs** — `skill/SKILL.md` and `skill/references/*`, model-facing instructions.

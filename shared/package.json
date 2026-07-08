@@ -3,13 +3,26 @@
   "version": "0.3.0",
   "description": "Shared annotation schema and parsers for the visual-artifact CLI and renderer.",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepare": "bun run build"
+  },
   "exports": {
-    ".": "./src/annotations.ts",
-    "./mermaid-validator": "./src/mermaid-validator.ts"
+    ".": "./dist/annotations.js",
+    "./contract": "./dist/contract.js",
+    "./mermaid-validator": "./dist/mermaid-validator.js"
   },
   "dependencies": {
     "linkedom": "^0.18.12",
     "mermaid": "^11.15.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
   }
 }
