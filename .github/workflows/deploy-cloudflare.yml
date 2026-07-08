@@ -41,6 +41,12 @@ jobs:
       - name: Run worker tests
         run: cd worker && bun test
 
+      - name: Build shared package
+        run: |
+          cd shared
+          bun install
+          bun run build
+
       - name: Install app dependencies
         run: cd app && pnpm install --frozen-lockfile
 

@@ -73,9 +73,9 @@ async function installDependencies(): Promise<void> {
   if (!commandExists("bun")) {
     throw new Error("bun is required to compile the CLI")
   }
-  exec("pnpm install", APP_DIR)
   exec("bun install", SHARED_DIR)
   exec("bun run build", SHARED_DIR)
+  exec("pnpm install", APP_DIR)
   exec("bun install", ROOT)
 }
 
