@@ -273,6 +273,20 @@ cd worker
 bun run smoke:deploy https://<worker>.<subdomain>.workers.dev
 ```
 
+### Auto-deploy via GitHub Actions
+
+The repo includes `.github/workflows/deploy-cloudflare.yml`. It deploys the Worker on every published release and can be triggered manually via `workflow_dispatch`.
+
+To set it up:
+
+1. Create a Cloudflare API token at [https://dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens).
+2. Use the **Edit Cloudflare Workers** template.
+3. In your GitHub repo, go to **Settings** → **Environments** → **production** and add:
+   - `CLOUDFLARE_API_TOKEN` — the token from step 1
+   - `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID
+
+After merging, the workflow appears under **Actions** → **Deploy Cloudflare Worker**.
+
 Comments posted on a published artifact are persisted by the Worker to R2, so shared URLs support threaded annotations. The author is labeled as a local fallback because the Worker has no access to the viewer's git identity.
 
 To build the renderer for Cloudflare, use `cd app && pnpm build:cloud`. This exports only shared shells and runs a leak verifier so no local artifact pages are baked into the deploy.
