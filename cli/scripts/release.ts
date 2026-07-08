@@ -91,9 +91,20 @@ async function buildCliBinary(target: Target, outPath: string): Promise<void> {
   const entry = resolve(ROOT, "src", "main.ts")
   exec(`bun build --compile --target=${target.bunTarget} ${entry} --outfile ${outPath}`, ROOT)
 
+  if (!canSmokeTestTarget(target)) {
+    console.log(`[release] Skipping smoke test for ${target.id} on ${process.platform}`)
+    return
+  }
+
   console.log(`[release] Smoke testing ${target.id} binary...`)
   execSync(`${outPath} contract --format summary`, { cwd: ROOT, stdio: "pipe" })
   console.log(`[release] Smoke test passed for ${target.id}`)
+}
+
+function canSmokeTestTarget(target: Target): boolean {
+  if (target.os === "macos") return process.platform === "darwin"
+  if (target.os === "linux") return process.platform === "linux"
+  return false
 }
 
 async function copySupportingFiles(buildDir: string): Promise<void> {
