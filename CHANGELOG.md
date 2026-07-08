@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.2...v0.3.3) (2026-07-08)
+
+
+### Bug Fixes
+
+* **release:** skip incompatible binary smoke tests ([542d984](https://github.com/iurysza/visual-artifact-renderer/commit/542d984cc82aff693cdd69ca0a6e2876aa06186a))
+
 ## [0.3.2](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.1...v0.3.2) (2026-07-08)
 
 
