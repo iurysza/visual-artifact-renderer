@@ -48,6 +48,7 @@ jobs:
         run: cd app && pnpm build:cloud
 
       - name: Deploy Worker
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -57,19 +58,7 @@ jobs:
           wranglerVersion: "4.12.0"
 
       - name: Smoke test
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          WORKER_NAME=$(bun -e '
-            import { readFileSync } from "fs";
-            const text = readFileSync("worker/wrangler.jsonc", "utf8");
-            const stripped = text.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
-            console.log(JSON.parse(stripped).name);
-          ')
-          SUBDOMAIN=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | \
-            jq -r '.result.subdomain')
-          URL="https://$WORKER_NAME.$SUBDOMAIN.workers.dev"
+          URL="${{ steps.deploy.outputs.deployment-url }}"
           echo "Smoke-testing $URL"
           curl -fsSL "$URL/" -o /dev/null
