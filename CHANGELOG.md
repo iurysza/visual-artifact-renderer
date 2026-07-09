@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.3...v0.4.0) (2026-07-09)
+
+
+### Features
+
+* **cli:** add tracked server shutdown ([bfaadb8](https://github.com/iurysza/visual-artifact-renderer/commit/bfaadb892b5785bdcd1693b40698337e2c55ba8f))
+
 ## [0.3.3](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.2...v0.3.3) (2026-07-08)
 
 
