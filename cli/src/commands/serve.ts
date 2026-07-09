@@ -1,11 +1,18 @@
 import { resolve, join } from "node:path"
 import { spawn } from "node:child_process"
-import type { Server } from "bun"
 import { loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
 import { applyMutations, parseAnnotationMutationsPayload, readAnnotationsDocument, resolveLocalAuthor, writeAnnotationsDocument } from "../lib/annotations.ts"
 import type { AnnotationMutations } from "../lib/annotations.ts"
+import {
+  bearerTokenMatches,
+  createServerState,
+  generateShutdownToken,
+  removeServerState,
+  serverStatePath,
+  writeServerState,
+} from "../lib/server-lifecycle.ts"
 import type { Logger } from "../logger.ts"
 import { dirExists, fileExists } from "../util.ts"
 import type { Config } from "../types.ts"
@@ -97,60 +104,126 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     log.warn(`Artifacts directory missing: ${artifactsDir}`)
   }
 
-  Bun.serve({
-    port: config.port,
-    hostname: config.host,
-    async fetch(req) {
-      const url = new URL(req.url)
-      const pathname = decodeURIComponent(url.pathname)
-
-      if (mountPath && pathname === mountPath) {
-        return new Response(null, { status: 302, headers: { Location: `${mountPath}/` } })
-      }
-
-      const stripped = stripMountPath(pathname, mountPath)
-      if (stripped === null) {
-        return new Response("Not found", { status: 404 })
-      }
-
-      if (stripped.startsWith(`${apiPath}/`) || stripped === apiPath) {
-        return await serveApi(req, stripped, artifactsDir, apiPath)
-      }
-
-      if (stripped.startsWith(`${dataPath}/`)) {
-        return await serveData(stripped, artifactsDir, dataPath)
-      }
-
-      const staticResponse = await serveStatic(stripped, outDir)
-      if (staticResponse) return staticResponse
-
-      const indexResponse = await serveDirectoryIndex(stripped, outDir)
-      if (indexResponse) return indexResponse
-
-      const liveArtifactResponse = await serveLiveArtifactShell(stripped, artifactsDir, outDir)
-      if (liveArtifactResponse) return liveArtifactResponse
-
-      const liveProjectResponse = await serveLiveProjectIndexShell(stripped, artifactsDir, outDir)
-      if (liveProjectResponse) return liveProjectResponse
-
-      return await serveFallback(outDir)
-    },
+  const shutdownPath = "/api/shutdown"
+  const shutdownToken = generateShutdownToken()
+  const state = createServerState(config, shutdownToken)
+  const statePath = serverStatePath(config)
+  let requestShutdown!: () => void
+  const shutdownRequested = new Promise<void>((resolve) => {
+    requestShutdown = resolve
   })
+
+  let server: ReturnType<typeof Bun.serve>
+  try {
+    server = Bun.serve({
+      port: config.port,
+      hostname: config.host,
+      async fetch(req) {
+        const url = new URL(req.url)
+        const pathname = decodeURIComponent(url.pathname)
+
+        if (mountPath && pathname === mountPath) {
+          return new Response(null, { status: 302, headers: { Location: `${mountPath}/` } })
+        }
+
+        const stripped = stripMountPath(pathname, mountPath)
+        if (stripped === null) {
+          return new Response("Not found", { status: 404 })
+        }
+
+        if (stripped === shutdownPath) {
+          return serveShutdownApi(req, stripped, shutdownPath, shutdownToken, () => {
+            setTimeout(requestShutdown, 0)
+          })
+        }
+
+        if (stripped.startsWith(`${apiPath}/`) || stripped === apiPath) {
+          return await serveApi(req, stripped, artifactsDir, apiPath)
+        }
+
+        if (stripped.startsWith(`${dataPath}/`)) {
+          return await serveData(stripped, artifactsDir, dataPath)
+        }
+
+        const staticResponse = await serveStatic(stripped, outDir)
+        if (staticResponse) return staticResponse
+
+        const indexResponse = await serveDirectoryIndex(stripped, outDir)
+        if (indexResponse) return indexResponse
+
+        const liveArtifactResponse = await serveLiveArtifactShell(stripped, artifactsDir, outDir)
+        if (liveArtifactResponse) return liveArtifactResponse
+
+        const liveProjectResponse = await serveLiveProjectIndexShell(stripped, artifactsDir, outDir)
+        if (liveProjectResponse) return liveProjectResponse
+
+        return await serveFallback(outDir)
+      },
+    })
+  } catch (error) {
+    log.error(`Could not start server on ${config.host}:${config.port}: ${error instanceof Error ? error.message : String(error)}`)
+    return 1
+  }
+
+  try {
+    await writeServerState(state, statePath)
+  } catch (error) {
+    await server.stop(true)
+    log.error(`Could not write server state: ${error instanceof Error ? error.message : String(error)}`)
+    return 1
+  }
+
+  let cleanedUp = false
+  const cleanup = async (force = false): Promise<void> => {
+    if (cleanedUp) return
+    cleanedUp = true
+    await removeServerState(statePath)
+    await server.stop(force)
+  }
+  const signalHandler = (): void => {
+    void cleanup(true).finally(() => process.exit(0))
+  }
+  process.once("SIGINT", signalHandler)
+  process.once("SIGTERM", signalHandler)
 
   const localUrl = localBaseUrl(config)
   log.success(`Visualizer server running at ${localUrl}`)
   log.log(`  outDir:      ${outDir}`)
   log.log(`  artifacts:   ${artifactsDir}`)
+  log.log(`  state:       ${statePath}`)
 
   if (config.open) {
     openBrowser(localUrl)
   }
 
-  await new Promise(() => {
-    // keep process alive
-  })
+  await shutdownRequested
+  process.removeListener("SIGINT", signalHandler)
+  process.removeListener("SIGTERM", signalHandler)
+  await cleanup(false)
 
   return 0
+}
+
+export function serveShutdownApi(
+  req: Request,
+  stripped: string,
+  shutdownPath: string,
+  shutdownToken: string,
+  onShutdown: () => void,
+): Response {
+  if (stripped !== shutdownPath) return notFound()
+  if (req.method !== "POST") {
+    return jsonResponse(JSON.stringify({ error: "Method not allowed" }, null, 2), { status: 405 })
+  }
+  const authHeader = req.headers.get("authorization")
+  if (!authHeader) {
+    return jsonResponse(JSON.stringify({ error: "Missing authorization" }, null, 2), { status: 401 })
+  }
+  if (!bearerTokenMatches(authHeader, shutdownToken)) {
+    return jsonResponse(JSON.stringify({ error: "Forbidden" }, null, 2), { status: 403 })
+  }
+  onShutdown()
+  return jsonResponse(JSON.stringify({ ok: true, message: "Shutting down" }, null, 2))
 }
 
 export async function serveApi(req: Request, stripped: string, artifactsDir: string, apiPath: string): Promise<Response> {

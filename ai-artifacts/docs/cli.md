@@ -55,8 +55,8 @@ Use `--json` for automation, `--plain` for URL-only output, and `--no-input` in 
 | `visual-artifact validate [spec.json or -]` | Validate a spec without writing it. |
 | `visual-artifact contract` | Print the current artifact contract. |
 | `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer plus live artifact JSON. |
-| `visual-artifact serve status` | Check server health. |
-| `visual-artifact serve stop` | Best-effort stop for the local server. |
+| `visual-artifact serve status [--host addr] [--port n]` | Check server health and whether it is tracked by local lifecycle state. |
+| `visual-artifact serve stop [--host addr] [--port n] [--force]` | Stop a tracked local server via tokenized shutdown, with conservative fallback process termination. |
 | `visual-artifact list [project]` | List projects or artifacts. |
 | `visual-artifact open [project/slug]` | Open the index or one artifact. |
 | `visual-artifact doctor` | Diagnose install and runtime state. |
@@ -123,11 +123,21 @@ Data endpoints use:
 /artifacts/data/artifacts/<project>/<slug>/assets/<file>
 ```
 
+Local server lifecycle state uses per-address files:
+
+```text
+${XDG_STATE_HOME:-~/.local/state}/visual-artifact/servers/<host>-<port>.json
+```
+
+The state file records PID, host, port, mount path, process identity metadata, and a random shutdown token. It is written after `serve` binds successfully and removed during normal shutdown.
+
 ## Server roles
 
 `pnpm dev` runs the Next.js dev server on `:9999`. Use it when editing renderer code or using live mode.
 
 `visual-artifact serve` runs the CLI static-preview server on `:9998`. `create` starts it automatically unless you pass `--no-serve`.
+
+The local server exposes a token-protected shutdown endpoint at `/artifacts/api/shutdown`. Use `visual-artifact serve stop` to call it from the matching state file. If state is missing, stop only terminates a listener that clearly looks like `visual-artifact serve`; ambiguous listeners are refused unless `--force` is explicit. Use `serve status --json` to see `running`, `tracked`, `statePath`, and `pid` fields for automation.
 
 ## Configuration
 
