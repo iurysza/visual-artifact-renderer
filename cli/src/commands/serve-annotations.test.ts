@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { mkdir, rm, writeFile, mkdtemp } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { serveApi, serveData } from "./serve.ts"
+import { serveApi, serveData, serveShutdownApi } from "./serve.ts"
 
 async function makeTempDir(prefix: string): Promise<string> {
   return mkdtemp(join(tmpdir(), prefix))
@@ -34,6 +34,62 @@ const validMutation = {
   type: "createThread" as const,
   thread: validThread,
 }
+
+describe("serveShutdownApi", () => {
+  test("rejects missing authorization", async () => {
+    let called = false
+    const response = serveShutdownApi(
+      new Request("http://localhost/api/shutdown", { method: "POST" }),
+      "/api/shutdown",
+      "/api/shutdown",
+      "secret-token-secret-token-secret-token",
+      () => { called = true },
+    )
+    expect(response.status).toBe(401)
+    expect(called).toBe(false)
+  })
+
+  test("rejects wrong token", async () => {
+    let called = false
+    const response = serveShutdownApi(
+      new Request("http://localhost/api/shutdown", { method: "POST", headers: { Authorization: "Bearer wrong-token" } }),
+      "/api/shutdown",
+      "/api/shutdown",
+      "secret-token-secret-token-secret-token",
+      () => { called = true },
+    )
+    expect(response.status).toBe(403)
+    expect(called).toBe(false)
+  })
+
+  test("accepts matching token", async () => {
+    let called = false
+    const token = "secret-token-secret-token-secret-token"
+    const response = serveShutdownApi(
+      new Request("http://localhost/api/shutdown", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+      "/api/shutdown",
+      "/api/shutdown",
+      token,
+      () => { called = true },
+    )
+    expect(response.status).toBe(200)
+    expect(called).toBe(true)
+    expect(await response.text()).not.toContain(token)
+  })
+
+  test("rejects non-POST", async () => {
+    let called = false
+    const response = serveShutdownApi(
+      new Request("http://localhost/api/shutdown", { method: "GET" }),
+      "/api/shutdown",
+      "/api/shutdown",
+      "secret-token-secret-token-secret-token",
+      () => { called = true },
+    )
+    expect(response.status).toBe(405)
+    expect(called).toBe(false)
+  })
+})
 
 describe("serveData annotations endpoint", () => {
   test("returns empty document when annotations.json is missing", async () => {

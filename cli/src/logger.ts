@@ -59,6 +59,10 @@ export class Logger {
     if (this.opts.quiet && !this.opts.plain) return
     console.log(text)
   }
+
+  structured(): boolean {
+    return this.opts.json || this.opts.plain
+  }
 }
 
 export function isQuiet(): boolean {

@@ -28,6 +28,7 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 4. **Single sources of truth.** URL/path math lives in `app/src/lib/artifacts/paths.ts`. Default artifact storage is `<project-root>/artifacts/<project>/<slug>.json` (or `<skill-root>/artifacts/...` when installed).
 5. **Small, well-named files.** Prefer scoped adapter files over monolithic registries.
 6. **Types are documentation.** Push semantic meaning into names. Use Zod to make illegal specs unrepresentable.
+7. **OpenSpec changes are local-only.** Keep `openspec/changes/` planning packages out of git. They can exist locally for discovery/implementation, but PRs must not add change specs or task markdown.
 
 ## Before committing renderer/schema changes
 

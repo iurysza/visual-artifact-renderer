@@ -103,20 +103,25 @@ const serveCmd = program
 serveCmd
   .command("status")
   .description("Check whether the renderer server is running.")
-  .action(async () => {
+  .option("--port <number>", "Server port", parseInt)
+  .option("--host <address>", "Server host")
+  .action(async (opts) => {
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)
-    const exitCode = await serveStatus(log)
+    const exitCode = await serveStatus(log, opts)
     process.exit(exitCode)
   })
 
 serveCmd
   .command("stop")
   .description("Stop the renderer server if it is tracked.")
-  .action(async () => {
+  .option("--port <number>", "Server port", parseInt)
+  .option("--host <address>", "Server host")
+  .option("--force", "Terminate an ambiguous listener on the target port")
+  .action(async (opts) => {
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)
-    const exitCode = await serveStop(log)
+    const exitCode = await serveStop(opts, log)
     process.exit(exitCode)
   })
 

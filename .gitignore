@@ -55,6 +55,8 @@ yarn-error.log*
 next-env.d.ts
 
 # generated / local artifacts
+# OpenSpec change packages are local planning artifacts; do not commit them.
+openspec/changes/
 .pi/handoffs/
 .pi/skills-lock.json
 ai-artifacts/exec-plans/
