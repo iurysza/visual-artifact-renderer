@@ -2,8 +2,8 @@
 
 ## Status
 
-- Current wave: 3A — file-read boundary and verification gate.
-- Implementation: Waves 0–2 complete; Wave 3A next.
+- Current wave: 3B — annotation integrity (completed).
+- Implementation: Waves 0–3A complete; Wave 3B complete; Waves 4–5 next.
 - Baseline branch: `main`.
 - Parent session handoff: `2026-07-10T07-42-31-695Z_019f4afa-650f-7d38-8bd4-aa79a3de7ed7.jsonl`.
 
@@ -184,3 +184,25 @@
 
 - `a6a9efb` — `fix(cli): contain file-tree source reads`.
 - `58bd980` — `ci: gate pull requests and releases`.
+
+## Wave 3B — annotation integrity
+
+### Shipped
+
+- Added `annotationMutationRequestRejection` in `shared/src/annotations.ts`: enforces `application/json`, rejects non-same-origin browser requests via `Sec-Fetch-Site`, and allows loopback-to-loopback dev-proxy traffic.
+- Hardened local CLI writes: `writeAnnotationsDocument` writes to a temp file with mode `0600`, fsyncs, renames into place, and cleans up; `mutateAnnotationsDocument` serializes per-file mutations through an in-memory promise queue.
+- Updated CLI serve routes: applies the shared policy, returns 404 when the artifact is missing, returns 405 with `Allow`, and uses the serialized mutation function.
+- Updated Worker routes: checks artifact existence via `head`, rejects unsafe origins, applies mutations, and retries conditional R2 `put` up to 5 times using `onlyIf` with `etagMatches`/`etagDoesNotMatch`.
+- Updated React client provider: replaced simple optimistic state with a serialized mutation queue using `useRef`, rolling back to the previous authoritative doc on failure and replacing with the server-returned doc on success.
+- Added Worker dependency on `@agents/visual-artifact-annotations` and updated its lockfile.
+- Added CLI atomic/concurrency/policy tests and Worker mock R2 conditional-put/retry tests; added DOM tests for the provider queue and rollback reconciliation.
+
+### Validation
+
+- `./scripts/verify.sh` — pass; CLI 287/287; app 53/53; worker 29/29; shared typecheck/build pass; app lint/export/contract diff/82-spec verification/build pass; random-port health smoke pass.
+- Runtime pins: Node 22.22.3, Bun 1.1.34, pnpm 11.5.2.
+- All 82 ignored runtime artifacts and both protected directories remain; no runtime artifact was staged or committed.
+
+### Commits
+
+- `a3bcb4f` — `fix(annotations): atomic writes, origin policy, CAS retry, queued sync`.
