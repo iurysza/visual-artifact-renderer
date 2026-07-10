@@ -152,3 +152,35 @@
 ### Commit
 
 - `7285d06` — `fix(cli): enforce stable output and config`.
+
+## Wave 3A — source-read boundary and repository gate
+
+### Shipped
+
+- Added canonical project/allow-root containment for `file-tree.src`, raw `..` and symlink-escape denial, repeatable `--allow-read`, 512 KiB per-file/1 MiB aggregate/final 2 MiB limits, source stripping, dry-run parity, publish warnings, JSON safety metadata, and verbose-only canonical paths.
+- Covered file-tree nodes nested under containers, tabs, and accordions. Reads use the canonical target through the existing bounded regular-file handle.
+- Added exact Node/Bun/pnpm pins (22.22.3/1.1.34/11.5.2), tracked lockfiles for app/shared/CLI/worker, frozen installs, the reusable dual-OS x64 workflow, release-please/release/deploy dependencies, full app test discovery, generated-contract drift enforcement, native CLI smoke, and a current-route health smoke.
+- Health smoke uses a temporary random loopback port, isolated artifact/state roots, PID-owned bounded cleanup, and checks home, artifact shell, artifact JSON, and annotation JSON.
+
+### Parent review and fixes
+
+- Reviewed isolated writer commits `c74f900` and `6ec8c5f` before merge. Per user direction, all review/fix work was parent-owned; no subagents were used.
+- Track A blockers fixed: tabs/accordion traversal, absolute-path leakage in normal errors, re-opening symlink-bearing paths, a command-option publisher test seam, false dry-run assertion, environment leakage, and the ignored `validation.md` edit. Reviewed commit became `be05080`.
+- Track B blockers fixed: `.test.ts` exclusion and invalid formatter fixture, missing release-please gate, wrong contract diff path, fixed port/real-home lifecycle state/incomplete cleanup, retired `macos-13`, and workflow architecture assertion. Reviewed commit became `9abcf53`.
+- Confirmed `macos-15-intel` is GitHub's supported x86_64 migration label through August 2027.
+- Independent post-fix security and CI/release passes found no remaining integration blocker; no `fix(p1)` commit was needed.
+
+### Validation
+
+- Track A isolated gate: `cd cli && bun test && bun run typecheck && bun run build` — 278 pass / 0 fail; typecheck and native build/smoke pass.
+- Track B clean frozen-install gate: `./scripts/verify.sh` — pass. Complete app Node+tsx suite: 51 pass / 0 fail. Worker: 24 pass / 0 fail. Shared and CLI typecheck/build pass; health smoke pass.
+- Integrated main gate: `./scripts/verify.sh` — pass with exact runtime checks; CLI 278/278; app 51/51; worker 24/24; app lint/export/contract diff/82-spec verification/build pass; four-route random-port health smoke pass.
+- Shell/Node/YAML syntax checks, `git diff --check`, `sem_diff`, generated-contract clean check, and runtime-pin mismatch scan — pass.
+- Frozen coverage confirmed for `app/pnpm-lock.yaml`, `shared/bun.lockb`, `cli/bun.lockb`, and `worker/bun.lockb`; release/deploy installs are frozen.
+- Pi create argv remains `create - --project <cwd> --json` and never grants `--allow-read`.
+- Main stayed clean after verification. All 82 ignored runtime artifacts and both protected directories remain; no runtime artifact was staged or committed.
+
+### Commits
+
+- `a6a9efb` — `fix(cli): contain file-tree source reads`.
+- `58bd980` — `ci: gate pull requests and releases`.
