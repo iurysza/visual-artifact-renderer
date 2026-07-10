@@ -1,10 +1,18 @@
 import { execSync } from "node:child_process"
 import { constants, fstatSync } from "node:fs"
+import { homedir } from "node:os"
 import { basename, resolve } from "node:path"
 import { open, stat } from "node:fs/promises"
 import { mkdir } from "node:fs/promises"
 
 import { RAW_ARTIFACT_MAX_BYTES } from "@agents/visual-artifact-annotations/contract"
+
+export function expandHome(path: string): string {
+  if (path.startsWith("~/")) {
+    return resolve(homedir(), path.slice(2))
+  }
+  return path
+}
 
 export function sanitizeProjectName(name: string): string {
   return name

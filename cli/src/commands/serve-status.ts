@@ -1,4 +1,4 @@
-import { loadConfig, localBaseUrl } from "../config.ts"
+import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import {
   commandLooksLikeVisualizerServer,
   getProcessCommand,
@@ -7,7 +7,7 @@ import {
   removeServerState,
   serverStatePath,
 } from "../lib/server-lifecycle.ts"
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import type { Config } from "../types.ts"
 
 type FetchImpl = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
@@ -35,7 +35,7 @@ function targetConfig(opts: ServeStatusOpts): Config {
   const overrides: Partial<Config> = {}
   if (opts.port !== undefined) overrides.port = opts.port
   if (opts.host !== undefined) overrides.host = opts.host
-  return loadConfig(overrides)
+  return loadConfig({ overrides })
 }
 
 async function serverIsRunning(url: string, fetchImpl: FetchImpl): Promise<boolean> {
@@ -47,25 +47,33 @@ async function serverIsRunning(url: string, fetchImpl: FetchImpl): Promise<boole
   }
 }
 
-function writeStatusOutput(log: Logger, output: StatusOutput): void {
-  const structured = (log as Logger & { structured?: () => boolean }).structured?.() ?? true
-  if (structured) {
-    log.output(output)
-    return
-  }
-  if (output.running && output.tracked) {
-    log.success(`Visualizer server running at ${output.url} (tracked pid ${output.pid})`)
-    return
-  }
-  if (output.running) {
-    log.info(`Visualizer server running at ${output.url} (untracked)`)
-    return
-  }
-  log.info(`Visualizer server is not running at ${output.url}`)
+function emitResult(log: Logger, output: StatusOutput): void {
+  log.result({
+    command: "serve status",
+    running: output.running,
+    url: output.url,
+    statePath: output.statePath,
+    tracked: output.tracked,
+    pid: output.pid,
+    state: output.state,
+    staleStateRemoved: output.staleStateRemoved,
+    error: output.error,
+  })
 }
 
 export async function serveStatus(log: Logger, opts: ServeStatusOpts = {}): Promise<number> {
-  const config = targetConfig(opts)
+  let config: Config
+  try {
+    config = targetConfig(opts)
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
   const url = localBaseUrl(config)
   const statePath = serverStatePath(config)
   const fetchImpl = opts.fetchImpl ?? fetch
@@ -80,13 +88,13 @@ export async function serveStatus(log: Logger, opts: ServeStatusOpts = {}): Prom
     const processCommand = pidExists ? await command(pid) : null
     const tracked = running && pidExists && commandLooksLikeVisualizerServer(processCommand, stateResult.state)
     if (tracked) {
-      writeStatusOutput(log, { running, tracked: true, url: stateResult.state.url, statePath, pid, state: "valid" } satisfies StatusOutput)
+      emitResult(log, { running, tracked: true, url: stateResult.state.url, statePath, pid, state: "valid" })
       return 0
     }
 
     if (!running && !pidExists) {
       await removeServerState(statePath)
-      writeStatusOutput(log, {
+      emitResult(log, {
         running,
         tracked: false,
         url,
@@ -94,18 +102,18 @@ export async function serveStatus(log: Logger, opts: ServeStatusOpts = {}): Prom
         pid,
         state: "stale",
         staleStateRemoved: true,
-      } satisfies StatusOutput)
+      })
       return 1
     }
 
-    writeStatusOutput(log, { running, tracked: false, url, statePath, pid, state: "stale" } satisfies StatusOutput)
+    emitResult(log, { running, tracked: false, url, statePath, pid, state: "stale" })
     return running ? 0 : 1
   }
 
   if (stateResult.reason === "corrupt") {
     if (!running) {
       await removeServerState(statePath)
-      writeStatusOutput(log, {
+      emitResult(log, {
         running,
         tracked: false,
         url,
@@ -113,21 +121,21 @@ export async function serveStatus(log: Logger, opts: ServeStatusOpts = {}): Prom
         state: "corrupt",
         staleStateRemoved: true,
         error: stateResult.error,
-      } satisfies StatusOutput)
+      })
       return 1
     }
 
-    writeStatusOutput(log, {
+    emitResult(log, {
       running,
       tracked: false,
       url,
       statePath,
       state: "corrupt",
       error: stateResult.error,
-    } satisfies StatusOutput)
+    })
     return 0
   }
 
-  writeStatusOutput(log, { running, tracked: false, url, statePath, state: "missing" } satisfies StatusOutput)
+  emitResult(log, { running, tracked: false, url, statePath, state: "missing" })
   return running ? 0 : 1
 }

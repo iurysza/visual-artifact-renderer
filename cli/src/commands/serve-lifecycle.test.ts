@@ -21,6 +21,7 @@ const config: Config = {
   mountPath: "/artifacts",
   dataPath: "/data/artifacts",
   open: false,
+  allowRemote: false,
 }
 
 function makeLogger() {
@@ -33,6 +34,9 @@ function makeLogger() {
     success: (m: string) => logs.push(`success: ${m}`),
     output: (o: unknown) => logs.push(`output: ${JSON.stringify(o)}`),
     outputText: (t: string) => logs.push(`text: ${t}`),
+    result: (o: unknown) => logs.push(`output: ${JSON.stringify(o)}`),
+    resultText: (t: string) => logs.push(`text: ${t}`),
+    structured: () => false,
     _logs: logs,
   }
 }

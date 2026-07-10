@@ -1,9 +1,9 @@
 import { createInterface } from "node:readline/promises"
 import { stdin as input, stderr as output } from "node:process"
 
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import type { GlobalOpts } from "../types.ts"
-import { findProjectRoot } from "../config.ts"
+import { ConfigValidationError, findProjectRoot, loadConfig, normalizeBaseUrl } from "../config.ts"
 import {
   DEFAULT_CLOUDFLARE_PROFILE_NAME,
   DEFAULT_CLOUDFLARE_WORKER_NAME,
@@ -44,11 +44,25 @@ export async function setupCloudflare(opts: SetupCloudflareOpts, log: Logger): P
   }
 
   try {
+    loadConfig({
+      overrides: opts.allowRemote !== undefined ? { allowRemote: opts.allowRemote } : undefined,
+    })
+
+    // Validate CLI-provided base URL early so syntactically invalid URLs exit
+    // before any profile is written or side effects occur.
+    if (profileInput.baseUrl !== undefined) {
+      normalizeBaseUrl(profileInput.baseUrl)
+    }
+
     if (!promptsDisabled(opts)) {
       await promptForMissingProfileValues(profileInput, profileName)
     }
 
     const resolved = await resolveCloudflareProfile(profileInput, { profileName })
+    // Validate the resolved base URL with the strict config rules (no
+    // credentials, query, or hash) before any profile is written.
+    normalizeBaseUrl(resolved.profile.baseUrl)
+
     if (resolved.missing.length > 0) {
       log.error(["Missing Cloudflare setup values:", ...resolved.missing.map((item) => `- ${item}`)].join("\n"))
       log.log("Run `visual-artifact setup cloudflare --help` for flag and env-var names.")
@@ -73,33 +87,26 @@ export async function setupCloudflare(opts: SetupCloudflareOpts, log: Logger): P
       }
     }
 
-    if (opts.json) {
-      const output: Record<string, unknown> = {
-        ok: true,
-        provider: "cloudflare",
-        dryRun: opts.dryRun ?? false,
-        profileName,
-        profilePath,
-        profile: resolved.profile,
-        secretStatus: secretStatusFor(resolved.secrets),
-        warnings: [],
-      }
-      if (workerConfigPath) output.workerConfigPath = workerConfigPath
-      log.output(output)
-      return 0
+    const result: ResultData = {
+      command: "setup cloudflare",
+      ok: true,
+      profileName,
+      baseUrl: resolved.profile.baseUrl,
+      dryRun: opts.dryRun ?? false,
+      profilePath,
+      profile: resolved.profile,
+      secretStatus: secretStatusFor(resolved.secrets),
+      warnings: [],
     }
-
-    log.success(opts.dryRun ? "Cloudflare setup looks valid" : "Cloudflare publish profile saved")
-    log.log(`  profile: ${resolved.profilePath}`)
-    log.log(`  bucket:  ${resolved.profile.bucketName}`)
-    log.log(`  worker:  ${resolved.profile.workerName}`)
-    log.log(`  url:     ${resolved.profile.baseUrl}`)
-    log.log(`  routes:  ${resolved.profile.cloudBuildRouteStrategy}`)
-    if (workerConfigPath) log.log(`  worker config: ${workerConfigPath}`)
-    log.log("  secrets: env-only; no credentials were written to disk")
+    if (workerConfigPath) result.workerConfigPath = workerConfigPath
+    log.result(result)
     return 0
   } catch (error) {
-    log.error(error instanceof Error ? error.message : String(error))
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
     return 1
   }
 }

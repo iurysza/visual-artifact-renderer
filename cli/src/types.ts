@@ -12,6 +12,7 @@ export interface GlobalOpts {
   verbose: boolean
   noColor: boolean
   noInput: boolean
+  allowRemote?: boolean
 }
 
 export interface Config {
@@ -22,5 +23,8 @@ export interface Config {
   mountPath: string
   dataPath: string
   open: boolean
+  allowRemote: boolean
   baseUrl?: string
+  contractPath?: string
+  projectPath?: string
 }

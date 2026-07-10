@@ -1,17 +1,29 @@
 import { readdir } from "node:fs/promises"
 import { resolve } from "node:path"
-import { loadConfig } from "../config.ts"
+import { ConfigValidationError, loadConfig } from "../config.ts"
 import { isInsideArtifactsDir } from "../lib/paths.ts"
 import { listProjectArtifacts } from "../lib/scan.ts"
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import { dirExists } from "../util.ts"
 
 export async function list(project: string | undefined, log: Logger): Promise<number> {
-  const config = loadConfig()
+  let config
+  try {
+    config = loadConfig()
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
   const artifactsDir = config.artifactsDir
 
   if (!(await dirExists(artifactsDir))) {
-    log.output({ projects: [] })
+    const result: ResultData = { command: "list", projects: [] }
+    log.result(result)
     return 0
   }
 
@@ -26,7 +38,17 @@ export async function list(project: string | undefined, log: Logger): Promise<nu
       return 1
     }
     const artifacts = await listProjectArtifacts(projectDir)
-    log.output({ project, artifacts })
+    const result: ResultData = {
+      command: "list",
+      project,
+      artifacts: artifacts.map((a) => ({
+        project,
+        slug: a.slug,
+        title: a.title,
+        modifiedAt: a.modifiedAt,
+      })),
+    }
+    log.result(result)
     return 0
   }
 
@@ -51,7 +73,8 @@ export async function list(project: string | undefined, log: Logger): Promise<nu
     return bTime - aTime
   })
 
-  log.output({ projects })
+  const result: ResultData = { command: "list", projects }
+  log.result(result)
   return 0
 }
 

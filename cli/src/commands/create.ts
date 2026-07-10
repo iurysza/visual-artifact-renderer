@@ -1,11 +1,11 @@
 import { resolve, isAbsolute } from "node:path"
 import { writeFile, readFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
-import { RAW_ARTIFACT_MAX_BYTES } from "@agents/visual-artifact-annotations/contract"
+import { RAW_ARTIFACT_MAX_BYTES, preflightArtifactSpec } from "@agents/visual-artifact-annotations/contract"
 
-import { artifactBaseUrl, loadConfig, localBaseUrl } from "../config.ts"
+import { artifactBaseUrl, ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, bundleDirPath, publishJsonPath } from "../lib/paths.ts"
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
 import { validateMermaidNodes } from "../mermaid.ts"
 import { deriveProjectName, ensureDir, readStdinOrFile } from "../util.ts"
@@ -43,8 +43,7 @@ function getServeCommand(): { command: string; args: string[] } {
   return { command: arg0 || process.execPath, args: ["serve", "--no-open"] }
 }
 
-async function ensureServer(log: Logger): Promise<void> {
-  const config = loadConfig()
+async function ensureServer(log: Logger, config: ReturnType<typeof loadConfig>): Promise<void> {
   const url = localBaseUrl(config)
   if (await serverIsRunning(url)) {
     if (config.open) {
@@ -58,6 +57,10 @@ async function ensureServer(log: Logger): Promise<void> {
   const child = spawn(command, args, {
     detached: true,
     stdio: "ignore",
+    env: {
+      ...process.env,
+      VISUAL_ARTIFACT_ALLOW_REMOTE: config.allowRemote ? "1" : "0",
+    },
   })
   child.unref()
 
@@ -78,7 +81,7 @@ async function ensureServer(log: Logger): Promise<void> {
  * resolved when `content` is absent. Relative paths resolve against cwd.
  * Throws on missing/unreadable files (hard fail).
  */
-async function resolveFileTreeSources(spec: unknown, baseDir: string): Promise<void> {
+async function resolveFileTreeSources(spec: unknown, baseDir: string, log: Logger): Promise<void> {
   const visit = async (node: unknown): Promise<void> => {
     if (!node || typeof node !== "object") return
     const obj = node as Record<string, unknown>
@@ -93,6 +96,9 @@ async function resolveFileTreeSources(spec: unknown, baseDir: string): Promise<v
             const filePath = isAbsolute(itemObj.src) ? itemObj.src : resolve(baseDir, itemObj.src)
             try {
               itemObj.content = await readFile(filePath, "utf8")
+              log.debug(
+                `file-tree source: ${itemObj.src} (${Buffer.byteLength(itemObj.content as string, "utf8")} bytes)`,
+              )
             } catch (error) {
               const msg = error instanceof Error ? error.message : String(error)
               throw new ValidationError(
@@ -126,6 +132,26 @@ async function resolveFileTreeSources(spec: unknown, baseDir: string): Promise<v
 }
 
 export async function create(inputPath: string | undefined, opts: CreateOpts, log: Logger): Promise<number> {
+  let config
+  try {
+    config = loadConfig({
+      overrides: {
+        ...(opts.project !== undefined ? { projectPath: opts.project } : {}),
+        ...(opts.allowRemote !== undefined ? { allowRemote: opts.allowRemote } : {}),
+      },
+    })
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
+  log.debug(`project path: ${config.projectPath ?? process.cwd()}`)
+  log.debug(`artifacts directory: ${config.artifactsDir}`)
+
   let raw: string
   try {
     raw = await readStdinOrFile(inputPath)
@@ -150,9 +176,13 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     // broken graph fails fast with a clear error instead of rendering blank.
     await validateMermaidNodes(spec)
 
+    const { result: preflight } = preflightArtifactSpec(specJson)
+    const totalNodes = preflight.totalNodes
+    const datasetCount = spec.data ? Object.keys(spec.data).length : 0
+
     // Expand file-tree `src` paths into inline `content` before saving.
-    const projectPath = opts.project ? resolve(opts.project) : resolve(process.cwd())
-    await resolveFileTreeSources(specJson, projectPath)
+    const projectPath = config.projectPath ?? resolve(process.cwd())
+    await resolveFileTreeSources(specJson, projectPath, log)
 
     // Final serialized artifact must fit inside the advertised raw limit, and
     // inlined content must still pass the shared schema.
@@ -165,21 +195,31 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     const finalSpec = validateSpec(specJson)
 
     if (opts.dryRun) {
-      log.output({ ok: true, slug: finalSpec.slug, title: finalSpec.title, message: "Spec is valid" })
+      const result: ResultData = {
+        command: "create",
+        ok: true,
+        dryRun: true,
+        slug: finalSpec.slug,
+        title: finalSpec.title,
+        totalNodes,
+        datasetCount,
+      }
+      log.result(result)
       return 0
     }
 
-    const config = loadConfig()
     const projectName = deriveProjectName(projectPath)
     const bundleDir = bundleDirPath(config.artifactsDir, projectName, finalSpec.slug)
     const filePath = artifactJsonPath(config.artifactsDir, projectName, finalSpec.slug)
+    log.debug(`bundle directory: ${bundleDir}`)
+    log.debug(`artifact path: ${filePath}`)
 
     await ensureDir(bundleDir)
     await ensureDir(assetsDirPath(config.artifactsDir, projectName, finalSpec.slug))
     await writeFile(filePath, serialized, "utf8")
 
     if (opts.serve !== false) {
-      await ensureServer(log)
+      await ensureServer(log, config)
     }
 
     const localUrl = `${artifactBaseUrl(config)}/${projectName}/${finalSpec.slug}/`
@@ -204,46 +244,37 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
 
     const url = publishResult?.url ?? localUrl
 
-    if (opts.json) {
-      const output: Record<string, unknown> = {
-        ok: true,
-        slug: finalSpec.slug,
-        projectName,
-        projectPath,
-        path: filePath,
-        bundleDir,
-        url,
-        localUrl,
-      }
-      if (publishResult) {
-        output.published = {
-          provider: "cloudflare",
-          profileName: publishProfileName,
-          metadataPath: publishMetadataPath,
-          remoteObjects: publishResult.remoteObjects,
-        }
-      }
-      log.output(output)
-    } else if (opts.plain) {
-      log.outputText(filePath)
-    } else {
-      log.success(`Created visual artifact ${finalSpec.slug} in project ${projectName}`)
-      log.log(`  bundle: ${bundleDir}`)
-      log.log(`  path:   ${filePath}`)
-      log.log(`  url:    ${url}`)
-      if (publishResult) {
-        log.log(`  local:  ${localUrl}`)
-        log.log(`  remote: ${publishResult.url}`)
+    const result: ResultData = {
+      command: "create",
+      ok: true,
+      slug: finalSpec.slug,
+      projectName,
+      projectPath,
+      path: filePath,
+      bundleDir,
+      url,
+      localUrl,
+      totalNodes,
+      datasetCount,
+    }
+    if (publishResult) {
+      result.published = {
+        provider: "cloudflare",
+        profileName: publishProfileName,
+        metadataPath: publishMetadataPath,
+        remoteObjects: publishResult.remoteObjects,
+        remoteUrl: publishResult.url,
       }
     }
 
+    log.result(result)
     return 0
   } catch (error) {
     if (error instanceof ValidationError) {
       log.error(`Validation failed: ${error.message}`)
       return 2
     }
-    log.error(error instanceof Error ? error.message : String(error))
+    log.error(error instanceof Error ? error.message : String(error), error)
     return 1
   }
 }

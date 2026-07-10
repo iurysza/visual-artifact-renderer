@@ -18,9 +18,13 @@ function makeLogger() {
     warn: (m: string) => logs.push(`warn: ${m}`),
     log: (m: string) => logs.push(`log: ${m}`),
     info: (m: string) => logs.push(`info: ${m}`),
+    debug: (m: string) => logs.push(`debug: ${m}`),
     success: (m: string) => logs.push(`success: ${m}`),
     output: (o: unknown) => logs.push(`output: ${JSON.stringify(o)}`),
     outputText: (t: string) => logs.push(`text: ${t}`),
+    result: (o: unknown) => logs.push(`output: ${JSON.stringify(o)}`),
+    resultText: (t: string) => logs.push(`text: ${t}`),
+    structured: () => false,
     _logs: logs,
   }
 }

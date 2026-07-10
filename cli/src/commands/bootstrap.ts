@@ -3,8 +3,8 @@ import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { findProjectRoot } from "../config.ts"
-import type { Logger } from "../logger.ts"
+import { ConfigValidationError, loadConfig } from "../config.ts"
+import type { Logger, ResultData } from "../logger.ts"
 
 function commandExists(cmd: string): boolean {
   try {
@@ -41,16 +41,30 @@ function findProjectRootFromScript(): string | null {
   return null
 }
 
-function run(cmd: string, args: string[], cwd: string): number {
+function run(log: Logger, cmd: string, args: string[], cwd: string): number {
   const result = spawnSync(cmd, args, {
     cwd,
-    stdio: "inherit",
+    stdio: "pipe",
     env: process.env,
+    encoding: "utf8",
   })
+  if (typeof result.stdout === "string") log.rawDiagnostic(result.stdout)
+  if (typeof result.stderr === "string") log.rawDiagnostic(result.stderr)
   return result.status ?? 1
 }
 
 export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promise<number> {
+  try {
+    loadConfig()
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
   // Bootstrap must build from the development source tree, not from the
   // installed skill target which only contains SKILL.md + artifacts/.
   const projectRoot = findProjectRootFromScript()
@@ -80,7 +94,13 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
   const extensionInstalled = existsSync(extensionPath)
 
   if (opts.dryRun) {
-    log.output({
+    const checks = [
+      { prerequisite: "bun", ok: hasBun, message: hasBun ? "found" : "bun not found in PATH" },
+      { prerequisite: "pnpm", ok: hasPnpm, message: hasPnpm ? "found" : "pnpm not found in PATH" },
+    ]
+    const result: ResultData = {
+      command: "bootstrap",
+      dryRun: true,
       projectRoot,
       hasBun,
       hasPnpm,
@@ -90,6 +110,7 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
       skillInstalled,
       piDetected,
       extensionInstalled,
+      checks,
       plan: [
         hasPnpm ? "pnpm install in app" : "skip: pnpm not found",
         hasPnpm ? "pnpm build in app" : "skip: pnpm not found",
@@ -98,7 +119,8 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
         hasBun ? "bun run build in cli" : "skip: bun not found",
         hasBun ? "bun run install:binary in cli (CLI to ~/.local/bin, skill to ~/.agents/skills, Pi extension if Pi is installed)" : "skip: bun not found",
       ],
-    })
+    }
+    log.result(result)
     return hasBun && hasPnpm ? 0 : 1
   }
 
@@ -113,45 +135,43 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
 
   log.info(`Bootstrapping visual-artifact from ${projectRoot}`)
 
-  let rc = run("pnpm", ["install"], appDir)
+  let rc = run(log, "pnpm", ["install"], appDir)
   if (rc !== 0) {
     log.error("renderer dependency install failed")
-    return rc
+    return 1
   }
 
-  rc = run("pnpm", ["build"], appDir)
+  rc = run(log, "pnpm", ["build"], appDir)
   if (rc !== 0) {
     log.error("renderer build failed")
-    return rc
+    return 1
   }
 
-  rc = run("bun", ["install"], sharedDir)
+  rc = run(log, "bun", ["install"], sharedDir)
   if (rc !== 0) {
     log.error("shared dependency install failed")
-    return rc
+    return 1
   }
 
-  rc = run("bun", ["install"], cliDir)
+  rc = run(log, "bun", ["install"], cliDir)
   if (rc !== 0) {
     log.error("CLI dependency install failed")
-    return rc
+    return 1
   }
 
-  rc = run("bun", ["run", "build"], cliDir)
+  rc = run(log, "bun", ["run", "build"], cliDir)
   if (rc !== 0) {
     log.error("CLI build failed")
-    return rc
+    return 1
   }
 
-  rc = run("bun", ["run", "install:binary"], cliDir)
+  rc = run(log, "bun", ["run", "install:binary"], cliDir)
   if (rc !== 0) {
     log.error("CLI binary install failed")
-    return rc
+    return 1
   }
 
-  log.success(`visual-artifact installed: ${binPath}`)
-  if (existsSync(piAgentDir)) {
-    log.info("Run `/reload` in Pi, or restart Pi, to load the extension.")
-  }
+  const result: ResultData = { command: "bootstrap", binaryPath: binPath }
+  log.result(result)
   return 0
 }

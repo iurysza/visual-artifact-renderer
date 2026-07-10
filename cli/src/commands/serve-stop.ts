@@ -1,4 +1,4 @@
-import { loadConfig, localBaseUrl } from "../config.ts"
+import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import {
   commandLooksLikeVisualizerServer,
   getProcessCommand,
@@ -10,7 +10,7 @@ import {
   serverStatePath,
 } from "../lib/server-lifecycle.ts"
 import type { ListenerLookupResult, ListenerProcess, ServerState } from "../lib/server-lifecycle.ts"
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import type { Config } from "../types.ts"
 
 type FetchImpl = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
@@ -45,7 +45,7 @@ function targetConfig(opts: ServeStopOpts): Config {
   const overrides: Partial<Config> = {}
   if (opts.port !== undefined) overrides.port = opts.port
   if (opts.host !== undefined) overrides.host = opts.host
-  return loadConfig(overrides)
+  return loadConfig({ overrides })
 }
 
 async function defaultSleep(ms: number): Promise<void> {
@@ -85,21 +85,19 @@ async function tryShutdownEndpoint(state: ServerState, fetchImpl: FetchImpl): Pr
   }
 }
 
-function writeOutput(log: Logger, output: StopOutput): void {
-  const structured = (log as Logger & { structured?: () => boolean }).structured?.() ?? true
-  if (structured) {
-    log.output(output)
-    return
-  }
-  if (output.method === "refused") {
-    log.error(output.reason ?? "Refused to stop server")
-    return
-  }
-  if (output.stopped) {
-    log.success(`Stopped visualizer server at ${output.url} via ${output.method}`)
-    return
-  }
-  log.info(output.reason ?? `No running visualizer server at ${output.url}`)
+function emitResult(log: Logger, output: StopOutput): void {
+  log.result({
+    command: "serve stop",
+    stopped: output.stopped,
+    method: output.method,
+    url: output.url,
+    statePath: output.statePath,
+    pid: output.pid,
+    reason: output.reason,
+    staleStateRemoved: output.staleStateRemoved,
+    forced: output.forced,
+    listener: output.listener,
+  })
 }
 
 async function stopPid(
@@ -132,7 +130,18 @@ async function stopPid(
 }
 
 export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<number> {
-  const config = targetConfig(opts)
+  let config: Config
+  try {
+    config = targetConfig(opts)
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
   const url = localBaseUrl(config)
   const statePath = serverStatePath(config)
   const fetchImpl = opts.fetchImpl ?? fetch
@@ -158,7 +167,7 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
         staleStateRemoved: false,
         reason: stopped ? undefined : `Shutdown was accepted but ${state.url} still responds`,
       }
-      writeOutput(log, output)
+      emitResult(log, output)
       return stopped ? 0 : 1
     }
 
@@ -173,7 +182,7 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
         reason: "Server is not running; removed stale state",
         staleStateRemoved: true,
       }
-      writeOutput(log, output)
+      emitResult(log, output)
       return 0
     }
 
@@ -181,7 +190,7 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
     if (processStatus.matches) {
       const output = await stopPid(state.pid, state.url, "pid", stateBase, { fetchImpl, sleep, killProcess })
       if (output.stopped) await removeServerState(statePath)
-      writeOutput(log, output)
+      emitResult(log, output)
       return output.stopped ? 0 : 1
     }
 
@@ -194,7 +203,7 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
         ? `Recorded PID ${state.pid} does not look like a visual-artifact server (${processStatus.match.reason})`
         : "Tracked state exists, but graceful shutdown failed and the recorded process is gone while the URL still responds",
     }
-    writeOutput(log, output)
+    emitResult(log, output)
     return 1
   }
 
@@ -209,13 +218,13 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
       reason: "Server is not running; removed corrupt state",
       staleStateRemoved: true,
     }
-    writeOutput(log, output)
+    emitResult(log, output)
     return 0
   }
 
   if (!(await serverIsRunning(url, fetchImpl))) {
     const output: StopOutput = { ...base, stopped: false, method: "none", reason: "Server is not running" }
-    writeOutput(log, output)
+    emitResult(log, output)
     return 0
   }
 
@@ -227,7 +236,7 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
       method: "refused",
       reason: `Server is running but no state exists and listener inspection is unavailable: ${listeners.error}`,
     }
-    writeOutput(log, output)
+    emitResult(log, output)
     return 1
   }
 
@@ -242,7 +251,7 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
       killProcess,
     })
     if (output.stopped && stateWasCorrupt) await removeServerState(statePath)
-    writeOutput(log, output)
+    emitResult(log, output)
     return output.stopped ? 0 : 1
   }
 
@@ -257,6 +266,6 @@ export async function serveStop(opts: ServeStopOpts, log: Logger): Promise<numbe
         ? `Process ${listener.pid} listens on ${config.host}:${config.port}, but it does not clearly match visual-artifact serve. Re-run with --force to terminate it.`
         : `Server responds at ${url}, but no listener process could be identified.`,
   }
-  writeOutput(log, output)
+  emitResult(log, output)
   return 1
 }
