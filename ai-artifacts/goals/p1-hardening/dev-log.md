@@ -57,8 +57,9 @@
 
 ### Commits
 
-- Planning: pending.
-- Impeccable housekeeping: pending; must remain separate.
+- `08de19f` — `docs(p1): define hardening contract`; seven goal-package files only.
+- `607697c` — `chore(skills): update impeccable`; updater-owned `.agents`, `.pi`, and `.codex` paths only.
+- Wave 0 evidence log: this follow-up documentation commit.
 
 ### Remaining risks
 
@@ -96,4 +97,4 @@
 
 ### Commit
 
-- Planning hash/subject pending.
+- Planning and housekeeping hashes recorded above.
