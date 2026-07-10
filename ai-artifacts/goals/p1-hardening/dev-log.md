@@ -2,8 +2,8 @@
 
 ## Status
 
-- Current wave: 2 — CLI output and configuration contract.
-- Implementation: Wave 1 complete; Wave 2 next.
+- Current wave: 3A — file-read boundary and verification gate.
+- Implementation: Waves 0–2 complete; Wave 3A next.
 - Baseline branch: `main`.
 - Parent session handoff: `2026-07-10T07-42-31-695Z_019f4afa-650f-7d38-8bd4-aa79a3de7ed7.jsonl`.
 
@@ -124,3 +124,31 @@
 ### Commit
 
 - `02f528a` — `fix(contract): unify artifact validation`.
+
+## Wave 2 — CLI output and configuration contract
+
+### Shipped
+
+- Centralized human/JSON/plain primary output in `Logger.result`; JSON uses `schemaVersion: 1`, plain records match D3, and `--quiet` never suppresses stdout results.
+- Routed diagnostics/progress to stderr, added TTY/`NO_COLOR`/`TERM=dumb` color rules, verbose timing and unexpected-error stacks, and isolated bootstrap child output from structured stdout.
+- Added one strict config boundary for ports, hosts, URL paths, filesystem paths, base URLs, booleans, project paths, contract paths, and explicit remote exposure; CLI overrides now preserve CLI > env > default precedence and validate before side effects.
+- Added Commander-level JSON/plain conflicts and exit 0/1/2 mapping, stable source/compiled subprocess coverage, Pi create-field compatibility, IPv6 URL normalization, human contract summary, explicit legacy full-contract JSON, and documented remote serve opt-in in help.
+
+### Validation
+
+- Parent full gate in herdr: `cd cli && bun test && bun run typecheck && bun run build` — 262 pass / 0 fail; typecheck pass; compiled build/smoke pass.
+- Parent source+binary matrix: help/version, serve help, conflict, validate/create human+JSON+plain+quiet+verbose, invalid config, default/explicit/versioned contract modes — pass.
+- Focused source+binary suite after initial fixes — 105 pass / 0 fail.
+- `git diff --cached --check` and path inspection — pass; 22 CLI source/test files only.
+- Saved compatibility gate — 82/82 specs validate. With explicit user approval, removed only the invalid root `projectPath` from ignored `artifacts/var/serve-stop-v040-feature-guide/artifact.json`; both protected artifact directories remain, and no runtime artifact was staged or committed.
+
+### Review synthesis
+
+- Three fresh reviewers found: blank CLI path overrides bypassed validation, strict booleans accepted surrounding whitespace, default contract output bypassed the human result mode, summary+JSON compatibility needed preservation, and `serve --help` omitted remote exposure. All accepted findings were fixed.
+- Two fresh re-reviewers found no remaining blockers and independently reran 262/262 tests, typecheck, build, compiled smoke, and diff checks.
+- Deferred one low-risk non-dry-run bootstrap stream integration test because it would rebuild/install into the user's home. The child-output path is structurally reviewed; dry-run/output formatting and final bootstrap verification remain covered separately.
+- Annotation request policy is intentionally still pending Wave 3B; the early remote-bind gate is not counted as annotation completion.
+
+### Commit
+
+- `7285d06` — `fix(cli): enforce stable output and config`.
