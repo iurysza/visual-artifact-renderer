@@ -92,6 +92,11 @@ setupCmd
     await runAction("setup cloudflare", (log) => setupCloudflare({ ...globalOptsFromProgram(), ...opts }, log))
   })
 
+const allowReadOption = new Option(
+  "--allow-read <dir>",
+  "Authorize reading file-tree sources under this directory (repeatable)",
+).argParser((value: string, previous: string[] = []) => [...previous, value])
+
 program
   .command("create [spec]")
   .description("Validate and save an artifact spec. Reads from file or stdin. Starts the renderer if it is not running.")
@@ -99,6 +104,7 @@ program
   .option("--dry-run", "Validate only; do not write the artifact")
   .option("--no-serve", "Do not auto-start the renderer")
   .option("--publish [profile]", "Publish the artifact to Cloudflare using the named profile")
+  .addOption(allowReadOption)
   .action(async (spec, opts) => {
     await runAction("create", (log) => create(spec, { ...globalOptsFromProgram(), ...opts }, log))
   })

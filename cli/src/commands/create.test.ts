@@ -1,33 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, dirname } from "node:path"
-import { fileURLToPath } from "node:url"
+import { join } from "node:path"
 
 import { RAW_ARTIFACT_MAX_BYTES } from "@agents/visual-artifact-annotations/contract"
 
 import { create } from "./create.ts"
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
-// Minimal logger capturing output.
-function makeLogger() {
-  const logs: string[] = []
-  return {
-    error: (m: string) => logs.push(`error: ${m}`),
-    warn: (m: string) => logs.push(`warn: ${m}`),
-    log: (m: string) => logs.push(`log: ${m}`),
-    info: (m: string) => logs.push(`info: ${m}`),
-    debug: (m: string) => logs.push(`debug: ${m}`),
-    success: (m: string) => logs.push(`success: ${m}`),
-    output: (o: unknown) => logs.push(`output: ${JSON.stringify(o)}`),
-    outputText: (t: string) => logs.push(`text: ${t}`),
-    result: (o: unknown) => logs.push(`output: ${JSON.stringify(o)}`),
-    resultText: (t: string) => logs.push(`text: ${t}`),
-    structured: () => false,
-    _logs: logs,
-  }
-}
+import { makeLogger } from "./__test__/logger.ts"
 
 describe("create: file-tree src resolution", () => {
   let dir: string
@@ -90,8 +69,14 @@ describe("create: file-tree src resolution", () => {
     const out = JSON.parse(await readFile(writtenPath, "utf8"))
     const item = out.nodes[0].props.items[0]
     expect(item.content).toBe(fileBody)
-    expect(item.src).toBe("src/button.tsx")
+    expect(item.src).toBeUndefined()
     expect(item.language).toBe("tsx")
+
+    const result = JSON.parse(outLine!.slice("output: ".length))
+    expect(result.safety.diskSources.included).toBe(true)
+    expect(result.safety.diskSources.count).toBe(1)
+    expect(result.safety.diskSources.totalBytes).toBe(Buffer.byteLength(fileBody, "utf8"))
+    expect(result.safety.diskSources.files[0].displayPath).toBe("src/button.tsx")
   })
 
   test("explicit content wins over src", async () => {
@@ -127,27 +112,29 @@ describe("create: file-tree src resolution", () => {
     expect(rc).toBe(0)
     // The in-memory spec keeps explicit content (resolver skips when content set).
     expect((spec.nodes[0] as any).props.items[0].content).toBe("EXPLICIT CONTENT")
+    const outLine = log._logs.find((l) => l.startsWith("output: "))
+    expect(outLine).toBeDefined()
+    const result = JSON.parse(outLine!.slice("output: ".length))
+    expect(result.safety.diskSources.included).toBe(false)
   })
 
   test("rejects the exact pretty-printed artifact when it exceeds 2 MiB", async () => {
     const specPath = join(dir, "spec.json")
-    const sourcePath = join(dir, "large.txt")
-    const expanded = {
+    const spec = {
       slug: "final-size-limit",
       title: "Final size limit",
       nodes: [
         {
           type: "file-tree",
           props: {
-            items: [{ name: "large.txt", type: "file", src: "large.txt", content: "" }],
+            items: [{ name: "large.txt", type: "file", content: "" }],
           },
         },
       ],
     }
-    const contentBytes = RAW_ARTIFACT_MAX_BYTES - Buffer.byteLength(JSON.stringify(expanded), "utf8")
-    await writeFile(sourcePath, "x".repeat(contentBytes), "utf8")
-    delete (expanded.nodes[0].props.items[0] as { content?: string }).content
-    await writeFile(specPath, JSON.stringify(expanded), "utf8")
+    const contentBytes = RAW_ARTIFACT_MAX_BYTES - Buffer.byteLength(JSON.stringify(spec), "utf8") - 1
+    spec.nodes[0].props.items[0].content = "x".repeat(contentBytes)
+    await writeFile(specPath, JSON.stringify(spec), "utf8")
 
     const log = makeLogger()
     const rc = await create(specPath, { dryRun: true, serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
