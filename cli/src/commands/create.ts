@@ -1,9 +1,10 @@
 import { resolve, isAbsolute } from "node:path"
 import { writeFile, readFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
+import { RAW_ARTIFACT_MAX_BYTES } from "@agents/visual-artifact-annotations/contract"
+
 import { artifactBaseUrl, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, bundleDirPath, publishJsonPath } from "../lib/paths.ts"
-import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
 import { validateMermaidNodes } from "../mermaid.ts"
@@ -14,7 +15,6 @@ import { buildPublishMetadata, loadPublishContext, publishBundle, type PublishRe
 
 interface CreateOpts extends GlobalOpts {
   project?: string
-  contract?: string
   dryRun?: boolean
   serve?: boolean
   publish?: string | boolean
@@ -142,13 +142,8 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     return 2
   }
 
-  let contractPath: string | undefined
   try {
-    contractPath = opts.contract
-      ? resolve(opts.contract)
-      : undefined
-    const contract = await loadContract(contractPath)
-    const spec = validateSpec(specJson, contract)
+    const spec = validateSpec(specJson)
 
     // Validate Mermaid diagram content before writing. Structural validation
     // above only checks node shape; this runs the real `mermaid.parse()` so a
@@ -159,25 +154,35 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     const projectPath = opts.project ? resolve(opts.project) : resolve(process.cwd())
     await resolveFileTreeSources(specJson, projectPath)
 
+    // Final serialized artifact must fit inside the advertised raw limit, and
+    // inlined content must still pass the shared schema.
+    const serialized = `${JSON.stringify(specJson as Record<string, unknown>, null, 2)}\n`
+    if (Buffer.byteLength(serialized, "utf8") > RAW_ARTIFACT_MAX_BYTES) {
+      throw new ValidationError(
+        `Final artifact exceeds ${RAW_ARTIFACT_MAX_BYTES} bytes after inlining file-tree sources`,
+      )
+    }
+    const finalSpec = validateSpec(specJson)
+
     if (opts.dryRun) {
-      log.output({ ok: true, slug: spec.slug, title: spec.title, message: "Spec is valid" })
+      log.output({ ok: true, slug: finalSpec.slug, title: finalSpec.title, message: "Spec is valid" })
       return 0
     }
 
     const config = loadConfig()
     const projectName = deriveProjectName(projectPath)
-    const bundleDir = bundleDirPath(config.artifactsDir, projectName, spec.slug)
-    const filePath = artifactJsonPath(config.artifactsDir, projectName, spec.slug)
+    const bundleDir = bundleDirPath(config.artifactsDir, projectName, finalSpec.slug)
+    const filePath = artifactJsonPath(config.artifactsDir, projectName, finalSpec.slug)
 
     await ensureDir(bundleDir)
-    await ensureDir(assetsDirPath(config.artifactsDir, projectName, spec.slug))
-    await writeFile(filePath, `${JSON.stringify(spec, null, 2)}\n`, "utf8")
+    await ensureDir(assetsDirPath(config.artifactsDir, projectName, finalSpec.slug))
+    await writeFile(filePath, serialized, "utf8")
 
     if (opts.serve !== false) {
       await ensureServer(log)
     }
 
-    const localUrl = `${artifactBaseUrl(config)}/${projectName}/${spec.slug}/`
+    const localUrl = `${artifactBaseUrl(config)}/${projectName}/${finalSpec.slug}/`
     let publishResult: PublishResult | undefined
     let publishProfileName: string | undefined
     let publishMetadataPath: string | undefined
@@ -191,8 +196,8 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
         )
       }
       const context = await loadPublishContext(profile)
-      publishResult = { ...(await publishBundle(context, projectName, spec.slug, bundleDir)), localUrl }
-      publishMetadataPath = publishJsonPath(config.artifactsDir, projectName, spec.slug)
+      publishResult = { ...(await publishBundle(context, projectName, finalSpec.slug, bundleDir)), localUrl }
+      publishMetadataPath = publishJsonPath(config.artifactsDir, projectName, finalSpec.slug)
       const metadata = buildPublishMetadata(context, publishResult, publishProfileName)
       await writeFile(publishMetadataPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8")
     }
@@ -202,7 +207,7 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     if (opts.json) {
       const output: Record<string, unknown> = {
         ok: true,
-        slug: spec.slug,
+        slug: finalSpec.slug,
         projectName,
         projectPath,
         path: filePath,
@@ -222,7 +227,7 @@ export async function create(inputPath: string | undefined, opts: CreateOpts, lo
     } else if (opts.plain) {
       log.outputText(filePath)
     } else {
-      log.success(`Created visual artifact ${spec.slug} in project ${projectName}`)
+      log.success(`Created visual artifact ${finalSpec.slug} in project ${projectName}`)
       log.log(`  bundle: ${bundleDir}`)
       log.log(`  path:   ${filePath}`)
       log.log(`  url:    ${url}`)

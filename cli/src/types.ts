@@ -2,20 +2,8 @@ export type {
   ArtifactContract,
   NodeDef,
   SpecConstraints,
+  VisualArtifactSpec as ArtifactSpec,
 } from "@agents/visual-artifact-annotations/contract"
-
-export interface ArtifactSpec {
-  slug: string
-  title: string
-  description?: string
-  createdAt?: string
-  layout?: {
-    type?: "default" | "grid"
-    columns?: number
-  }
-  data?: Record<string, unknown>
-  nodes: unknown[]
-}
 
 export interface GlobalOpts {
   json: boolean

@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, dirname, resolve } from "node:path"
+import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
+
+import { RAW_ARTIFACT_MAX_BYTES } from "@agents/visual-artifact-annotations/contract"
 
 import { create } from "./create.ts"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// cli/assets/contract.json relative to cli/src/commands/
-const CONTRACT_PATH = resolve(__dirname, "../../assets/contract.json")
 
 // Minimal logger capturing output.
 function makeLogger() {
@@ -73,13 +73,12 @@ describe("create: file-tree src resolution", () => {
     )
 
     const log = makeLogger()
-    const contractPath = CONTRACT_PATH
-    const rc = await create(specPath, { dryRun: true, serve: false, contract: contractPath, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    const rc = await create(specPath, { dryRun: true, serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc).toBe(0)
     // dryRun resolves src into content in-memory but does not write. Re-run
     // without dryRun to confirm the written artifact JSON carries inlined content.
     log._logs.length = 0
-    const rc2 = await create(specPath, { serve: false, contract: contractPath, json: true, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    const rc2 = await create(specPath, { serve: false, json: true, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc2).toBe(0)
     const outLine = log._logs.find((l) => l.startsWith("output: "))
     expect(outLine).toBeDefined()
@@ -120,11 +119,36 @@ describe("create: file-tree src resolution", () => {
     await writeFile(specPath, JSON.stringify(spec), "utf8")
 
     const log = makeLogger()
-    const contractPath = CONTRACT_PATH
-    const rc = await create(specPath, { dryRun: true, serve: false, contract: contractPath, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    const rc = await create(specPath, { dryRun: true, serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc).toBe(0)
     // The in-memory spec keeps explicit content (resolver skips when content set).
     expect((spec.nodes[0] as any).props.items[0].content).toBe("EXPLICIT CONTENT")
+  })
+
+  test("rejects the exact pretty-printed artifact when it exceeds 2 MiB", async () => {
+    const specPath = join(dir, "spec.json")
+    const sourcePath = join(dir, "large.txt")
+    const expanded = {
+      slug: "final-size-limit",
+      title: "Final size limit",
+      nodes: [
+        {
+          type: "file-tree",
+          props: {
+            items: [{ name: "large.txt", type: "file", src: "large.txt", content: "" }],
+          },
+        },
+      ],
+    }
+    const contentBytes = RAW_ARTIFACT_MAX_BYTES - Buffer.byteLength(JSON.stringify(expanded), "utf8")
+    await writeFile(sourcePath, "x".repeat(contentBytes), "utf8")
+    delete (expanded.nodes[0].props.items[0] as { content?: string }).content
+    await writeFile(specPath, JSON.stringify(expanded), "utf8")
+
+    const log = makeLogger()
+    const rc = await create(specPath, { dryRun: true, serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    expect(rc).toBe(2)
+    expect(log._logs.some((line) => line.includes("Final artifact exceeds"))).toBe(true)
   })
 
   test("hard-fails on unreadable src path", async () => {
@@ -150,9 +174,8 @@ describe("create: file-tree src resolution", () => {
     )
 
     const log = makeLogger()
-    const contractPath = CONTRACT_PATH
     // Non-dryRun so the resolver runs and throws before write.
-    const rc = await create(specPath, { serve: false, contract: contractPath, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    const rc = await create(specPath, { serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc).toBe(2)
     expect(log._logs.some((l) => l.includes("could not be read"))).toBe(true)
   })
@@ -194,7 +217,7 @@ describe("create: mermaid content validation", () => {
     )
 
     const log = makeLogger()
-    const rc = await create(specPath, { dryRun: true, serve: false, contract: CONTRACT_PATH, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    const rc = await create(specPath, { dryRun: true, serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc).toBe(2)
     expect(log._logs.some((l) => l.includes("Mermaid diagram at nodes[0]<mermaid> is invalid"))).toBe(true)
   })
@@ -215,7 +238,7 @@ describe("create: mermaid content validation", () => {
     )
 
     const log = makeLogger()
-    const rc = await create(specPath, { dryRun: true, serve: false, contract: CONTRACT_PATH, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
+    const rc = await create(specPath, { dryRun: true, serve: false, json: false, plain: false, quiet: false, verbose: false, noColor: false, noInput: false }, log as any)
     expect(rc).toBe(0)
   })
 })

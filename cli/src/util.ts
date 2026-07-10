@@ -1,8 +1,10 @@
 import { execSync } from "node:child_process"
-import { fstatSync } from "node:fs"
+import { constants, fstatSync } from "node:fs"
 import { basename, resolve } from "node:path"
-import { readFile, stat } from "node:fs/promises"
+import { open, stat } from "node:fs/promises"
 import { mkdir } from "node:fs/promises"
+
+import { RAW_ARTIFACT_MAX_BYTES } from "@agents/visual-artifact-annotations/contract"
 
 export function sanitizeProjectName(name: string): string {
   return name
@@ -36,23 +38,67 @@ function stdinHasReadableSource(): boolean {
   }
 }
 
-async function readStdin(): Promise<string> {
+async function readStdinBounded(maxBytes: number): Promise<string> {
   const reader = Bun.stdin.stream().getReader()
   const chunks: Uint8Array[] = []
+  let totalBytes = 0
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    if (value) chunks.push(value)
+    if (value) {
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        await reader.cancel()
+        throw new Error(
+          `stdin exceeds ${maxBytes} bytes (artifact limit)`,
+        )
+      }
+      chunks.push(value)
+    }
   }
   const decoder = new TextDecoder("utf8")
   return chunks.map((c) => decoder.decode(c, { stream: true })).join("") + decoder.decode()
 }
 
-export async function readStdinOrFile(inputPath?: string): Promise<string> {
-  if (inputPath === "-") return readStdin()
-  if (inputPath) return readFile(resolve(inputPath), "utf8")
+async function readFileBounded(filePath: string, maxBytes: number): Promise<string> {
+  const handle = await open(filePath, constants.O_RDONLY | constants.O_NONBLOCK)
+  try {
+    const fileStats = await handle.stat()
+    if (!fileStats.isFile()) {
+      throw new Error(`${filePath} is not a regular file`)
+    }
+    const buffer = Buffer.alloc(maxBytes + 1)
+    let totalBytes = 0
+    while (totalBytes < buffer.length) {
+      const { bytesRead } = await handle.read(
+        buffer,
+        totalBytes,
+        buffer.length - totalBytes,
+        totalBytes,
+      )
+      if (bytesRead === 0) break
+      totalBytes += bytesRead
+    }
+    if (totalBytes > maxBytes) {
+      throw new Error(`${filePath} is larger than ${maxBytes} bytes`)
+    }
+    return buffer.subarray(0, totalBytes).toString("utf8")
+  } finally {
+    await handle.close()
+  }
+}
+
+export async function readStdinOrFile(
+  inputPath?: string,
+  maxBytes: number = RAW_ARTIFACT_MAX_BYTES,
+): Promise<string> {
+  if (inputPath === "-") return readStdinBounded(maxBytes)
+  if (inputPath) {
+    const filePath = resolve(inputPath)
+    return readFileBounded(filePath, maxBytes)
+  }
   if (stdinHasReadableSource()) {
-    const raw = await readStdin()
+    const raw = await readStdinBounded(maxBytes)
     if (raw.length > 0) return raw
   }
   throw new Error("No input provided. Pass a file path or pipe JSON to stdin.")

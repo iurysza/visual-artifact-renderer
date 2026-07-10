@@ -2,10 +2,51 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { VisualArtifactRenderer } from "@/components/visual-artifact-renderer"
-import { VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/contract/artifact-schema"
+import {
+  RAW_ARTIFACT_MAX_BYTES,
+  VisualArtifactSpecSchema,
+  parseRawArtifactJson,
+  type VisualArtifactSpec,
+} from "@/lib/contract/artifact-schema"
 import { artifactDataUrl, artifactParamsFromPath, type ArtifactRouteParams } from "@/lib/artifacts/paths"
 
 import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
+
+export async function readResponseTextBounded(
+  res: Response,
+  maxBytes: number = RAW_ARTIFACT_MAX_BYTES,
+): Promise<string> {
+  const contentLength = res.headers.get("content-length")
+  if (contentLength && Number(contentLength) > maxBytes) {
+    await res.body?.cancel()
+    throw new Error(`Artifact JSON exceeds ${maxBytes} bytes`)
+  }
+
+  const body = res.body
+  if (!body) throw new Error("Response body is empty")
+
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value) continue
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        await reader.cancel()
+        throw new Error(`Artifact JSON exceeds ${maxBytes} bytes`)
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  const decoder = new TextDecoder("utf8")
+  return chunks.map((chunk) => decoder.decode(chunk, { stream: true })).join("") + decoder.decode()
+}
 
 interface ClientArtifactLoaderProps {
   project?: string
@@ -35,9 +76,10 @@ export function ClientArtifactLoader({ project, slug, initialSpec }: ClientArtif
     // under Next.js dev, the static export server, and proxied mounts.
     const url = artifactDataUrl(params.project, params.slug)
     fetch(url)
-      .then(res => {
+      .then(async res => {
         if (!res.ok) throw new Error(`Artifact not found (${res.status})`)
-        return res.json()
+        const text = await readResponseTextBounded(res)
+        return parseRawArtifactJson(text)
       })
       .then(data => {
         const parsed = VisualArtifactSpecSchema.safeParse(data)

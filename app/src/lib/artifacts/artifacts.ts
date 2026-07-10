@@ -1,7 +1,14 @@
 import { promises as fs } from "fs"
 import path from "path"
 
-import { ArtifactSlugSchema, VisualArtifactSpecSchema, type VisualArtifactSpec } from "@/lib/contract/artifact-schema"
+import {
+  ArtifactSlugSchema,
+  ArtifactValidationError,
+  VisualArtifactSpecSchema,
+  parseRawArtifactJson,
+  type VisualArtifactSpec,
+} from "@/lib/contract/artifact-schema"
+import { readArtifactFileBounded } from "@/lib/artifacts/read-artifact-file"
 
 const ARTIFACTS_DIR = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
   ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
@@ -82,12 +89,12 @@ export async function listArtifactsInProject(projectName: string): Promise<Artif
       const stats = await fs.stat(filePath).catch(() => null)
       if (!stats) continue
 
-      const raw = await fs.readFile(filePath, "utf8")
       let title = slug
       let description: string | undefined
 
       try {
-        const parsed = VisualArtifactSpecSchema.safeParse(JSON.parse(raw))
+        const raw = await readArtifactFileBounded(filePath)
+        const parsed = VisualArtifactSpecSchema.safeParse(parseRawArtifactJson(raw))
         if (parsed.success) {
           title = parsed.data.title
           description = parsed.data.description
@@ -124,11 +131,11 @@ export async function getVisualArtifactSpec(projectName: string, slug: string): 
   const filePath = artifactJsonPath(parsedProject.data, parsedSlug.data)
 
   try {
-    const file = await fs.readFile(filePath, "utf8")
-    const parsed = VisualArtifactSpecSchema.safeParse(JSON.parse(file))
+    const file = await readArtifactFileBounded(filePath)
+    const parsed = VisualArtifactSpecSchema.safeParse(parseRawArtifactJson(file))
     return parsed.success ? parsed.data : null
   } catch (error) {
-    if (isMissingFileError(error) || error instanceof SyntaxError) {
+    if (isMissingFileError(error) || error instanceof ArtifactValidationError) {
       return null
     }
 

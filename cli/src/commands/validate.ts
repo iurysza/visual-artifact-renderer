@@ -1,15 +1,11 @@
-import { resolve } from "node:path"
 import { loadConfig } from "../config.ts"
-import { loadContract } from "../contract.ts"
 import type { Logger } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
 import { validateMermaidNodes } from "../mermaid.ts"
 import { readStdinOrFile } from "../util.ts"
 import type { GlobalOpts } from "../types.ts"
 
-interface ValidateOpts extends GlobalOpts {
-  contract?: string
-}
+interface ValidateOpts extends GlobalOpts {}
 
 export async function validate(inputPath: string | undefined, opts: ValidateOpts, log: Logger): Promise<number> {
   let raw: string
@@ -29,10 +25,8 @@ export async function validate(inputPath: string | undefined, opts: ValidateOpts
   }
 
   try {
-    const config = loadConfig()
-    const contractPath = opts.contract ? resolve(opts.contract) : config.baseUrl ? undefined : undefined
-    const contract = await loadContract(contractPath)
-    const spec = validateSpec(specJson, contract)
+    loadConfig()
+    const spec = validateSpec(specJson)
 
     // Validate Mermaid diagram content so `validate` reports the same broken
     // graphs that `create` would reject.

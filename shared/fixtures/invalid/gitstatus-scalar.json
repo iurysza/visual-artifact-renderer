@@ -1,0 +1,13 @@
+{
+  "slug": "gitstatus-scalar",
+  "title": "GitStatus is scalar",
+  "nodes": [
+    {
+      "type": "file-tree",
+      "props": {
+        "items": [{ "name": "README.md" }],
+        "gitStatus": "modified"
+      }
+    }
+  ]
+}

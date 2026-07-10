@@ -60,7 +60,6 @@ program
   .command("create [spec]")
   .description("Validate and save an artifact spec. Reads from file or stdin. Starts the renderer if it is not running.")
   .option("-p, --project <path>", "Project directory (default: current directory)")
-  .option("-c, --contract <path>", "Path to artifact-contract.json")
   .option("--dry-run", "Validate only; do not write the artifact")
   .option("--no-serve", "Do not auto-start the renderer")
   .option("--publish [profile]", "Publish the artifact to Cloudflare using the named profile")
@@ -74,7 +73,6 @@ program
 program
   .command("validate [spec]")
   .description("Validate an artifact spec without writing it.")
-  .option("-c, --contract <path>", "Path to artifact-contract.json")
   .action(async (spec, opts) => {
     const globalOpts = program.opts() as GlobalOpts
     const log = buildLogger(globalOpts)

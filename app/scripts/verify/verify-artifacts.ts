@@ -1,10 +1,44 @@
 import { promises as fs } from "fs"
 import path from "path"
 
-import { artifactComponentManifest, artifactManifest } from "../../src/lib/contract/artifact-manifest"
-import { ARTIFACT_NODE_TYPES, VisualArtifactSpecSchema } from "../../src/lib/contract/artifact-schema"
+import {
+  ARTIFACT_NODE_TYPES,
+  ARTIFACT_SPEC_RESOURCE_LIMITS,
+  ArtifactNodeSchema,
+  VisualArtifactSpecSchema,
+  artifactComponentManifest,
+  artifactManifest,
+  createArtifactContract,
+  parseRawArtifactJson,
+} from "../../src/lib/contract/artifact-manifest"
+import { readArtifactFileBounded } from "../../src/lib/artifacts/read-artifact-file"
 
-async function findArtifactFiles(dir: string): Promise<string[]> {
+const EXCLUDED_NAMES = new Set(["annotations.json", "publish.json"])
+
+async function findArtifactSpecFiles(dir: string): Promise<string[]> {
+  const files: string[] = []
+  async function walk(current: string) {
+    let entries
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true })
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return
+      throw error
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(current, entry.name)
+      if (entry.isDirectory()) {
+        await walk(entryPath)
+      } else if (entry.name.endsWith(".json") && !EXCLUDED_NAMES.has(entry.name)) {
+        files.push(entryPath)
+      }
+    }
+  }
+  await walk(dir)
+  return files
+}
+
+async function findBundleArtifactFiles(dir: string): Promise<string[]> {
   const files: string[] = []
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true })
@@ -25,27 +59,79 @@ async function findArtifactFiles(dir: string): Promise<string[]> {
   return files
 }
 
+async function validateFixture(filePath: string): Promise<void> {
+  const raw = await readArtifactFileBounded(filePath)
+  const parsed = parseRawArtifactJson(raw)
+  const result = VisualArtifactSpecSchema.safeParse(parsed)
+  if (!result.success) {
+    throw new Error(`${filePath} fixture failed validation: ${result.error.message}`)
+  }
+}
+
 async function main() {
   const skillRoot = path.resolve(__dirname, "..", "..")
   const artifactsDir = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
     ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
     : path.join(skillRoot, "..", "artifacts")
-  const files = await findArtifactFiles(artifactsDir)
 
-  for (const filePath of files) {
-    const raw = await fs.readFile(filePath, "utf8")
-    const parsed = VisualArtifactSpecSchema.parse(JSON.parse(raw))
-    const fileName = path.basename(filePath)
+  // Recursively validate every parseable artifact spec JSON under artifacts,
+  // excluding known non-spec files.
+  const specFiles = await findArtifactSpecFiles(artifactsDir)
+  let validatedCount = 0
+  for (const filePath of specFiles) {
+    const raw = await readArtifactFileBounded(filePath)
+    let parsed: unknown
+    try {
+      parsed = parseRawArtifactJson(raw)
+    } catch {
+      continue
+    }
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !Array.isArray((parsed as Record<string, unknown>).nodes)
+    ) {
+      continue
+    }
+    const result = VisualArtifactSpecSchema.safeParse(parsed)
+    if (!result.success) {
+      throw new Error(`${filePath} failed validation: ${result.error.message}`)
+    }
+    validatedCount++
+  }
+
+  // Bundle artifact.json files must also have slugs matching their directory.
+  const bundleFiles = await findBundleArtifactFiles(artifactsDir)
+  for (const filePath of bundleFiles) {
+    const raw = await readArtifactFileBounded(filePath)
+    const parsed = VisualArtifactSpecSchema.parse(parseRawArtifactJson(raw))
     const slugDir = path.basename(path.dirname(filePath))
-
-    if (fileName !== "artifact.json" || parsed.slug !== slugDir) {
+    if (parsed.slug !== slugDir) {
       throw new Error(`${filePath} slug does not match bundle directory ${parsed.slug}`)
     }
   }
 
-  for (const type of ARTIFACT_NODE_TYPES) {
-    if (!artifactManifest[type]) {
-      throw new Error(`Missing manifest entry for ${type}`)
+  // Validate tracked compatibility fixtures in clean CI.
+  const fixturesDir = path.resolve(skillRoot, "..", "shared", "fixtures", "valid")
+  const fixtureEntries = await fs.readdir(fixturesDir, { withFileTypes: true }).catch(() => [])
+  for (const entry of fixtureEntries) {
+    if (!entry.name.endsWith(".json")) continue
+    await validateFixture(path.join(fixturesDir, entry.name))
+  }
+
+  const expectedNodeTypes = [...ARTIFACT_NODE_TYPES].sort()
+  const manifestNodeTypes = Object.keys(artifactManifest).sort()
+  if (JSON.stringify(manifestNodeTypes) !== JSON.stringify(expectedNodeTypes)) {
+    throw new Error(
+      `Manifest nodeTypes mismatch: expected=[${expectedNodeTypes.join(", ")}] manifest=[${manifestNodeTypes.join(", ")}]`,
+    )
+  }
+
+  // Every manifest example must parse as an ArtifactNode.
+  for (const entry of artifactComponentManifest) {
+    const result = ArtifactNodeSchema.safeParse(entry.example)
+    if (!result.success) {
+      throw new Error(`Manifest example for ${entry.type} failed node validation: ${result.error.message}`)
     }
   }
 
@@ -96,20 +182,39 @@ async function main() {
   }
 
   const contractNodeTypes = [...contract.nodeTypes].sort()
-  const schemaNodeTypes = [...ARTIFACT_NODE_TYPES].sort()
-  if (JSON.stringify(contractNodeTypes) !== JSON.stringify(schemaNodeTypes)) {
+  const contractDefinitionTypes = Object.keys(contract.nodes).sort()
+  if (
+    JSON.stringify(contractNodeTypes) !== JSON.stringify(expectedNodeTypes) ||
+    JSON.stringify(contractDefinitionTypes) !== JSON.stringify(expectedNodeTypes)
+  ) {
     throw new Error(
-      `Contract nodeTypes mismatch: schema=[${schemaNodeTypes.join(", ")}] contract=[${contractNodeTypes.join(", ")}]`,
+      `Contract nodeTypes mismatch: expected=[${expectedNodeTypes.join(", ")}] nodeTypes=[${contractNodeTypes.join(", ")}] definitions=[${contractDefinitionTypes.join(", ")}]`,
     )
   }
 
-  for (const type of ARTIFACT_NODE_TYPES) {
-    if (!contract.nodes[type]) {
-      throw new Error(`Contract missing node definition for ${type}`)
+  // Generated contract must be byte-for-byte equal to createArtifactContract().
+  const expectedContract = createArtifactContract()
+  if (JSON.stringify(contract) !== JSON.stringify(expectedContract)) {
+    throw new Error(
+      `Generated contract at ${contractPath} does not match createArtifactContract(). Run \`pnpm export:contract\` and commit the result.`,
+    )
+  }
+
+  // Limits must be present and match the shared resource envelope.
+  if (!contract.limits) {
+    throw new Error("Generated contract is missing limits")
+  }
+  for (const [key, value] of Object.entries(ARTIFACT_SPEC_RESOURCE_LIMITS)) {
+    if (contract.limits[key] !== value) {
+      throw new Error(
+        `Contract limit mismatch for ${key}: expected ${value}, got ${contract.limits[key]}`,
+      )
     }
   }
 
-  console.log(`Verified ${files.length} artifact spec(s), ${ARTIFACT_NODE_TYPES.length} manifest entries, contract sync, and code-block contract.`)
+  console.log(
+    `Verified ${validatedCount} artifact spec(s) (${bundleFiles.length} bundles), ${ARTIFACT_NODE_TYPES.length} manifest entries, manifest examples, contract sync, limits, and code-block contract.`,
+  )
 }
 
 main().catch((error) => {
