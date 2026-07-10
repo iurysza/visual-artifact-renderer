@@ -2,8 +2,8 @@
 
 ## Status
 
-- Current wave: 0 — documentation and dirty-tree isolation.
-- Implementation: not started.
+- Current wave: 2 — CLI output and configuration contract.
+- Implementation: Wave 1 complete; Wave 2 next.
 - Baseline branch: `main`.
 - Parent session handoff: `2026-07-10T07-42-31-695Z_019f4afa-650f-7d38-8bd4-aa79a3de7ed7.jsonl`.
 
@@ -98,3 +98,29 @@
 ### Commit
 
 - Planning and housekeeping hashes recorded above.
+
+## Wave 1 — shared executable schema and resource limits
+
+### Shipped
+
+- Moved executable artifact validation to `shared/`; app now re-exports it and CLI removed the handwritten manifest interpreter.
+- Added iterative preflight plus the selected 2 MiB/node/dataset/depth/file-tree envelope before recursive Zod parsing.
+- Added bounded browser, Node, Bun file/stdin reads; regular-file/FIFO protection; final serialized create-size validation.
+- Restored Mermaid parity for `validate`, bracketed CLI paths, tracked generated contract output, strict button URL schemes, parity/resource fixtures, and 82-spec recursive verification.
+
+### Validation
+
+- Shared typecheck/build — pass.
+- CLI focused gate — 62 pass; full suite — 156 pass; typecheck/build/compiled smoke — pass.
+- App focused loader/schema/read gate — 11 pass; lint/export/82-spec verify/build — pass.
+- Generated contract has no unstaged drift; cached diff check and runtime-artifact status — clean.
+
+### Review synthesis
+
+- Three fresh initial reviewers found app preflight bypass, top-level-only/non-aggregate file-tree checks, Mermaid regression, unbounded reads, weak fixtures, and path formatting; all fixed.
+- Two fresh Gemini re-reviewers found no remaining Wave 1 correctness issue. Their source containment/per-source findings are the already-planned Wave 3A boundary, not Wave 1 regressions; existing Mermaid normalization/security-level observations are deferred outside this schema wave.
+- Codex re-review attempts hit provider usage limits; Gemini fresh-context fallback completed.
+
+### Commit
+
+- `02f528a` — `fix(contract): unify artifact validation`.
