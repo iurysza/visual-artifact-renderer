@@ -11,7 +11,11 @@ permissions:
   pull-requests: write
 
 jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+
   release-please:
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4

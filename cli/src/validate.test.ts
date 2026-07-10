@@ -439,8 +439,18 @@ describe("resource envelope", () => {
 })
 
 describe("saved artifact compatibility", () => {
-  test("all parseable saved artifact specs validate", async () => {
+  test("all parseable saved artifact specs validate when present", async () => {
     const files = await findSavedJsonFiles(SAVED_ARTIFACTS_DIR)
+    if (files.length === 0) {
+      // Clean clones ignore the runtime artifacts/ directory. Fall back to the
+      // tracked representative compatibility fixture so the gate still asserts
+      // real-world structural shapes.
+      const spec = await loadFixture("valid", "representative.json")
+      const result = parseVisualArtifactSpec(spec)
+      expect(result.nodes.length).toBeGreaterThan(0)
+      return
+    }
+
     let total = 0
     for (const filePath of files) {
       const raw = await readFile(filePath, "utf8")

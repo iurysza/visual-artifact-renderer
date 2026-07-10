@@ -93,11 +93,6 @@ const baseSpec = VisualArtifactSpecSchema.parse({
       props: { dataKey: "checks", columns: ["check", "status", "evidence"] },
       metadata: { id: "table-1" },
     },
-    {
-      type: "log",
-      props: { dataKey: "missing", lines: [] },
-      metadata: { id: "missing-data" },
-    },
   ],
 }) satisfies VisualArtifactSpec
 
