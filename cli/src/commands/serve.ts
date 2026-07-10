@@ -1,9 +1,16 @@
 import { resolve, join } from "node:path"
 import { spawn } from "node:child_process"
+import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
 import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
-import { applyMutations, parseAnnotationMutationsPayload, readAnnotationsDocument, resolveLocalAuthor, writeAnnotationsDocument } from "../lib/annotations.ts"
+import {
+  ArtifactNotFoundError,
+  mutateAnnotationsDocument,
+  parseAnnotationMutationsPayload,
+  readAnnotationsDocument,
+  resolveLocalAuthor,
+} from "../lib/annotations.ts"
 import type { AnnotationMutations } from "../lib/annotations.ts"
 import {
   bearerTokenMatches,
@@ -242,9 +249,7 @@ export function serveShutdownApi(
   onShutdown: () => void,
 ): Response {
   if (stripped !== shutdownPath) return notFound()
-  if (req.method !== "POST") {
-    return jsonResponse(JSON.stringify({ error: "Method not allowed" }, null, 2), { status: 405 })
-  }
+  if (req.method !== "POST") return methodNotAllowed("POST")
   const authHeader = req.headers.get("authorization")
   if (!authHeader) {
     return jsonResponse(JSON.stringify({ error: "Missing authorization" }, null, 2), { status: 401 })
@@ -265,39 +270,44 @@ export async function serveApi(req: Request, stripped: string, artifactsDir: str
   }
 
   const mutationMatch = matchMutationRoute(reqPath, apiPath)
-  if (mutationMatch && req.method === "POST") {
-    const route = parseBundleRoute(mutationMatch.project, mutationMatch.slug)
-    if (!route) return badRequest("Invalid project or slug")
-    const projectDir = resolve(artifactsDir, route.project)
-    if (!isInsideArtifactsDir(projectDir, artifactsDir)) return badRequest("Invalid project or slug")
+  if (!mutationMatch) return notFound()
+  if (req.method !== "POST") return methodNotAllowed("POST")
 
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return badRequest("Invalid JSON body")
-    }
-
-    let mutations: AnnotationMutations
-    try {
-      mutations = parseAnnotationMutationsPayload(body)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      return badRequest(message)
-    }
-
-    try {
-      const doc = await readAnnotationsDocument(artifactsDir, route)
-      const updated = applyMutations(doc, mutations)
-      await writeAnnotationsDocument(artifactsDir, route, updated)
-      return jsonResponse(JSON.stringify(updated, null, 2))
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 500 })
-    }
+  const rejection = annotationMutationRequestRejection(req)
+  if (rejection) {
+    return jsonResponse(JSON.stringify({ error: rejection.message }, null, 2), {
+      status: rejection.status,
+    })
   }
 
-  return notFound()
+  const route = parseBundleRoute(mutationMatch.project, mutationMatch.slug)
+  if (!route) return badRequest("Invalid project or slug")
+  const projectDir = resolve(artifactsDir, route.project)
+  if (!isInsideArtifactsDir(projectDir, artifactsDir)) return badRequest("Invalid project or slug")
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return badRequest("Invalid JSON body")
+  }
+
+  let mutations: AnnotationMutations
+  try {
+    mutations = parseAnnotationMutationsPayload(body)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return badRequest(message)
+  }
+
+  try {
+    const updated = await mutateAnnotationsDocument(artifactsDir, route, mutations)
+    return jsonResponse(JSON.stringify(updated, null, 2))
+  } catch (error) {
+    if (error instanceof ArtifactNotFoundError) return notFound()
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 500 })
+  }
 }
 
 export async function serveData(stripped: string, artifactsDir: string, dataPath: string): Promise<Response> {
@@ -335,8 +345,13 @@ export async function serveData(stripped: string, artifactsDir: string, dataPath
   if (annotationsMatch) {
     const route = parseBundleRoute(annotationsMatch.project, annotationsMatch.slug)
     if (!route) return notFound()
-    const doc = await readAnnotationsDocument(artifactsDir, route)
-    return jsonResponse(JSON.stringify(doc, null, 2))
+    try {
+      const doc = await readAnnotationsDocument(artifactsDir, route)
+      return jsonResponse(JSON.stringify(doc, null, 2))
+    } catch (error) {
+      if (error instanceof ArtifactNotFoundError) return notFound()
+      throw error
+    }
   }
 
   const assetMatch = matchAsset(reqPath, dataPath)
@@ -354,7 +369,9 @@ export async function serveData(stripped: string, artifactsDir: string, dataPath
 }
 
 function jsonResponse(body: string, init?: ResponseInit): Response {
-  return new Response(body, { ...init, headers: { "Content-Type": "application/json; charset=utf-8" } })
+  const headers = new Headers(init?.headers)
+  headers.set("Content-Type", "application/json; charset=utf-8")
+  return new Response(body, { ...init, headers })
 }
 
 function notFound(): Response {
@@ -363,6 +380,13 @@ function notFound(): Response {
 
 function badRequest(message: string): Response {
   return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 400 })
+}
+
+function methodNotAllowed(allow: string): Response {
+  return jsonResponse(JSON.stringify({ error: "Method not allowed" }, null, 2), {
+    status: 405,
+    headers: { Allow: allow },
+  })
 }
 
 function escapeRegex(value: string): string {

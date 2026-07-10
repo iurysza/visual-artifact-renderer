@@ -1,6 +1,6 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises"
+import { randomUUID } from "node:crypto"
+import { open, readFile, rename, rm, stat } from "node:fs/promises"
 import { spawn } from "node:child_process"
-import { dirname } from "node:path"
 import {
   emptyAnnotationDocument,
   parseAnnotationDocument,
@@ -12,9 +12,31 @@ import {
   LOCAL_ANONYMOUS_AUTHOR,
   type AnnotationThread,
 } from "@agents/visual-artifact-annotations"
-import { annotationsJsonPath, isInsideArtifactsDir, parseBundleRoute, type BundleRoute } from "./paths.ts"
+import {
+  annotationsJsonPath,
+  artifactJsonPath,
+  isInsideArtifactsDir,
+  parseBundleRoute,
+  type BundleRoute,
+} from "./paths.ts"
 
 export type { AnnotationAuthor, AnnotationDocument, AnnotationMutation, AnnotationMutations, AnnotationThread }
+
+export class ArtifactNotFoundError extends Error {
+  constructor(route: BundleRoute) {
+    super(`Artifact ${route.project}/${route.slug} not found`)
+    this.name = "ArtifactNotFoundError"
+  }
+}
+
+interface AnnotationWriteDependencies {
+  open: typeof open
+  rename: typeof rename
+  rm: typeof rm
+}
+
+const DEFAULT_WRITE_DEPENDENCIES: AnnotationWriteDependencies = { open, rename, rm }
+const annotationQueues = new Map<string, Promise<void>>()
 
 export async function resolveLocalAuthor(): Promise<AnnotationAuthor> {
   const [name, email] = await Promise.all([
@@ -60,10 +82,25 @@ export function parseBundleRouteFromParams(params: { project: unknown; slug: unk
   return parseBundleRoute(params.project, params.slug)
 }
 
+async function assertArtifactExists(artifactsDir: string, route: BundleRoute): Promise<void> {
+  const filePath = artifactJsonPath(artifactsDir, route.project, route.slug)
+  if (!isInsideArtifactsDir(filePath, artifactsDir)) {
+    throw new Error("Path traversal detected")
+  }
+  try {
+    const fileStat = await stat(filePath)
+    if (!fileStat.isFile()) throw new ArtifactNotFoundError(route)
+  } catch (error) {
+    if (isMissingFileError(error)) throw new ArtifactNotFoundError(route)
+    throw error
+  }
+}
+
 export async function readAnnotationsDocument(
   artifactsDir: string,
   route: BundleRoute,
 ): Promise<AnnotationDocument> {
+  await assertArtifactExists(artifactsDir, route)
   const filePath = annotationsJsonPath(artifactsDir, route.project, route.slug)
   if (!isInsideArtifactsDir(filePath, artifactsDir)) {
     throw new Error("Path traversal detected")
@@ -85,13 +122,55 @@ export async function writeAnnotationsDocument(
   artifactsDir: string,
   route: BundleRoute,
   doc: AnnotationDocument,
+  overrides: Partial<AnnotationWriteDependencies> = {},
 ): Promise<void> {
+  const dependencies = { ...DEFAULT_WRITE_DEPENDENCIES, ...overrides }
+  await assertArtifactExists(artifactsDir, route)
   const filePath = annotationsJsonPath(artifactsDir, route.project, route.slug)
   if (!isInsideArtifactsDir(filePath, artifactsDir)) {
     throw new Error("Path traversal detected")
   }
-  await mkdir(dirname(filePath), { recursive: true })
-  await writeFile(filePath, `${JSON.stringify(doc, null, 2)}\n`, "utf8")
+
+  const tempPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`
+  let handle: Awaited<ReturnType<typeof open>> | undefined
+  try {
+    handle = await dependencies.open(tempPath, "wx", 0o600)
+    await handle.writeFile(`${JSON.stringify(doc, null, 2)}\n`, "utf8")
+    await handle.sync()
+    await handle.close()
+    handle = undefined
+    await dependencies.rename(tempPath, filePath)
+  } finally {
+    await handle?.close().catch(() => {})
+    await dependencies.rm(tempPath, { force: true }).catch(() => {})
+  }
+}
+
+async function inAnnotationQueue<T>(key: string, operation: () => Promise<T>): Promise<T> {
+  const previous = annotationQueues.get(key) ?? Promise.resolve()
+  const result = previous.catch(() => {}).then(operation)
+  const settled = result.then(() => {}, () => {})
+  annotationQueues.set(key, settled)
+
+  try {
+    return await result
+  } finally {
+    if (annotationQueues.get(key) === settled) annotationQueues.delete(key)
+  }
+}
+
+export async function mutateAnnotationsDocument(
+  artifactsDir: string,
+  route: BundleRoute,
+  mutations: AnnotationMutations,
+): Promise<AnnotationDocument> {
+  const key = annotationsJsonPath(artifactsDir, route.project, route.slug)
+  return inAnnotationQueue(key, async () => {
+    const doc = await readAnnotationsDocument(artifactsDir, route)
+    const updated = applyMutations(doc, mutations)
+    await writeAnnotationsDocument(artifactsDir, route, updated)
+    return updated
+  })
 }
 
 export function applyMutations(

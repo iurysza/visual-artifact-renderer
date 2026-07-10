@@ -1,6 +1,8 @@
+import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
 import { isSafeAssetPath, parseArtifactPath, parseProjectPath } from "./paths.ts"
 import { buildHomeIndex, buildProjectIndex } from "./indexes.ts"
 import {
+  AnnotationValidationError,
   applyMutations,
   emptyAnnotationDocument,
   LOCAL_ANONYMOUS_AUTHOR,
@@ -17,6 +19,7 @@ const DATA_SEGMENT = "data/artifacts"
 const API_SEGMENT = "api/annotations"
 
 const JSON_HEADERS = { "Content-Type": "application/json" }
+const ANNOTATION_WRITE_ATTEMPTS = 5
 
 export async function handleRequest(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url)
@@ -65,6 +68,7 @@ async function handleDataRequest(method: string, path: string, env: Env): Promis
   if (segments.length === 3 && segments[2] === "annotations.json") {
     const parsed = parseArtifactPath([segments[0], segments[1]])
     if (!parsed) return notFound()
+    if (!(await artifactExists(env.BUCKET, parsed.project, parsed.slug))) return notFound()
     return getR2ObjectOrEmptyAnnotations(env.BUCKET, parsed.project, parsed.slug)
   }
 
@@ -99,27 +103,34 @@ async function handleApiRequest(
 
   const parsed = parseArtifactPath(segments)
   if (!parsed) return notFound()
+  if (method !== "POST") return methodNotAllowed("POST")
 
-  if (method === "POST") {
-    let mutations: ReturnType<typeof parseAnnotationMutations>
-    try {
-      const body = await request.json()
-      mutations = parseAnnotationMutations(body)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Invalid request body"
-      return jsonResponse({ error: message }, 400)
-    }
+  const rejection = annotationMutationRequestRejection(request)
+  if (rejection) return jsonResponse({ error: rejection.message }, rejection.status)
+  if (!(await artifactExists(env.BUCKET, parsed.project, parsed.slug))) return notFound()
 
-    const key = `artifacts/${parsed.project}/${parsed.slug}/annotations.json`
-    const doc = await loadAnnotationDocument(env.BUCKET, parsed.project, parsed.slug)
-    const updated = applyMutations(doc, mutations)
-    await env.BUCKET.put(key, JSON.stringify(updated), {
-      httpMetadata: new Headers({ "Content-Type": "application/json" }),
-    })
-    return jsonResponse(updated)
+  let mutations: ReturnType<typeof parseAnnotationMutations>
+  try {
+    const body = await request.json()
+    mutations = parseAnnotationMutations(body)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid request body"
+    return jsonResponse({ error: message }, 400)
   }
 
-  return methodNotAllowed()
+  try {
+    const updated = await mutateAnnotationDocument(
+      env.BUCKET,
+      parsed.project,
+      parsed.slug,
+      mutations,
+    )
+    return updated ? jsonResponse(updated) : jsonResponse({ error: "Annotation write conflict" }, 409)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const status = error instanceof AnnotationValidationError ? 400 : 500
+    return jsonResponse({ error: message }, status)
+  }
 }
 
 async function handlePageOrAssetRequest(request: Request, env: Env, pathname: string): Promise<Response> {
@@ -165,20 +176,54 @@ async function getR2Object(bucket: R2Bucket, key: string): Promise<Response> {
   return new Response(object.body, { headers })
 }
 
-async function loadAnnotationDocument(bucket: R2Bucket, project: string, slug: string): Promise<AnnotationDocument> {
+async function artifactExists(bucket: R2Bucket, project: string, slug: string): Promise<boolean> {
+  return Boolean(await bucket.head(`artifacts/${project}/${slug}/artifact.json`))
+}
+
+interface LoadedAnnotationDocument {
+  document: AnnotationDocument
+  etag?: string
+}
+
+async function loadAnnotationDocument(
+  bucket: R2Bucket,
+  project: string,
+  slug: string,
+): Promise<LoadedAnnotationDocument> {
   const key = `artifacts/${project}/${slug}/annotations.json`
   const object = await bucket.get(key)
-  if (object) {
-    const text = await object.text()
-    const parsed = JSON.parse(text) as AnnotationDocument
-    return parsed
+  if (!object) return { document: emptyAnnotationDocument(project, slug) }
+  return {
+    document: JSON.parse(await object.text()) as AnnotationDocument,
+    etag: object.etag,
   }
-  return emptyAnnotationDocument(project, slug)
+}
+
+async function mutateAnnotationDocument(
+  bucket: R2Bucket,
+  project: string,
+  slug: string,
+  mutations: ReturnType<typeof parseAnnotationMutations>,
+): Promise<AnnotationDocument | null> {
+  const key = `artifacts/${project}/${slug}/annotations.json`
+  for (let attempt = 0; attempt < ANNOTATION_WRITE_ATTEMPTS; attempt++) {
+    const current = await loadAnnotationDocument(bucket, project, slug)
+    const updated = applyMutations(current.document, mutations)
+    const onlyIf: R2Conditional = current.etag
+      ? { etagMatches: current.etag }
+      : { etagDoesNotMatch: "*" }
+    const result = await bucket.put(key, JSON.stringify(updated), {
+      onlyIf,
+      httpMetadata: new Headers({ "Content-Type": "application/json" }),
+    })
+    if (result) return updated
+  }
+  return null
 }
 
 async function getR2ObjectOrEmptyAnnotations(bucket: R2Bucket, project: string, slug: string): Promise<Response> {
-  const doc = await loadAnnotationDocument(bucket, project, slug)
-  return jsonResponse(doc)
+  const { document } = await loadAnnotationDocument(bucket, project, slug)
+  return jsonResponse(document)
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -189,6 +234,6 @@ function notFound(): Response {
   return new Response("Not Found", { status: 404 })
 }
 
-function methodNotAllowed(): Response {
-  return new Response("Method Not Allowed", { status: 405 })
+function methodNotAllowed(allow = "GET"): Response {
+  return new Response("Method Not Allowed", { status: 405, headers: { Allow: allow } })
 }

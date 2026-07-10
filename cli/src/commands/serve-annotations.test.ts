@@ -1,11 +1,22 @@
 import { describe, expect, test } from "bun:test"
-import { mkdir, rm, writeFile, mkdtemp } from "node:fs/promises"
+import { mkdir, readdir, rm, writeFile, mkdtemp } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { serveApi, serveData, serveShutdownApi } from "./serve.ts"
 
 async function makeTempDir(prefix: string): Promise<string> {
   return mkdtemp(join(tmpdir(), prefix))
+}
+
+async function writeArtifact(dir: string): Promise<string> {
+  const bundleDir = join(dir, "example-project", "example-artifact")
+  await mkdir(bundleDir, { recursive: true })
+  await writeFile(
+    join(bundleDir, "artifact.json"),
+    JSON.stringify({ slug: "example-artifact", title: "Example", nodes: [{ type: "text", props: { text: "x" } }] }),
+    "utf8",
+  )
+  return bundleDir
 }
 
 const validAuthor = { name: "Iury Souza", email: "iury@example.com" }
@@ -92,13 +103,24 @@ describe("serveShutdownApi", () => {
 })
 
 describe("serveData annotations endpoint", () => {
-  test("returns empty document when annotations.json is missing", async () => {
+  test("returns 404 when the artifact is missing and creates nothing", async () => {
     const dir = await makeTempDir("visualizer-serve-data-")
     try {
       const response = await serveData("/data/artifacts/example-project/example-artifact/annotations.json", dir, "/data/artifacts")
+      expect(response.status).toBe(404)
+      expect(await readdir(dir)).toEqual([])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("returns an empty document for an existing artifact without annotations", async () => {
+    const dir = await makeTempDir("visualizer-serve-data-")
+    try {
+      await writeArtifact(dir)
+      const response = await serveData("/data/artifacts/example-project/example-artifact/annotations.json", dir, "/data/artifacts")
       expect(response.status).toBe(200)
-      const body = await response.json()
-      expect(body).toEqual({ version: 1, project: "example-project", slug: "example-artifact", threads: [] })
+      expect(await response.json()).toEqual({ version: 1, project: "example-project", slug: "example-artifact", threads: [] })
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -107,8 +129,7 @@ describe("serveData annotations endpoint", () => {
   test("returns existing annotations.json", async () => {
     const dir = await makeTempDir("visualizer-serve-data-")
     try {
-      const bundleDir = join(dir, "example-project", "example-artifact")
-      await mkdir(bundleDir, { recursive: true })
+      const bundleDir = await writeArtifact(dir)
       const doc = { version: 1, project: "example-project", slug: "example-artifact", threads: [validThread] }
       await writeFile(join(bundleDir, "annotations.json"), JSON.stringify(doc), "utf8")
 
@@ -149,6 +170,7 @@ describe("serveApi annotations endpoint", () => {
   test("POST mutation creates thread and writes annotations.json", async () => {
     const dir = await makeTempDir("visualizer-serve-api-")
     try {
+      await writeArtifact(dir)
       const req = new Request("http://localhost/api/annotations/example-project/example-artifact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -170,6 +192,7 @@ describe("serveApi annotations endpoint", () => {
   test("POST invalid mutation returns 400", async () => {
     const dir = await makeTempDir("visualizer-serve-api-")
     try {
+      await writeArtifact(dir)
       const req = new Request("http://localhost/api/annotations/example-project/example-artifact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,9 +220,141 @@ describe("serveApi annotations endpoint", () => {
     }
   })
 
+  test("POST mutation returns 404 for a missing artifact and creates nothing", async () => {
+    const dir = await makeTempDir("visualizer-serve-api-")
+    try {
+      const req = new Request("http://localhost/api/annotations/example-project/example-artifact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validMutation),
+      })
+      const response = await serveApi(req, "/api/annotations/example-project/example-artifact", dir, "/api/annotations")
+      expect(response.status).toBe(404)
+      expect(await readdir(dir)).toEqual([])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("enforces mutation method and JSON content type", async () => {
+    const dir = await makeTempDir("visualizer-serve-api-")
+    try {
+      await writeArtifact(dir)
+      const path = "/api/annotations/example-project/example-artifact"
+      const wrongMethod = await serveApi(
+        new Request(`http://localhost${path}`, { method: "PUT" }),
+        path,
+        dir,
+        "/api/annotations",
+      )
+      expect(wrongMethod.status).toBe(405)
+      expect(wrongMethod.headers.get("allow")).toBe("POST")
+
+      const wrongType = await serveApi(
+        new Request(`http://localhost${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(validMutation),
+        }),
+        path,
+        dir,
+        "/api/annotations",
+      )
+      expect(wrongType.status).toBe(415)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects unsafe browser origins and allows same-origin evidence", async () => {
+    const dir = await makeTempDir("visualizer-serve-api-")
+    try {
+      await writeArtifact(dir)
+      const path = "/api/annotations/example-project/example-artifact"
+      const crossOrigin = await serveApi(
+        new Request(`http://127.0.0.1:9998${path}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "https://evil.example",
+            "Sec-Fetch-Site": "cross-site",
+          },
+          body: JSON.stringify(validMutation),
+        }),
+        path,
+        dir,
+        "/api/annotations",
+      )
+      expect(crossOrigin.status).toBe(403)
+
+      const sameOrigin = await serveApi(
+        new Request(`http://127.0.0.1:9998${path}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            Origin: "http://127.0.0.1:9998",
+            "Sec-Fetch-Site": "same-origin",
+          },
+          body: JSON.stringify(validMutation),
+        }),
+        path,
+        dir,
+        "/api/annotations",
+      )
+      expect(sameOrigin.status).toBe(200)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("allows the loopback dev proxy and requests without origin metadata", async () => {
+    const path = "/api/annotations/example-project/example-artifact"
+
+    const proxyDir = await makeTempDir("visualizer-serve-api-")
+    try {
+      await writeArtifact(proxyDir)
+      const response = await serveApi(
+        new Request(`http://127.0.0.1:9998${path}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://localhost:9999",
+            "Sec-Fetch-Site": "same-origin",
+          },
+          body: JSON.stringify(validMutation),
+        }),
+        path,
+        proxyDir,
+        "/api/annotations",
+      )
+      expect(response.status).toBe(200)
+    } finally {
+      await rm(proxyDir, { recursive: true, force: true })
+    }
+
+    const cliDir = await makeTempDir("visualizer-serve-api-")
+    try {
+      await writeArtifact(cliDir)
+      const response = await serveApi(
+        new Request(`http://127.0.0.1:9998${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(validMutation),
+        }),
+        path,
+        cliDir,
+        "/api/annotations",
+      )
+      expect(response.status).toBe(200)
+    } finally {
+      await rm(cliDir, { recursive: true, force: true })
+    }
+  })
+
   test("POST editMessage updates message body", async () => {
     const dir = await makeTempDir("visualizer-serve-api-")
     try {
+      await writeArtifact(dir)
       const createReq = new Request("http://localhost/api/annotations/example-project/example-artifact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -231,6 +386,7 @@ describe("serveApi annotations endpoint", () => {
   test("POST deleteMessage removes message and deletes empty thread", async () => {
     const dir = await makeTempDir("visualizer-serve-api-")
     try {
+      await writeArtifact(dir)
       const createReq = new Request("http://localhost/api/annotations/example-project/example-artifact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
