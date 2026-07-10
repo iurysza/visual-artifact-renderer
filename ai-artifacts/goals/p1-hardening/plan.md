@@ -70,7 +70,7 @@
 
 - Four known invalid subprocess fixtures exit 2 with paths.
 - All 82 local parseable saved specs pass shared schema; tracked representative compatibility fixtures pass in clean CI.
-- Shared typecheck/build; CLI tests/typecheck/build; app test/lint/export/diff/verify/build.
+- Shared typecheck/build; CLI tests/typecheck/build; focused app schema tests plus lint/export/diff/verify/build. The complete `pnpm test` script lands in Wave 3A.
 
 ### Commit
 

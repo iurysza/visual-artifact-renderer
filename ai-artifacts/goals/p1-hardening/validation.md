@@ -63,7 +63,7 @@ Required subprocess fixtures (`visual-artifact validate`):
 
 ```bash
 cd app
-pnpm test
+node --import tsx --test --test-concurrency=1 src/lib/artifacts/node-paths.test.ts
 pnpm lint
 pnpm export:contract
 git diff --exit-code -- ../cli/assets/contract.json
