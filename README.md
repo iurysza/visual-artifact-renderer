@@ -115,6 +115,27 @@ visual-artifact bootstrap
 
 More install and CLI detail: [`ai-artifacts/docs/cli.md`](./ai-artifacts/docs/cli.md).
 
+### Install the agent skill with `npx`
+
+Install only the `visual-artifact` skill from GitHub with the open `skills` CLI:
+
+```bash
+npx skills add iurysza/visual-artifact-renderer --skill visual-artifact
+```
+
+For a global Pi install without prompts:
+
+```bash
+npx skills add iurysza/visual-artifact-renderer \
+  --skill visual-artifact --global --agent pi --yes
+```
+
+Update it later with:
+
+```bash
+npx skills update visual-artifact --global
+```
+
 ## Create an artifact
 
 From a file:
