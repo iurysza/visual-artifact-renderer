@@ -80,18 +80,12 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
   const distBinary = resolve(cliDir, "dist", "visual-artifact")
   const home = homedir()
   const binPath = resolve(home, ".local", "bin", "visual-artifact")
-  const skillPath = resolve(home, ".agents", "skills", "visual-artifact")
-  const piAgentDir = resolve(home, ".pi", "agent")
-  const extensionPath = resolve(piAgentDir, "extensions", "visual-artifact.ts")
 
   const hasBun = commandExists("bun")
   const hasPnpm = commandExists("pnpm")
   const appOutExists = existsSync(outDir)
   const binaryExists = existsSync(distBinary)
   const installed = existsSync(binPath)
-  const skillInstalled = existsSync(skillPath)
-  const piDetected = existsSync(piAgentDir)
-  const extensionInstalled = existsSync(extensionPath)
 
   if (opts.dryRun) {
     const checks = [
@@ -107,9 +101,6 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
       appOutExists,
       binaryExists,
       installed,
-      skillInstalled,
-      piDetected,
-      extensionInstalled,
       checks,
       plan: [
         hasPnpm ? "pnpm install in app" : "skip: pnpm not found",
@@ -117,7 +108,7 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
         hasBun ? "bun install in shared" : "skip: bun not found",
         hasBun ? "bun install in cli" : "skip: bun not found",
         hasBun ? "bun run build in cli" : "skip: bun not found",
-        hasBun ? "bun run install:binary in cli (CLI to ~/.local/bin, skill to ~/.agents/skills, Pi extension if Pi is installed)" : "skip: bun not found",
+        hasBun ? "bun run install:binary in cli (CLI to ~/.local/bin and renderer to ~/.local/share/visual-artifact)" : "skip: bun not found",
       ],
     }
     log.result(result)

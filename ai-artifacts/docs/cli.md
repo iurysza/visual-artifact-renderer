@@ -17,13 +17,12 @@ visual-artifact doctor
 For Pi, use its package manager for the extension and skill while the release installer provides the CLI and renderer:
 
 ```bash
-curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh \
-  | sh -s -- --runtime-only
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
 pi install git:github.com/iurysouza/visual-artifact-renderer
 visual-artifact doctor
 ```
 
-Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysouza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. Do not combine the Pi package with the legacy extension copy or a separate `npx skills` install; the package declares both resources in root `package.json`.
+Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysouza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. Do not also install the skill with `npx skills`; the package declares both resources in root `package.json`.
 
 Install from this repo:
 
@@ -35,21 +34,19 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-`bootstrap` builds the renderer and CLI, then installs the pieces agents need.
+`bootstrap` builds and installs runtime files only.
 
 | Piece | Installed location |
 |---|---|
 | CLI binary | `~/.local/bin/visual-artifact` |
 | Static renderer export | `~/.local/share/visual-artifact/app/out` |
-| Skill files | `~/.agents/skills/visual-artifact/` |
-| Artifact storage | `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/` |
-| Pi extension | `~/.pi/agent/extensions/visual-artifact.ts` (legacy convenience install) |
+| Artifact storage | `~/.local/share/visual-artifact/artifacts/<project>/<slug>/` |
 
-With the official Pi package, Pi stores the git checkout under `~/.pi/agent/git/` and records the package source in `~/.pi/agent/settings.json`; the extension and skill load from that package instead of copied top-level paths.
+Pi stores the package checkout under `~/.pi/agent/git/` and records its source in `~/.pi/agent/settings.json`; the extension and skill load from that package.
 
 For Pi, run `/reload` or restart Pi after install.
 
-Custom harnesses may not read `~/.agents/skills`. If not, copy `~/.agents/skills/visual-artifact` into that harness's skill directory and wire its tool layer to call `visual-artifact create`.
+Other compatible agents can install the skill with `npx skills add iurysouza/visual-artifact-renderer --skill visual-artifact`.
 
 ## Command map
 
@@ -63,7 +60,7 @@ Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited
 
 | Command | Purpose |
 |---|---|
-| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
+| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install runtime files only. |
 | `visual-artifact create [spec.json or -] [--project path] [--dry-run] [--no-serve] [--publish [profile]] [--allow-read dir]` | Validate, write, serve, and optionally publish an artifact. `--allow-read` is repeatable. |
 | `visual-artifact validate [spec.json or -]` | Validate a spec without writing it. |
 | `visual-artifact contract` | Print the current artifact contract. |
@@ -167,8 +164,7 @@ The annotation mutation API is writable. It requires POST with `application/json
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `VISUAL_ARTIFACT_SKILL_ROOT` | auto-detected | Override skill root lookup. |
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` or `<skill-root>/artifacts` | Artifact bundle store. |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` in source development; otherwise `~/.local/share/visual-artifact/artifacts` | Artifact bundle store. |
 | `VISUAL_ARTIFACT_OUT_DIR` | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export. |
 | `VISUAL_ARTIFACT_PORT` | `9998` | Static-preview server port. |
 | `VISUAL_ARTIFACT_HOST` | `127.0.0.1` | Server bind host. |

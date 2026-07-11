@@ -50,10 +50,8 @@ The installer downloads the right archive for the user's OS/arch and copies:
 |---|---|
 | `visual-artifact` | `~/.local/bin/visual-artifact` |
 | `out/` | `~/.local/share/visual-artifact/app/out` |
-| `skill/` | `~/.agents/skills/visual-artifact/` |
-| `pi-extension/visual-artifact.ts` | `~/.pi/agent/extensions/visual-artifact.ts` |
 
-That extension path is retained as a legacy convenience install. The official Pi flow uses `install.sh --runtime-only`, then `pi install git:github.com/iurysouza/visual-artifact-renderer[@ref]`. Root `package.json` declares `pi.extensions` and `pi.skills`, so Pi owns discovery, updates, filtering, and removal. Before release, smoke-test the package locally and confirm the release tag used in documentation exists before sharing a pinned command.
+Agent resources are not included in release archives. Pi installs the extension and skill with `pi install git:github.com/iurysouza/visual-artifact-renderer[@ref]`; other compatible agents install the skill with `npx skills`. Root `package.json` declares `pi.extensions` and `pi.skills`, so Pi owns discovery, updates, filtering, and removal. Before release, smoke-test the package locally and confirm the release tag used in documentation exists before sharing a pinned command.
 
 ## Rebuild locally
 

@@ -129,7 +129,7 @@ visual-artifact serve status
 visual-artifact open <project>/<slug>
 ```
 
-The server serves static files from `<skill-root>/app/out` and live JSON from `<skill-root>/artifacts`.
+The installed server serves static files from `~/.local/share/visual-artifact/app/out` and live JSON from the configured artifacts directory (`~/.local/share/visual-artifact/artifacts` by default).
 
 ## 6. Verification
 

@@ -61,7 +61,7 @@ visual-artifact create spec.json --no-serve
 | `bun test` | Package tests; the full gate runs CLI and Worker suites separately. |
 | `bun run typecheck` | CLI TypeScript compile check. |
 | `bun run build` | Bundles contract/static assets and compiles CLI binary. |
-| `visual-artifact bootstrap` | Builds renderer and CLI, installs shared dependencies, and installs the binary/skill/extension copies. |
+| `visual-artifact bootstrap` | Builds renderer and CLI, installs shared dependencies, and installs runtime files only. |
 | `visual-artifact doctor` | Binary/deps/contract/out-dir/artifacts-dir/server health. |
 
 ## Visual QA

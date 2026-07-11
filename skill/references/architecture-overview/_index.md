@@ -34,7 +34,7 @@ For working notes, use the target repo:
 For the rendered artifact, the CLI writes:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>.json
+~/.local/share/visual-artifact/artifacts/<project>/<slug>/artifact.json
 ```
 
 ## Framing rules

@@ -68,7 +68,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 - Constrained JSON contract for `slug`, `title`, optional `data`, and typed `nodes`.
 - 30+ node types for prose, cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, and diffs.
 - Data-backed components that reference shared datasets by `dataKey`.
-- Local-first storage under the installed skill root unless overridden.
+- Local-first storage under `~/.local/share/visual-artifact/artifacts` unless overridden.
 - Pi extension with the `create_visual_artifact` tool.
 - Static renderer with live JSON, so new artifacts appear without rebuilding.
 - Node-level annotations and in-memory AI Colab review mode.
@@ -77,7 +77,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Choose your path
 
-Use the shell installer if you only want to create and view artifacts locally. By default it installs the CLI, static renderer, agent skill, and a legacy convenience copy of the Pi extension. Pi users should prefer the official Pi package flow below. You do not need to clone this repo for local use.
+Use the shell installer for the CLI and static renderer. Install agent resources through Pi's package manager or the open `skills` CLI. You do not need to clone this repo for local use.
 
 Clone the repo if you want to develop the renderer or deploy the Cloudflare Worker. First-time Cloudflare deployment needs the repo because the Worker source, wrangler config, and cloud build live here.
 
@@ -107,21 +107,22 @@ visual-artifact doctor
 
 If Pi is running, use `/reload` or restart Pi after install.
 
-Update an existing install with:
+Update a source-built CLI and renderer install with:
 
 ```bash
 visual-artifact bootstrap
 ```
 
+`bootstrap` does not install agent resources; use the Pi package or `npx skills` flow below.
+
 More install and CLI detail: [`ai-artifacts/docs/cli.md`](./ai-artifacts/docs/cli.md).
 
 ### Install the official Pi package
 
-Pi can manage the extension and skill together from this Git repository. Install the CLI and renderer without legacy resource copies, then install the package:
+Pi can manage the extension and skill together from this Git repository. Install the CLI and renderer, then install the package:
 
 ```bash
-curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh \
-  | sh -s -- --runtime-only
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
 pi install git:github.com/iurysza/visual-artifact-renderer
 visual-artifact doctor
 ```

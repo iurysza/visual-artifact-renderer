@@ -1,6 +1,6 @@
 # ADR-0003: Self-Contained Skill Directory Layout
 
-> **Quick Reference** | Status: Accepted | Date: 2026-06-27
+> **Quick Reference** | Status: Superseded by [ADR-0011](./ADR-0011-separate-runtime-and-agent-resources.md) | Date: 2026-06-27
 > **Decision**: Collapse the skill into a single `skill/{app,cli,artifacts}` directory so it is portable and self-contained.
 > **Context**: The skill was previously split across repo root, `pi-skill/visual-artifact/`, and helper scripts.
 > **Alternatives**: Keep scattered root layout, monorepo with shared packages
@@ -34,3 +34,4 @@ Everything lives under `skill/`: the Next.js app (`skill/app`), the Bun CLI (`sk
 ## Related
 
 - [ADR-0004](./ADR-0004-compiled-bun-cli.md): CLI also lives inside the skill directory.
+- [ADR-0011](./ADR-0011-separate-runtime-and-agent-resources.md): Replaces skill-owned installation and mutable storage.
