@@ -123,9 +123,9 @@ Run inside herdr (`HERDR_ENV=1`). Each long-running process gets its own split p
 2. Split a pane for the Impeccable live helper, start it, and verify:
    ```bash
    LIVE_PANE=$(herdr pane split "$MY_PANE" --direction right --no-focus | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
-   herdr pane run "$LIVE_PANE" "node .pi/skills/impeccable/scripts/live-server.mjs start"
+   herdr pane run "$LIVE_PANE" "node .agents/skills/impeccable/scripts/live-server.mjs start"
    herdr wait output "$LIVE_PANE" --match "ready|listening" --regex --timeout 15000
-   node .pi/skills/impeccable/scripts/live-status.mjs
+   node .agents/skills/impeccable/scripts/live-status.mjs
    curl -s http://localhost:9999/artifacts/ | rg 'http://localhost:8400/live\.js'
    ```
 
@@ -137,7 +137,7 @@ Run inside herdr (`HERDR_ENV=1`). Each long-running process gets its own split p
 4. Start the poll loop in its own pane and wait for it to confirm it is polling. **This must be running before the user clicks Go** — the browser queues events on the helper server and the spinner spins forever if no agent pulls them.
    ```bash
    POLL_PANE=$(herdr pane split "$MY_PANE" --direction down --no-focus | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
-   herdr pane run "$POLL_PANE" "node .pi/skills/impeccable/scripts/live-poll.mjs"
+   herdr pane run "$POLL_PANE" "node .agents/skills/impeccable/scripts/live-poll.mjs"
    herdr wait output "$POLL_PANE" --match "polling|ready|waiting" --regex --timeout 15000
    ```
 
@@ -146,11 +146,11 @@ Run inside herdr (`HERDR_ENV=1`). Each long-running process gets its own split p
 ### Cleanup
 
 ```bash
-node .pi/skills/impeccable/scripts/live-server.mjs stop
+node .agents/skills/impeccable/scripts/live-server.mjs stop
 herdr pane close "$LIVE_PANE"   # live-server
 herdr pane close "$POLL_PANE"   # live-poll
 # Leave $DEV_PANE running only if you want to keep the dev server up; otherwise close it too.
-node .pi/skills/impeccable/scripts/live-inject.mjs --remove
+node .agents/skills/impeccable/scripts/live-inject.mjs --remove
 ```
 
 Re-read pane ids with `herdr pane list` before closing if any split happened after you captured them — ids compact on close.

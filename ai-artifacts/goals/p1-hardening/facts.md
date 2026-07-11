@@ -6,8 +6,8 @@ Observed 2026-07-10. Facts are parent-verified unless marked as prior-audit evid
 
 - Branch: `main`.
 - Product source started clean.
-- User-authorized `npx impeccable update` changed `.agents/skills/impeccable/` and generated `.pi/skills/impeccable/` plus `.codex/hooks.json`.
-- Updater output explicitly said it found `.agents` and `.pi`, updated both provider folders to v3.9.1, and installed hooks. Both `.agents/skills` and `.pi/skills` are established tracked repo conventions; `.codex/hooks.json` is an updater-owned hook target.
+- User-authorized `npx impeccable update` updated `.agents/skills/impeccable/` and `.codex/hooks.json`.
+- `.agents/skills/impeccable/` is the canonical project skill consumed by Pi and other Agent Skills-compatible tools; `.codex/hooks.json` is the updater-owned hook target.
 - Updater output will be isolated in a housekeeping commit; it must not enter P1 implementation commits.
 - Accidental `context.md` is absent.
 - Runtime `artifacts/` content is generated/ignored and must not be committed.

@@ -33,7 +33,7 @@
 1. `docs(p1): define hardening contract`
    - Only `ai-artifacts/goals/p1-hardening/`.
 2. `chore(skills): update impeccable`
-   - Only updater-owned `.agents/skills/impeccable/`, `.pi/skills/impeccable/`, `.codex/`.
+   - Only updater-owned `.agents/skills/impeccable/` and `.codex/`.
 
 ### Gate
 
