@@ -1,3 +1,6 @@
+
+
+
 # Visual Artifact Renderer
 
 ![Visual Artifact Renderer cover](./assets/cover.jpg)
@@ -6,9 +9,10 @@ Visual Artifact Renderer turns agent output into polished visual pages: reports,
 
 The rule is simple: **agents emit JSON, not HTML or React.** The renderer owns layout, styling, validation, and interaction.
 
-## Demo
+## Demo 
+Recorded with [terminal-control](https://github.com/anomalyco/terminal-control)
 
-https://github.com/user-attachments/assets/1fdc9a6e-9566-4ae6-904d-dee1b8ee5e05
+https://github.com/user-attachments/assets/3c3e7351-6321-426d-9b1d-f759e16e6640
 
 ## Try it with prompts
 
