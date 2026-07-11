@@ -39,17 +39,17 @@ jobs:
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
 
-      - name: Install worker dependencies
-        run: cd worker && bun install --frozen-lockfile
-
-      - name: Run worker tests
-        run: cd worker && bun test
-
       - name: Build shared package
         run: |
           cd shared
           bun install --frozen-lockfile
           bun run build
+
+      - name: Install worker dependencies
+        run: cd worker && bun install --frozen-lockfile
+
+      - name: Run worker tests
+        run: cd worker && bun test
 
       - name: Install app dependencies
         run: cd app && pnpm install --frozen-lockfile
