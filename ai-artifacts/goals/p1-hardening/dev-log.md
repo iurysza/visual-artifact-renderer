@@ -2,8 +2,8 @@
 
 ## Status
 
-- Current wave: 3B — annotation integrity (completed).
-- Implementation: Waves 0–3A complete; Wave 3B complete; Waves 4–5 next.
+- Current wave: 5 — final integration (completed).
+- Implementation: P1 Waves 0–5 complete.
 - Baseline branch: `main`.
 - Parent session handoff: `2026-07-10T07-42-31-695Z_019f4afa-650f-7d38-8bd4-aa79a3de7ed7.jsonl`.
 
@@ -206,3 +206,47 @@
 ### Commits
 
 - `a3bcb4f` — `fix(annotations): atomic writes, origin policy, CAS retry, queued sync`.
+
+## Wave 4 — cross-surface docs and contract wording
+
+### Shipped
+
+- Aligned README, agent skill, Pi tool guidance, onboarding, architecture, semantic map, CLI, frontend, annotations, publishing, release, reliability, node, and design docs with shipped behavior.
+- Corrected bundle paths, server ports, `--plain` semantics, shared executable-schema ownership, tracked contract drift, exact runtime pins, resource limits, file-read authority, annotation request policy/concurrency, Worker CAS retries, and release/deploy gate timing.
+- Documented residual hosted-annotation limits: same-origin protection is not user authentication, and no rate limit is applied.
+
+### Validation
+
+- Relative-link existence check across all changed Markdown files — pass.
+- Representative source CLI help/create/serve/contract output compared with docs — pass.
+- `pnpm export:contract` followed by `git diff --exit-code -- cli/assets/contract.json` — pass.
+- `git diff --check` and stale current-doc path/claim scan — pass.
+
+### Commit
+
+- `a6eb865` — `docs(p1): document hardened boundaries`.
+
+## Wave 5 — final integration and evidence
+
+### Validation
+
+- Final clean-tree `./scripts/verify.sh` — pass with exact Node 22.22.3, Bun 1.1.34, and pnpm 11.5.2 pins; CLI 287/287; app 53/53; Worker 29/29; shared/CLI/Worker typechecks; native CLI build smoke; app lint/export/contract drift/82-spec verification/build; random-port current-route health smoke.
+- Rebuilt and installed the CLI from the verified tree; installed and compiled binary SHA-256 hashes match.
+- Compiled+installed smoke matrix — pass: help/version/conflict; create/validate human+JSON+plain+quiet+invalid; contained, explicitly allowed, traversal, and oversized file-tree reads; serve/status; annotation 404/405/415/403; concurrent writes; tokenized stop.
+- Final `sem_diff`, raw history, and per-commit path audit — complete. Updater-owned `.agents`, `.pi`, and `.codex` changes in this P1 range appear only in `607697c`.
+- All 82 ignored runtime artifacts and both protected directories remain. No artifact path changed in the P1 commit range; the four pre-existing tracked artifact control/demo paths remain untouched.
+
+### Integration fix
+
+- The first final gate exposed one loaded-runner timeout in the three-subprocess quiet-output test. Its timeout now matches the subprocess budget; focused integration (98/98) and two subsequent complete repository gates pass.
+
+### Residual risks
+
+- Hosted annotation writes have cross-site request protection but no identity authentication or rate limiting.
+- Release-event verification protects asset upload and Worker deployment; it cannot retract a GitHub Release already published before those workflows begin.
+- Visual regression remains screenshot/metric based rather than pixel-perfect.
+
+### Commits
+
+- `8aaf7d5` — `test(cli): tolerate loaded subprocess matrix`.
+- Final evidence: this documentation commit.
