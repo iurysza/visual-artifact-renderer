@@ -86,9 +86,10 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     promptGuidelines: [
       "For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.",
       "For simple visual artifacts, call create_visual_artifact directly with a JSON spec.",
-      "Run `visual-artifact contract` and only use supported node types and props.",
+      "Run `visual-artifact contract` and only use supported node types, props, and resource limits.",
       "Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.",
-      "The CLI validates the spec, writes it to the skill artifacts folder, and auto-starts the renderer if needed.",
+      "The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.",
+      "The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.",
     ],
     parameters: {
       type: "object",

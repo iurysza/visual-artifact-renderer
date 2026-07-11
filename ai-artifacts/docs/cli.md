@@ -46,15 +46,15 @@ All commands use the same shape:
 visual-artifact [global flags] <command>
 ```
 
-Use `--json` for automation, `--plain` for URL-only output, and `--no-input` in non-interactive scripts. Other global flags are `--quiet`, `--verbose`, and `--no-color`.
+Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited/line-oriented records, and `--no-input` in non-interactive scripts. `create`, `open`, and `serve` emit their URL as the plain record; other commands emit command-specific records such as `VALID`, `PROJECT`, `ARTIFACT`, `PASS`, or `RUNNING`. `--quiet` suppresses diagnostics, never primary stdout. Other global flags are `--verbose`, `--no-color`, and `--allow-remote`.
 
 | Command | Purpose |
 |---|---|
 | `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install CLI, global skill, and optional Pi extension copies. |
-| `visual-artifact create [spec.json or -] [--project path] [--no-serve] [--publish [profile]]` | Validate, write, serve, and optionally publish an artifact. |
+| `visual-artifact create [spec.json or -] [--project path] [--dry-run] [--no-serve] [--publish [profile]] [--allow-read dir]` | Validate, write, serve, and optionally publish an artifact. `--allow-read` is repeatable. |
 | `visual-artifact validate [spec.json or -]` | Validate a spec without writing it. |
 | `visual-artifact contract` | Print the current artifact contract. |
-| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer plus live artifact JSON. |
+| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer, live artifact JSON, and writable annotation API. Non-loopback binds require global `--allow-remote` or `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. |
 | `visual-artifact serve status [--host addr] [--port n]` | Check server health and whether it is tracked by local lifecycle state. |
 | `visual-artifact serve stop [--host addr] [--port n] [--force]` | Stop a tracked local server via tokenized shutdown, with conservative fallback process termination. |
 | `visual-artifact list [project]` | List projects or artifacts. |
@@ -87,7 +87,16 @@ Validate before writing:
 
 ```bash
 visual-artifact validate my-spec.json
+visual-artifact create my-spec.json --dry-run
 ```
+
+Create-time `file-tree` sources are project-contained by default:
+
+```bash
+visual-artifact create my-spec.json --allow-read ../approved-source
+```
+
+Relative `src` paths must resolve inside the canonical project root. Absolute paths and outside-project reads require a matching canonical `--allow-read` root. Raw `..` segments and symlink escapes are rejected. `content` wins over `src`, and successful creation strips `src` after inlining.
 
 Publish after local write:
 
@@ -139,6 +148,8 @@ The state file records PID, host, port, mount path, process identity metadata, a
 
 The local server exposes a token-protected shutdown endpoint at `/artifacts/api/shutdown`. Use `visual-artifact serve stop` to call it from the matching state file. If state is missing, stop only terminates a listener that clearly looks like `visual-artifact serve`; ambiguous listeners are refused unless `--force` is explicit. Use `serve status --json` to see `running`, `tracked`, `statePath`, and `pid` fields for automation.
 
+The annotation mutation API is writable. It requires POST with `application/json`, rejects cross-origin browser evidence, and permits the loopback Next dev proxy. Requests without browser origin metadata remain available to CLI/tests. Annotation reads and writes require an existing `artifact.json`; local mutations are serialized per bundle and atomically replace a mode-`0600` `annotations.json`.
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -151,14 +162,15 @@ The local server exposes a token-protected shutdown endpoint at `/artifacts/api/
 | `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
 | `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint under the mount path. |
 | `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
+| `VISUAL_ARTIFACT_ALLOW_REMOTE` | `0` | Permit a non-loopback bind for the writable server. Only strict `0` or `1` is accepted. |
 | `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create` and `open`; include `/artifacts` if using a proxy. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path. |
 
 Cloudflare publishing variables live in [`publishing.md`](./publishing.md).
 
-## Contract
+## Contract and enforced limits
 
-The artifact contract is compiled from `shared/src/contract.ts` and bundled into the CLI. Inspect it with:
+The executable schema lives in `shared/src/artifact-schema.ts`; `shared/src/contract.ts` supplies the LLM-facing manifest. `cli/assets/contract.json` is generated, tracked, checked for drift, and bundled into the CLI. Inspect it with:
 
 ```bash
 visual-artifact contract
@@ -171,6 +183,8 @@ cd app
 pnpm export:contract
 pnpm verify:artifacts
 ```
+
+The validator enforces: 2 MiB raw/final JSON; 30 top-level and 100 total nodes; 20 datasets; node depth 8; 500 aggregate file-tree items; file-tree depth 12; 512 KiB per sourced file; and 1 MiB aggregate sourced content.
 
 ## Related
 

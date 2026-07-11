@@ -26,5 +26,6 @@ New nodes should be added only when composition cannot express the concept safel
 
 - Public reference: [`ai-artifacts/docs/nodes.md`](../../../ai-artifacts/docs/nodes.md)
 - Live contract: run `visual-artifact contract`
-- Contract file: [`skill/artifact-contract.json`](../../../skill/artifact-contract.json)
-- Source manifest: [`skill/app/src/lib/artifact-manifest.ts`](../../../skill/app/src/lib/artifact-manifest.ts)
+- Tracked contract: [`cli/assets/contract.json`](../../../cli/assets/contract.json)
+- Executable schema: [`shared/src/artifact-schema.ts`](../../../shared/src/artifact-schema.ts)
+- Source manifest: [`shared/src/contract.ts`](../../../shared/src/contract.ts)

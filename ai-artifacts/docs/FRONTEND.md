@@ -75,7 +75,7 @@ Stable node IDs come from `metadata.id` in the spec. The renderer falls back to 
 
 AI Colab is an in-memory companion to persistent annotations. A formatter or agent can emit `spec.aiColab` with comment threads anchored to nodes or to the whole artifact. The user can review, edit, add, or remove those comments, then copy the result as sparse Markdown.
 
-- Stored only in React state; nothing is persisted to `annotations.json` unless the user explicitly converts comments.
+- Stored only in React state; the current Colab flow never persists it to `annotations.json`.
 - Mutually exclusive with persistent comment mode: turning on Colab closes Comments and vice versa.
 - Rendered in the same right sidebar as annotations, but marked as AI suggestions.
 
@@ -98,11 +98,13 @@ AI Colab is an in-memory companion to persistent annotations. A formatter or age
 
 ## Annotation data flow
 
-1. `AnnotationProvider` fetches `annotations.json` and the local author on mount.
-2. User actions create an `AnnotationMutation` (`createThread`, `addMessage`, `resolveThread`, `reopenThread`).
-3. The provider applies the mutation optimistically to local state, then POSTs the mutation array to the CLI server.
-4. On error, the provider rolls back to the previous document and shows the error in the sidebar.
-5. On success, the updated document is returned and parsed with the shared annotation schema.
+1. `AnnotationProvider` fetches `annotations.json` and the local/hosted fallback author on mount.
+2. User actions create an `AnnotationMutation` (`createThread`, `addMessage`, `resolveThread`, `reopenThread`, `editMessage`, or `deleteMessage`).
+3. The provider queues the whole transaction. Only after the prior response settles does it derive and apply the next optimistic document.
+4. It POSTs a JSON mutation array to the local CLI or hosted Worker endpoint.
+5. On success, the shared schema parses the authoritative response and replaces local state.
+6. On failure, the provider rolls back to that transaction's previous authoritative document before the next queued transaction starts, preventing stale rollback from clobbering later success.
+7. `isSaving` remains true until all queued mutations settle.
 
 ## Mobile and touch
 
@@ -115,14 +117,15 @@ Comment and Colab modes both support touch devices, but node selection is more i
 
 ## Adding a node type
 
-1. Add TS type + Zod schema branch in `app/src/lib/contract/artifact-schema.ts`.
-2. Add manifest entry in `app/src/lib/contract/artifact-manifest.ts`.
+1. Add the Zod schema/type branch in `shared/src/artifact-schema.ts`.
+2. Add the manifest entry in `shared/src/contract.ts`; keep app compatibility exports/consumers aligned.
 3. Implement adapter in `app/src/components/adapters/`.
 4. Register it in `app/src/components/component-registry.tsx`.
 5. Run:
 
 ```bash
 cd app
+pnpm test
 pnpm export:contract
 pnpm verify:artifacts
 pnpm lint
@@ -145,7 +148,7 @@ bun run build
 
 ## Path conventions
 
-All app path math belongs in `app/src/lib/paths.ts`.
+All artifact path math belongs in `app/src/lib/artifacts/paths.ts`.
 
 Do not hand-assemble artifact URLs in components. Import helpers like:
 
@@ -171,10 +174,11 @@ bun run src/main.ts serve --no-open
 
 The server:
 
-- serves static files from `<skill-root>/app/out`
-- serves artifact JSON/assets from `<skill-root>/artifacts`
+- serves static files from the configured `app/out`
+- serves artifact JSON/assets from the configured artifacts directory
 - creates live index JSON endpoints
 - serves `shell-artifact` or `shell-project` shells for artifacts/projects created after build
+- exposes annotation writes only on loopback unless remote access is explicit; browser mutations require JSON and same-origin evidence
 
 ## Design references
 

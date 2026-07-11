@@ -29,23 +29,25 @@ Use Colab to:
 - add new temporary comments
 - copy the artifact plus current comments as Markdown
 
-Colab comments live in browser state. They are not saved to `annotations.json` unless a future workflow explicitly converts them to persistent annotations.
+Colab comments live in browser state. The current flow never saves them to `annotations.json`.
 
 ## Persistence
 
-Local artifacts are stored as bundles, which are also described in [`CLI runtime paths`](./cli.md#runtime-paths):
+Local artifacts are stored as bundles under the configured artifacts directory, which is the source repo's `artifacts/` in development or the installed skill's `artifacts/` by default:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>/
+<artifacts-dir>/<project>/<slug>/
   artifact.json
   annotations.json
   publish.json   # present after successful --publish
   assets/
 ```
 
-The local `visual-artifact serve` process can persist annotation edits because it runs on your machine and can write to the artifact bundle.
+The local `visual-artifact serve` process persists annotation edits because it runs on your machine and can write to the artifact bundle. Reads and mutations return 404 unless `artifact.json` exists. Mutations are serialized per artifact, then written through a same-directory mode-`0600` temp file, fsync, and atomic rename; failed writes clean up the temp file.
 
-Static hosting can serve `artifact.json` and `annotations.json`, but browser JavaScript cannot write edits back to disk. Published Cloudflare artifacts persist hosted comments through the Worker and R2.
+The writable local server binds only to loopback by default. A non-loopback host requires global `--allow-remote` or strict `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. Mutation routes accept only POST JSON and reject cross-origin browser evidence; loopback-to-loopback traffic is allowed for the Next dev proxy. This is cross-site request protection, not authentication.
+
+Ordinary static hosting can only serve `artifact.json` and `annotations.json`. Published Cloudflare artifacts persist hosted comments through the Worker and R2. The Worker requires the artifact to exist and retries conditional writes against the latest etag up to five times, returning 409 if conflicts never settle.
 
 ## Authors
 
@@ -62,7 +64,7 @@ If no git identity is available, Visual Artifact Renderer uses a local anonymous
 
 Use **Copy link** in the sidebar to copy the artifact page URL.
 
-For public links, publish the artifact instead of sharing a local `127.0.0.1` URL. See [`Publishing`](./publishing.md).
+For public links, publish the artifact instead of sharing a local `127.0.0.1` URL. Hosted comments currently have no user authentication or rate limiting; anyone who can load the page can submit same-origin comments. See [`Publishing`](./publishing.md).
 
 ## Related
 

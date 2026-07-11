@@ -43,9 +43,9 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | Adapters | Leaf, data-backed, and layout node renderers. | `src/components/adapters/*.tsx` |
 | UI primitives | shadcn/Base UI components and artifact-specific primitives. | `src/components/ui/*`, `src/components/artifact-primitives.tsx` |
 | Diagrams | Mermaid renderer and sandboxed SVG iframe. | `src/components/mermaid/*`, `src/components/svg-diagram.tsx` |
-| Schema/manifest | Contract source of truth. | `src/lib/contract/artifact-schema.ts`, `src/lib/contract/artifact-manifest.ts` |
+| Schema/manifest | Compatibility re-export of the shared executable schema plus LLM-facing manifest consumption. | `shared/src/artifact-schema.ts`, `shared/src/contract.ts`, `src/lib/contract/artifact-schema.ts`, `src/lib/contract/artifact-manifest.ts` |
 | Paths | URL/data-route helpers. | `src/lib/artifacts/paths.ts` |
-| Annotations | Thread state, UI, and API client. | `src/components/annotation-provider.tsx`, `src/components/annotation-panel.tsx`, `src/components/annotation-helpers.ts`, `src/lib/artifacts/annotations.ts` |
+| Annotations | Serialized optimistic thread state, UI, and API client. | `src/components/annotations/annotation-provider.tsx`, `src/components/annotations/annotation-panel.tsx`, `src/components/annotations/annotation-helpers.ts`, `src/lib/artifacts/annotations.ts` |
 
 ### 2.2 CLI (`cli/`)
 
@@ -61,17 +61,18 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 
 The CLI finds the skill root by walking from the binary/script path, then by checking `VISUAL_ARTIFACT_SKILL_ROOT`, `~/.agents/skills/visual-artifact`, and `~/.pi/skills/visual-artifact`.
 
-### 2.3 Shared annotation schema (`shared/`)
+### 2.3 Shared executable contracts (`shared/`)
 
-The `@agents/visual-artifact-annotations` package is the single source of truth for annotation data shapes and parsers. It lives in `shared/` and is linked into both the renderer and the CLI. It defines:
+The `@agents/visual-artifact-annotations` package owns both the executable artifact schema/resource preflight and annotation data/request-policy schemas. The app compatibility layer and CLI call the same artifact parser; app, CLI, and Worker share annotation validation. It defines:
 
 - `AnnotationAuthor` — name and email, with a local anonymous fallback.
 - `AnnotationAnchor` — `nodeId`, `nodePath`, `nodeType`, optional `textSnippet`, and optional `x`/`y` coordinates.
 - `AnnotationThread` — id, anchor, status (`open` | `resolved`), timestamps, and messages.
-- `AnnotationMutation` — `createThread`, `addMessage`, `resolveThread`, `reopenThread`.
+- `AnnotationMutation` — `createThread`, `addMessage`, `resolveThread`, `reopenThread`, `editMessage`, and `deleteMessage`.
 - `AnnotationDocument` — version, project, slug, and threads.
+- `annotationMutationRequestRejection` — shared JSON/content-origin policy for local and Worker mutation routes.
 
-Both the renderer and the CLI parse annotation payloads with the same Zod schemas, so JSON read from disk or posted from the browser cannot silently diverge.
+The artifact resource envelope is enforced before recursive Zod parsing: 2 MiB raw/final JSON, 30 top-level/100 total nodes, 20 datasets, node depth 8, 500 file-tree items/depth 12, and 512 KiB per/1 MiB aggregate sourced content.
 
 ### 2.4 Pi extension (`pi-extension`)
 
@@ -87,10 +88,10 @@ The extension registers:
 
 | Artifact | Source/writer | Reader |
 |---|---|---|
-| `cli/assets/contract.json` | `app/scripts/contract/export-contract.ts` | Compiled CLI fallback; generated build artifact, not committed |
-| `VisualArtifactSpecSchema` | `app/src/lib/contract/artifact-schema.ts` | Renderer and `verify-artifacts` |
+| `cli/assets/contract.json` | `app/scripts/contract/export-contract.ts` | Tracked generated contract; drift gate; compiled CLI fallback |
+| `VisualArtifactSpecSchema` | `shared/src/artifact-schema.ts` (re-exported by app) | CLI, renderer, and `verify-artifacts` |
 | `artifactManifest` | `shared/src/contract.ts` (consumed by `app/src/lib/contract/artifact-manifest.ts`) | Contract exporter, CLI, and docs |
-| `@agents/visual-artifact-annotations` | `shared/src/annotations.ts` | Renderer and CLI for annotation data |
+| `@agents/visual-artifact-annotations` | `shared/src/artifact-schema.ts`, `shared/src/annotations.ts` | App, CLI, and Worker executable validation |
 
 ## 3. Runtime flows
 
@@ -101,9 +102,10 @@ Agent builds spec
   → create_visual_artifact tool
   → extension finds visual-artifact
   → CLI create reads JSON from stdin
-  → CLI validates against artifact-contract.json
+  → CLI validates with the shared executable schema
   → CLI derives project from git root / directory
-  → CLI writes <skill-root>/artifacts/<project>/<slug>.json
+  → CLI resolves project-contained or explicitly granted file-tree sources
+  → CLI writes <artifacts-dir>/<project>/<slug>/artifact.json
   → CLI starts server if needed
   → extension returns URL
 ```
@@ -127,9 +129,13 @@ Browser opens /artifacts/<project>/<slug>/
   → AnnotationProvider loads /artifacts/data/artifacts/<project>/<slug>/annotations.json
   → parse as AnnotationDocument
   → render comment toggle, node outlines, thread badges, and sidebar
-  → user mutation posts to /artifacts/api/annotations/<project>/<slug>
-  → CLI validates mutations, applies them, writes annotations.json
-  → UI refetches/updates optimistically
+  → user mutation enters the client transaction queue
+  → optimistic state is applied only when that transaction starts
+  → POST /artifacts/api/annotations/<project>/<slug> with JSON/same-origin evidence
+  → local CLI serializes read→apply→atomic mode-0600 replace per bundle
+  → hosted Worker retries conditional R2 writes against the latest etag
+  → success replaces client state with the parsed authoritative document
+  → failure rolls back before the next queued transaction starts
 ```
 
 ### 3.4 Static export + live JSON
@@ -181,7 +187,8 @@ Environment overrides:
 | `VISUAL_ARTIFACT_ARTIFACTS_DIR` | Artifact storage directory. |
 | `VISUAL_ARTIFACT_OUT_DIR` | Static export directory. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | Contract file. |
-| `VISUAL_ARTIFACT_PORT` / `VISUAL_ARTIFACT_HOST` | Server bind address. |
+| `VISUAL_ARTIFACT_PORT` / `VISUAL_ARTIFACT_HOST` | Server bind address. Non-loopback hosts require explicit remote exposure. |
+| `VISUAL_ARTIFACT_ALLOW_REMOTE` | Strict `0|1` opt-in for a non-loopback writable server bind. |
 | `VISUAL_ARTIFACT_MOUNT_PATH` | Public mount path, default `/artifacts`. |
 | `VISUAL_ARTIFACT_DATA_PATH` | Data path under mount, default `/data/artifacts`. |
 | `VISUAL_ARTIFACT_BASE_URL` | URL base returned by `create` and `open`. |
@@ -192,13 +199,13 @@ Environment overrides:
 
 Agents lose arbitrary expressiveness, but gain stable rendering, smaller prompts, and safer output.
 
-### Contract duplication
+### Shared executable contract
 
-The renderer uses Zod. The CLI uses plain TypeScript validation against exported JSON. This duplicates some rules, but catches bad specs before disk writes and keeps the compiled CLI independent from renderer source.
+The CLI and renderer use the same Zod artifact schema from `shared/`; the app re-export preserves import compatibility. The tracked exported JSON remains the agent/tooling handshake and compiled CLI reference, while `verify.sh` rejects generated drift.
 
 ### Static app, live data, and annotations
 
-Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. The annotation mutation endpoint requires the local CLI server because it writes to disk; a static host can serve the annotation JSON but cannot accept edits from browser JavaScript. The fallback shell is the bridge for artifacts created after the last build.
+Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. Local annotation edits require the CLI server; published Cloudflare pages use the Worker mutation route and R2. Both mutation routes require an existing artifact and apply the shared JSON/origin policy. The fallback shell is the bridge for artifacts created after the last build.
 
 ### Skill-root bundle storage
 
@@ -206,7 +213,7 @@ Artifacts are stored as bundles (`artifact.json`, `annotations.json`, `assets/`)
 
 ### Annotation persistence
 
-Annotation mutations are validated by the shared schema, applied by the CLI, and written to `annotations.json`. The renderer uses optimistic UI updates with a rollback on error, so the UX feels immediate while the filesystem remains the source of truth.
+Local mutation transactions are queued by artifact, validated, and atomically replace `annotations.json`; hosted writes use bounded R2 compare-and-swap retries. The renderer serializes whole optimistic transactions: success adopts the server-returned document, and failure rolls back before later work begins. Same-origin checks reduce browser cross-site writes but are not user authentication.
 
 ## 6. Change hotspots
 
@@ -214,4 +221,4 @@ Annotation mutations are validated by the shared schema, applied by the CLI, and
 - URL/path change: `app/src/lib/artifacts/paths.ts`, CLI serve/create/open, README/docs.
 - Storage change: CLI config, serve/list/open/create, docs, extension expectations.
 - Contract change: export contract, verify artifacts, rebuild CLI if bundled fallback matters.
-- Annotation change: update shared schema, then both renderer and CLI tests; keep boundary fixtures in sync.
+- Annotation change: update shared schema/policy, then renderer, CLI, and Worker tests; keep local and hosted boundary fixtures in sync.

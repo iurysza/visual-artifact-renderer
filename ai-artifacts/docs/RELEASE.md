@@ -1,6 +1,6 @@
 # Release process
 
-Releases are automated with [release-please](https://github.com/googleapis/release-please). Root `package.json` is the version source of truth; `cli/src/version.ts` reads from it at runtime. Merging a release PR bumps the version, writes `CHANGELOG.md`, creates a git tag, and publishes a GitHub Release. A second workflow then builds cross-platform binaries and uploads them to that release.
+Releases are automated with [release-please](https://github.com/googleapis/release-please). Root `package.json` is the version source of truth; `cli/src/version.ts` reads from it at runtime. Merging a release PR bumps the version, writes `CHANGELOG.md`, creates a git tag, and publishes a GitHub Release. Release creation, asset upload, and Cloudflare deployment all depend on the reusable verification gate; release-event verification protects assets/deploy because the GitHub Release already exists when those workflows start.
 
 ## Setup (one-time)
 
@@ -23,8 +23,8 @@ release-please needs a PAT because the default `GITHUB_TOKEN` cannot trigger dow
 3. **Merge the release PR.**
    release-please then creates a tag and GitHub Release with generated notes.
 
-4. **Assets upload automatically.**
-   The `Release` workflow triggers on the published release, builds on `macos-latest`, and uploads:
+4. **Assets upload automatically after verification.**
+   The `Release` workflow triggers on the published release, reruns the pinned dual-OS reusable gate, then builds on `macos-15-intel` and uploads:
    - `install.sh`
    - `latest.json`
    - `visual-artifact-macos-aarch64.tar.gz`
@@ -32,7 +32,12 @@ release-please needs a PAT because the default `GITHUB_TOKEN` cannot trigger dow
    - `visual-artifact-linux-aarch64.tar.gz`
    - `visual-artifact-linux-x86_64.tar.gz`
 
-5. **Share the install command.**
+   Verification uses Node 22.22.3, Bun 1.1.34, pnpm 11.5.2, frozen lockfiles, native CLI smoke on Linux x64 and macOS x64, the complete app suite, contract drift checks, artifact verification, health smoke, and Worker tests.
+
+5. **Cloudflare deploys after the same gate.**
+   The release-triggered deploy workflow verifies again before building and deploying the Worker. Manual deployment uses the selected `github.ref` when no release tag exists.
+
+6. **Share the install command.**
    ```bash
    curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
    ```

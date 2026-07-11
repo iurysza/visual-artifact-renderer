@@ -6,10 +6,10 @@ Visualizer artifacts are built from a constrained node catalog. Agents never wri
 
 ## Sources of truth
 
-- `visual-artifact contract` — get the exported runtime contract used by the CLI and agents.
-- `visual-artifact contract` — exported runtime contract bundled into the CLI.
-- [`app/src/lib/contract/artifact-schema.ts`](../app/src/lib/contract/artifact-schema.ts) — Zod schema and TypeScript types.
-- [`app/src/lib/contract/artifact-manifest.ts`](../app/src/lib/contract/artifact-manifest.ts) — LLM-facing descriptions, examples, and props.
+- `visual-artifact contract` — inspect the exported runtime contract bundled into the CLI.
+- [`shared/src/artifact-schema.ts`](../../shared/src/artifact-schema.ts) — executable Zod schema, TypeScript types, and resource preflight.
+- [`shared/src/contract.ts`](../../shared/src/contract.ts) — LLM-facing descriptions, examples, props, and exported limits.
+- [`cli/assets/contract.json`](../../cli/assets/contract.json) — tracked generated handshake checked for drift.
 
 Regenerate the contract after schema or manifest changes:
 
@@ -124,7 +124,13 @@ Example:
 }
 ```
 
-Keep data values well-formed. The CLI validates structural correctness (types, required fields, enums) from the contract.
+Keep data values well-formed. The CLI and renderer call the same shared executable schema. The enforced envelope is 2 MiB raw/final JSON, 30 top-level/100 total nodes, 20 datasets, node depth 8, 500 file-tree items, and file-tree depth 12.
+
+## File-tree source reads
+
+A file item may supply `content` directly or use `src` as create-time input. Prefer project-relative `src` paths. They must resolve inside the canonical project root; raw `..` segments and symlink escapes are rejected. Absolute or outside-project reads require a matching repeatable `visual-artifact create --allow-read <dir>` grant. The Pi tool never grants external reads.
+
+The CLI reads the canonical regular file, caps each source at 512 KiB and all sourced content at 1 MiB, inlines it as `content`, and strips `src` from newly saved/published artifacts. Explicit `content` wins without reading disk.
 
 ## Local images
 

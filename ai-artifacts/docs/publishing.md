@@ -62,7 +62,9 @@ Deploy the Worker:
 
 ```bash
 cd ../worker
-bun install
+bun install --frozen-lockfile
+bun test
+bun run typecheck
 bun run deploy
 ```
 
@@ -105,7 +107,7 @@ with file mode `0600`.
 
 ## GitHub Actions deploy
 
-The repo includes `.github/workflows/deploy-cloudflare.yml`. It deploys the Worker on published releases and can run manually with `workflow_dispatch`.
+The repo includes `.github/workflows/deploy-cloudflare.yml`. It deploys the Worker on published releases and can run manually with `workflow_dispatch`. Both paths depend on the reusable pinned verification workflow before deployment; manual runs check out `github.ref`, while release runs check out the release tag.
 
 Setup:
 
@@ -114,11 +116,13 @@ Setup:
 3. In GitHub, open **Settings** → **Environments** → **production**.
 4. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
-After merging, run **Actions** → **Deploy Cloudflare Worker**.
+After merging, run **Actions** → **Deploy Cloudflare Worker**. CI uses Node 22.22.3, Bun 1.1.34, pnpm 11.5.2, frozen installs, Worker tests, the cloud renderer build, and a deployed-root smoke request.
 
 ## Hosted comments
 
-Comments on published artifacts are persisted by the Worker to R2, so shared URLs support threaded annotations. The author uses a local fallback label because the Worker cannot access the viewer's git identity.
+Comments on published artifacts are persisted by the Worker to R2, so shared URLs support threaded annotations. The Worker requires `artifact.json`, enforces POST JSON and same-origin browser evidence, then retries an etag-conditional R2 write up to five times (including first-write races). Exhausted conflicts return 409. The author uses a local fallback label because the Worker cannot access the viewer's git identity.
+
+This protects against cross-site browser writes; it is not account authentication. Anyone who can load the public artifact can submit same-origin comments, and no rate limit is currently applied.
 
 For local comment behavior, see [`Annotations`](./annotations.md).
 

@@ -10,12 +10,12 @@ Why: containment. Rich output without arbitrary code execution, repeated boilerp
 
 ## 2. The contract is the handshake
 
-`skill/app/src/lib/artifact-schema.ts` + `skill/app/src/lib/artifact-manifest.ts` export to `skill/artifact-contract.json`. The CLI, Pi extension, skill docs, and renderer all meet at that file. Inspect the live contract with `visual-artifact contract`.
+`shared/src/artifact-schema.ts` is the executable schema and resource preflight; `shared/src/contract.ts` supplies the LLM-facing manifest. They export to tracked `cli/assets/contract.json`. The CLI, Pi extension, skill docs, and renderer meet at this contract, while CLI and renderer execute the same shared Zod parser. Inspect it with `visual-artifact contract`.
 
 Regenerate after schema or manifest changes:
 
 ```bash
-cd skill/app
+cd app
 pnpm export:contract
 pnpm verify:artifacts
 ```
@@ -30,7 +30,7 @@ Names like `VisualArtifactSpec`, `ArtifactNode`, `dataKey`, and `ArtifactManifes
 
 ## 5. Storage is runtime output
 
-Generated artifact JSON is local output under `<skill-root>/artifacts` by default. Do not commit generated artifacts unless the user explicitly asks.
+Generated artifact bundles are local output under the source repo's `artifacts/` in development or the installed skill's `artifacts/` by default. Do not commit generated artifacts unless the user explicitly asks.
 
 ## 6. Progressive disclosure for agents
 

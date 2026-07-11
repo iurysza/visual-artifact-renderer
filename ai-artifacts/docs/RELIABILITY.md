@@ -4,17 +4,27 @@
 
 ## Validation layers
 
-1. **CLI pre-write** — `cli/src/validate.ts` validates against the exported contract before writing.
-2. **Renderer post-read** — `app/src/lib/contract/artifact-schema.ts` parses with Zod before render.
-3. **Contract sync** — `app/scripts/verify-artifacts.ts` checks schema, manifest, saved artifacts, and exported contract.
-4. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates to the CLI instead of duplicating validation.
+1. **Shared executable schema** — `shared/src/artifact-schema.ts` owns Zod validation and the iterative resource preflight.
+2. **CLI pre-write** — `cli/src/validate.ts` calls that shared schema before writing.
+3. **Renderer post-read** — `app/src/lib/contract/artifact-schema.ts` re-exports and applies the same shared schema before render.
+4. **Contract sync** — `app/scripts/verify/verify-artifacts.ts` checks schema, manifest, saved artifacts, and tracked `cli/assets/contract.json`.
+5. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates to the CLI instead of duplicating validation.
 
 ## Core checks
+
+The repository-wide executable gate uses exact Node 22.22.3, Bun 1.1.34, and pnpm 11.5.2 pins:
+
+```bash
+./scripts/verify.sh
+```
+
+It performs frozen installs, shared/CLI/app/Worker tests and typechecks, native CLI build smoke, lint, contract export/drift detection, 82-spec verification, static build, and a random-port current-route health smoke with bounded cleanup.
 
 Renderer/schema changes:
 
 ```bash
 cd app
+pnpm test
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
@@ -43,11 +53,12 @@ visual-artifact create spec.json --no-serve
 
 | Command | Checks |
 |---|---|
+| `pnpm test` | Complete Node + `tsx` suite for both `.test.ts` and `.test.tsx`. |
 | `pnpm lint` | ESLint over renderer source. |
 | `pnpm export:contract` | Regenerates `cli/assets/contract.json` from schema + manifest. |
 | `pnpm verify:artifacts` | Saved specs parse, filenames match slugs, manifest/contract node sets match. |
 | `pnpm build` | Next.js static export to `app/out`. |
-| `bun test` | CLI unit tests for path/scan/create/serve commands. |
+| `bun test` | Package tests; the full gate runs CLI and Worker suites separately. |
 | `bun run typecheck` | CLI TypeScript compile check. |
 | `bun run build` | Bundles contract/static assets and compiles CLI binary. |
 | `visual-artifact bootstrap` | Builds renderer and CLI, installs shared dependencies, and installs the binary/skill/extension copies. |
@@ -76,7 +87,7 @@ Run when changing Mermaid rendering or authoring complex diagrams.
 
 | Change type | Required | Optional |
 |---|---|---|
-| Docs only | path/link sanity, `git diff --check` | none |
+| Docs only | path/link sanity, representative help comparison, `git diff --check` | contract export/drift check |
 | Schema/manifest | app full sequence | CLI build if bundled fallback matters |
 | Adapter/rendering | `pnpm lint`, `pnpm build` | `pnpm visual:qa` |
 | Theme/CSS | `pnpm lint`, `pnpm build` | `pnpm visual:qa` |
@@ -86,6 +97,6 @@ Run when changing Mermaid rendering or authoring complex diagrams.
 
 ## Known gaps
 
-- No broad renderer unit-test suite yet.
-- CLI tests exist in package wiring but are not the main safety net.
 - Visual regression is screenshot/metric based, not pixel-perfect.
+- Hosted annotation writes use same-origin browser protection and R2 compare-and-swap retries, but no user authentication or rate limiting.
+- Release-event verification can block asset upload and Worker deployment, but the GitHub Release already exists when those workflows start.

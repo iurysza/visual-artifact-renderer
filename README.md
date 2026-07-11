@@ -93,7 +93,7 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-Requirements for source builds: Bun, pnpm, and Node.js 20+. Pi is optional; if present, the installer registers the Pi extension.
+Repository verification uses Node.js 22.22.3, Bun 1.1.34, and pnpm 11.5.2. Pi is optional; if present, the installer registers the Pi extension.
 
 Install from this repo instead if you are developing or preparing a deployment:
 
@@ -154,9 +154,11 @@ The CLI returns a local URL like:
 http://127.0.0.1:9998/artifacts/my-project/demo-report/
 ```
 
+`file-tree` items may use `src` as create-time input. Relative paths must stay inside the canonical project root. Outside-project reads require a repeatable explicit `--allow-read <dir>` grant; the Pi tool never grants one. The CLI strips `src` after safely inlining `content`.
+
 ## Annotations and AI Colab
 
-Artifacts support node-level comment threads. Open an artifact and use **Comments** to select nodes, post replies, resolve threads, and copy a page link.
+Artifacts support node-level comment threads. Open an artifact and use **Comments** to select nodes, post replies, resolve threads, and copy a page link. Local writes require an existing artifact, are serialized per bundle, and use atomic mode-`0600` replacement. Writable serving is loopback-only unless `--allow-remote` is explicit; browser writes must be JSON and satisfy same-origin checks.
 
 **Colab** mode lets a formatter or agent attach suggested comments without persisting them. You can review, edit, delete, or export those comments as Markdown.
 
@@ -200,23 +202,31 @@ The docs are split like a small wiki. Start at the [`docs index`](./ai-artifacts
 
 ## Development
 
-Renderer:
+Run the complete pinned repository gate:
+
+```bash
+./scripts/verify.sh
+```
+
+For renderer development:
 
 ```bash
 cd app
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev              # http://localhost:9999/artifacts/
+pnpm test
 pnpm lint
 pnpm export:contract
 pnpm verify:artifacts
 pnpm build
 ```
 
-CLI:
+For focused CLI development:
 
 ```bash
 cd cli
-bun install
+bun install --frozen-lockfile
+bun test
 bun run typecheck
 bun run build
 ```
@@ -228,7 +238,7 @@ Run `pnpm visual:qa` if you touch adapters or styling. Use [`Reliability`](./ai-
 The contract is compiled into the CLI from a shared source:
 
 - `shared/src/contract.ts`
-- `cli/assets/contract.json` (generated for docs and tooling, not committed)
+- `cli/assets/contract.json` (generated, tracked, and checked for drift)
 
 Inspect it with:
 
@@ -249,7 +259,7 @@ pnpm verify:artifacts
 ```text
 app/                   # Next.js renderer source + static export
 cli/                   # Bun CLI source and compiled binary
-shared/                # shared annotation schema
+shared/                # shared artifact contract + annotation schema
 pi-extension/          # Pi tool wrapper for create_visual_artifact
 skill/                 # agent-facing skill bundle
 artifacts/             # local generated bundles, gitignored
