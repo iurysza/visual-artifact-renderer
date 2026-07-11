@@ -14,7 +14,7 @@ const APP_DIR = resolve(PROJECT_ROOT, "app")
 const SHARED_DIR = resolve(PROJECT_ROOT, "shared")
 const RELEASES_DIR = resolve(PROJECT_ROOT, "releases")
 
-interface Target {
+export interface Target {
   id: string
   bunTarget: string
   os: string
@@ -99,10 +99,14 @@ async function buildCliBinary(target: Target, outPath: string): Promise<void> {
   console.log(`[release] Smoke test passed for ${target.id}`)
 }
 
-function canSmokeTestTarget(target: Target): boolean {
-  if (target.os === "macos") return process.platform === "darwin"
-  if (target.os === "linux") return process.platform === "linux"
-  return false
+export function canSmokeTestTarget(
+  target: Target,
+  platform = process.platform,
+  arch = process.arch,
+): boolean {
+  const targetPlatform = target.os === "macos" ? "darwin" : target.os
+  const targetArch = target.arch === "aarch64" ? "arm64" : target.arch === "x86_64" ? "x64" : target.arch
+  return platform === targetPlatform && arch === targetArch
 }
 
 async function copyRenderer(buildDir: string): Promise<void> {
@@ -188,7 +192,9 @@ async function main(): Promise<void> {
   console.log(`             curl -fsSL https://github.com/${repoSlug}/releases/latest/download/install.sh | sh`)
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exit(1)
-})
+if (import.meta.main) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exit(1)
+  })
+}
