@@ -12,8 +12,6 @@ const ROOT = resolve(__dirname, "..")
 const PROJECT_ROOT = resolve(ROOT, "..")
 const APP_DIR = resolve(PROJECT_ROOT, "app")
 const SHARED_DIR = resolve(PROJECT_ROOT, "shared")
-const SKILL_DIR = resolve(PROJECT_ROOT, "skill")
-const PI_EXTENSION_DIR = resolve(PROJECT_ROOT, "pi-extension")
 const RELEASES_DIR = resolve(PROJECT_ROOT, "releases")
 
 interface Target {
@@ -107,14 +105,12 @@ function canSmokeTestTarget(target: Target): boolean {
   return false
 }
 
-async function copySupportingFiles(buildDir: string): Promise<void> {
+async function copyRenderer(buildDir: string): Promise<void> {
   const appOutDir = resolve(APP_DIR, "out")
   if (!existsSync(appOutDir)) {
     throw new Error(`App static export missing: ${appOutDir}. Run pnpm build in app/ first.`)
   }
   await cp(appOutDir, resolve(buildDir, "out"), { recursive: true, force: true })
-  await cp(SKILL_DIR, resolve(buildDir, "skill"), { recursive: true, force: true })
-  await cp(PI_EXTENSION_DIR, resolve(buildDir, "pi-extension"), { recursive: true, force: true })
 }
 
 async function createArchive(target: Target, buildDir: string): Promise<string> {
@@ -163,7 +159,7 @@ async function main(): Promise<void> {
 
     const binaryPath = resolve(buildDir, "visual-artifact")
     await buildCliBinary(target, binaryPath)
-    await copySupportingFiles(buildDir)
+    await copyRenderer(buildDir)
 
     const archiveName = await createArchive(target, buildDir)
     manifest.assets[`${target.os}-${target.arch}`] = assetUrl(repoSlug, archiveName)

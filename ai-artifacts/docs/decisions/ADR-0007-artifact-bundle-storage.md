@@ -19,7 +19,7 @@ The original storage shape saved each artifact as one flat JSON file. Annotation
 The canonical layout is:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>/
+<artifacts-root>/<project>/<slug>/
   artifact.json
   annotations.json
   assets/
@@ -46,5 +46,6 @@ Public page URLs stay `/artifacts/<project>/<slug>/`; runtime data URLs point in
 
 - [ADR-0002](./ADR-0002-static-renderer-runtime-artifact-data.md): Runtime data boundary that loads bundle files.
 - [README annotations](../../README.md#annotations): User-facing bundle and annotation docs.
-- [Architecture: filesystem and URL contracts](../../ai-artifacts/ARCHITECTURE.md#4-filesystem-and-url-contracts): Current bundle path map.
+- [Architecture: filesystem and URL contracts](../../ARCHITECTURE.md#4-filesystem-and-url-contracts): Current bundle path map.
+- [ADR-0011](./ADR-0011-separate-runtime-and-agent-resources.md): Defines the installed runtime artifacts root.
 - [Annotation goal](../../ai-artifacts/goals/visual-artifact-annotations/goal.md): Original bundle-storage requirement.

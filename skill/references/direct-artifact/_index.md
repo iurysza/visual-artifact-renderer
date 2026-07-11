@@ -38,7 +38,7 @@ The CLI validates, writes, and starts the renderer if needed.
 Default storage:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>.json
+~/.local/share/visual-artifact/artifacts/<project>/<slug>/artifact.json
 ```
 
 `<project>` is derived from the caller's git root or directory name.

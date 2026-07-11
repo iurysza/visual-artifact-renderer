@@ -71,7 +71,7 @@ visual-artifact [global flags] <command>
 
 | Command | What it does |
 |---|---|
-| `bootstrap` | Build renderer, compile CLI, install the global skill, and copy the optional Pi extension. |
+| `bootstrap` | Build renderer and CLI, then install runtime files. Agent resources stay package-managed. |
 | `create [spec.json|-]` | Validate, save, and auto-start renderer unless `--no-serve`. Add `--publish [profile]` to publish to Cloudflare. |
 | `validate [spec.json|-]` | Validate without writing. |
 | `serve` | Serve static renderer + live artifact JSON. |
@@ -97,10 +97,10 @@ visual-artifact contract --format summary
 
 ## Storage and URLs
 
-Default artifact storage:
+Default installed artifact storage:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>/artifact.json
+~/.local/share/visual-artifact/artifacts/<project>/<slug>/artifact.json
 ```
 
 Development mode uses `<project-root>/artifacts` when the CLI detects the source tree. Each bundle may also contain `annotations.json`, `publish.json`, and `assets/`.
@@ -195,7 +195,7 @@ for the full run order.
 Place local image assets in the artifact bundle:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>/assets/hero.png
+~/.local/share/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 Use a relative source:

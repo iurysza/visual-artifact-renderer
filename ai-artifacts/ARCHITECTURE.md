@@ -59,7 +59,7 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | `open` | Open index or artifact URL. | `src/commands/open.ts` |
 | `doctor` | Check binary, deps, contract, out dir, artifacts dir, server. | `src/commands/doctor.ts` |
 
-The CLI finds the skill root by walking from the binary/script path, then by checking `VISUAL_ARTIFACT_SKILL_ROOT`, `~/.agents/skills/visual-artifact`, and `~/.pi/skills/visual-artifact`.
+Source development stores artifacts under `<project-root>/artifacts`. Installed binaries store artifacts under `~/.local/share/visual-artifact/artifacts`.
 
 ### 2.3 Shared executable contracts (`shared/`)
 
@@ -145,8 +145,8 @@ cd app && pnpm build
   → exports static app to app/out
 
 visual-artifact serve
-  → serves static files from <skill-root>/app/out
-  → serves JSON/assets from <skill-root>/artifacts
+  → serves static files from ~/.local/share/visual-artifact/app/out
+  → serves JSON/assets from <artifacts-dir>
   → builds live index JSON at /artifacts/data/artifacts/index.json
   → falls back to live-artifact/live-project shells for post-build artifacts
 ```
@@ -158,7 +158,7 @@ This is why new artifacts can be created after build without rebuilding the rend
 Artifacts are stored as bundles:
 
 ```text
-<skill-root>/artifacts/
+<artifacts-dir>/
   <project>/
     <slug>/
       artifact.json
@@ -168,10 +168,10 @@ Artifacts are stored as bundles:
 
 | Path | Role |
 |---|---|
-| `<skill-root>/artifacts/<project>/<slug>/artifact.json` | Artifact spec inside a bundle. |
-| `<skill-root>/artifacts/<project>/<slug>/annotations.json` | Persisted annotation threads for the artifact. |
-| `<skill-root>/artifacts/<project>/<slug>/assets/` | Sidecar images and other assets. |
-| `<skill-root>/app/out` | Static renderer export. |
+| `<artifacts-dir>/<project>/<slug>/artifact.json` | Artifact spec inside a bundle. |
+| `<artifacts-dir>/<project>/<slug>/annotations.json` | Persisted annotation threads for the artifact. |
+| `<artifacts-dir>/<project>/<slug>/assets/` | Sidecar images and other assets. |
+| `~/.local/share/visual-artifact/app/out` | Installed static renderer export. |
 | `/artifacts/<project>/<slug>/` | Artifact page route. |
 | `/artifacts/data/artifacts/<project>/<slug>/artifact.json` | Public artifact JSON endpoint. |
 | `/artifacts/data/artifacts/<project>/<slug>/annotations.json` | Public annotation JSON endpoint. |
@@ -183,7 +183,6 @@ Environment overrides:
 
 | Variable | Effect |
 |---|---|
-| `VISUAL_ARTIFACT_SKILL_ROOT` | Override skill-root detection. |
 | `VISUAL_ARTIFACT_ARTIFACTS_DIR` | Artifact storage directory. |
 | `VISUAL_ARTIFACT_OUT_DIR` | Static export directory. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | Contract file. |

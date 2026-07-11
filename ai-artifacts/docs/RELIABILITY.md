@@ -8,7 +8,7 @@
 2. **CLI pre-write** — `cli/src/validate.ts` calls that shared schema before writing.
 3. **Renderer post-read** — `app/src/lib/contract/artifact-schema.ts` re-exports and applies the same shared schema before render.
 4. **Contract sync** — `app/scripts/verify/verify-artifacts.ts` checks schema, manifest, saved artifacts, and tracked `cli/assets/contract.json`.
-5. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates to the CLI instead of duplicating validation.
+5. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates schema validation to the CLI.
 
 ## Core checks
 
@@ -61,7 +61,7 @@ visual-artifact create spec.json --no-serve
 | `bun test` | Package tests; the full gate runs CLI and Worker suites separately. |
 | `bun run typecheck` | CLI TypeScript compile check. |
 | `bun run build` | Bundles contract/static assets and compiles CLI binary. |
-| `visual-artifact bootstrap` | Builds renderer and CLI, installs shared dependencies, and installs the binary/skill/extension copies. |
+| `visual-artifact bootstrap` | Builds renderer and CLI, installs shared dependencies, and installs runtime files only. |
 | `visual-artifact doctor` | Binary/deps/contract/out-dir/artifacts-dir/server health. |
 
 ## Visual QA

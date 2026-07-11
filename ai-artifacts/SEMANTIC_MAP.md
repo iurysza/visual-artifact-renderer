@@ -17,7 +17,7 @@
 | Registry | Node dispatch table. | `app/src/components/component-registry.tsx` |
 | Contract | Exported JSON handshake used by agents and CLI validation. | `cli/assets/contract.json` (generated build artifact) |
 | Project | URL/storage namespace derived from caller git root or directory. | `cli/src/util.ts` |
-| Skill root | Directory containing `SKILL.md` and `artifacts/` when installed. | `cli/src/config.ts` |
+| Runtime data root | Dedicated installed storage for artifact bundles and renderer files. | `~/.local/share/visual-artifact/` |
 | Renderer | Next.js app that renders saved specs. | `app/` |
 | CLI | Bun binary that validates, writes, serves, and opens artifacts. | `cli/` |
 | Pi extension | Pi tool wrapper that delegates to the CLI. | `pi-extension/visual-artifact.ts` |
@@ -50,7 +50,7 @@
 │ Next.js shell → client loaders → renderer → adapters.         │
 ├─────────────────────────────────────────────────────────────┤
 │ Storage                                                      │
-│ <skill-root>/artifacts/<project>/<slug>/ by default.          │
+│ ~/.local/share/visual-artifact/artifacts/<project>/<slug>/.   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
