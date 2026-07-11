@@ -25,6 +25,11 @@ function findCli(): string | null {
   }
 }
 
+export function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {
+  const { projectPath: _projectPath, ...spec } = params
+  return spec
+}
+
 function runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {
   const result = spawnSync(cli, ["create", "-", "--project", projectPath, "--json"], {
     input: `${JSON.stringify(spec)}\n`,
@@ -117,7 +122,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
       }
 
       const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? ".")
-      const result = runCreate(cli, params, projectPath)
+      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)
 
       if (!result.ok) {
         throw new Error(result.error)
