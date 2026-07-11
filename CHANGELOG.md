@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.4.0...v0.5.0) (2026-07-11)
+
+
+### Features
+
+* **pi:** add official package install ([e3bf3d1](https://github.com/iurysza/visual-artifact-renderer/commit/e3bf3d18ed7f00d724bc1fa11c5f3424f06aea43))
+
+
+### Bug Fixes
+
+* harden artifact runtime boundaries ([7bce756](https://github.com/iurysza/visual-artifact-renderer/commit/7bce7566288f271865eb99287478456b8a507282))
+
 ## [0.4.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.3.3...v0.4.0) (2026-07-09)
 
 
