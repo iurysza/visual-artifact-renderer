@@ -25,6 +25,7 @@ const config: Config = {
   mountPath: "/artifacts",
   dataPath: "/data/artifacts",
   open: false,
+  allowRemote: false,
 }
 
 describe("server lifecycle state", () => {

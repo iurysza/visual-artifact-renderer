@@ -10,12 +10,12 @@ The load-bearing design decision:
 
 > **The LLM never writes React, routes, JSX, imports, CSS, or full HTML for the renderer.**
 
-The agent emits a constrained `VisualArtifactSpec`. The Pi extension calls the `visual-artifact` CLI. The CLI validates against `artifact-contract.json`, writes the spec to the skill artifact store, and starts the renderer if needed. The Next.js app fetches the JSON and renders each node through trusted adapters.
+The agent emits a constrained `VisualArtifactSpec`. The Pi extension calls the `visual-artifact` CLI. The CLI validates with the shared executable schema, writes an artifact bundle, and starts the renderer if needed. The Next.js app fetches the JSON, parses it with the same schema, and renders each node through trusted adapters.
 
 Key surfaces:
 
 - **Renderer** — `app/`, Next.js static export under `basePath: "/artifacts"`.
-- **Contract system** — `shared/src/contract.ts` is the shared source of truth; `app/src/lib/contract/artifact-schema.ts` + `app/src/lib/contract/artifact-manifest.ts` consume it and `pnpm export:contract` writes `cli/assets/contract.json`. Inspect it with `visual-artifact contract`.
+- **Contract system** — `shared/src/artifact-schema.ts` owns executable validation/resource limits; `shared/src/contract.ts` owns the LLM-facing manifest; app compatibility layers consume both, and `pnpm export:contract` writes tracked `cli/assets/contract.json`. Inspect it with `visual-artifact contract`.
 - **CLI** — `cli/`, Bun binary for create/validate/serve/list/open/doctor/bootstrap.
 - **Pi extension** — `pi-extension/visual-artifact.ts`, registers `create_visual_artifact` and delegates to the CLI.
 - **Skill docs** — `skill/SKILL.md` and `skill/references/*`, model-facing instructions.
@@ -24,34 +24,23 @@ Key surfaces:
 
 ```text
 visualizer/
-├── skill/
-│   ├── SKILL.md
-│   ├── artifact-contract.json
-│   ├── app/
-│   │   ├── src/app/                 # Next.js routes
-│   │   ├── src/components/          # renderer, adapters, UI primitives
-│   │   ├── src/lib/                 # schema, manifest, paths, helpers
-│   │   ├── scripts/                 # contract export, verification, QA
-│   │   └── package.json
-│   ├── cli/
-│   │   ├── src/commands/            # bootstrap/create/validate/serve/list/open/doctor
-│   │   ├── scripts/                 # build + binary install
-│   │   └── package.json
-│   ├── artifacts/                   # local generated specs, gitignored
-│   └── references/                  # model-facing usage notes
-├── pi-extension/
-│   └── visual-artifact.ts           # Pi tool wrapper
-├── docs/
-│   └── nodes.md                     # node catalog
+├── app/                             # Next.js renderer, contract adapters, QA
+├── cli/                             # Bun CLI, generated contract, release scripts
+├── shared/                          # executable artifact + annotation contracts
+├── worker/                          # Cloudflare Worker + R2 routes
+├── skill/                           # installed model-facing skill and references
+├── pi-extension/visual-artifact.ts  # Pi tool wrapper
+├── artifacts/                       # local generated bundles, gitignored
 ├── ai-artifacts/docs/               # architecture/product/design/reliability docs
+├── scripts/verify.sh                # pinned repository gate
 ├── assets/                          # README screenshots
 └── README.md
 ```
 
 ## 3. Read these first
 
-1. `app/src/lib/contract/artifact-schema.ts` — spec shape and Zod validation.
-2. `app/src/lib/contract/artifact-manifest.ts` — LLM-facing node descriptions and limits.
+1. `shared/src/artifact-schema.ts` — executable spec shape, Zod validation, and resource limits.
+2. `shared/src/contract.ts` — LLM-facing node descriptions, examples, and exported limits.
 3. `app/src/components/component-registry.tsx` — `node.type` → adapter map.
 4. `app/src/components/visual-artifact-renderer.tsx` — page-level render flow.
 5. `app/src/lib/artifacts/paths.ts` — URL/path conventions.
@@ -65,7 +54,7 @@ Renderer:
 
 ```bash
 cd app
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev          # http://localhost:9999/artifacts
 ```
 
@@ -73,7 +62,7 @@ CLI:
 
 ```bash
 cd cli
-bun install
+bun install --frozen-lockfile
 bun test
 bun run typecheck
 bun run build
@@ -98,11 +87,10 @@ visual-artifact doctor
 
 ### Add a node type
 
-1. `app/src/lib/contract/artifact-schema.ts`
-   - Add the TS union member.
-   - Add the Zod branch.
-   - Add data-key checks if it reads `spec.data`.
-2. `app/src/lib/contract/artifact-manifest.ts`
+1. `shared/src/artifact-schema.ts`
+   - Add the TS union member and Zod branch.
+   - Add data-key/resource checks if it reads `spec.data`.
+2. `shared/src/contract.ts`
    - Add description, props, children mode, data requirements, example, and limits.
 3. `app/src/components/adapters/*`
    - Implement the adapter in leaf/data/layout adapters.
@@ -128,7 +116,7 @@ visual-artifact create spec.json --project /path/to/source-repo
 Output defaults to:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>.json
+<artifacts-dir>/<project>/<slug>/artifact.json
 ```
 
 `<project>` comes from the git root name when available, otherwise the directory name.
@@ -145,20 +133,13 @@ The server serves static files from `<skill-root>/app/out` and live JSON from `<
 
 ## 6. Verification
 
-Docs-only changes need link/path sanity. Renderer/schema/CLI changes need:
+Run the repository contract for implementation changes:
 
 ```bash
-cd app
-pnpm lint
-pnpm export:contract
-pnpm verify:artifacts
-pnpm build
-
-cd ../cli
-bun test
-bun run typecheck
-bun run build
+./scripts/verify.sh
 ```
+
+Docs-only changes need link/path sanity, representative CLI help comparison, `git diff --check`, and contract drift confirmation.
 
 Optional:
 
@@ -172,9 +153,9 @@ pnpm validate:mermaid path/to/diagram.mmd
 
 - **Contract drift.** Schema and manifest changes are not done until `cli/assets/contract.json` is regenerated and `visual-artifact contract` reflects them.
 - **Wrong working directory.** Renderer commands run in `app/`; CLI commands run in `cli/`.
-- **Storage location confusion.** Current default is `<skill-root>/artifacts`, not a repo under the caller project. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
+- **Storage location confusion.** Development defaults to the source repo's `artifacts/`; installed use defaults to the skill's `artifacts/`. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
 - **Base path.** App routes live under `/artifacts`; data routes live under `/artifacts/data/artifacts/...`.
-- **Generated artifacts are local output.** Do not commit `artifacts/<project>/*.json` unless explicitly asked.
+- **Generated artifacts are local output.** Do not commit `artifacts/<project>/<slug>/` unless explicitly asked.
 - **Extension delegates.** `pi-extension/visual-artifact.ts` does not implement rendering; it finds the CLI and sends JSON through stdin.
 - **Static export + live JSON.** New artifacts work after build because the CLI server falls back to live shells and fetches JSON client-side.
 - **SVG diagrams are sandboxed.** They may contain self-contained HTML/SVG, but never leak JSX/CSS into the main renderer.

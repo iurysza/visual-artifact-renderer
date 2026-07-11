@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 
 import { LOCAL_ANONYMOUS_AUTHOR } from "@agents/visual-artifact-annotations"
 
@@ -122,6 +122,9 @@ function AnnotationProviderInner({
   const [params, setParams] = usePanelParams()
 
   const [doc, setDoc] = useState<AnnotationDocument | null>(null)
+  const docRef = useRef<AnnotationDocument | null>(null)
+  const mutationQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const pendingMutationCountRef = useRef(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -176,7 +179,10 @@ function AnnotationProviderInner({
 
     loadAnnotationDocument(project, slug)
       .then((data) => {
-        if (!cancelled) setDoc(data)
+        if (!cancelled) {
+          docRef.current = data
+          setDoc(data)
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load annotations")
@@ -327,27 +333,46 @@ function AnnotationProviderInner({
   )
 
   const withOptimisticMutation = useCallback(
-    async (
+    (
       buildOptimisticDoc: (current: AnnotationDocument) => AnnotationDocument,
       mutations: AnnotationMutations,
-    ) => {
-      if (!doc) return
-      const previousDoc = doc
-      const optimisticDoc = buildOptimisticDoc(doc)
-      setDoc(optimisticDoc)
+    ): Promise<void> => {
+      pendingMutationCountRef.current += 1
       setIsSaving(true)
-      setError(null)
 
-      try {
-        await postAnnotationMutations(project, slug, mutations)
-      } catch (err) {
-        setDoc(previousDoc)
-        setError(err instanceof Error ? err.message : "Failed to save annotations")
-      } finally {
-        setIsSaving(false)
+      const run = async () => {
+        const previousDoc = docRef.current
+        if (!previousDoc) return
+
+        const optimisticDoc = buildOptimisticDoc(previousDoc)
+        docRef.current = optimisticDoc
+        setDoc(optimisticDoc)
+        setError(null)
+
+        try {
+          const authoritativeDoc = await postAnnotationMutations(project, slug, mutations)
+          docRef.current = authoritativeDoc
+          setDoc(authoritativeDoc)
+        } catch (err) {
+          // Whole transactions are serialized, so no later operation has
+          // started yet and this rollback cannot clobber a later success.
+          docRef.current = previousDoc
+          setDoc(previousDoc)
+          setError(err instanceof Error ? err.message : "Failed to save annotations")
+        }
       }
+
+      const operation = mutationQueueRef.current.catch(() => {}).then(run)
+      // The queue must continue even if a mutation fails; errors are surfaced
+      // in state, not as unhandled rejections.
+      const settled = operation.then(() => {}, () => {})
+      mutationQueueRef.current = settled
+      return settled.finally(() => {
+        pendingMutationCountRef.current -= 1
+        if (pendingMutationCountRef.current === 0) setIsSaving(false)
+      })
     },
-    [doc, project, slug],
+    [project, slug],
   )
 
   const createThread = useCallback(

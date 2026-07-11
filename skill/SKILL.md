@@ -55,10 +55,11 @@ Use `visual-artifact contract` to print the full contract, `visual-artifact cont
 
 Rules:
 
-- Follow `visual-artifact contract` for root spec and node constraints (slug format/length, required fields, node types, layout type/columns, etc.).
+- Follow `visual-artifact contract` for root spec, node constraints, and resource limits.
 - Data-backed nodes need `data.<dataKey>` arrays.
-- Keep data values well-formed. The CLI validates structural correctness from the contract.
+- Keep data values well-formed. The shared executable schema validates the same contract in the CLI and renderer.
 - Do not use `file://` URLs. Use HTTPS, app routes, or sidecar image files.
+- `file-tree.props.items[].src` is create-time input. Use project-relative paths. Outside-project paths require explicit `create --allow-read <dir>` authority, which the Pi tool does not grant; persisted specs receive inlined `content`, not `src`.
 
 ## CLI
 
@@ -99,8 +100,10 @@ visual-artifact contract --format summary
 Default artifact storage:
 
 ```text
-<skill-root>/artifacts/<project>/<slug>.json
+<skill-root>/artifacts/<project>/<slug>/artifact.json
 ```
+
+Development mode uses `<project-root>/artifacts` when the CLI detects the source tree. Each bundle may also contain `annotations.json`, `publish.json`, and `assets/`.
 
 The project name is derived from the caller's git root or directory.
 
@@ -135,7 +138,7 @@ Default bucket name is `visual-artifact-renderer`; override with `--bucket <name
 
 For local development these may be placed in a `.env` file in the working directory; the CLI loads it automatically without overriding shell variables. `.env` is gitignored by default.
 
-Published artifacts support remote comment persistence: the Worker stores annotation mutations in R2. The author is shown as a local fallback because the Worker has no access to the viewer's git identity.
+Published artifacts support remote comment persistence: the Worker requires the artifact to exist, validates JSON/same-origin browser writes, and stores mutations in R2 with bounded conditional-write retries. The author is shown as a local fallback because the Worker has no access to the viewer's git identity.
 
 ## Node choice
 
@@ -189,16 +192,16 @@ for the full run order.
 
 ## Sidecar images
 
-Place local image assets next to the artifact JSON:
+Place local image assets in the artifact bundle:
 
 ```text
-<skill-root>/artifacts/<project>/hero.png
+<skill-root>/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 Use a relative source:
 
 ```json
-{ "type": "image", "props": { "src": "hero.png", "alt": "Hero" } }
+{ "type": "image", "props": { "src": "assets/hero.png", "alt": "Hero" } }
 ```
 
 ## Slash commands
@@ -216,3 +219,4 @@ When the Pi extension is installed:
 - Prefer `create_visual_artifact` inside Pi; prefer `visual-artifact create` from shell.
 - The CLI auto-starts the renderer on create unless `--no-serve` is passed.
 - Runtime artifacts are local generated output; do not commit them unless explicitly asked.
+- The enforced envelope is 2 MiB raw/final JSON, 30 top-level nodes, 100 total nodes, 20 datasets, node depth 8, 500 file-tree items, and file-tree depth 12. Sourced files are capped at 512 KiB each and 1 MiB total.

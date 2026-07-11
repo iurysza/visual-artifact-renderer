@@ -203,3 +203,60 @@ export function buildAnnotationDocument(
     threads,
   }
 }
+
+export interface AnnotationRequestRejection {
+  status: 403 | 415
+  message: string
+}
+
+function isLoopbackUrl(url: URL): boolean {
+  const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase()
+  if (hostname === "localhost" || hostname === "::1") return true
+  const parts = hostname.split(".")
+  return (
+    parts.length === 4 &&
+    parts[0] === "127" &&
+    parts.every((part) => /^\d+$/.test(part) && Number(part) >= 0 && Number(part) <= 255)
+  )
+}
+
+/**
+ * Validate browser-facing annotation mutation requests.
+ *
+ * Requests without browser origin metadata remain valid for CLI/tests. When
+ * browsers provide the metadata, only same-origin requests are accepted,
+ * with a loopback-to-loopback exception for the Next dev proxy.
+ */
+export function annotationMutationRequestRejection(
+  request: Request,
+): AnnotationRequestRejection | null {
+  const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase()
+  if (contentType !== "application/json") {
+    return { status: 415, message: "Content-Type must be application/json" }
+  }
+
+  const fetchSite = request.headers.get("sec-fetch-site")?.trim().toLowerCase()
+  if (fetchSite && fetchSite !== "same-origin") {
+    return { status: 403, message: "Cross-origin annotation mutation denied" }
+  }
+
+  const origin = request.headers.get("origin")
+  if (!origin) return null
+
+  let source: URL
+  let target: URL
+  try {
+    source = new URL(origin)
+    target = new URL(request.url)
+  } catch {
+    return { status: 403, message: "Invalid annotation mutation origin" }
+  }
+
+  if (origin !== source.origin) {
+    return { status: 403, message: "Invalid annotation mutation origin" }
+  }
+  if (source.origin === target.origin) return null
+  if (isLoopbackUrl(source) && isLoopbackUrl(target)) return null
+
+  return { status: 403, message: "Cross-origin annotation mutation denied" }
+}

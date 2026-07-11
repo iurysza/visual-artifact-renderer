@@ -2,20 +2,8 @@ export type {
   ArtifactContract,
   NodeDef,
   SpecConstraints,
+  VisualArtifactSpec as ArtifactSpec,
 } from "@agents/visual-artifact-annotations/contract"
-
-export interface ArtifactSpec {
-  slug: string
-  title: string
-  description?: string
-  createdAt?: string
-  layout?: {
-    type?: "default" | "grid"
-    columns?: number
-  }
-  data?: Record<string, unknown>
-  nodes: unknown[]
-}
 
 export interface GlobalOpts {
   json: boolean
@@ -24,6 +12,7 @@ export interface GlobalOpts {
   verbose: boolean
   noColor: boolean
   noInput: boolean
+  allowRemote?: boolean
 }
 
 export interface Config {
@@ -34,5 +23,8 @@ export interface Config {
   mountPath: string
   dataPath: string
   open: boolean
+  allowRemote: boolean
   baseUrl?: string
+  contractPath?: string
+  projectPath?: string
 }

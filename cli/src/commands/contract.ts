@@ -1,23 +1,12 @@
+import { ConfigValidationError, loadConfig } from "../config.ts"
 import { loadContract } from "../contract.ts"
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import type { ArtifactContract, GlobalOpts } from "../types.ts"
 
 interface ContractOpts extends GlobalOpts {
   contract?: string
   format?: string
   node?: string
-}
-
-function writeStdout(text: string): void {
-  process.stdout.write(`${text}\n`)
-}
-
-function outputJson(log: Logger, data: unknown, opts: ContractOpts): void {
-  if (opts.json || opts.plain) {
-    log.output(data)
-  } else {
-    writeStdout(JSON.stringify(data, null, 2))
-  }
 }
 
 function formatSpecConstraints(spec: ArtifactContract["spec"]): string[] {
@@ -39,22 +28,7 @@ function formatSpecConstraints(spec: ArtifactContract["spec"]): string[] {
   return lines
 }
 
-function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpts): void {
-  const summary = {
-    version: contract.version,
-    spec: contract.spec,
-    nodeCount: contract.nodeTypes.length,
-    nodeTypes: contract.nodeTypes,
-    dataNodeCount: contract.dataNodes.length,
-    dataNodes: contract.dataNodes,
-    patterns: Object.keys(contract.patternExamples),
-  }
-
-  if (opts.json || opts.plain) {
-    log.output(summary)
-    return
-  }
-
+function printSummary(contract: ArtifactContract): string {
   const lines = [
     `Visualizer artifact contract v${contract.version}`,
     "",
@@ -68,23 +42,33 @@ function printSummary(log: Logger, contract: ArtifactContract, opts: ContractOpt
     }),
     "",
     `Data-backed node types: ${contract.dataNodes.length}`,
-    `Pattern examples: ${summary.patterns.join(", ") || "none"}`,
+    `Pattern examples: ${Object.keys(contract.patternExamples).join(", ") || "none"}`,
   ]
-  writeStdout(lines.join("\n"))
+  return lines.join("\n")
 }
 
-function printNode(log: Logger, contract: ArtifactContract, nodeType: string, opts: ContractOpts): number {
-  const def = contract.nodes[nodeType]
-  if (!def) {
-    log.error(`Unknown node type: ${nodeType}`)
-    log.info(`Known node types: ${contract.nodeTypes.join(", ")}`)
-    return 2
-  }
-  outputJson(log, def, opts)
-  return 0
+function printNode(contract: ArtifactContract, nodeType: string): string {
+  return JSON.stringify(contract.nodes[nodeType], null, 2)
 }
 
 export async function contract(opts: ContractOpts, log: Logger): Promise<number> {
+  let config
+  try {
+    config = loadConfig({
+      overrides: {
+        ...(opts.contract !== undefined ? { contractPath: opts.contract } : {}),
+        ...(opts.allowRemote !== undefined ? { allowRemote: opts.allowRemote } : {}),
+      },
+    })
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
   if (opts.format && opts.format !== "json" && opts.format !== "summary") {
     log.error(`Invalid format: ${opts.format}. Expected "json" or "summary".`)
     return 2
@@ -92,21 +76,59 @@ export async function contract(opts: ContractOpts, log: Logger): Promise<number>
 
   let contract: ArtifactContract
   try {
-    contract = await loadContract(opts.contract)
+    contract = await loadContract(config.contractPath)
   } catch (error) {
-    log.error(error instanceof Error ? error.message : String(error))
+    const message = error instanceof Error ? error.message : String(error)
+    log.error(`Could not load contract ${config.contractPath ?? "bundled contract"}: ${message}`, error)
     return 1
   }
 
   if (opts.node) {
-    return printNode(log, contract, opts.node, opts)
-  }
-
-  if (opts.format === "summary") {
-    printSummary(log, contract, opts)
+    const def = contract.nodes[opts.node]
+    if (!def) {
+      log.error(`Unknown node type: ${opts.node}`)
+      log.info(`Known node types: ${contract.nodeTypes.join(", ")}`)
+      return 2
+    }
+    if (opts.json) {
+      log.result({ command: "contract", version: contract.version, type: opts.node, ...def })
+      return 0
+    }
+    if (opts.plain) {
+      log.result({ command: "contract", version: contract.version, node: { type: opts.node, ...def } })
+      return 0
+    }
+    process.stdout.write(`${printNode(contract, opts.node)}\n`)
     return 0
   }
 
-  outputJson(log, contract, opts)
+  if (opts.format === "summary" || (opts.format === undefined && !opts.json && !opts.plain)) {
+    log.result(
+      {
+        command: "contract",
+        version: contract.version,
+        spec: contract.spec,
+        nodeCount: contract.nodeTypes.length,
+        nodeTypes: contract.nodeTypes,
+        dataNodeCount: contract.dataNodes.length,
+        dataNodes: contract.dataNodes,
+        patterns: Object.keys(contract.patternExamples),
+      },
+      printSummary(contract),
+    )
+    return 0
+  }
+
+  if (opts.json) {
+    log.result({ command: "contract", ...contract })
+    return 0
+  }
+
+  if (opts.plain) {
+    log.result({ command: "contract", version: contract.version, nodeTypes: contract.nodeTypes })
+    return 0
+  }
+
+  process.stdout.write(`${JSON.stringify(contract, null, 2)}\n`)
   return 0
 }

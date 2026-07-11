@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises"
+import { mkdtemp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
@@ -13,6 +13,8 @@ import {
 } from "@agents/visual-artifact-annotations"
 import {
   applyMutations,
+  ArtifactNotFoundError,
+  mutateAnnotationsDocument,
   readAnnotationsDocument,
   resolveLocalAuthor,
   writeAnnotationsDocument,
@@ -20,6 +22,17 @@ import {
 
 async function makeTempDir(prefix: string): Promise<string> {
   return mkdtemp(join(tmpdir(), prefix))
+}
+
+async function writeArtifact(dir: string, project: string, slug: string): Promise<string> {
+  const bundleDir = join(dir, project, slug)
+  await mkdir(bundleDir, { recursive: true })
+  await writeFile(
+    join(bundleDir, "artifact.json"),
+    JSON.stringify({ slug, title: slug, nodes: [{ type: "text", props: { text: "x" } }] }),
+    "utf8",
+  )
+  return bundleDir
 }
 
 const validAuthor = { name: "Iury Souza", email: "iury@example.com" }
@@ -241,11 +254,24 @@ describe("applyMutations", () => {
 })
 
 describe("readAnnotationsDocument", () => {
-  test("returns empty document when file is missing", async () => {
+  test("returns empty document when annotations are missing for an existing artifact", async () => {
     const dir = await makeTempDir("visualizer-annotations-")
     try {
+      await writeArtifact(dir, "project", "slug")
       const doc = await readAnnotationsDocument(dir, { project: "project", slug: "slug" })
       expect(doc).toEqual(emptyAnnotationDocument("project", "slug"))
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects a missing artifact without creating annotation state", async () => {
+    const dir = await makeTempDir("visualizer-annotations-")
+    try {
+      await expect(
+        readAnnotationsDocument(dir, { project: "project", slug: "missing" }),
+      ).rejects.toBeInstanceOf(ArtifactNotFoundError)
+      expect(await readdir(dir)).toEqual([])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -254,8 +280,7 @@ describe("readAnnotationsDocument", () => {
   test("parses existing document", async () => {
     const dir = await makeTempDir("visualizer-annotations-")
     try {
-      const projectDir = join(dir, "example-project", "example-artifact")
-      await mkdir(projectDir, { recursive: true })
+      const projectDir = await writeArtifact(dir, "example-project", "example-artifact")
       await writeFile(join(projectDir, "annotations.json"), JSON.stringify(validDocument), "utf8")
       const doc = await readAnnotationsDocument(dir, { project: "example-project", slug: "example-artifact" })
       expect(doc).toEqual(validDocument)
@@ -270,12 +295,77 @@ describe("round-trip write/read", () => {
     const dir = await makeTempDir("visualizer-annotations-")
     try {
       const route = { project: "example-project", slug: "example-artifact" }
+      await writeArtifact(dir, route.project, route.slug)
       const doc = await readAnnotationsDocument(dir, route)
       const updated = applyMutations(doc, [{ type: "createThread", thread: validThread }])
       await writeAnnotationsDocument(dir, route, updated)
       const read = await readAnnotationsDocument(dir, route)
       expect(read).toEqual(updated)
       expect(read.threads[0].messages[0].body).toBe("This wording is confusing.")
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("serialized atomic writes", () => {
+  test("preserves 20 concurrent unique mutations", async () => {
+    const dir = await makeTempDir("visualizer-annotations-concurrent-")
+    const route = { project: "example-project", slug: "example-artifact" }
+    try {
+      await writeArtifact(dir, route.project, route.slug)
+      await Promise.all(
+        Array.from({ length: 20 }, (_, index) => {
+          const suffix = String(index)
+          const thread = {
+            ...validThread,
+            id: `thr_${suffix}`,
+            messages: [{ ...validMessage, id: `msg_${suffix}`, body: `message ${suffix}` }],
+          }
+          return mutateAnnotationsDocument(dir, route, [{ type: "createThread", thread }])
+        }),
+      )
+      const document = await readAnnotationsDocument(dir, route)
+      expect(document.threads).toHaveLength(20)
+      expect(new Set(document.threads.map((thread) => thread.id)).size).toBe(20)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("atomically replaces with mode 0600 and leaves no temp files", async () => {
+    const dir = await makeTempDir("visualizer-annotations-atomic-")
+    const route = { project: "example-project", slug: "example-artifact" }
+    try {
+      const bundleDir = await writeArtifact(dir, route.project, route.slug)
+      await writeAnnotationsDocument(dir, route, validDocument)
+      const fileStat = await stat(join(bundleDir, "annotations.json"))
+      expect(fileStat.mode & 0o777).toBe(0o600)
+      expect((await readdir(bundleDir)).filter((name) => name.endsWith(".tmp"))).toEqual([])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("rename failure preserves the original and removes the temp file", async () => {
+    const dir = await makeTempDir("visualizer-annotations-failure-")
+    const route = { project: "example-project", slug: "example-artifact" }
+    try {
+      const bundleDir = await writeArtifact(dir, route.project, route.slug)
+      await writeAnnotationsDocument(dir, route, validDocument)
+      const original = await readAnnotationsDocument(dir, route)
+      const changed = { ...validDocument, threads: [] }
+
+      await expect(
+        writeAnnotationsDocument(dir, route, changed, {
+          rename: async () => {
+            throw new Error("injected rename failure")
+          },
+        }),
+      ).rejects.toThrow("injected rename failure")
+
+      expect(await readAnnotationsDocument(dir, route)).toEqual(original)
+      expect((await readdir(bundleDir)).filter((name) => name.endsWith(".tmp"))).toEqual([])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

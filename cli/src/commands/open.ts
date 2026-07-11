@@ -1,14 +1,25 @@
 import { spawn } from "node:child_process"
-import { artifactBaseUrl, loadConfig } from "../config.ts"
-import type { Logger } from "../logger.ts"
+import { artifactBaseUrl, ConfigValidationError, loadConfig } from "../config.ts"
+import type { Logger, ResultData } from "../logger.ts"
 
 export async function openArtifact(target: string | undefined, log: Logger): Promise<number> {
-  const config = loadConfig()
+  let config
+  try {
+    config = loadConfig()
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
 
   if (!target) {
     const url = artifactBaseUrl(config)
     openBrowser(url)
-    log.outputText(url)
+    const result: ResultData = { command: "open", url }
+    log.result(result)
     return 0
   }
 
@@ -21,7 +32,8 @@ export async function openArtifact(target: string | undefined, log: Logger): Pro
   const [project, slug] = parts
   const url = `${artifactBaseUrl(config)}/${project}/${slug}/`
   openBrowser(url)
-  log.outputText(url)
+  const result: ResultData = { command: "open", url, project, slug }
+  log.result(result)
   return 0
 }
 

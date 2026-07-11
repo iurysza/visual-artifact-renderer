@@ -40,7 +40,10 @@ describe("AIColabProvider", () => {
   let root: Root
 
   before(() => {
-    const dom = new JSDOM(`<!DOCTYPE html><html><body></body></html>`)
+    const dom = new JSDOM(`<!DOCTYPE html><html><body></body></html>`, {
+      url: "http://localhost:9999/artifacts/",
+    })
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
     global.window = dom.window as unknown as Window & typeof globalThis
     global.document = dom.window.document
     Object.defineProperty(global, "navigator", {

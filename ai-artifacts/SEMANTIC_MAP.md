@@ -8,7 +8,7 @@
 |---|---|---|
 | Artifact | A rendered visual page backed by one JSON spec and optional annotation threads. | `artifacts/<project>/<slug>/artifact.json` + `annotations.json` |
 | Artifact bundle | The directory holding `artifact.json`, `annotations.json`, and `assets/`. | `artifacts/<project>/<slug>/` |
-| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `app/src/lib/contract/artifact-schema.ts` |
+| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `shared/src/artifact-schema.ts` (re-exported by app) |
 | Node | One typed UI unit in `nodes[]`: text, stat-card, chart, Mermaid, etc. | schema + manifest |
 | Node type | Discriminated `type` value. The LLM chooses from the contract. | `ARTIFACT_NODE_TYPES` |
 | Node identity | `metadata.id` (preferred) or deterministic node path used to anchor comments. | rendered `data-va-node-*` attributes |
@@ -41,10 +41,10 @@
 │ opens, and persists annotation mutations.                     │
 ├─────────────────────────────────────────────────────────────┤
 │ Contract                                                     │
-│ Schema + manifest exported to artifact-contract.json.         │
+│ Shared schema + manifest exported to tracked contract.json.   │
 ├─────────────────────────────────────────────────────────────┤
-│ Shared annotation schema                                     │
-│ Zod parsers shared by renderer and CLI.                       │
+│ Shared executable contracts                                  │
+│ Artifact/annotation Zod parsers + mutation request policy.    │
 ├─────────────────────────────────────────────────────────────┤
 │ Renderer                                                     │
 │ Next.js shell → client loaders → renderer → adapters.         │
@@ -62,8 +62,9 @@
 Agent JSON
   → create_visual_artifact
   → visual-artifact create - --project <cwd> --json
-  → validate against the exported contract
-  → write <skill-root>/artifacts/<project>/<slug>/artifact.json
+  → validate with the shared executable schema/resource preflight
+  → resolve contained or explicitly granted file-tree sources
+  → write <artifacts-dir>/<project>/<slug>/artifact.json
   → return /artifacts/<project>/<slug>/
 ```
 
@@ -99,11 +100,13 @@ Agent JSON
 
 ```text
 Browser mutation
-  → /artifacts/api/annotations/<project>/<slug>
-  → CLI validates with shared annotation schema
-  → applyMutations()
-  → write <skill-root>/artifacts/<project>/<slug>/annotations.json
-  → return updated AnnotationDocument
+  → client serializes whole optimistic transaction
+  → POST /artifacts/api/annotations/<project>/<slug>
+  → require existing artifact + POST + application/json + same-origin evidence
+  → local: keyed queue → applyMutations() → atomic mode-0600 replace
+  → hosted: read etag → applyMutations() → conditional R2 put (max 5 attempts)
+  → return authoritative AnnotationDocument
+  → client adopts response or rolls back before next transaction
 ```
 
 ## 4. Boundary rules
@@ -116,16 +119,16 @@ Browser mutation
 | Renderer → UI | Only registered adapters render nodes. |
 | Images/buttons | No `file://`; use relative sidecar assets or HTTPS URLs. |
 | Diagrams | Mermaid is text; `svg-diagram` is sandboxed iframe HTML. |
-| Browser → CLI annotations | Mutations must validate against shared annotation schema. |
+| Browser → annotation API | Artifact must exist; writes require POST, JSON, and same-origin browser evidence (with loopback dev-proxy exception). |
 | Anchor → thread | Identity prefers `nodeId`, falls back to `nodePath`. |
 
 ## 5. Single sources of truth
 
 | Concern | File |
 |---|---|
-| Spec shape | `app/src/lib/contract/artifact-schema.ts` |
-| LLM-facing node descriptions | `app/src/lib/contract/artifact-manifest.ts` |
-| Exported runtime contract | `cli/assets/contract.json` (generated build artifact) |
+| Spec shape/resource envelope | `shared/src/artifact-schema.ts` |
+| LLM-facing node descriptions | `shared/src/contract.ts` (consumed by app manifest compatibility layer) |
+| Exported runtime contract | `cli/assets/contract.json` (tracked generated artifact) |
 | Shared annotation schema | `shared/src/annotations.ts` |
 | URL/path math | `app/src/lib/artifacts/paths.ts` |
 | CLI defaults and env vars | `cli/src/config.ts` |
@@ -136,10 +139,12 @@ Browser mutation
 ## 6. Invariants
 
 - `slug` and project names are kebab-case URL segments.
-- Top-level `nodes` must be non-empty and max 30 in CLI validation.
+- The shared resource envelope allows at most 2 MiB raw/final JSON, 30 top-level nodes, 100 total nodes, 20 datasets, node depth 8, 500 file-tree items, and file-tree depth 12.
+- Create-time file sources allow 512 KiB each and 1 MiB aggregate; relative reads stay inside the canonical project unless an explicit `--allow-read` root grants more.
 - Data-backed nodes require array datasets.
 - Contract must be regenerated after schema or manifest changes.
 - Renderer commands run from `app/`; CLI commands run from `cli/` or the installed binary.
 - The `/artifacts` base path is part of the public URL contract.
 - Annotation JSON is read with the shared Zod schema in both renderer and CLI.
-- Annotation mutations are written only by the local CLI server; static hosts cannot accept browser edits.
+- Local annotation mutations use the CLI's per-artifact atomic queue; published Cloudflare mutations use Worker R2 conditional retries.
+- Non-loopback local serving requires explicit remote-write exposure via `--allow-remote` or strict `VISUAL_ARTIFACT_ALLOW_REMOTE=1`.

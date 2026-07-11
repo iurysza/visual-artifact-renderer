@@ -27,13 +27,13 @@
 
 ## Implementation checklist
 
-- [ ] Type added to `ArtifactNode` union in `skill/app/src/lib/artifact-schema.ts`.
-- [ ] Zod schema branch added.
-- [ ] Manifest entry added in `skill/app/src/lib/artifact-manifest.ts`.
-- [ ] Adapter implemented in `skill/app/src/components/adapters/`.
-- [ ] Registered in `skill/app/src/components/component-registry.tsx`.
-- [ ] Contract regenerated with `cd skill/app && pnpm export:contract`.
-- [ ] Verification passes with `pnpm verify:artifacts`, `pnpm lint`, and `pnpm build`.
+- [ ] Type and Zod branch added in `shared/src/artifact-schema.ts`.
+- [ ] Manifest entry added in `shared/src/contract.ts`.
+- [ ] App compatibility exports/manifest consumer remain aligned.
+- [ ] Adapter implemented in `app/src/components/adapters/`.
+- [ ] Registered in `app/src/components/component-registry.tsx`.
+- [ ] Contract regenerated with `cd app && pnpm export:contract`.
+- [ ] Verification passes with `pnpm test`, `pnpm verify:artifacts`, `pnpm lint`, and `pnpm build`.
 - [ ] `ai-artifacts/docs/nodes.md` updated if the public catalog changes.
 
 ## Design smell test

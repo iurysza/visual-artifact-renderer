@@ -1,7 +1,6 @@
 # Build artifacts
 /dist/
 *.bun-build
-bun.lockb
 
 # Embedded assets copied at build time
 /src/assets/contract.json

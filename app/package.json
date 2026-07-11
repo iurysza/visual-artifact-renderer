@@ -8,6 +8,7 @@
     "build:cloud": "VISUAL_ARTIFACT_CLOUD_BUILD=1 next build && pnpm verify:cloud-build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import tsx --test --test-concurrency=1 'src/**/*.test.ts' 'src/**/*.test.tsx'",
     "verify:artifacts": "tsx scripts/verify/verify-artifacts.ts",
     "verify:cloud-build": "tsx scripts/verify/cloud-build-leaks.ts",
     "export:contract": "tsx scripts/contract/export-contract.ts",
@@ -15,6 +16,9 @@
     "health-check": "node scripts/qa/health-check.mjs",
     "validate:mermaid": "tsx scripts/mermaid/validate-mermaid.ts",
     "test:mermaid-validator": "tsx scripts/mermaid/test-mermaid-validator.ts"
+  },
+  "engines": {
+    "node": "22.22.3"
   },
   "dependencies": {
     "@agents/visual-artifact-annotations": "file:../shared",
@@ -45,14 +49,6 @@
     "@agents/visual-artifact-annotations": {
       "injected": true
     }
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "koffi",
-      "sharp",
-      "unrs-resolver"
-    ]
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

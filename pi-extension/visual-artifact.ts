@@ -25,6 +25,11 @@ function findCli(): string | null {
   }
 }
 
+export function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {
+  const { projectPath: _projectPath, ...spec } = params
+  return spec
+}
+
 function runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {
   const result = spawnSync(cli, ["create", "-", "--project", projectPath, "--json"], {
     input: `${JSON.stringify(spec)}\n`,
@@ -86,9 +91,10 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     promptGuidelines: [
       "For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.",
       "For simple visual artifacts, call create_visual_artifact directly with a JSON spec.",
-      "Run `visual-artifact contract` and only use supported node types and props.",
+      "Run `visual-artifact contract` and only use supported node types, props, and resource limits.",
       "Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.",
-      "The CLI validates the spec, writes it to the skill artifacts folder, and auto-starts the renderer if needed.",
+      "The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.",
+      "The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.",
     ],
     parameters: {
       type: "object",
@@ -116,7 +122,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
       }
 
       const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? ".")
-      const result = runCreate(cli, params, projectPath)
+      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)
 
       if (!result.ok) {
         throw new Error(result.error)

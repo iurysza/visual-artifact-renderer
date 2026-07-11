@@ -1,9 +1,16 @@
 import { resolve, join } from "node:path"
 import { spawn } from "node:child_process"
-import { loadConfig, localBaseUrl } from "../config.ts"
+import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
+import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
-import { applyMutations, parseAnnotationMutationsPayload, readAnnotationsDocument, resolveLocalAuthor, writeAnnotationsDocument } from "../lib/annotations.ts"
+import {
+  ArtifactNotFoundError,
+  mutateAnnotationsDocument,
+  parseAnnotationMutationsPayload,
+  readAnnotationsDocument,
+  resolveLocalAuthor,
+} from "../lib/annotations.ts"
 import type { AnnotationMutations } from "../lib/annotations.ts"
 import {
   bearerTokenMatches,
@@ -13,7 +20,7 @@ import {
   serverStatePath,
   writeServerState,
 } from "../lib/server-lifecycle.ts"
-import type { Logger } from "../logger.ts"
+import type { Logger, ResultData } from "../logger.ts"
 import { dirExists, fileExists } from "../util.ts"
 import type { Config } from "../types.ts"
 
@@ -50,6 +57,15 @@ function mimeType(filePath: string): string {
   return MIME_TYPES[ext] ?? "application/octet-stream"
 }
 
+function isLoopbackHost(host: string): boolean {
+  if (host === "localhost" || host === "::1") return true
+  if (host.startsWith("127.")) {
+    const parts = host.split(".")
+    if (parts.length === 4 && parts.every((p) => /^\d+$/.test(p) && Number(p) >= 0 && Number(p) <= 255)) return true
+  }
+  return false
+}
+
 function normalizeMountPath(value: string): string {
   value = value.trim()
   if (!value || value === "/") return ""
@@ -74,20 +90,41 @@ export interface ServeOpts {
   artifactsDir?: string
   mountPath?: string
   dataPath?: string
+  allowRemote?: boolean
 }
 
 export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
-  const overrides: Partial<Config> = {}
-  if (opts.port !== undefined) overrides.port = opts.port
-  if (opts.host !== undefined) overrides.host = opts.host
-  if (opts.outDir !== undefined) overrides.outDir = resolve(opts.outDir)
-  if (opts.artifactsDir !== undefined) overrides.artifactsDir = resolve(opts.artifactsDir)
-  if (opts.mountPath !== undefined) overrides.mountPath = opts.mountPath
-  if (opts.dataPath !== undefined) overrides.dataPath = opts.dataPath
-  if (opts.noOpen) overrides.open = false
-  if (opts.open) overrides.open = true
+  let config: Config
+  try {
+    const overrides: Partial<Config> = {}
+    if (opts.port !== undefined) overrides.port = opts.port
+    if (opts.host !== undefined) overrides.host = opts.host
+    if (opts.outDir !== undefined) overrides.outDir = opts.outDir
+    if (opts.artifactsDir !== undefined) overrides.artifactsDir = opts.artifactsDir
+    if (opts.mountPath !== undefined) overrides.mountPath = opts.mountPath
+    if (opts.dataPath !== undefined) overrides.dataPath = opts.dataPath
+    if (opts.open === false) overrides.open = false
+    if (opts.open === true) overrides.open = true
+    if (opts.allowRemote !== undefined) overrides.allowRemote = opts.allowRemote
 
-  const config = loadConfig(overrides)
+    config = loadConfig({ overrides })
+  } catch (error) {
+    if (error instanceof ConfigValidationError) {
+      log.error(error.message)
+      return 2
+    }
+    log.error(error instanceof Error ? error.message : String(error), error)
+    return 1
+  }
+
+  if (!config.allowRemote && !isLoopbackHost(config.host)) {
+    log.error(
+      `Refusing to bind to non-loopback host ${config.host}. ` +
+        "Pass --allow-remote or set VISUAL_ARTIFACT_ALLOW_REMOTE=1 to expose the writable API.",
+    )
+    return 2
+  }
+
   const outDir = config.outDir
   const artifactsDir = config.artifactsDir
   const mountPath = normalizeMountPath(config.mountPath)
@@ -161,7 +198,10 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
       },
     })
   } catch (error) {
-    log.error(`Could not start server on ${config.host}:${config.port}: ${error instanceof Error ? error.message : String(error)}`)
+    log.error(
+      `Could not start server on ${config.host}:${config.port}: ${error instanceof Error ? error.message : String(error)}`,
+      error,
+    )
     return 1
   }
 
@@ -169,7 +209,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     await writeServerState(state, statePath)
   } catch (error) {
     await server.stop(true)
-    log.error(`Could not write server state: ${error instanceof Error ? error.message : String(error)}`)
+    log.error(`Could not write server state: ${error instanceof Error ? error.message : String(error)}`, error)
     return 1
   }
 
@@ -187,10 +227,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
   process.once("SIGTERM", signalHandler)
 
   const localUrl = localBaseUrl(config)
-  log.success(`Visualizer server running at ${localUrl}`)
-  log.log(`  outDir:      ${outDir}`)
-  log.log(`  artifacts:   ${artifactsDir}`)
-  log.log(`  state:       ${statePath}`)
+  log.result({ command: "serve", url: localUrl })
 
   if (config.open) {
     openBrowser(localUrl)
@@ -212,9 +249,7 @@ export function serveShutdownApi(
   onShutdown: () => void,
 ): Response {
   if (stripped !== shutdownPath) return notFound()
-  if (req.method !== "POST") {
-    return jsonResponse(JSON.stringify({ error: "Method not allowed" }, null, 2), { status: 405 })
-  }
+  if (req.method !== "POST") return methodNotAllowed("POST")
   const authHeader = req.headers.get("authorization")
   if (!authHeader) {
     return jsonResponse(JSON.stringify({ error: "Missing authorization" }, null, 2), { status: 401 })
@@ -235,39 +270,44 @@ export async function serveApi(req: Request, stripped: string, artifactsDir: str
   }
 
   const mutationMatch = matchMutationRoute(reqPath, apiPath)
-  if (mutationMatch && req.method === "POST") {
-    const route = parseBundleRoute(mutationMatch.project, mutationMatch.slug)
-    if (!route) return badRequest("Invalid project or slug")
-    const projectDir = resolve(artifactsDir, route.project)
-    if (!isInsideArtifactsDir(projectDir, artifactsDir)) return badRequest("Invalid project or slug")
+  if (!mutationMatch) return notFound()
+  if (req.method !== "POST") return methodNotAllowed("POST")
 
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      return badRequest("Invalid JSON body")
-    }
-
-    let mutations: AnnotationMutations
-    try {
-      mutations = parseAnnotationMutationsPayload(body)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      return badRequest(message)
-    }
-
-    try {
-      const doc = await readAnnotationsDocument(artifactsDir, route)
-      const updated = applyMutations(doc, mutations)
-      await writeAnnotationsDocument(artifactsDir, route, updated)
-      return jsonResponse(JSON.stringify(updated, null, 2))
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 500 })
-    }
+  const rejection = annotationMutationRequestRejection(req)
+  if (rejection) {
+    return jsonResponse(JSON.stringify({ error: rejection.message }, null, 2), {
+      status: rejection.status,
+    })
   }
 
-  return notFound()
+  const route = parseBundleRoute(mutationMatch.project, mutationMatch.slug)
+  if (!route) return badRequest("Invalid project or slug")
+  const projectDir = resolve(artifactsDir, route.project)
+  if (!isInsideArtifactsDir(projectDir, artifactsDir)) return badRequest("Invalid project or slug")
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return badRequest("Invalid JSON body")
+  }
+
+  let mutations: AnnotationMutations
+  try {
+    mutations = parseAnnotationMutationsPayload(body)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return badRequest(message)
+  }
+
+  try {
+    const updated = await mutateAnnotationsDocument(artifactsDir, route, mutations)
+    return jsonResponse(JSON.stringify(updated, null, 2))
+  } catch (error) {
+    if (error instanceof ArtifactNotFoundError) return notFound()
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 500 })
+  }
 }
 
 export async function serveData(stripped: string, artifactsDir: string, dataPath: string): Promise<Response> {
@@ -305,8 +345,13 @@ export async function serveData(stripped: string, artifactsDir: string, dataPath
   if (annotationsMatch) {
     const route = parseBundleRoute(annotationsMatch.project, annotationsMatch.slug)
     if (!route) return notFound()
-    const doc = await readAnnotationsDocument(artifactsDir, route)
-    return jsonResponse(JSON.stringify(doc, null, 2))
+    try {
+      const doc = await readAnnotationsDocument(artifactsDir, route)
+      return jsonResponse(JSON.stringify(doc, null, 2))
+    } catch (error) {
+      if (error instanceof ArtifactNotFoundError) return notFound()
+      throw error
+    }
   }
 
   const assetMatch = matchAsset(reqPath, dataPath)
@@ -324,7 +369,9 @@ export async function serveData(stripped: string, artifactsDir: string, dataPath
 }
 
 function jsonResponse(body: string, init?: ResponseInit): Response {
-  return new Response(body, { ...init, headers: { "Content-Type": "application/json; charset=utf-8" } })
+  const headers = new Headers(init?.headers)
+  headers.set("Content-Type", "application/json; charset=utf-8")
+  return new Response(body, { ...init, headers })
 }
 
 function notFound(): Response {
@@ -333,6 +380,13 @@ function notFound(): Response {
 
 function badRequest(message: string): Response {
   return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 400 })
+}
+
+function methodNotAllowed(allow: string): Response {
+  return jsonResponse(JSON.stringify({ error: "Method not allowed" }, null, 2), {
+    status: 405,
+    headers: { Allow: allow },
+  })
 }
 
 function escapeRegex(value: string): string {

@@ -1,12 +1,50 @@
 // Shared, dependency-free source of truth for the visual artifact contract.
 // Used by the Next.js renderer export script and by the compiled CLI.
 
+import {
+  ARTIFACT_SLUG_MAX_LENGTH,
+  ARTIFACT_SPEC_RESOURCE_LIMITS,
+  MAX_TOP_LEVEL_NODES,
+  type ArtifactSpecResourceLimits,
+} from "./artifact-schema.js"
+
+export {
+  ARTIFACT_SLUG_MAX_LENGTH,
+  ARTIFACT_SPEC_RESOURCE_LIMITS,
+  ArtifactNodeSchema,
+  ArtifactResourceError,
+  ArtifactSizeError,
+  ArtifactSlugSchema,
+  ArtifactValidationError,
+  MAX_AGGREGATE_FILE_SOURCE_BYTES,
+  MAX_DATASETS,
+  MAX_FILE_SOURCE_BYTES,
+  MAX_FILE_TREE_DEPTH,
+  MAX_FILE_TREE_ITEMS,
+  MAX_NODE_DEPTH,
+  MAX_TOP_LEVEL_NODES,
+  MAX_TOTAL_NODES,
+  RAW_ARTIFACT_MAX_BYTES,
+  VisualArtifactSpecSchema,
+  parseRawArtifactJson,
+  parseVisualArtifactSpec,
+  preflightArtifactSpec,
+  safeParseVisualArtifactSpec,
+  type ArtifactColumn,
+  type ArtifactFlowItem,
+  type ArtifactNode,
+  type ArtifactPreflightResult,
+  type ArtifactSpecResourceLimits,
+  type ArtifactTone,
+  type VisualArtifactSpec,
+} from "./artifact-schema.js"
+
 export const ARTIFACT_SPEC_CONSTRAINTS = {
   slug: {
     type: "string",
     format: "kebab-case",
     minLength: 1,
-    maxLength: 80,
+    maxLength: ARTIFACT_SLUG_MAX_LENGTH,
   },
   title: {
     type: "string",
@@ -33,6 +71,7 @@ export const ARTIFACT_SPEC_CONSTRAINTS = {
   nodes: {
     type: "array",
     minItems: 1,
+    maxItems: MAX_TOP_LEVEL_NODES,
   },
 } as const
 
@@ -460,12 +499,14 @@ export interface SpecConstraints {
   nodes: {
     type: string
     minItems: number
+    maxItems: number
   }
 }
 
 export interface ArtifactContract {
   version: string
   spec: SpecConstraints
+  limits: ArtifactSpecResourceLimits
   nodeTypes: readonly string[]
   nodes: Record<string, NodeDef>
   dataNodes: readonly string[]
@@ -475,6 +516,7 @@ export interface ArtifactContract {
 export function createArtifactContract(): ArtifactContract {
   return {
     version: "1.0.0",
+    limits: ARTIFACT_SPEC_RESOURCE_LIMITS,
     spec: {
       slug: ARTIFACT_SPEC_CONSTRAINTS.slug,
       title: ARTIFACT_SPEC_CONSTRAINTS.title,
@@ -491,6 +533,7 @@ export function createArtifactContract(): ArtifactContract {
       nodes: {
         type: ARTIFACT_SPEC_CONSTRAINTS.nodes.type,
         minItems: ARTIFACT_SPEC_CONSTRAINTS.nodes.minItems,
+        maxItems: ARTIFACT_SPEC_CONSTRAINTS.nodes.maxItems,
       },
     },
     nodeTypes: ARTIFACT_NODE_TYPES,

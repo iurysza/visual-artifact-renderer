@@ -5,7 +5,7 @@
 ## App theming
 
 - `next-themes` toggles `.dark` on `html`.
-- CSS variables live in `skill/app/src/app/globals.css`.
+- CSS variables live in `app/src/app/globals.css`.
 - Tailwind v4 maps variables via `@theme inline`.
 - Adapters should use semantic tokens through classes, not hardcoded hex values.
 
@@ -26,12 +26,12 @@ Adapters should rely on semantic tokens unless the manifest explicitly calls for
 
 ## Mermaid theming
 
-Mermaid renders client-side in `skill/app/src/components/mermaid/`. The renderer supplies theme-aware CSS and viewport controls for zoom, pan, fit, and keyboard navigation.
+Mermaid renders client-side in `app/src/components/mermaid/`. The renderer supplies theme-aware CSS and viewport controls for zoom, pan, fit, and keyboard navigation.
 
 ## Source files
 
-- Theme tokens: `skill/app/src/app/globals.css`
-- Theme provider: `skill/app/src/components/theme-provider.tsx`
-- Theme toggle: `skill/app/src/components/theme-toggle.tsx`
-- Mermaid renderer: `skill/app/src/components/mermaid/*`
-- SVG iframe: `skill/app/src/components/svg-diagram.tsx`
+- Theme tokens: `app/src/app/globals.css`
+- Theme provider: `app/src/components/theme-provider.tsx`
+- Theme toggle: `app/src/components/theme-toggle.tsx`
+- Mermaid renderer: `app/src/components/mermaid/*`
+- SVG iframe: `app/src/components/svg-diagram.tsx`

@@ -5,7 +5,7 @@
 ## Mermaid
 
 - Input is Mermaid text, not executable renderer code.
-- Rendered client-side in `skill/app/src/components/mermaid/`.
+- Rendered client-side in `app/src/components/mermaid/`.
 - Supports zoom, pan, fit, and keyboard controls.
 - Use `pnpm validate:mermaid` for syntax checks when diagrams get complex.
 - Prefer Mermaid for topology, sequence, flowchart, ERD, state, class, and C4-style diagrams.
@@ -13,7 +13,7 @@
 ## SVG diagram
 
 - Input is a complete self-contained HTML document stored in `props.html`.
-- Rendered inside a sandboxed iframe by `skill/app/src/components/svg-diagram.tsx`.
+- Rendered inside a sandboxed iframe by `app/src/components/svg-diagram.tsx`.
 - Useful when Mermaid cannot express the desired layout or interaction.
 - The iframe must bring its own theme variables and theme bootstrap script.
 

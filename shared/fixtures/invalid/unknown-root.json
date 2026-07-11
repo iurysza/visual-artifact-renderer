@@ -1,0 +1,8 @@
+{
+  "slug": "unknown-root",
+  "title": "Unknown root property",
+  "unexpectedRoot": true,
+  "nodes": [
+    { "type": "text", "props": { "text": "Hello" } }
+  ]
+}
