@@ -14,6 +14,14 @@ log() { printf '[install] %s\n' "$*"; }
 err() { printf '[install] error: %s\n' "$*" >&2; exit 1; }
 warn() { printf '[install] warning: %s\n' "$*" >&2; }
 
+RUNTIME_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --runtime-only) RUNTIME_ONLY=1 ;;
+    *) err "unknown option: $arg" ;;
+  esac
+done
+
 need() {
   command -v "$1" >/dev/null 2>&1 || err "$1 is required"
 }
@@ -136,32 +144,35 @@ main() {
     warn "app static export missing from archive"
   fi
 
-  # Install skill bundle, preserving any existing artifacts/
-  mkdir -p "$SKILL_DIR"
-  for entry in "$SKILL_DIR"/* "$SKILL_DIR"/.[!.]* "$SKILL_DIR"/..?*; do
-    [ -e "$entry" ] || continue
-    name="${entry##*/}"
-    [ "$name" = "artifacts" ] && continue
-    rm -rf "$entry"
-  done
-  cp -R "${skill_src}/"* "$SKILL_DIR/" 2>/dev/null || true
-  mkdir -p "${SKILL_DIR}/artifacts"
-  log "installed skill bundle to ${SKILL_DIR}"
+  if [ "$RUNTIME_ONLY" -eq 1 ]; then
+    log "runtime-only install; skipped agent skill and Pi extension copies"
+  else
+    # Install skill bundle, preserving any existing artifacts/
+    mkdir -p "$SKILL_DIR"
+    for entry in "$SKILL_DIR"/* "$SKILL_DIR"/.[!.]* "$SKILL_DIR"/..?*; do
+      [ -e "$entry" ] || continue
+      name="${entry##*/}"
+      [ "$name" = "artifacts" ] && continue
+      rm -rf "$entry"
+    done
+    cp -R "${skill_src}/"* "$SKILL_DIR/" 2>/dev/null || true
+    mkdir -p "${SKILL_DIR}/artifacts"
+    log "installed skill bundle to ${SKILL_DIR}"
 
-  # Install Pi extension if Pi is detected
-  if [ -d "$PI_AGENT_DIR" ]; then
-    if [ -f "$ext_src" ]; then
-      mkdir -p "$PI_AGENT_DIR/extensions"
-      rm -f "$EXTENSION_TARGET"
-      cp "$ext_src" "$EXTENSION_TARGET"
-      log "installed Pi extension to ${EXTENSION_TARGET}"
+    # Legacy convenience install. Pi package users should pass --runtime-only.
+    if [ -d "$PI_AGENT_DIR" ]; then
+      if [ -f "$ext_src" ]; then
+        mkdir -p "$PI_AGENT_DIR/extensions"
+        rm -f "$EXTENSION_TARGET"
+        cp "$ext_src" "$EXTENSION_TARGET"
+        log "installed Pi extension to ${EXTENSION_TARGET}"
 
-      # Try to register the extension in Pi settings.json, deduplicating by realpath.
-      settings_file="$PI_AGENT_DIR/settings.json"
-      if [ -f "$settings_file" ]; then
-        registered=0
-        if command -v python3 >/dev/null 2>&1; then
-          if python3 - "$settings_file" "$EXTENSION_TARGET" <<'PY' 2>/dev/null; then
+        # Try to register the extension in Pi settings.json, deduplicating by realpath.
+        settings_file="$PI_AGENT_DIR/settings.json"
+        if [ -f "$settings_file" ]; then
+          registered=0
+          if command -v python3 >/dev/null 2>&1; then
+            if python3 - "$settings_file" "$EXTENSION_TARGET" <<'PY' 2>/dev/null; then
 import json, os, sys
 p, ext = sys.argv[1], sys.argv[2]
 try:
@@ -181,25 +192,26 @@ if ext not in keep:
     sys.exit(0)
 sys.exit(1)
 PY
-            registered=1
+              registered=1
+            fi
+          elif command -v jq >/dev/null 2>&1; then
+            if ! jq -e --arg ext "$EXTENSION_TARGET" '.extensions // [] | index($ext)' "$settings_file" >/dev/null 2>&1; then
+              jq --arg ext "$EXTENSION_TARGET" '.extensions = ((.extensions // []) + [$ext])' "$settings_file" > "${settings_file}.tmp" && mv "${settings_file}.tmp" "$settings_file"
+              registered=1
+            fi
           fi
-        elif command -v jq >/dev/null 2>&1; then
-          if ! jq -e --arg ext "$EXTENSION_TARGET" '.extensions // [] | index($ext)' "$settings_file" >/dev/null 2>&1; then
-            jq --arg ext "$EXTENSION_TARGET" '.extensions = ((.extensions // []) + [$ext])' "$settings_file" > "${settings_file}.tmp" && mv "${settings_file}.tmp" "$settings_file"
-            registered=1
+          if [ "$registered" -eq 1 ]; then
+            log "registered Pi extension in ${settings_file}"
           fi
         fi
-        if [ "$registered" -eq 1 ]; then
-          log "registered Pi extension in ${settings_file}"
-        fi
-      fi
 
-      log "run /reload in Pi, or restart Pi, to load the extension."
+        log "run /reload in Pi, or restart Pi, to load the extension."
+      else
+        warn "Pi extension missing from archive"
+      fi
     else
-      warn "Pi extension missing from archive"
+      log "Pi not detected; skipped Pi extension."
     fi
-  else
-    log "Pi not detected; skipped Pi extension."
   fi
 
   # Write version stamp

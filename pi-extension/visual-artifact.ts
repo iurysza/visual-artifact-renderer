@@ -3,8 +3,6 @@ import { resolve } from "node:path"
 import os from "node:os"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 
-const SKILL_PATH = resolve(os.homedir(), ".agents", "skills", "visual-artifact", "SKILL.md")
-
 function findCli(): string | null {
   try {
     return execSync("command -v visual-artifact", { encoding: "utf8", timeout: 3000 }).trim()
@@ -50,10 +48,6 @@ function runCreate(cli: string, spec: Record<string, unknown>, projectPath: stri
 }
 
 export default function visualArtifactExtension(pi: ExtensionAPI) {
-  pi.on("resources_discover", () => {
-    return { skillPaths: [SKILL_PATH] }
-  })
-
   pi.registerCommand("visual-diff", {
     description: "Generate a visual diff review as a visual artifact.",
     argumentHint: "[branch|commit|range|#PR|HEAD]",

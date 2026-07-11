@@ -4,6 +4,20 @@
   "private": true,
   "description": "JSON-to-UI runtime for rendered artifacts",
   "license": "MIT",
+  "keywords": [
+    "pi-package"
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./pi-extension/visual-artifact.ts"
+    ],
+    "skills": [
+      "./skill"
+    ]
+  },
   "engines": {
     "node": "22.22.3",
     "bun": "1.1.34",

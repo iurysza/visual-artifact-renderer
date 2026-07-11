@@ -14,6 +14,17 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
+For Pi, use its package manager for the extension and skill while the release installer provides the CLI and renderer:
+
+```bash
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh \
+  | sh -s -- --runtime-only
+pi install git:github.com/iurysouza/visual-artifact-renderer
+visual-artifact doctor
+```
+
+Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysouza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. Do not combine the Pi package with the legacy extension copy or a separate `npx skills` install; the package declares both resources in root `package.json`.
+
 Install from this repo:
 
 ```bash
@@ -32,7 +43,9 @@ visual-artifact doctor
 | Static renderer export | `~/.local/share/visual-artifact/app/out` |
 | Skill files | `~/.agents/skills/visual-artifact/` |
 | Artifact storage | `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/` |
-| Pi extension | `~/.pi/agent/extensions/visual-artifact.ts` |
+| Pi extension | `~/.pi/agent/extensions/visual-artifact.ts` (legacy convenience install) |
+
+With the official Pi package, Pi stores the git checkout under `~/.pi/agent/git/` and records the package source in `~/.pi/agent/settings.json`; the extension and skill load from that package instead of copied top-level paths.
 
 For Pi, run `/reload` or restart Pi after install.
 

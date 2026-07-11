@@ -77,7 +77,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Choose your path
 
-Use the shell installer if you only want to create and view artifacts locally. It installs the CLI, static renderer, agent skill, and Pi extension. You do not need to clone this repo for local use.
+Use the shell installer if you only want to create and view artifacts locally. By default it installs the CLI, static renderer, agent skill, and a legacy convenience copy of the Pi extension. Pi users should prefer the official Pi package flow below. You do not need to clone this repo for local use.
 
 Clone the repo if you want to develop the renderer or deploy the Cloudflare Worker. First-time Cloudflare deployment needs the repo because the Worker source, wrangler config, and cloud build live here.
 
@@ -93,7 +93,7 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-Repository verification uses Node.js 22.22.3, Bun 1.1.34, and pnpm 11.5.2. Pi is optional; if present, the installer registers the Pi extension.
+Repository verification uses Node.js 22.22.3, Bun 1.1.34, and pnpm 11.5.2.
 
 Install from this repo instead if you are developing or preparing a deployment:
 
@@ -115,9 +115,37 @@ visual-artifact bootstrap
 
 More install and CLI detail: [`ai-artifacts/docs/cli.md`](./ai-artifacts/docs/cli.md).
 
+### Install the official Pi package
+
+Pi can manage the extension and skill together from this Git repository. Install the CLI and renderer without legacy resource copies, then install the package:
+
+```bash
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh \
+  | sh -s -- --runtime-only
+pi install git:github.com/iurysza/visual-artifact-renderer
+visual-artifact doctor
+```
+
+Run `/reload` in an existing Pi session or restart Pi. Pi records the package in `~/.pi/agent/settings.json`; manage it with:
+
+```bash
+pi list
+pi config
+pi update --extensions
+pi remove git:github.com/iurysouza/visual-artifact-renderer
+```
+
+For a reproducible install, pin a release tag:
+
+```bash
+pi install git:github.com/iurysouza/visual-artifact-renderer@v<version>
+```
+
+Do not also install the skill with `npx skills` or copy `pi-extension/visual-artifact.ts`; the Pi package already provides both resources.
+
 ### Install the agent skill with `npx`
 
-Install only the `visual-artifact` skill from GitHub with the open `skills` CLI:
+For other compatible agents, install only the `visual-artifact` skill from GitHub with the open `skills` CLI:
 
 ```bash
 npx skills add iurysza/visual-artifact-renderer --skill visual-artifact
