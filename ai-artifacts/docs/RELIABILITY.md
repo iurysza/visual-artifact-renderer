@@ -8,7 +8,7 @@
 2. **CLI pre-write** — `cli/src/validate.ts` calls that shared schema before writing.
 3. **Renderer post-read** — `app/src/lib/contract/artifact-schema.ts` re-exports and applies the same shared schema before render.
 4. **Contract sync** — `app/scripts/verify/verify-artifacts.ts` checks schema, manifest, saved artifacts, and tracked `cli/assets/contract.json`.
-5. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates to the CLI instead of duplicating validation.
+5. **Pi boundary** — `pi-extension/visual-artifact.ts` delegates schema validation to the CLI.
 
 ## Core checks
 

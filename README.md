@@ -95,7 +95,7 @@ visual-artifact doctor
 
 Repository verification uses Node.js 22.22.3, Bun 1.1.34, and pnpm 11.5.2.
 
-Install from this repo instead if you are developing or preparing a deployment:
+For development or deployment, install from the repository:
 
 ```bash
 cd cli
@@ -113,7 +113,7 @@ Update a source-built CLI and renderer install with:
 visual-artifact bootstrap
 ```
 
-`bootstrap` does not install agent resources; use the Pi package or `npx skills` flow below.
+`bootstrap` installs the CLI and renderer. Install agent resources with the Pi package or `npx skills`.
 
 More install and CLI detail: [`ai-artifacts/docs/cli.md`](./ai-artifacts/docs/cli.md).
 
@@ -127,7 +127,7 @@ pi install git:github.com/iurysza/visual-artifact-renderer
 visual-artifact doctor
 ```
 
-Run `/reload` in an existing Pi session or restart Pi. Pi records the package in `~/.pi/agent/settings.json`; manage it with:
+Run `/reload` in an existing Pi session or restart Pi. Manage the package with:
 
 ```bash
 pi list
@@ -142,7 +142,7 @@ For a reproducible install, pin a release tag:
 pi install git:github.com/iurysouza/visual-artifact-renderer@v<version>
 ```
 
-Do not also install the skill with `npx skills` or copy `pi-extension/visual-artifact.ts`; the Pi package already provides both resources.
+The Pi package includes the extension and skill.
 
 ### Install the agent skill with `npx`
 

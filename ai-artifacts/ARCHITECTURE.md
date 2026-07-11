@@ -59,7 +59,7 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | `open` | Open index or artifact URL. | `src/commands/open.ts` |
 | `doctor` | Check binary, deps, contract, out dir, artifacts dir, server. | `src/commands/doctor.ts` |
 
-Source development stores artifacts under `<project-root>/artifacts`. Installed binaries store mutable artifacts under `~/.local/share/visual-artifact/artifacts`; agent package locations are never runtime storage.
+Source development stores artifacts under `<project-root>/artifacts`. Installed binaries store artifacts under `~/.local/share/visual-artifact/artifacts`.
 
 ### 2.3 Shared executable contracts (`shared/`)
 

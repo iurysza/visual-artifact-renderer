@@ -22,7 +22,7 @@ pi install git:github.com/iurysouza/visual-artifact-renderer
 visual-artifact doctor
 ```
 
-Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysouza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. Do not also install the skill with `npx skills`; the package declares both resources in root `package.json`.
+Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysouza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. The package includes the extension and skill.
 
 Install from this repo:
 
@@ -34,7 +34,7 @@ export PATH="$HOME/.local/bin:$PATH"
 visual-artifact doctor
 ```
 
-`bootstrap` builds and installs runtime files only.
+`bootstrap` builds and installs the CLI and renderer.
 
 | Piece | Installed location |
 |---|---|
@@ -42,7 +42,7 @@ visual-artifact doctor
 | Static renderer export | `~/.local/share/visual-artifact/app/out` |
 | Artifact storage | `~/.local/share/visual-artifact/artifacts/<project>/<slug>/` |
 
-Pi stores the package checkout under `~/.pi/agent/git/` and records its source in `~/.pi/agent/settings.json`; the extension and skill load from that package.
+The Pi package provides the extension and skill.
 
 For Pi, run `/reload` or restart Pi after install.
 
@@ -60,7 +60,7 @@ Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited
 
 | Command | Purpose |
 |---|---|
-| `visual-artifact bootstrap [--dry-run]` | Build renderer and CLI; install runtime files only. |
+| `visual-artifact bootstrap [--dry-run]` | Build and install the renderer and CLI. |
 | `visual-artifact create [spec.json or -] [--project path] [--dry-run] [--no-serve] [--publish [profile]] [--allow-read dir]` | Validate, write, serve, and optionally publish an artifact. `--allow-read` is repeatable. |
 | `visual-artifact validate [spec.json or -]` | Validate a spec without writing it. |
 | `visual-artifact contract` | Print the current artifact contract. |
