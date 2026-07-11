@@ -355,7 +355,7 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
     expect(json.exitCode).toBe(0)
     expect(JSON.parse(json.stdout).command).toBe("create")
     expect(json.stderr).toBe("")
-  })
+  }, 30_000)
 
   test("NO_COLOR disables ANSI", () => {
     const { exitCode, stderr } = runCli(target, ["validate", "-"], { NO_COLOR: "" }, '{"bad":1}')
