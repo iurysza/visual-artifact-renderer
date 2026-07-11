@@ -230,7 +230,7 @@
 
 ### Validation
 
-- Final clean-tree `./scripts/verify.sh` — pass with exact Node 22.22.3, Bun 1.1.34, and pnpm 11.5.2 pins; CLI 287/287; app 53/53; Worker 29/29; shared/CLI/Worker typechecks; native CLI build smoke; app lint/export/contract drift/82-spec verification/build; random-port current-route health smoke.
+- Final clean-tree `./scripts/verify.sh` — pass with exact Node 22.22.3, Bun 1.1.34, and pnpm 11.5.2 pins; Pi extension 1/1; CLI 287/287; app 53/53; Worker 29/29; shared/CLI/Worker typechecks; native CLI build smoke; app lint/export/contract drift/82-spec verification/build; random-port current-route health smoke.
 - Rebuilt and installed the CLI from the verified tree; installed and compiled binary SHA-256 hashes match.
 - Compiled+installed smoke matrix — pass: help/version/conflict; create/validate human+JSON+plain+quiet+invalid; contained, explicitly allowed, traversal, and oversized file-tree reads; serve/status; annotation 404/405/415/403; concurrent writes; tokenized stop.
 - Final `sem_diff`, raw history, and per-commit path audit — complete. Updater-owned `.agents`, `.pi`, and `.codex` changes in this P1 range appear only in `607697c`.
@@ -238,7 +238,8 @@
 
 ### Integration fix
 
-- The first final gate exposed one loaded-runner timeout in the three-subprocess quiet-output test. Its timeout now matches the subprocess budget; focused integration (98/98) and two subsequent complete repository gates pass.
+- The first final gate exposed one loaded-runner timeout in the three-subprocess quiet-output test. Its timeout now matches the subprocess budget; focused integration (98/98) and subsequent complete repository gates pass.
+- Creating the requested review artifact exposed a Pi boundary leak: routing-only `projectPath` was forwarded into the strict artifact spec. The extension now strips it before CLI validation; a dedicated Pi boundary test runs in `verify.sh`.
 
 ### Residual risks
 
@@ -249,4 +250,6 @@
 ### Commits
 
 - `8aaf7d5` — `test(cli): tolerate loaded subprocess matrix`.
-- Final evidence: this documentation commit.
+- `462d945` — `fix(pi): keep project path out of artifact specs`.
+- `c263214` — `docs(p1): record final verification`.
+- Final follow-up evidence: this documentation commit.
