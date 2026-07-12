@@ -620,7 +620,7 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
     }
   })
 
-  test("plain list, doctor, status, and stop emit stable records", async () => {
+  async function writeArtifactFixture(): Promise<Record<string, string>> {
     const bundleDir = join(artifactsDir, "demo", "artifact-one")
     await mkdir(bundleDir, { recursive: true })
     await mkdir(outDir, { recursive: true })
@@ -629,30 +629,50 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
       title: "Artifact One",
       nodes: [{ type: "text", props: { text: "one" } }],
     }))
-    const env = baseEnv(artifactsDir, outDir, stateDir)
+    return baseEnv(artifactsDir, outDir, stateDir)
+  }
 
-    const projects = runCli(target, ["--plain", "list"], env)
-    expect(projects.exitCode).toBe(0)
-    expect(projects.stderr).toBe("")
-    expect(projects.stdout).toMatch(/^PROJECT\tdemo\t1\t/)
+  test("plain project list emits a stable record", async () => {
+    const env = await writeArtifactFixture()
+    const result = runCli(target, ["--plain", "list"], env)
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe("")
+    expect(result.stdout).toMatch(/^PROJECT\tdemo\t1\t/)
+  })
 
-    const artifacts = runCli(target, ["--plain", "list", "demo"], env)
-    expect(artifacts.exitCode).toBe(0)
-    expect(artifacts.stderr).toBe("")
-    expect(artifacts.stdout).toContain("ARTIFACT\tdemo\tartifact-one\tArtifact One\t")
+  test("plain artifact list emits a stable record", async () => {
+    const env = await writeArtifactFixture()
+    const result = runCli(target, ["--plain", "list", "demo"], env)
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe("")
+    expect(result.stdout).toContain("ARTIFACT\tdemo\tartifact-one\tArtifact One\t")
+  })
 
-    const doctor = runCli(target, ["--plain", "doctor"], env)
-    expect([0, 1]).toContain(doctor.exitCode)
-    expect(doctor.stdout).toMatch(/^(PASS|FAIL)\t/)
-    expect(doctor.stdout).not.toContain("[object Object]")
+  test("plain doctor emits stable records", () => {
+    const result = runCli(target, ["--plain", "doctor"], baseEnv(artifactsDir, outDir, stateDir))
+    expect([0, 1]).toContain(result.exitCode)
+    expect(result.stdout).toMatch(/^(PASS|FAIL)\t/)
+    expect(result.stdout).not.toContain("[object Object]")
+  })
 
-    const status = runCli(target, ["--plain", "serve", "status", "--port", "49153"], env)
-    expect(status.exitCode).toBe(1)
-    expect(status.stdout).toMatch(/^STOPPED\t.*\tUNTRACKED\t--$/m)
+  test("plain serve status emits a stable record", () => {
+    const result = runCli(
+      target,
+      ["--plain", "serve", "status", "--port", "49153"],
+      baseEnv(artifactsDir, outDir, stateDir),
+    )
+    expect(result.exitCode).toBe(1)
+    expect(result.stdout).toMatch(/^STOPPED\t.*\tUNTRACKED\t--$/m)
+  })
 
-    const stop = runCli(target, ["--plain", "serve", "stop", "--port", "49153"], env)
-    expect(stop.exitCode).toBe(0)
-    expect(stop.stdout).toMatch(/^NOOP\t.*\tnone\t--$/m)
+  test("plain serve stop emits a stable record", () => {
+    const result = runCli(
+      target,
+      ["--plain", "serve", "stop", "--port", "49153"],
+      baseEnv(artifactsDir, outDir, stateDir),
+    )
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toMatch(/^NOOP\t.*\tnone\t--$/m)
   })
 
   test("plain bootstrap dry-run emits PASS/FAIL", () => {
