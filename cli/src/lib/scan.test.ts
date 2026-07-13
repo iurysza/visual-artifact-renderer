@@ -15,7 +15,12 @@ describe("listProjectArtifacts", () => {
       await mkdir(join(dir, "my-project", "bundled-artifact"), { recursive: true })
       await writeFile(
         join(dir, "my-project", "bundled-artifact", "artifact.json"),
-        JSON.stringify({ title: "Bundled", description: "desc" }),
+        JSON.stringify({
+          title: "Bundled",
+          description: "desc",
+          artifactType: "report",
+          topics: ["release", "quality"],
+        }),
         "utf8",
       )
       await writeFile(
@@ -28,6 +33,8 @@ describe("listProjectArtifacts", () => {
       expect(artifacts).toHaveLength(1)
       expect(artifacts[0].slug).toBe("bundled-artifact")
       expect(artifacts[0].title).toBe("Bundled")
+      expect(artifacts[0].artifactType).toBe("report")
+      expect(artifacts[0].topics).toEqual(["release", "quality"])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

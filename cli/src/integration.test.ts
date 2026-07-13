@@ -227,8 +227,9 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
       baseEnv(artifactsDir, outDir, stateDir),
     )
     expect(exitCode).toBe(1)
-    expect(stdout).toContain("http://[::1]:49152/artifacts")
+    expect(stdout).toContain("http://[::1]:49152")
     expect(stdout).not.toContain("[[::1]]")
+    expect(stdout).not.toContain("/artifacts")
   })
 
   test("invalid base URL exits 2", () => {
@@ -299,12 +300,6 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
     expect(exitCode).toBe(2)
     expect(stdout).toBe("")
     expect(stderr).toContain("empty")
-  })
-
-  test("invalid mount path exits 2", () => {
-    const { exitCode, stdout } = runCli(target, ["validate", "-"], { VISUAL_ARTIFACT_MOUNT_PATH: "relative" }, validSpec)
-    expect(exitCode).toBe(2)
-    expect(stdout).toBe("")
   })
 
   test("invalid data path exits 2", () => {
@@ -466,13 +461,13 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
     }
     const env = {
       ...baseEnv(artifactsDir, outDir, stateDir),
-      VISUAL_ARTIFACT_BASE_URL: "https://example.test/artifacts",
+      VISUAL_ARTIFACT_BASE_URL: "https://example.test",
       PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
     }
 
     const plain = runCli(target, ["--plain", "open", "demo/report"], env)
     expect(plain.exitCode).toBe(0)
-    expect(plain.stdout.trim()).toBe("https://example.test/artifacts/demo/report/")
+    expect(plain.stdout.trim()).toBe("https://example.test/demo/report/")
     expect(plain.stderr).toBe("")
 
     const json = runCli(target, ["--json", "open", "demo/report"], env)
@@ -482,7 +477,7 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
       command: "open",
       project: "demo",
       slug: "report",
-      url: "https://example.test/artifacts/demo/report/",
+      url: "https://example.test/demo/report/",
     })
     expect(json.stderr).toBe("")
   })

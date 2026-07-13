@@ -18,7 +18,6 @@ const config: Config = {
   outDir: "/tmp/out",
   port: 9998,
   host: "127.0.0.1",
-  mountPath: "/artifacts",
   dataPath: "/data/artifacts",
   open: false,
   allowRemote: false,
@@ -58,18 +57,15 @@ describe("serve stop/status lifecycle", () => {
   let oldXdgStateHome: string | undefined
   let oldPort: string | undefined
   let oldHost: string | undefined
-  let oldMountPath: string | undefined
 
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "visualizer-lifecycle-"))
     oldXdgStateHome = process.env.XDG_STATE_HOME
     oldPort = process.env.VISUAL_ARTIFACT_PORT
     oldHost = process.env.VISUAL_ARTIFACT_HOST
-    oldMountPath = process.env.VISUAL_ARTIFACT_MOUNT_PATH
     process.env.XDG_STATE_HOME = dir
     process.env.VISUAL_ARTIFACT_PORT = String(config.port)
     process.env.VISUAL_ARTIFACT_HOST = config.host
-    process.env.VISUAL_ARTIFACT_MOUNT_PATH = config.mountPath
   })
 
   afterEach(async () => {
@@ -79,8 +75,6 @@ describe("serve stop/status lifecycle", () => {
     else process.env.VISUAL_ARTIFACT_PORT = oldPort
     if (oldHost === undefined) delete process.env.VISUAL_ARTIFACT_HOST
     else process.env.VISUAL_ARTIFACT_HOST = oldHost
-    if (oldMountPath === undefined) delete process.env.VISUAL_ARTIFACT_MOUNT_PATH
-    else process.env.VISUAL_ARTIFACT_MOUNT_PATH = oldMountPath
     await rm(dir, { recursive: true, force: true })
   })
 

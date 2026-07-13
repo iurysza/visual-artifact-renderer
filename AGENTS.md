@@ -56,10 +56,10 @@ Run `pnpm visual:qa` if you touched adapters or styling.
 
 ```bash
 cd app
-pnpm dev          # http://localhost:9999/artifacts  (dev + HMR + live mode)
+pnpm dev          # http://localhost:9999/  (dev + HMR + live mode)
 
 cd ../cli
-bun run src/main.ts serve --no-open  # http://localhost:9998/artifacts  (static preview + live JSON)
+bun run src/main.ts serve --no-open  # http://localhost:9998/  (static preview + live JSON)
 ```
 
 The CLI is self-contained under `cli/`. `visual-artifact bootstrap` builds `app/`, compiles the CLI, and symlinks the binary into `~/.pi/bin/`.
@@ -126,12 +126,12 @@ Run inside herdr (`HERDR_ENV=1`). Each long-running process gets its own split p
    herdr pane run "$LIVE_PANE" "node .agents/skills/impeccable/scripts/live-server.mjs start"
    herdr wait output "$LIVE_PANE" --match "ready|listening" --regex --timeout 15000
    node .agents/skills/impeccable/scripts/live-status.mjs
-   curl -s http://localhost:9999/artifacts/ | rg 'http://localhost:8400/live\.js'
+   curl -s http://localhost:9999/ | rg 'http://localhost:8400/live\.js'
    ```
 
 3. Open the site in Zen (or the user's browser of choice):
    ```bash
-   open -a Zen 'http://localhost:9999/artifacts/'
+   open -a Zen 'http://localhost:9999/'
    ```
 
 4. Start the poll loop in its own pane and wait for it to confirm it is polling. **This must be running before the user clicks Go** — the browser queues events on the helper server and the spinner spins forever if no agent pulls them.

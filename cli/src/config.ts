@@ -12,7 +12,6 @@ import type { Config } from "./types.ts"
 // never collide. See AGENTS.md "Server roles".
 export const DEFAULT_PORT = 9998
 export const DEFAULT_HOST = "127.0.0.1"
-export const DEFAULT_MOUNT_PATH = "/artifacts"
 export const DEFAULT_DATA_PATH = "/data/artifacts"
 
 export { Config }
@@ -175,7 +174,7 @@ export function localBaseUrl(config: Config): string {
   let host = config.host
   if (host === "0.0.0.0" || host === "::") host = "127.0.0.1"
   const displayHost = host.includes(":") ? `[${host}]` : host
-  return `http://${displayHost}:${config.port}${config.mountPath}`
+  return `http://${displayHost}:${config.port}`
 }
 
 export function artifactBaseUrl(config: Config): string {
@@ -184,24 +183,24 @@ export function artifactBaseUrl(config: Config): string {
   return localBaseUrl(config)
 }
 
-function normalizeUrlPath(value: string, label: "mount" | "data"): string {
+function normalizeDataPath(value: string): string {
   const trimmed = value.trim()
-  if (!trimmed) throw new ConfigValidationError(`${label} path must not be empty`)
+  if (!trimmed) throw new ConfigValidationError("data path must not be empty")
   if (!trimmed.startsWith("/")) {
-    throw new ConfigValidationError(`${label} path must be absolute: ${value}`)
+    throw new ConfigValidationError(`data path must be absolute: ${value}`)
   }
   if (hasControlChars(trimmed)) {
-    throw new ConfigValidationError(`${label} path contains control characters`)
+    throw new ConfigValidationError("data path contains control characters")
   }
   if (/[\\?#]/.test(trimmed)) {
-    throw new ConfigValidationError(`${label} path contains invalid characters: ${value}`)
+    throw new ConfigValidationError(`data path contains invalid characters: ${value}`)
   }
 
   const normalized = posix.normalize(trimmed).replace(/\/+$/, "") || "/"
-  if (label === "data" && normalized === "/") {
+  if (normalized === "/") {
     throw new ConfigValidationError("data path must not be root (/)")
   }
-  return label === "mount" && normalized === "/" ? "" : normalized
+  return normalized
 }
 
 export function resolveFsPath(value: string | undefined, fallback: () => string): string {
@@ -234,7 +233,6 @@ export const ConfigSchema = z
     outDir: z.string().min(1),
     port: z.number().int().min(1).max(65535),
     host: z.string().min(1),
-    mountPath: z.string(),
     dataPath: z.string().min(1).regex(/^\//),
     open: z.boolean(),
     allowRemote: z.boolean(),
@@ -271,13 +269,8 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
   const port = parsePort(portRaw)
 
   const host = validateHost(overrides.host ?? process.env.VISUAL_ARTIFACT_HOST ?? DEFAULT_HOST)
-  const mountPath = normalizeUrlPath(
-    overrides.mountPath ?? process.env.VISUAL_ARTIFACT_MOUNT_PATH ?? DEFAULT_MOUNT_PATH,
-    "mount",
-  )
-  const dataPath = normalizeUrlPath(
+  const dataPath = normalizeDataPath(
     overrides.dataPath ?? process.env.VISUAL_ARTIFACT_DATA_PATH ?? DEFAULT_DATA_PATH,
-    "data",
   )
   const open = parseStrictBoolean(
     overrides.open !== undefined ? (overrides.open ? "1" : "0") : process.env.VISUAL_ARTIFACT_OPEN,
@@ -304,7 +297,6 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
     outDir,
     port,
     host,
-    mountPath,
     dataPath,
     open,
     allowRemote,

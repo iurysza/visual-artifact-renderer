@@ -1,11 +1,14 @@
 import { readdir, readFile, stat } from "node:fs/promises"
 import { join } from "node:path"
+import { ARTIFACT_TYPES, type ArtifactType } from "@agents/visual-artifact-annotations/contract"
 import { BUNDLE_FILES } from "./paths.ts"
 import { fileExists, isKebabCase } from "../util.ts"
 
 export interface ArtifactMeta {
   title?: string
   description?: string
+  artifactType?: ArtifactType
+  topics?: string[]
 }
 
 export interface ProjectIndexEntry {
@@ -18,6 +21,8 @@ export interface ArtifactIndexEntry {
   slug: string
   title?: string
   description?: string
+  artifactType?: ArtifactType
+  topics?: string[]
   modifiedAt: string
   project: string
 }
@@ -26,7 +31,13 @@ export interface ArtifactListEntry {
   slug: string
   title?: string
   description?: string
+  artifactType?: ArtifactType
+  topics?: string[]
   modifiedAt: string
+}
+
+function isArtifactType(value: unknown): value is ArtifactType {
+  return typeof value === "string" && ARTIFACT_TYPES.some((type) => type === value)
 }
 
 export async function readArtifactMeta(filePath: string): Promise<ArtifactMeta> {
@@ -36,6 +47,10 @@ export async function readArtifactMeta(filePath: string): Promise<ArtifactMeta> 
     return {
       title: typeof parsed.title === "string" && parsed.title.length > 0 ? parsed.title : undefined,
       description: typeof parsed.description === "string" && parsed.description.length > 0 ? parsed.description : undefined,
+      artifactType: isArtifactType(parsed.artifactType) ? parsed.artifactType : undefined,
+      topics: Array.isArray(parsed.topics)
+        ? parsed.topics.filter((topic: unknown): topic is string => typeof topic === "string" && topic.length > 0)
+        : undefined,
     }
   } catch {
     return {}
@@ -60,7 +75,14 @@ export async function listProjectArtifacts(projectDir: string): Promise<Artifact
       if (!(await fileExists(artifactJson))) continue
       const stats = await stat(artifactJson)
       const meta = await readArtifactMeta(artifactJson)
-      artifacts.push({ slug, title: meta.title, description: meta.description, modifiedAt: stats.mtime.toISOString() })
+      artifacts.push({
+        slug,
+        title: meta.title,
+        description: meta.description,
+        artifactType: meta.artifactType,
+        topics: meta.topics,
+        modifiedAt: stats.mtime.toISOString(),
+      })
     }
   } catch (error: any) {
     if (error.code !== "ENOENT") throw error

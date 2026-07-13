@@ -4,13 +4,13 @@ context: |
   Visualizer is a JSON-to-UI runtime for agents. Agents emit constrained VisualArtifactSpec JSON; the renderer owns UI. Do not generate React, routes, JSX, imports, CSS, or full HTML for renderer changes.
 
   Runtime layout:
-  - app/: Next.js static renderer mounted at /artifacts.
+  - app/: Next.js static renderer served from root (/).
   - cli/: Bun CLI for validate/create/serve/list/open/bootstrap.
   - shared/: shared annotation schemas used by app and CLI.
   - pi-extension/: Pi tool wrapper around the CLI.
   - skill/: model-facing visual-artifact skill docs.
 
-  Artifact bundles live at artifacts/<project>/<slug>/ with artifact.json, annotations.json, and assets/. Public artifact pages are /artifacts/<project>/<slug>/. Public data is /artifacts/data/artifacts/<project>/<slug>/artifact.json and annotations.json.
+  Artifact bundles live at artifacts/<project>/<slug>/ with artifact.json, annotations.json, and assets/. Public artifact pages are /<project>/<slug>/. Public data is /data/artifacts/<project>/<slug>/artifact.json and annotations.json.
 
   Core constraints:
   - JSON, not generated UI code.

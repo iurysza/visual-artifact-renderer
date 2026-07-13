@@ -1,7 +1,7 @@
 import { artifactDataPath, artifactDataUrl, artifactAnnotationsPath, artifactAnnotationsUrl } from "@/lib/artifacts/paths"
 
-const expectedData = "/artifacts/data/artifacts/project/slug/artifact.json"
-const expectedAnnotations = "/artifacts/data/artifacts/project/slug/annotations.json"
+const expectedData = "/data/artifacts/project/slug/artifact.json"
+const expectedAnnotations = "/data/artifacts/project/slug/annotations.json"
 
 if (artifactDataPath("project", "slug") !== expectedData) {
   throw new Error(
@@ -28,7 +28,7 @@ if (!artifactAnnotationsUrl("project", "slug").endsWith(expectedAnnotations)) {
 }
 
 // Prove the old flat project/slug.json shape is no longer the required read path.
-const oldFlat = "/artifacts/data/artifacts/project/slug.json"
+const oldFlat = "/data/artifacts/project/slug.json"
 if (artifactDataPath("project", "slug") === oldFlat) {
   throw new Error(`artifactDataPath must not use the old flat layout: ${oldFlat}`)
 }

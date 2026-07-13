@@ -131,15 +131,15 @@ Artifact bundles use this layout:
 Local URLs use:
 
 ```text
-http://127.0.0.1:9998/artifacts/<project>/<slug>/
+http://127.0.0.1:9998/<project>/<slug>/
 ```
 
 Data endpoints use:
 
 ```text
-/artifacts/data/artifacts/<project>/<slug>/artifact.json
-/artifacts/data/artifacts/<project>/<slug>/annotations.json
-/artifacts/data/artifacts/<project>/<slug>/assets/<file>
+/data/artifacts/<project>/<slug>/artifact.json
+/data/artifacts/<project>/<slug>/annotations.json
+/data/artifacts/<project>/<slug>/assets/<file>
 ```
 
 Release installation stops the existing renderer, installs the runtime, and ensures the canonical artifact store exists. It does not inspect or migrate other directories.
@@ -150,7 +150,7 @@ Local server lifecycle state uses per-address files:
 ${XDG_STATE_HOME:-~/.local/state}/visual-artifact/servers/<host>-<port>.json
 ```
 
-The state file records PID, host, port, mount/data paths, artifact/static roots, process identity metadata, and a random shutdown token. It is written after `serve` binds successfully and removed during normal shutdown.
+The state file records PID, host, port, data path, artifact/static roots, process identity metadata, and a random shutdown token. It is written after `serve` binds successfully and removed during normal shutdown.
 
 ## Server roles
 
@@ -158,7 +158,7 @@ The state file records PID, host, port, mount/data paths, artifact/static roots,
 
 `visual-artifact serve` runs the CLI static-preview server on `:9998`. `create` starts it automatically unless you pass `--no-serve`.
 
-The local server exposes a token-protected shutdown endpoint at `/artifacts/api/shutdown`. Use `visual-artifact serve stop` to call it from the matching state file. If state is missing, stop only terminates a listener that clearly looks like `visual-artifact serve`; ambiguous listeners are refused unless `--force` is explicit. Use `serve status --json` to see `running`, `tracked`, `statePath`, and `pid` fields for automation.
+The local server exposes a token-protected shutdown endpoint at `/api/shutdown`. Use `visual-artifact serve stop` to call it from the matching state file. If state is missing, stop only terminates a listener that clearly looks like `visual-artifact serve`; ambiguous listeners are refused unless `--force` is explicit. Use `serve status --json` to see `running`, `tracked`, `statePath`, and `pid` fields for automation.
 
 The annotation mutation API is writable. It requires POST with `application/json`, rejects cross-origin browser evidence, and permits the loopback Next dev proxy. Requests without browser origin metadata remain available to CLI/tests. Annotation reads and writes require an existing `artifact.json`; local mutations are serialized per bundle and atomically replace a mode-`0600` `annotations.json`.
 
@@ -171,11 +171,10 @@ The annotation mutation API is writable. It requires POST with `application/json
 | `VISUAL_ARTIFACT_OUT_DIR` | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export. |
 | `VISUAL_ARTIFACT_PORT` | `9998` | Static-preview server port. |
 | `VISUAL_ARTIFACT_HOST` | `127.0.0.1` | Server bind host. |
-| `VISUAL_ARTIFACT_MOUNT_PATH` | `/artifacts` | Public route prefix. |
-| `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint under the mount path. |
+| `VISUAL_ARTIFACT_DATA_PATH` | `/data/artifacts` | JSON data endpoint path. |
 | `VISUAL_ARTIFACT_OPEN` | `1` | Open browser when serving. Set `0` to disable. |
 | `VISUAL_ARTIFACT_ALLOW_REMOTE` | `0` | Permit a non-loopback bind for the writable server. Only strict `0` or `1` is accepted. |
-| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create` and `open`; include `/artifacts` if using a proxy. |
+| `VISUAL_ARTIFACT_BASE_URL` | local server URL | Base URL returned by `create` and `open`. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | `<project-root>/cli/assets/contract.json` | Override contract path. |
 
 Cloudflare publishing variables live in [`publishing.md`](./publishing.md).

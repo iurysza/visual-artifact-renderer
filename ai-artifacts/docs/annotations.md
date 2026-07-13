@@ -33,7 +33,7 @@ Colab comments live in browser state. The current flow never saves them to `anno
 
 ## Persistence
 
-Local artifacts are stored as bundles under the configured artifacts directory, which is the source repo's `artifacts/` in development or the installed skill's `artifacts/` by default:
+Local artifacts are stored as bundles under the configured artifacts directory, which defaults to `~/.agents/skills/visual-artifact/artifacts` for both development and installed runtimes:
 
 ```text
 <artifacts-dir>/<project>/<slug>/

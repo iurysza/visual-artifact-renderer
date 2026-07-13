@@ -15,23 +15,23 @@ All frontend source lives under `app/`.
 
 ## Routes
 
-`app/next.config.ts` sets `basePath: "/artifacts"`.
+`app/next.config.ts` sets `basePath: ""` (root-mounted).
 
 | Public route | File | Purpose |
 |---|---|---|
-| `/artifacts` | `app/src/app/page.tsx` | home index |
-| `/artifacts/<project>` | `app/src/app/[project]/page.tsx` | project index |
-| `/artifacts/<project>/<slug>` | `app/src/app/[project]/[slug]/page.tsx` | artifact shell |
-| `/artifacts/shell-artifact` | `app/src/app/shell-artifact/page.tsx` | post-build artifact fallback shell |
-| `/artifacts/shell-project` | `app/src/app/shell-project/page.tsx` | post-build project fallback shell |
+| `/` | `app/src/app/page.tsx` | home index |
+| `/<project>` | `app/src/app/[project]/page.tsx` | project index |
+| `/<project>/<slug>` | `app/src/app/[project]/[slug]/page.tsx` | artifact shell |
+| `/shell-artifact` | `app/src/app/shell-artifact/page.tsx` | post-build artifact fallback shell |
+| `/shell-project` | `app/src/app/shell-project/page.tsx` | post-build project fallback shell |
 
-Artifact JSON is fetched from `/artifacts/data/artifacts/<project>/<slug>/artifact.json` and annotation JSON from `/artifacts/data/artifacts/<project>/<slug>/annotations.json`. Mutations are posted to `/artifacts/api/annotations/<project>/<slug>`.
+Artifact JSON is fetched from `/data/artifacts/<project>/<slug>/artifact.json` and annotation JSON from `/data/artifacts/<project>/<slug>/annotations.json`. Mutations are posted to `/api/annotations/<project>/<slug>`.
 
 ## Rendering flow
 
 1. CLI server serves a static shell from `app/out`.
 2. `ClientArtifactLoader` parses `{ project, slug }` from `window.location`.
-3. It fetches `/artifacts/data/artifacts/<project>/<slug>/artifact.json`.
+3. It fetches `/data/artifacts/<project>/<slug>/artifact.json`.
 4. `VisualArtifactSpecSchema` parses the payload.
 5. `VisualArtifactRenderer` receives the spec and wraps the page in `AnnotationProvider` and `AIColabProvider`.
 6. `renderNodes` recurses over `spec.nodes`.

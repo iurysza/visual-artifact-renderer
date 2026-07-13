@@ -8,7 +8,7 @@
 |---|---|---|
 | Artifact | A rendered visual page backed by one JSON spec and optional annotation threads. | `artifacts/<project>/<slug>/artifact.json` + `annotations.json` |
 | Artifact bundle | The directory holding `artifact.json`, `annotations.json`, and `assets/`. | `artifacts/<project>/<slug>/` |
-| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `layout?`, `data?`, `nodes[]`. | `shared/src/artifact-schema.ts` (re-exported by app) |
+| VisualArtifactSpec | Agent-facing JSON: `slug`, `title`, `description?`, `artifactType?`, `topics?`, `layout?`, `data?`, `nodes[]`. `artifactType` is one of explainer, dashboard, review, comparison, report, plan, diagram, or idea. | `shared/src/artifact-schema.ts` (re-exported by app) |
 | Node | One typed UI unit in `nodes[]`: text, stat-card, chart, Mermaid, etc. | schema + manifest |
 | Node type | Discriminated `type` value. The LLM chooses from the contract. | `ARTIFACT_NODE_TYPES` |
 | Node identity | `metadata.id` (preferred) or deterministic node path used to anchor comments. | rendered `data-va-node-*` attributes |
@@ -65,34 +65,34 @@ Agent JSON
   → validate with the shared executable schema/resource preflight
   → resolve contained or explicitly granted file-tree sources
   → write <artifacts-dir>/<project>/<slug>/artifact.json
-  → return /artifacts/<project>/<slug>/
+  → return /<project>/<slug>/
 ```
 
 ### Browser rendering
 
 ```text
-/artifacts/<project>/<slug>/
+/<project>/<slug>/
   → static page shell
   → artifactParamsFromPath()
-  → /artifacts/data/artifacts/<project>/<slug>/artifact.json
+  → /data/artifacts/<project>/<slug>/artifact.json
   → VisualArtifactSpecSchema.parse()
   → renderNodes()
   → componentRegistry[type]
-  → AnnotationProvider loads /artifacts/data/artifacts/<project>/<slug>/annotations.json
+  → AnnotationProvider loads /data/artifacts/<project>/<slug>/annotations.json
   → render annotation UI
 ```
 
 ### Index rendering
 
 ```text
-/artifacts/
+/
   → ArtifactIndexLoader
-  → /artifacts/data/artifacts/index.json
+  → /data/artifacts/index.json
   → projects + recent artifacts
 
-/artifacts/<project>/
+/<project>/
   → ProjectIndexLoader
-  → /artifacts/data/artifacts/<project>/index.json
+  → /data/artifacts/<project>/index.json
   → artifacts in one project
 ```
 
@@ -101,7 +101,7 @@ Agent JSON
 ```text
 Browser mutation
   → client serializes whole optimistic transaction
-  → POST /artifacts/api/annotations/<project>/<slug>
+  → POST /api/annotations/<project>/<slug>
   → require existing artifact + POST + application/json + same-origin evidence
   → local: keyed queue → applyMutations() → atomic mode-0600 replace
   → hosted: read etag → applyMutations() → conditional R2 put (max 5 attempts)
@@ -144,7 +144,7 @@ Browser mutation
 - Data-backed nodes require array datasets.
 - Contract must be regenerated after schema or manifest changes.
 - Renderer commands run from `app/`; CLI commands run from `cli/` or the installed binary.
-- The `/artifacts` base path is part of the public URL contract.
+- The renderer is served from root (`/`); data and API namespaces remain `/data/artifacts` and `/api/annotations`.
 - Annotation JSON is read with the shared Zod schema in both renderer and CLI.
 - Local annotation mutations use the CLI's per-artifact atomic queue; published Cloudflare mutations use Worker R2 conditional retries.
 - Non-loopback local serving requires explicit remote-write exposure via `--allow-remote` or strict `VISUAL_ARTIFACT_ALLOW_REMOTE=1`.

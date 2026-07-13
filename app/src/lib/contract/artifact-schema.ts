@@ -4,7 +4,9 @@ export {
   ARTIFACT_NODE_TYPES,
   ARTIFACT_SLUG_MAX_LENGTH,
   ARTIFACT_SPEC_RESOURCE_LIMITS,
+  ARTIFACT_TYPES,
   ArtifactNodeSchema,
+  ArtifactTypeSchema,
   ArtifactResourceError,
   ArtifactSizeError,
   ArtifactSlugSchema,
@@ -29,5 +31,6 @@ export {
   type ArtifactPreflightResult,
   type ArtifactSpecResourceLimits,
   type ArtifactTone,
+  type ArtifactType,
   type VisualArtifactSpec,
 } from "@agents/visual-artifact-annotations/contract"

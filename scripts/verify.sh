@@ -178,7 +178,7 @@ SERVER_PID=$!
 
 HEALTH_READY=0
 for _ in $(seq 1 50); do
-  if curl -fsS "http://127.0.0.1:${HEALTH_PORT}/artifacts/" >/dev/null 2>&1; then
+  if curl -fsS "http://127.0.0.1:${HEALTH_PORT}/" >/dev/null 2>&1; then
     HEALTH_READY=1
     break
   fi
@@ -193,7 +193,7 @@ if [[ "$HEALTH_READY" != "1" ]]; then
   fail "health server did not become ready"
 fi
 
-BASE_URL="http://127.0.0.1:${HEALTH_PORT}/artifacts" \
+BASE_URL="http://127.0.0.1:${HEALTH_PORT}" \
 ARTIFACT_PROJECT="$HEALTH_PROJECT" \
 ARTIFACT_SLUG="$HEALTH_SLUG" \
   node "$ROOT/app/scripts/qa/health-check.mjs" || fail "health smoke failed"

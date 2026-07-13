@@ -23,7 +23,7 @@ flowchart LR
 
 The project has four runtime faces:
 
-1. **Renderer** — `app/`, a Next.js app mounted at `/artifacts`.
+1. **Renderer** — `app/`, a Next.js app served from root (`/`).
 2. **CLI** — `cli/`, Bun binary that validates, writes, serves, lists, opens, and bootstraps artifacts.
 3. **Pi extension** — `pi-extension/visual-artifact.ts`, a thin tool wrapper around the CLI.
 4. **Skill docs** — `skill/SKILL.md` and `skill/references/` used by agents before creating artifacts.
@@ -36,7 +36,7 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 
 | Component | Responsibility | Key files |
 |---|---|---|
-| App Router | Routes under `basePath: "/artifacts"`. | `src/app/page.tsx`, `src/app/[project]/page.tsx`, `src/app/[project]/[slug]/page.tsx`, `src/app/live-artifact/page.tsx`, `src/app/live-project/page.tsx` |
+| App Router | Root routes. | `src/app/page.tsx`, `src/app/[project]/page.tsx`, `src/app/[project]/[slug]/page.tsx`, `src/app/live-artifact/page.tsx`, `src/app/live-project/page.tsx` |
 | Client loaders | Fetch live artifact/project JSON after static shell loads. | `src/components/client-artifact-loader.tsx`, `artifact-index-loader.tsx`, `project-index-loader.tsx` |
 | Renderer | Builds hero/header and recursively renders nodes. | `src/components/visual-artifact-renderer.tsx` |
 | Registry | Maps `node.type` to adapter. | `src/components/component-registry.tsx` |
@@ -113,10 +113,10 @@ Agent builds spec
 ### 3.2 Render an artifact
 
 ```text
-Browser opens /artifacts/<project>/<slug>/
+Browser opens /<project>/<slug>/
   → static shell loads
   → ClientArtifactLoader parses project/slug from URL
-  → fetch /artifacts/data/artifacts/<project>/<slug>/artifact.json
+  → fetch /data/artifacts/<project>/<slug>/artifact.json
   → Zod parse as VisualArtifactSpec
   → VisualArtifactRenderer renders nodes
   → componentRegistry dispatches to adapters
@@ -125,13 +125,13 @@ Browser opens /artifacts/<project>/<slug>/
 ### 3.3 Render annotations
 
 ```text
-Browser opens /artifacts/<project>/<slug>/
-  → AnnotationProvider loads /artifacts/data/artifacts/<project>/<slug>/annotations.json
+Browser opens /<project>/<slug>/
+  → AnnotationProvider loads /data/artifacts/<project>/<slug>/annotations.json
   → parse as AnnotationDocument
   → render comment toggle, node outlines, thread badges, and sidebar
   → user mutation enters the client transaction queue
   → optimistic state is applied only when that transaction starts
-  → POST /artifacts/api/annotations/<project>/<slug> with JSON/same-origin evidence
+  → POST /api/annotations/<project>/<slug> with JSON/same-origin evidence
   → local CLI serializes read→apply→atomic mode-0600 replace per bundle
   → hosted Worker retries conditional R2 writes against the latest etag
   → success replaces client state with the parsed authoritative document
@@ -148,7 +148,7 @@ cd app && pnpm build
 visual-artifact serve
   → serves static files from ~/.local/share/visual-artifact/app/out
   → serves JSON/assets from <artifacts-dir>
-  → builds live index JSON at /artifacts/data/artifacts/index.json
+  → builds live index JSON at /data/artifacts/index.json
   → falls back to live-artifact/live-project shells for post-build artifacts
 ```
 
@@ -173,12 +173,12 @@ Artifacts are stored as bundles:
 | `<artifacts-dir>/<project>/<slug>/annotations.json` | Persisted annotation threads for the artifact. |
 | `<artifacts-dir>/<project>/<slug>/assets/` | Sidecar images and other assets. |
 | `~/.local/share/visual-artifact/app/out` | Installed static renderer export. |
-| `/artifacts/<project>/<slug>/` | Artifact page route. |
-| `/artifacts/data/artifacts/<project>/<slug>/artifact.json` | Public artifact JSON endpoint. |
-| `/artifacts/data/artifacts/<project>/<slug>/annotations.json` | Public annotation JSON endpoint. |
-| `/artifacts/api/annotations/<project>/<slug>` | Annotation mutation endpoint. |
-| `/artifacts/data/artifacts/index.json` | Live home index. |
-| `/artifacts/data/artifacts/<project>/index.json` | Live project index. |
+| `/<project>/<slug>/` | Artifact page route. |
+| `/data/artifacts/<project>/<slug>/artifact.json` | Public artifact JSON endpoint. |
+| `/data/artifacts/<project>/<slug>/annotations.json` | Public annotation JSON endpoint. |
+| `/api/annotations/<project>/<slug>` | Annotation mutation endpoint. |
+| `/data/artifacts/index.json` | Live home index. |
+| `/data/artifacts/<project>/index.json` | Live project index. |
 
 Environment overrides:
 
@@ -190,8 +190,7 @@ Environment overrides:
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | Contract file. |
 | `VISUAL_ARTIFACT_PORT` / `VISUAL_ARTIFACT_HOST` | Server bind address. Non-loopback hosts require explicit remote exposure. |
 | `VISUAL_ARTIFACT_ALLOW_REMOTE` | Strict `0|1` opt-in for a non-loopback writable server bind. |
-| `VISUAL_ARTIFACT_MOUNT_PATH` | Public mount path, default `/artifacts`. |
-| `VISUAL_ARTIFACT_DATA_PATH` | Data path under mount, default `/data/artifacts`. |
+| `VISUAL_ARTIFACT_DATA_PATH` | Public data path, default `/data/artifacts`. |
 | `VISUAL_ARTIFACT_BASE_URL` | URL base returned by `create` and `open`. |
 
 ## 5. Tradeoffs
@@ -210,7 +209,7 @@ Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. 
 
 ### Skill-namespace bundle storage
 
-Artifacts are stored as bundles (`artifact.json`, `annotations.json`, `assets/`) under `~/.agents/skills/visual-artifact/artifacts` by default. The directory is user-owned output: renderer and skill updates must preserve it. One shared store lets development and installed renderers expose the same collection; use `VISUAL_ARTIFACT_ARTIFACTS_DIR` only for an intentional alternate store. Installers stop the default renderer before copying legacy roots, verify the snapshot, and retain each legacy root as a safety backup.
+Artifacts are stored as bundles (`artifact.json`, `annotations.json`, `assets/`) under `~/.agents/skills/visual-artifact/artifacts` by default. The directory is user-owned output: renderer and skill updates must preserve it. One shared store lets development and installed renderers expose the same collection; use `VISUAL_ARTIFACT_ARTIFACTS_DIR` only for an intentional alternate store. Installers stop the existing renderer, install the runtime, and ensure the canonical artifact store exists; they do not inspect or migrate legacy roots.
 
 ### Annotation persistence
 

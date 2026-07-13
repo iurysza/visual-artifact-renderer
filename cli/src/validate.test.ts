@@ -414,6 +414,27 @@ describe("resource envelope", () => {
     expect(result.nodes.length).toBeGreaterThan(0)
   })
 
+  test("accepts optional artifact classification metadata", () => {
+    const result = parseVisualArtifactSpec({
+      slug: "classified-artifact",
+      title: "Classified artifact",
+      artifactType: "explainer",
+      topics: ["runtime", "typescript"],
+      nodes: [{ type: "text", props: { text: "Content" } }],
+    })
+    expect(result.artifactType).toBe("explainer")
+    expect(result.topics).toEqual(["runtime", "typescript"])
+  })
+
+  test("rejects unknown artifact classifications", () => {
+    expect(() => parseVisualArtifactSpec({
+      slug: "unknown-classification",
+      title: "Unknown classification",
+      artifactType: "memo",
+      nodes: [{ type: "text", props: { text: "Content" } }],
+    })).toThrow(ArtifactValidationError)
+  })
+
   test("very deep input is rejected before recursive Zod parsing", () => {
     let node: Record<string, unknown> = { type: "text", props: { text: "leaf" } }
     for (let depth = 0; depth < 10_000; depth++) {

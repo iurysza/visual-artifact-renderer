@@ -85,7 +85,6 @@ async function ensureServer(log: Logger, config: ReturnType<typeof loadConfig>):
       VISUAL_ARTIFACT_OUT_DIR: config.outDir,
       VISUAL_ARTIFACT_PORT: String(config.port),
       VISUAL_ARTIFACT_HOST: config.host,
-      VISUAL_ARTIFACT_MOUNT_PATH: config.mountPath || "/",
       VISUAL_ARTIFACT_DATA_PATH: config.dataPath,
       VISUAL_ARTIFACT_OPEN: "0",
       VISUAL_ARTIFACT_ALLOW_REMOTE: config.allowRemote ? "1" : "0",

@@ -43,6 +43,8 @@ Use `visual-artifact contract` to print the full contract, `visual-artifact cont
   "slug": "kebab-case-slug",
   "title": "Artifact title",
   "description": "Optional short description",
+  "artifactType": "report",
+  "topics": ["architecture", "runtime"],
   "layout": { "type": "default" },
   "data": {
     "rows": [{ "name": "Example", "status": "ok" }]
@@ -55,6 +57,7 @@ Use `visual-artifact contract` to print the full contract, `visual-artifact cont
 
 Rules:
 
+- Always include exactly one `artifactType` and 2–5 concise lowercase kebab-case `topics` for discovery and search. Runtime validation keeps these optional only for legacy artifacts.
 - Follow `visual-artifact contract` for root spec, node constraints, and resource limits.
 - Data-backed nodes need `data.<dataKey>` arrays.
 - Keep data values well-formed. The shared executable schema validates the same contract in the CLI and renderer.
@@ -110,10 +113,10 @@ The project name is derived from the caller's git root or directory.
 Default URL:
 
 ```text
-http://127.0.0.1:9998/artifacts/<project>/<slug>/
+http://127.0.0.1:9998/<project>/<slug>/
 ```
 
-Set `VISUAL_ARTIFACT_BASE_URL` when serving through a proxy/tunnel/tailnet route. Include the `/artifacts` mount path.
+Set `VISUAL_ARTIFACT_BASE_URL` when serving through a proxy/tunnel/tailnet route.
 
 ### Publishing to Cloudflare
 

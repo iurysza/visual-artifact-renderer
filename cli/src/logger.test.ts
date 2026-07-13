@@ -17,8 +17,8 @@ describe("plain result records", () => {
     expect(formatPlainRecords({ command: "open", url: "https://example.test/open" })).toEqual([
       "https://example.test/open",
     ])
-    expect(formatPlainRecords({ command: "serve", url: "http://127.0.0.1:9998/artifacts" })).toEqual([
-      "http://127.0.0.1:9998/artifacts",
+    expect(formatPlainRecords({ command: "serve", url: "http://127.0.0.1:9998" })).toEqual([
+      "http://127.0.0.1:9998",
     ])
     expect(formatPlainRecords({ command: "validate", slug: "demo", totalNodes: 3, datasetCount: 1 })).toEqual([
       "VALID\tdemo\t3\t1",
@@ -50,14 +50,14 @@ describe("plain result records", () => {
       command: "serve status",
       running: false,
       tracked: false,
-      url: "http://127.0.0.1:9998/artifacts",
-    })).toEqual(["STOPPED\thttp://127.0.0.1:9998/artifacts\tUNTRACKED\t--"])
+      url: "http://127.0.0.1:9998",
+    })).toEqual(["STOPPED\thttp://127.0.0.1:9998\tUNTRACKED\t--"])
     expect(formatPlainRecords({
       command: "serve stop",
       stopped: false,
       method: "refused",
-      url: "http://127.0.0.1:9998/artifacts",
-    })).toEqual(["REFUSED\thttp://127.0.0.1:9998/artifacts\trefused\t--"])
+      url: "http://127.0.0.1:9998",
+    })).toEqual(["REFUSED\thttp://127.0.0.1:9998\trefused\t--"])
   })
 
   test("contract, setup, and bootstrap records", () => {

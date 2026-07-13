@@ -1,4 +1,4 @@
-import { ARTIFACT_DATA_SEGMENT, BASE_PATH } from "@/lib/artifacts/paths"
+import { ARTIFACT_DATA_SEGMENT } from "@/lib/artifacts/paths"
 
 const FILE_PROTOCOL_RE = /^file:\/\//i
 const ABSOLUTE_URL_RE = /^(https?:)?\/\//i
@@ -11,7 +11,7 @@ const DATA_URI_RE = /^data:/i
  * - Absolute HTTP(S), protocol-relative, and data URIs are passed through unchanged.
  * - `file://` URLs are rejected (they are not portable across machines).
  * - Relative paths are resolved against the artifact's bundle assets directory
- *   served at `/artifacts/data/artifacts/<project>/<slug>/assets/`.
+ *   served at `/data/artifacts/<project>/<slug>/assets/`.
  */
 export function resolveArtifactImageSrc(src: string, project: string, slug: string): string {
   if (FILE_PROTOCOL_RE.test(src)) {
@@ -23,5 +23,5 @@ export function resolveArtifactImageSrc(src: string, project: string, slug: stri
   }
 
   const normalized = src.replace(/^[\/]+/, "")
-  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/assets/${normalized}`
+  return `/${ARTIFACT_DATA_SEGMENT}/${project}/${slug}/assets/${normalized}`
 }

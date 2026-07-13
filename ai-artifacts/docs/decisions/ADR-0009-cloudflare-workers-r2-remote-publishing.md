@@ -16,7 +16,7 @@ The renderer is already a static export that loads artifact JSON at runtime. Art
 
 **For hosted publishing, prefer Cloudflare Workers Static Assets plus R2.**
 
-Workers Static Assets serves the static renderer under `/artifacts`; a Worker handles `/artifacts/data/artifacts/*` and `/artifacts/api/annotations/*` before static assets and reads artifact bundle data (`artifact.json`, `annotations.json`, `assets/`) from R2. The CLI can publish validated artifact bundles directly to R2 and purge changed JSON URLs.
+Workers Static Assets serves the static renderer from root (`/`); a Worker handles `/data/artifacts/*` and `/api/annotations/*` before static assets and reads artifact bundle data (`artifact.json`, `annotations.json`, `assets/`) from R2. The CLI can publish validated artifact bundles directly to R2 and purge changed JSON URLs.
 
 ## Alternatives Considered
 
@@ -30,7 +30,7 @@ Workers Static Assets serves the static renderer under `/artifacts`; a Worker ha
 
 ## Consequences
 
-- **Positive**: Durable share URLs, no renderer rebuild per artifact, same `/artifacts` path model, cheap edge delivery.
+- **Positive**: Durable share URLs, no renderer rebuild per artifact, root path model, cheap edge delivery.
 - **Negative**: Requires Cloudflare config, R2 credentials, cache invalidation, Worker routing knowledge, and handling of bundle files (artifact, annotations, assets).
 - **Requires**: A publish command/flag, R2 object layout for bundles, scoped R2 access keys, index update strategy, cache purge policy, and annotation API proxy if annotations are remote.
 

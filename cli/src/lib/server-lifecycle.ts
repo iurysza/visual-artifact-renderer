@@ -18,7 +18,6 @@ export const ServerStateSchema = z.object({
   pid: z.number().int().positive(),
   host: z.string().min(1),
   port: z.number().int().min(1).max(65535),
-  mountPath: z.string().min(1),
   dataPath: z.string().min(1),
   artifactsDir: z.string().min(1),
   outDir: z.string().min(1),
@@ -75,7 +74,6 @@ export function createServerState(config: Config, shutdownToken: string): Server
     pid: process.pid,
     host: config.host,
     port: config.port,
-    mountPath: config.mountPath,
     dataPath: config.dataPath,
     artifactsDir: config.artifactsDir,
     outDir: config.outDir,
@@ -99,7 +97,6 @@ export function serverStateMatchesConfig(state: ServerState, config: Config): bo
   return (
     state.host === config.host &&
     state.port === config.port &&
-    state.mountPath === config.mountPath &&
     state.dataPath === config.dataPath &&
     canonicalFsPath(state.artifactsDir) === canonicalFsPath(config.artifactsDir) &&
     canonicalFsPath(state.outDir) === canonicalFsPath(config.outDir)

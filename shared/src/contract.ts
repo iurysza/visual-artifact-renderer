@@ -4,6 +4,7 @@
 import {
   ARTIFACT_SLUG_MAX_LENGTH,
   ARTIFACT_SPEC_RESOURCE_LIMITS,
+  ARTIFACT_TYPES,
   MAX_TOP_LEVEL_NODES,
   type ArtifactSpecResourceLimits,
 } from "./artifact-schema.js"
@@ -11,7 +12,9 @@ import {
 export {
   ARTIFACT_SLUG_MAX_LENGTH,
   ARTIFACT_SPEC_RESOURCE_LIMITS,
+  ARTIFACT_TYPES,
   ArtifactNodeSchema,
+  ArtifactTypeSchema,
   ArtifactResourceError,
   ArtifactSizeError,
   ArtifactSlugSchema,
@@ -36,6 +39,7 @@ export {
   type ArtifactPreflightResult,
   type ArtifactSpecResourceLimits,
   type ArtifactTone,
+  type ArtifactType,
   type VisualArtifactSpec,
 } from "./artifact-schema.js"
 
@@ -58,6 +62,15 @@ export const ARTIFACT_SPEC_CONSTRAINTS = {
   createdAt: {
     type: "string",
     minLength: 1,
+    optional: true,
+  },
+  artifactType: {
+    enum: ARTIFACT_TYPES,
+    optional: true,
+  },
+  topics: {
+    type: "array",
+    items: "non-empty string",
     optional: true,
   },
   layout: {
@@ -488,6 +501,15 @@ export interface SpecConstraints {
     minLength: number
     optional: boolean
   }
+  artifactType: {
+    enum: readonly string[]
+    optional: boolean
+  }
+  topics: {
+    type: string
+    items: string
+    optional: boolean
+  }
   layout: {
     type: {
       enum: string[]
@@ -522,6 +544,8 @@ export function createArtifactContract(): ArtifactContract {
       title: ARTIFACT_SPEC_CONSTRAINTS.title,
       description: ARTIFACT_SPEC_CONSTRAINTS.description,
       createdAt: ARTIFACT_SPEC_CONSTRAINTS.createdAt,
+      artifactType: ARTIFACT_SPEC_CONSTRAINTS.artifactType,
+      topics: ARTIFACT_SPEC_CONSTRAINTS.topics,
       layout: {
         type: {
           enum: Array.from(ARTIFACT_SPEC_CONSTRAINTS.layout.type.enum),

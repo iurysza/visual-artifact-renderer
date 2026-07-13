@@ -23,7 +23,6 @@ const config: Config = {
   outDir: "/tmp/out",
   port: 9998,
   host: "127.0.0.1",
-  mountPath: "/artifacts",
   dataPath: "/data/artifacts",
   open: false,
   allowRemote: false,

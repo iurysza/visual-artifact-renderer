@@ -16,7 +16,7 @@ Annotations are collaboration state, not part of the visual artifact spec. Local
 
 **Use local-first annotation persistence.**
 
-The renderer loads `annotations.json`, posts mutations to `/artifacts/api/annotations/<project>/<slug>`, and the CLI validates and writes the updated document. Authors are inferred from local git config with a local fallback.
+The renderer loads `annotations.json`, posts mutations to `/api/annotations/<project>/<slug>`, and the CLI validates and writes the updated document. Authors are inferred from local git config with a local fallback.
 
 ## Alternatives Considered
 

@@ -55,14 +55,15 @@ function getServerSnapshot(): PanelParams {
   return NULL_PARAMS
 }
 
-function serialize(p: PanelParams): string {
-  const sp = new URLSearchParams()
-  if (p.panel) sp.set("panel", p.panel)
-  if (p.thread) sp.set("thread", p.thread)
-  if (p.node) sp.set("node", p.node)
-  if (p.pick) sp.set("pick", "1")
-  const str = sp.toString()
-  return str ? `?${str}` : ""
+export function serializePanelParams(search: string, params: PanelParams): string {
+  const sp = new URLSearchParams(search)
+  for (const key of ["panel", "thread", "node", "pick"]) sp.delete(key)
+  if (params.panel) sp.set("panel", params.panel)
+  if (params.thread) sp.set("thread", params.thread)
+  if (params.node) sp.set("node", params.node)
+  if (params.pick) sp.set("pick", "1")
+  const value = sp.toString()
+  return value ? `?${value}` : ""
 }
 
 export type SetPanelParams = (
@@ -77,7 +78,8 @@ export function usePanelParams(): readonly [PanelParams, SetPanelParams] {
     if (typeof window === "undefined") return
     const prev = readParams()
     const next = { ...prev, ...values }
-    const url = `${window.location.pathname}${serialize(next)}${window.location.hash}`
+    const search = serializePanelParams(window.location.search, next)
+    const url = `${window.location.pathname}${search}${window.location.hash}`
     if (options.history === "replace") window.history.replaceState(null, "", url)
     else window.history.pushState(null, "", url)
     emit()

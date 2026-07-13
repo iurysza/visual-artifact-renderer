@@ -49,7 +49,7 @@ describe("Cloudflare R2 publisher keys", () => {
   })
 
   test("localArtifactPageUrl points at default static server", () => {
-    expect(localArtifactPageUrl("p", "s")).toBe("http://127.0.0.1:9998/artifacts/p/s/")
+    expect(localArtifactPageUrl("p", "s")).toBe("http://127.0.0.1:9998/p/s/")
   })
 
   test("loadPublishContext only requires R2 S3 credentials", async () => {
@@ -74,7 +74,7 @@ describe("Cloudflare R2 publisher keys", () => {
         project: "demo",
         slug: "hello",
         url: "https://visual-artifact.demo.workers.dev/demo/hello/",
-        localUrl: "http://127.0.0.1:9998/artifacts/demo/hello/",
+        localUrl: "http://127.0.0.1:9998/demo/hello/",
         remoteObjects: ["artifacts/demo/hello/artifact.json"],
       },
       "default",

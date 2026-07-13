@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 
 import { listProjects, listArtifactsInProject, getVisualArtifactSpec } from "@/lib/artifacts/artifacts"
+import { isReservedRootSegment } from "@/lib/artifacts/paths"
 import { cloudBuildArtifactParams, isCloudBuild } from "@/lib/artifacts/cloud-build"
 import { ArtifactPageShell } from "@/components/artifact-page-shell"
 
@@ -10,6 +12,7 @@ export async function generateStaticParams() {
   const projects = await listProjects()
   const params: { project: string; slug: string }[] = []
   for (const project of projects) {
+    if (isReservedRootSegment(project.name)) continue
     const artifacts = await listArtifactsInProject(project.name)
     for (const artifact of artifacts) {
       params.push({ project: project.name, slug: artifact.slug })
@@ -39,6 +42,7 @@ export default async function ArtifactPage({
   params: Promise<{ project: string; slug: string }>
 }) {
   const { project, slug } = await params
+  if (isReservedRootSegment(project)) notFound()
 
   // Try to load at build time for SSR. Cloud builds must stay shell-only;
   // the Worker serves this shell for remote artifact routes and loads JSON from R2.

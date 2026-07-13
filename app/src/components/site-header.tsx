@@ -19,9 +19,9 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { homeFilterSearchFromSearch } from "@/lib/artifacts/alternative-index"
+import { useLocationSearch } from "@/lib/navigation/location-search"
 import { cn } from "@/lib/utils"
-
-const BASE_PATH = "/artifacts"
 
 function humanize(slug: string) {
   return slug
@@ -34,11 +34,12 @@ export function SiteHeader() {
   const annotationCtx = useOptionalAnnotationContext()
   const aiColabCtx = useOptionalAIColabContext()
   const [panelParams, setPanelParams] = usePanelParams()
-  const routePath = pathname?.startsWith(BASE_PATH)
-    ? pathname.slice(BASE_PATH.length) || "/"
-    : pathname || "/"
+  const locationSearch = useLocationSearch()
+  const homeFilterSearch = homeFilterSearchFromSearch(locationSearch)
+  const routePath = pathname || "/"
 
   const segments = routePath.split("/").filter(Boolean)
+  const homeHref = `/${homeFilterSearch}`
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
@@ -52,7 +53,7 @@ export function SiteHeader() {
                   <span className="sr-only sm:not-sr-only">Home</span>
                 </BreadcrumbPage>
               ) : (
-                <BreadcrumbLink render={<Link href="/" />} className="flex min-w-0 items-center gap-1.5">
+                <BreadcrumbLink render={<Link href={homeHref} />} className="flex min-w-0 items-center gap-1.5">
                   <Home data-icon="inline-start" className="shrink-0" />
                   <span className="sr-only sm:not-sr-only">Home</span>
                 </BreadcrumbLink>
@@ -62,7 +63,7 @@ export function SiteHeader() {
             {segments.map((segment, index) => {
               const isLast = index === segments.length - 1
               const isIntermediate = !isLast
-              const href = "/" + segments.slice(0, index + 1).join("/") + "/"
+              const href = "/" + segments.slice(0, index + 1).join("/") + "/" + homeFilterSearch
               const label = humanize(segment)
 
               return (

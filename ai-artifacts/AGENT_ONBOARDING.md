@@ -14,7 +14,7 @@ The agent emits a constrained `VisualArtifactSpec`. The Pi extension calls the `
 
 Key surfaces:
 
-- **Renderer** — `app/`, Next.js static export under `basePath: "/artifacts"`.
+- **Renderer** — `app/`, Next.js static export served from root (`/`).
 - **Contract system** — `shared/src/artifact-schema.ts` owns executable validation/resource limits; `shared/src/contract.ts` owns the LLM-facing manifest; app compatibility layers consume both, and `pnpm export:contract` writes tracked `cli/assets/contract.json`. Inspect it with `visual-artifact contract`.
 - **CLI** — `cli/`, Bun binary for create/validate/serve/list/open/doctor/bootstrap.
 - **Pi extension** — `pi-extension/visual-artifact.ts`, registers `create_visual_artifact` and delegates to the CLI.
@@ -55,7 +55,7 @@ Renderer:
 ```bash
 cd app
 pnpm install --frozen-lockfile
-pnpm dev          # http://localhost:9999/artifacts
+pnpm dev          # http://localhost:9999/
 ```
 
 CLI:
@@ -67,6 +67,7 @@ bun test
 bun run typecheck
 bun run build
 bun run install:binary
+bun run src/main.ts bootstrap --dry-run  # optional sanity check
 ```
 
 Bootstrap everything from the source tree:
@@ -153,8 +154,8 @@ pnpm validate:mermaid path/to/diagram.mmd
 
 - **Contract drift.** Schema and manifest changes are not done until `cli/assets/contract.json` is regenerated and `visual-artifact contract` reflects them.
 - **Wrong working directory.** Renderer commands run in `app/`; CLI commands run in `cli/`.
-- **Storage location confusion.** Development defaults to the source repo's `artifacts/`; installed use defaults to the skill's `artifacts/`. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
-- **Base path.** App routes live under `/artifacts`; data routes live under `/artifacts/data/artifacts/...`.
+- **Storage location confusion.** Development and installed runtimes both default to `~/.agents/skills/visual-artifact/artifacts`. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
+- **Base path.** App routes are root-relative (`/<project>/<slug>/`); data routes live under `/data/artifacts/...` and the annotation API under `/api/annotations/...`.
 - **Generated artifacts are local output.** Do not commit `artifacts/<project>/<slug>/` unless explicitly asked.
 - **Extension delegates.** `pi-extension/visual-artifact.ts` does not implement rendering; it finds the CLI and sends JSON through stdin.
 - **Static export + live JSON.** New artifacts work after build because the CLI server falls back to live shells and fetches JSON client-side.
