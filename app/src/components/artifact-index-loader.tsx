@@ -51,6 +51,7 @@ function typeLabel(type: ArtifactType): string {
 function ArtifactIndexSkeleton() {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      <span className="sr-only" role="status">Loading artifact library</span>
       <div className="flex flex-col gap-3">
         <Skeleton className="h-9 w-56" />
         <Skeleton className="h-5 w-full max-w-xl" />
