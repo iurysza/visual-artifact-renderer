@@ -77,7 +77,6 @@ visual-artifact [global flags] <command>
 | `serve` | Serve static renderer + live artifact JSON. |
 | `serve status` | Check renderer server health. |
 | `serve stop` | Best-effort stop for tracked server. |
-| `migrate-store` | Copy legacy bundles into the shared store without overwriting conflicts; retain the source as backup. |
 | `list [project]` | List projects or artifacts. |
 | `open [project/slug]` | Open index or artifact page. |
 | `doctor` | Diagnose install/runtime state. |
@@ -91,7 +90,6 @@ visual-artifact create spec.json --project /path/to/repo
 cat spec.json | visual-artifact create -
 visual-artifact --json create spec.json --no-serve
 visual-artifact serve --no-open
-visual-artifact migrate-store --from ~/.local/share/visual-artifact/artifacts
 visual-artifact open my-project/my-slug
 visual-artifact doctor
 visual-artifact contract --format summary

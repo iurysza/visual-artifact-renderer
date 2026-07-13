@@ -15,7 +15,6 @@ import { doctor } from "./commands/doctor.ts"
 import { bootstrap } from "./commands/bootstrap.ts"
 import { contract } from "./commands/contract.ts"
 import { setupCloudflare } from "./commands/setup-cloudflare.ts"
-import { migrateStore } from "./commands/migrate-store.ts"
 import { VERSION } from "./version.ts"
 
 function parsePort(value: string): number {
@@ -160,15 +159,6 @@ serveCmd
       host: opts.host,
       force: opts.force,
     }, log))
-  })
-
-program
-  .command("migrate-store")
-  .description("Copy legacy artifact bundles into the configured shared store without overwriting conflicts.")
-  .option("--from <path>", "Legacy artifact store (repeatable)", (value: string, previous: string[] = []) => [...previous, value], [])
-  .option("--to <path>", "Destination store (default: configured artifact store)")
-  .action(async (opts) => {
-    await runAction("migrate-store", (log) => migrateStore(opts, log))
   })
 
 program

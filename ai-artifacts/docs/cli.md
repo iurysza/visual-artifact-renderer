@@ -67,7 +67,6 @@ Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited
 | `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer, live artifact JSON, and writable annotation API. Non-loopback binds require global `--allow-remote` or `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. |
 | `visual-artifact serve status [--host addr] [--port n]` | Check server health and whether it is tracked by local lifecycle state. |
 | `visual-artifact serve stop [--host addr] [--port n] [--force]` | Stop a tracked local server via tokenized shutdown, with conservative fallback process termination. |
-| `visual-artifact migrate-store [--from path] [--to path]` | Copy legacy bundles into the shared store; differing identities fail without overwrite and sources remain as backups. |
 | `visual-artifact list [project]` | List projects or artifacts. |
 | `visual-artifact open [project/slug]` | Open the index or one artifact. |
 | `visual-artifact doctor` | Diagnose install and runtime state. |
@@ -143,7 +142,7 @@ Data endpoints use:
 /artifacts/data/artifacts/<project>/<slug>/assets/<file>
 ```
 
-Release installation automatically stops the existing renderer, then copies the legacy `~/.local/share/visual-artifact/artifacts` store into the shared store. Source bootstrap does the same for bundle directories from the repository’s former `artifacts/` root. Migration verifies every copied bundle, rejects differing identities, and retains legacy roots as safety backups. Manual `migrate-store` refuses to run while the default renderer is active.
+Release installation stops the existing renderer, installs the runtime, and ensures the canonical artifact store exists. It does not inspect or migrate other directories.
 
 Local server lifecycle state uses per-address files:
 

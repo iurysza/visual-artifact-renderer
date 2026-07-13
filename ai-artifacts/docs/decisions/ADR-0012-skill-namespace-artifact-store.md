@@ -4,7 +4,7 @@
 > **Decision**: Store local artifacts under `~/.agents/skills/visual-artifact/artifacts` for source and installed runtimes.
 > **Context**: Context-sensitive source and installed stores split user output and let a healthy server expose the wrong collection.
 > **Alternatives**: XDG runtime-data store, multi-root overlay server, project-local stores
-> **Impact**: CLI defaults, renderer builds, installer, lifecycle state, migration, documentation
+> **Impact**: CLI defaults, renderer builds, installer, lifecycle state, documentation
 
 ---
 
@@ -30,7 +30,7 @@ The skill and extension remain package-managed resources, but artifacts are user
 
 - **Positive**: One visible collection for dev and installed renderers; easy backup, inspection, and selective versioning.
 - **Negative**: Skill installers must preserve `artifacts/`; the data directory shares a namespace with agent resources.
-- **Requires**: Copy existing roots with conflict checks, retain them as upgrade backups, record store identity in server state, and never replace `artifacts/` during updates.
+- **Requires**: Record store identity in server state and never replace `artifacts/` during updates.
 
 ## Related
 

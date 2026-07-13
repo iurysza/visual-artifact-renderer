@@ -76,12 +76,6 @@ describe("plain result records", () => {
       baseUrl: "https://worker.example",
     })).toEqual(["PROFILE\tdefault\thttps://worker.example"])
     expect(formatPlainRecords({
-      command: "migrate-store",
-      migrated: 3,
-      deduplicated: 1,
-      target: "/tmp/artifacts",
-    })).toEqual(["MIGRATED\t3\t1\t/tmp/artifacts"])
-    expect(formatPlainRecords({
       command: "bootstrap",
       dryRun: true,
       checks: [{ prerequisite: "bun", ok: true }],
@@ -99,7 +93,6 @@ describe("human results", () => {
       formatHumanResult({ command: "list", projects: [{ name: "demo", artifactCount: 1 }] }),
       formatHumanResult({ command: "doctor", ok: true, checks: [{ check: "contract", ok: true }] }),
       formatHumanResult({ command: "serve status", running: false, tracked: false, url: "http://localhost" }),
-      formatHumanResult({ command: "migrate-store", migrated: 3, deduplicated: 1, target: "/tmp/artifacts" }),
     ]
     for (const output of outputs) {
       expect(output).not.toContain("[object Object]")

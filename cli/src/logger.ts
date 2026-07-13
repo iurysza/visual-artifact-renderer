@@ -192,10 +192,6 @@ export function formatPlainRecords(data: ResultData): string[] {
       const { profileName, baseUrl } = rest
       return [`PROFILE\t${sanitizePlainField(profileName)}\t${sanitizePlainField(baseUrl)}`]
     }
-    case "migrate-store":
-      return [
-        `MIGRATED\t${sanitizePlainField(rest.migrated)}\t${sanitizePlainField(rest.deduplicated)}\t${sanitizePlainField(rest.target)}`,
-      ]
     case "bootstrap": {
       if (rest.dryRun) {
         const checks = Array.isArray(rest.checks) ? rest.checks : []
@@ -271,8 +267,6 @@ export function formatHumanResult(data: ResultData): string {
     }
     case "setup cloudflare":
       return `Cloudflare profile "${rest.profileName}" ready at ${rest.baseUrl}`
-    case "migrate-store":
-      return `Artifact store ready at ${rest.target}: ${rest.migrated} migrated, ${rest.deduplicated} deduplicated`
     case "bootstrap": {
       if (rest.dryRun) {
         const checks = Array.isArray(rest.checks) ? rest.checks : []

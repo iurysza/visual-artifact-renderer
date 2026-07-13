@@ -55,7 +55,6 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | `create` | Read JSON, validate, derive project, write artifact, auto-start server. | `src/commands/create.ts` |
 | `validate` | Validate a spec without writing. | `src/commands/validate.ts` |
 | `serve` | Serve static export + live artifact JSON + fallback shells. | `src/commands/serve.ts` |
-| `migrate-store` | Safely merge legacy roots into the shared store. | `src/commands/migrate-store.ts`, `src/lib/artifact-store-migration.ts` |
 | `list` | List projects/artifacts from the artifact store. | `src/commands/list.ts` |
 | `open` | Open index or artifact URL. | `src/commands/open.ts` |
 | `doctor` | Check binary, deps, contract, out dir, artifacts dir, server. | `src/commands/doctor.ts` |
