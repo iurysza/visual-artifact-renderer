@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.6.0...v0.7.0) (2026-07-13)
+
+
+### Features
+
+* add alternative artifact library and root routes ([56380f5](https://github.com/iurysza/visual-artifact-renderer/commit/56380f5d23c75b072d6193f700df1cc4b46f0a76))
+* add alternative artifact library and root routes ([31373a0](https://github.com/iurysza/visual-artifact-renderer/commit/31373a08e10955313b176be45f8cea7769e576a5))
+* require artifact tags and preserve filters ([1ef34c3](https://github.com/iurysza/visual-artifact-renderer/commit/1ef34c32f2780dbee771ecfb183a5955be7c24f0))
+
+
+### Bug Fixes
+
+* hide empty artifact type filters ([5f6380e](https://github.com/iurysza/visual-artifact-renderer/commit/5f6380e57bc5a3db5fe4dbd84bf188b5b4e6164c))
+* **installer:** remove legacy store migration ([ca3ba52](https://github.com/iurysza/visual-artifact-renderer/commit/ca3ba5243ce31ba18d1a2293df1026cbca8b8d32))
+* scope filters and animate home updates ([df6adde](https://github.com/iurysza/visual-artifact-renderer/commit/df6adde6c07610e4534e4f782aabae735d00c3ed))
+
 ## [0.6.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.5.0...v0.6.0) (2026-07-13)
 
 
