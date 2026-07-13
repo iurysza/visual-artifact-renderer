@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process"
 import { randomBytes, timingSafeEqual } from "node:crypto"
+import { realpathSync } from "node:fs"
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { basename, dirname, resolve } from "node:path"
@@ -10,7 +11,7 @@ import type { Config } from "../types.ts"
 
 const execFileAsync = promisify(execFile)
 
-export const SERVER_STATE_VERSION = 1
+export const SERVER_STATE_VERSION = 2
 
 export const ServerStateSchema = z.object({
   version: z.literal(SERVER_STATE_VERSION),
@@ -18,6 +19,9 @@ export const ServerStateSchema = z.object({
   host: z.string().min(1),
   port: z.number().int().min(1).max(65535),
   mountPath: z.string().min(1),
+  dataPath: z.string().min(1),
+  artifactsDir: z.string().min(1),
+  outDir: z.string().min(1),
   url: z.string().url(),
   startedAt: z.string().datetime(),
   executable: z.string().min(1),
@@ -72,12 +76,34 @@ export function createServerState(config: Config, shutdownToken: string): Server
     host: config.host,
     port: config.port,
     mountPath: config.mountPath,
+    dataPath: config.dataPath,
+    artifactsDir: config.artifactsDir,
+    outDir: config.outDir,
     url: localBaseUrl(config),
     startedAt: new Date().toISOString(),
     executable: process.execPath,
     argv: process.argv.slice(),
     shutdownToken,
   }
+}
+
+function canonicalFsPath(path: string): string {
+  try {
+    return realpathSync(path)
+  } catch {
+    return resolve(path)
+  }
+}
+
+export function serverStateMatchesConfig(state: ServerState, config: Config): boolean {
+  return (
+    state.host === config.host &&
+    state.port === config.port &&
+    state.mountPath === config.mountPath &&
+    state.dataPath === config.dataPath &&
+    canonicalFsPath(state.artifactsDir) === canonicalFsPath(config.artifactsDir) &&
+    canonicalFsPath(state.outDir) === canonicalFsPath(config.outDir)
+  )
 }
 
 export function publicServerState(state: ServerState): PublicServerState {

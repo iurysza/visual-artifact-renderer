@@ -77,6 +77,7 @@ visual-artifact [global flags] <command>
 | `serve` | Serve static renderer + live artifact JSON. |
 | `serve status` | Check renderer server health. |
 | `serve stop` | Best-effort stop for tracked server. |
+| `migrate-store` | Copy legacy bundles into the shared store without overwriting conflicts; retain the source as backup. |
 | `list [project]` | List projects or artifacts. |
 | `open [project/slug]` | Open index or artifact page. |
 | `doctor` | Diagnose install/runtime state. |
@@ -90,6 +91,7 @@ visual-artifact create spec.json --project /path/to/repo
 cat spec.json | visual-artifact create -
 visual-artifact --json create spec.json --no-serve
 visual-artifact serve --no-open
+visual-artifact migrate-store --from ~/.local/share/visual-artifact/artifacts
 visual-artifact open my-project/my-slug
 visual-artifact doctor
 visual-artifact contract --format summary
@@ -97,13 +99,13 @@ visual-artifact contract --format summary
 
 ## Storage and URLs
 
-Default installed artifact storage:
+Default artifact storage for both installed and development runtimes:
 
 ```text
-~/.local/share/visual-artifact/artifacts/<project>/<slug>/artifact.json
+~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/artifact.json
 ```
 
-Development mode uses `<project-root>/artifacts` when the CLI detects the source tree. Each bundle may also contain `annotations.json`, `publish.json`, and `assets/`.
+Each bundle may also contain `annotations.json`, `publish.json`, and `assets/`. Use `VISUAL_ARTIFACT_ARTIFACTS_DIR` only when an explicit alternate store is required.
 
 The project name is derived from the caller's git root or directory.
 
@@ -195,7 +197,7 @@ for the full run order.
 Place local image assets in the artifact bundle:
 
 ```text
-~/.local/share/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
+~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 Use a relative source:

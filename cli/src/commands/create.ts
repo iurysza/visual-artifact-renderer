@@ -10,6 +10,7 @@ import {
 
 import { artifactBaseUrl, ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, bundleDirPath, publishJsonPath } from "../lib/paths.ts"
+import { readServerState, serverStateMatchesConfig, serverStatePath } from "../lib/server-lifecycle.ts"
 import type { Logger, ResultData } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
 import { validateMermaidNodes } from "../mermaid.ts"
@@ -58,10 +59,19 @@ function getServeCommand(): { command: string; args: string[] } {
 async function ensureServer(log: Logger, config: ReturnType<typeof loadConfig>): Promise<void> {
   const url = localBaseUrl(config)
   if (await serverIsRunning(url)) {
-    if (config.open) {
-      log.log("Renderer already running")
+    const stateResult = await readServerState(serverStatePath(config))
+    if (stateResult.ok && serverStateMatchesConfig(stateResult.state, config)) {
+      if (config.open) {
+        log.log("Renderer already running")
+      }
+      return
     }
-    return
+
+    const activeStore = stateResult.ok ? stateResult.state.artifactsDir : "unknown"
+    throw new Error(
+      `Renderer at ${url} uses artifact store ${activeStore}; expected ${config.artifactsDir}. ` +
+        "Run `visual-artifact serve stop`, then retry.",
+    )
   }
 
   const { command, args } = getServeCommand()
@@ -71,6 +81,13 @@ async function ensureServer(log: Logger, config: ReturnType<typeof loadConfig>):
     stdio: "ignore",
     env: {
       ...process.env,
+      VISUAL_ARTIFACT_ARTIFACTS_DIR: config.artifactsDir,
+      VISUAL_ARTIFACT_OUT_DIR: config.outDir,
+      VISUAL_ARTIFACT_PORT: String(config.port),
+      VISUAL_ARTIFACT_HOST: config.host,
+      VISUAL_ARTIFACT_MOUNT_PATH: config.mountPath || "/",
+      VISUAL_ARTIFACT_DATA_PATH: config.dataPath,
+      VISUAL_ARTIFACT_OPEN: "0",
       VISUAL_ARTIFACT_ALLOW_REMOTE: config.allowRemote ? "1" : "0",
     },
   })

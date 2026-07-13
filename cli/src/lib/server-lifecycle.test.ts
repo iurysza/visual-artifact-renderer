@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import type { Config } from "../types.ts"
@@ -13,6 +13,7 @@ import {
   publicServerState,
   readServerState,
   removeServerState,
+  serverStateMatchesConfig,
   serverStatePath,
   writeServerState,
 } from "./server-lifecycle.ts"
@@ -61,9 +62,20 @@ describe("server lifecycle state", () => {
     expect(read.ok).toBe(true)
     if (read.ok) expect(read.state).toEqual(state)
     expect(publicServerState(state).shutdownToken).toBe("<redacted>")
+    expect(serverStateMatchesConfig(state, config)).toBe(true)
+    expect(serverStateMatchesConfig(state, { ...config, artifactsDir: "/tmp/other-artifacts" })).toBe(false)
 
     await removeServerState(path)
     expect(await readServerState(path)).toEqual({ ok: false, path, reason: "missing" })
+  })
+
+  test("matches artifact stores reached through symlink aliases", async () => {
+    const store = join(dir, "store")
+    const alias = join(dir, "store-alias")
+    await mkdir(store)
+    await symlink(store, alias)
+    const state = createServerState({ ...config, artifactsDir: store }, generateShutdownToken())
+    expect(serverStateMatchesConfig(state, { ...config, artifactsDir: alias })).toBe(true)
   })
 
   test("reports corrupt state", async () => {

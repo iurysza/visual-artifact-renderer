@@ -137,7 +137,7 @@ The CLI reads the canonical regular file, caps each source at 512 KiB and all so
 For local assets, place the file inside the artifact's `assets` directory:
 
 ```text
-~/.local/share/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
+~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 Then reference it with a relative path:

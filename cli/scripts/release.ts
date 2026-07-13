@@ -79,6 +79,7 @@ async function installDependencies(): Promise<void> {
 
 async function buildApp(): Promise<void> {
   exec("pnpm build", APP_DIR)
+  exec("VISUAL_ARTIFACT_CLOUD_ROUTE_STRATEGY=placeholder pnpm verify:cloud-build", APP_DIR)
   exec("pnpm export:contract", APP_DIR)
 }
 

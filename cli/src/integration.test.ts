@@ -140,6 +140,30 @@ describe.each(["source", "binary"] as Target[])("CLI integration (%s)", (target)
     expect(stderr).toBe("")
   })
 
+  test("migrate-store moves legacy bundles through the CLI", async () => {
+    const legacy = join(dir, "legacy")
+    const bundle = join(legacy, "demo", "legacy-artifact")
+    await mkdir(join(bundle, "assets"), { recursive: true })
+    await writeFile(join(bundle, "artifact.json"), JSON.stringify({
+      slug: "legacy-artifact",
+      title: "Legacy",
+      nodes: [{ type: "text", props: { text: "legacy" } }],
+    }))
+    await writeFile(join(bundle, "annotations.json"), "legacy annotations")
+
+    const { exitCode, stdout, stderr } = runCli(
+      target,
+      ["--json", "migrate-store", "--from", legacy, "--to", artifactsDir],
+      { ...baseEnv(artifactsDir, outDir, stateDir), VISUAL_ARTIFACT_PORT: "49153" },
+    )
+
+    expect(exitCode).toBe(0)
+    expect(stderr).toBe("")
+    expect(JSON.parse(stdout).migrated).toBe(1)
+    expect(existsSync(join(artifactsDir, "demo", "legacy-artifact", "artifact.json"))).toBe(true)
+    expect(existsSync(join(bundle, "artifact.json"))).toBe(true)
+  })
+
   test("json+plain conflict exits 2 with empty stdout", () => {
     const { exitCode, stdout, stderr } = runCli(target, ["--json", "--plain", "validate", "-"], {}, validSpec)
     expect(exitCode).toBe(2)

@@ -72,7 +72,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 - Constrained JSON contract for `slug`, `title`, optional `data`, and typed `nodes`.
 - 30+ node types for prose, cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, and diffs.
 - Data-backed components that reference shared datasets by `dataKey`.
-- Local-first storage under `~/.local/share/visual-artifact/artifacts` unless overridden.
+- Local-first storage under `~/.agents/skills/visual-artifact/artifacts` unless overridden.
 - Pi extension with the `create_visual_artifact` tool.
 - Static renderer with live JSON, so new artifacts appear without rebuilding.
 - Node-level annotations and in-memory AI Colab review mode.

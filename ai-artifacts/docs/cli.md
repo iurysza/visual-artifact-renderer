@@ -40,7 +40,7 @@ visual-artifact doctor
 |---|---|
 | CLI binary | `~/.local/bin/visual-artifact` |
 | Static renderer export | `~/.local/share/visual-artifact/app/out` |
-| Artifact storage | `~/.local/share/visual-artifact/artifacts/<project>/<slug>/` |
+| Artifact storage | `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/` |
 
 The Pi package provides the extension and skill.
 
@@ -67,6 +67,7 @@ Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited
 | `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer, live artifact JSON, and writable annotation API. Non-loopback binds require global `--allow-remote` or `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. |
 | `visual-artifact serve status [--host addr] [--port n]` | Check server health and whether it is tracked by local lifecycle state. |
 | `visual-artifact serve stop [--host addr] [--port n] [--force]` | Stop a tracked local server via tokenized shutdown, with conservative fallback process termination. |
+| `visual-artifact migrate-store [--from path] [--to path]` | Copy legacy bundles into the shared store; differing identities fail without overwrite and sources remain as backups. |
 | `visual-artifact list [project]` | List projects or artifacts. |
 | `visual-artifact open [project/slug]` | Open the index or one artifact. |
 | `visual-artifact doctor` | Diagnose install and runtime state. |
@@ -142,13 +143,15 @@ Data endpoints use:
 /artifacts/data/artifacts/<project>/<slug>/assets/<file>
 ```
 
+Release installation automatically stops the existing renderer, then copies the legacy `~/.local/share/visual-artifact/artifacts` store into the shared store. Source bootstrap does the same for bundle directories from the repository’s former `artifacts/` root. Migration verifies every copied bundle, rejects differing identities, and retains legacy roots as safety backups. Manual `migrate-store` refuses to run while the default renderer is active.
+
 Local server lifecycle state uses per-address files:
 
 ```text
 ${XDG_STATE_HOME:-~/.local/state}/visual-artifact/servers/<host>-<port>.json
 ```
 
-The state file records PID, host, port, mount path, process identity metadata, and a random shutdown token. It is written after `serve` binds successfully and removed during normal shutdown.
+The state file records PID, host, port, mount/data paths, artifact/static roots, process identity metadata, and a random shutdown token. It is written after `serve` binds successfully and removed during normal shutdown.
 
 ## Server roles
 
@@ -164,7 +167,8 @@ The annotation mutation API is writable. It requires POST with `application/json
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<project-root>/artifacts` in source development; otherwise `~/.local/share/visual-artifact/artifacts` | Artifact bundle store. |
+| `VISUAL_ARTIFACT_SKILL_ROOT` | `~/.agents/skills/visual-artifact` | Stable skill namespace containing user artifacts. |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | `<skill-root>/artifacts` | Explicit artifact bundle store override. |
 | `VISUAL_ARTIFACT_OUT_DIR` | `~/.local/share/visual-artifact/app/out` or `<project-root>/app/out` | Static renderer export. |
 | `VISUAL_ARTIFACT_PORT` | `9998` | Static-preview server port. |
 | `VISUAL_ARTIFACT_HOST` | `127.0.0.1` | Server bind host. |

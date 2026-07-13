@@ -3,6 +3,7 @@ import { homedir } from "node:os"
 import { resolve } from "node:path"
 import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { loadContract } from "../contract.ts"
+import { readServerState, serverStateMatchesConfig, serverStatePath } from "../lib/server-lifecycle.ts"
 import type { Logger, ResultData } from "../logger.ts"
 import { dirExists, fileExists } from "../util.ts"
 
@@ -40,7 +41,16 @@ export async function doctor(log: Logger): Promise<number> {
   const url = localBaseUrl(config)
   try {
     const response = await fetch(url, { method: "HEAD" })
-    results.push({ check: "server", ok: response.ok, message: url })
+    const stateResult = await readServerState(serverStatePath(config))
+    const configMatches = stateResult.ok && serverStateMatchesConfig(stateResult.state, config)
+    const serverOk = response.ok && configMatches
+    const message = configMatches
+      ? `${url} (${config.artifactsDir})`
+      : stateResult.ok
+        ? `${url} serves ${stateResult.state.artifactsDir}; expected ${config.artifactsDir}`
+        : `${url} has ${stateResult.reason} lifecycle state`
+    results.push({ check: "server", ok: serverOk, message })
+    if (!serverOk) fail = true
   } catch {
     results.push({ check: "server", ok: false, message: `not running at ${url}` })
   }

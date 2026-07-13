@@ -55,11 +55,12 @@ The core constraint is still the product: **JSON, not generated React/HTML/CSS.*
 | `create` | Read JSON, validate, derive project, write artifact, auto-start server. | `src/commands/create.ts` |
 | `validate` | Validate a spec without writing. | `src/commands/validate.ts` |
 | `serve` | Serve static export + live artifact JSON + fallback shells. | `src/commands/serve.ts` |
+| `migrate-store` | Safely merge legacy roots into the shared store. | `src/commands/migrate-store.ts`, `src/lib/artifact-store-migration.ts` |
 | `list` | List projects/artifacts from the artifact store. | `src/commands/list.ts` |
 | `open` | Open index or artifact URL. | `src/commands/open.ts` |
 | `doctor` | Check binary, deps, contract, out dir, artifacts dir, server. | `src/commands/doctor.ts` |
 
-Source development stores artifacts under `<project-root>/artifacts`. Installed binaries store artifacts under `~/.local/share/visual-artifact/artifacts`.
+Source development and installed binaries share `~/.agents/skills/visual-artifact/artifacts` by default. This keeps one user-visible collection regardless of which renderer mode is active.
 
 ### 2.3 Shared executable contracts (`shared/`)
 
@@ -142,7 +143,8 @@ Browser opens /artifacts/<project>/<slug>/
 
 ```text
 cd app && pnpm build
-  → exports static app to app/out
+  → exports shell-only static app to app/out by default
+  → never embeds local user artifacts unless VISUAL_ARTIFACT_ARTIFACTS_DIR is explicit
 
 visual-artifact serve
   → serves static files from ~/.local/share/visual-artifact/app/out
@@ -183,7 +185,8 @@ Environment overrides:
 
 | Variable | Effect |
 |---|---|
-| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | Artifact storage directory. |
+| `VISUAL_ARTIFACT_SKILL_ROOT` | Stable skill namespace, default `~/.agents/skills/visual-artifact`. |
+| `VISUAL_ARTIFACT_ARTIFACTS_DIR` | Explicit artifact storage directory override. |
 | `VISUAL_ARTIFACT_OUT_DIR` | Static export directory. |
 | `VISUAL_ARTIFACT_CONTRACT_PATH` | Contract file. |
 | `VISUAL_ARTIFACT_PORT` / `VISUAL_ARTIFACT_HOST` | Server bind address. Non-loopback hosts require explicit remote exposure. |
@@ -204,11 +207,11 @@ The CLI and renderer use the same Zod artifact schema from `shared/`; the app re
 
 ### Static app, live data, and annotations
 
-Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. Local annotation edits require the CLI server; published Cloudflare pages use the Worker mutation route and R2. Both mutation routes require an existing artifact and apply the shared JSON/origin policy. The fallback shell is the bridge for artifacts created after the last build.
+Static export keeps serving simple. Live JSON endpoints keep artifacts dynamic. Local annotation edits require the CLI server; published Cloudflare pages use the Worker mutation route and R2. Both mutation routes require an existing artifact and apply the shared JSON/origin policy. The fallback shell is the bridge for runtime artifacts. Keeping production exports shell-only prevents private local specs from leaking into release archives.
 
-### Skill-root bundle storage
+### Skill-namespace bundle storage
 
-Artifacts are stored as bundles (`artifact.json`, `annotations.json`, `assets/`) under the skill root by default. This keeps generated output local and makes it easy to copy or share an artifact with its discussion intact. Use `VISUAL_ARTIFACT_ARTIFACTS_DIR` when a central store is needed.
+Artifacts are stored as bundles (`artifact.json`, `annotations.json`, `assets/`) under `~/.agents/skills/visual-artifact/artifacts` by default. The directory is user-owned output: renderer and skill updates must preserve it. One shared store lets development and installed renderers expose the same collection; use `VISUAL_ARTIFACT_ARTIFACTS_DIR` only for an intentional alternate store. Installers stop the default renderer before copying legacy roots, verify the snapshot, and retain each legacy root as a safety backup.
 
 ### Annotation persistence
 

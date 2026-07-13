@@ -14,7 +14,7 @@ Quick reference index for all architectural decisions. Read this file first to i
 | [0006](./ADR-0006-adapter-registry-node-rendering.md) | Adapter registry for node rendering | Renderer, adapters, registry | 2026-06-11 |
 | [0007](./ADR-0007-artifact-bundle-storage.md) | Artifact bundle storage | CLI storage, paths, annotations, assets | 2026-07-06 |
 | [0008](./ADR-0008-local-first-annotation-persistence.md) | Local-first annotation persistence | Annotation schema, CLI API, renderer, static hosting | 2026-07-06 |
-| [0011](./ADR-0011-separate-runtime-and-agent-resources.md) | Separate runtime, agent-resource, and artifact-data ownership | Installer, Pi package, skill distribution, artifact paths | 2026-07-10 |
+| [0012](./ADR-0012-skill-namespace-artifact-store.md) | One skill-namespace store for user-owned artifacts | CLI defaults, renderer, installer, lifecycle state, migration | 2026-07-13 |
 
 ## Proposed Decisions
 
@@ -27,6 +27,7 @@ Quick reference index for all architectural decisions. Read this file first to i
 | ADR | Was | Replaced By | Date |
 |-----|-----|-------------|------|
 | [0003](./ADR-0003-self-contained-skill-directory.md) | Self-contained skill-owned installation and storage | [ADR-0011](./ADR-0011-separate-runtime-and-agent-resources.md) | 2026-07-10 |
+| [0011](./ADR-0011-separate-runtime-and-agent-resources.md) | Dedicated runtime-data store separate from agent resources | [ADR-0012](./ADR-0012-skill-namespace-artifact-store.md) | 2026-07-13 |
 
 ## By Category
 
@@ -40,9 +41,10 @@ Quick reference index for all architectural decisions. Read this file first to i
 ### Packaging & Tooling
 - [ADR-0004](./ADR-0004-compiled-bun-cli.md): Compiled Bun CLI replacing bash wrappers
 - [ADR-0005](./ADR-0005-pi-extension-delegates-to-cli.md): Pi extension delegates to CLI via spawn
-- [ADR-0011](./ADR-0011-separate-runtime-and-agent-resources.md): Separate runtime and agent-resource installation
+- [ADR-0011](./ADR-0011-separate-runtime-and-agent-resources.md): Separate runtime and agent-resource installation (Superseded)
 
 ### Storage & Annotations
+- [ADR-0012](./ADR-0012-skill-namespace-artifact-store.md): Skill-namespace artifact store
 - [ADR-0007](./ADR-0007-artifact-bundle-storage.md): Artifact bundle storage
 - [ADR-0008](./ADR-0008-local-first-annotation-persistence.md): Local-first annotation persistence
 
