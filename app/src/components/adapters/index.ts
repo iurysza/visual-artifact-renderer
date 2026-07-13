@@ -24,6 +24,12 @@ export {
 } from "./leaf-adapters"
 
 export {
+  renderAnnotatedVisual,
+  renderKnowledgeCheck,
+  renderVisualSequence,
+} from "./lesson-adapters"
+
+export {
   renderTable,
   renderDataTable,
   renderComparisonTable,

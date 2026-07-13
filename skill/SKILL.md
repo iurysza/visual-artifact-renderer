@@ -176,7 +176,8 @@ building:
 
 | Intent | Reference |
 |---|---|
-| Most artifacts (galleries, explainers, dashboards, quick diagrams) | [`references/direct-artifact/_index.md`](./references/direct-artifact/_index.md) |
+| Most artifacts (galleries, dashboards, quick diagrams) | [`references/direct-artifact/_index.md`](./references/direct-artifact/_index.md) |
+| Explainers & lessons | [`references/content-types/explainers.md`](./references/content-types/explainers.md) |
 | Full codebase architecture overview | [`references/architecture-overview/_index.md`](./references/architecture-overview/_index.md) |
 | Dashboards & metrics | [`references/content-types/dashboards.md`](./references/content-types/dashboards.md) |
 | Architecture diagrams | [`references/content-types/architecture-diagrams.md`](./references/content-types/architecture-diagrams.md) |

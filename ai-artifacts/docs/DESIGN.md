@@ -49,6 +49,7 @@ Headings use the editorial stack for report-like weight. Code and data use mono.
 - Use `status-grid` for health/readiness/risk boards.
 - Use `comparison-table` and `data-table` for structured evidence.
 - Use `flow` or `mermaid` for architecture/data/request paths.
+- Use `annotated-visual` for visible anatomy, `visual-sequence` for learner-paced change, and `knowledge-check` for retrieval feedback.
 - Use `accordion` only for secondary detail.
 - Avoid nested card soup.
 

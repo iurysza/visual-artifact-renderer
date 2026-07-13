@@ -1,0 +1,84 @@
+{
+  "slug": "lesson-nodes",
+  "title": "Lesson node compatibility fixture",
+  "description": "Covers annotated visuals, learner-paced sequences, and retrieval checks.",
+  "nodes": [
+    {
+      "type": "annotated-visual",
+      "props": {
+        "src": "diagram.png",
+        "alt": "A request passing through validation and rendering",
+        "caption": "Two boundaries own different responsibilities.",
+        "aspect": "wide",
+        "markers": [
+          {
+            "title": "Validation",
+            "description": "The CLI rejects invalid specs before writing.",
+            "x": 25,
+            "y": 50
+          },
+          {
+            "title": "Rendering",
+            "description": "Trusted adapters turn nodes into UI.",
+            "x": 75,
+            "y": 50
+          }
+        ]
+      }
+    },
+    {
+      "type": "visual-sequence",
+      "props": {
+        "title": "Follow one artifact",
+        "caption": "Advance when each boundary is clear.",
+        "items": [
+          {
+            "title": "Describe",
+            "description": "Emit semantic JSON.",
+            "nodes": [
+              {
+                "type": "code-block",
+                "props": {
+                  "language": "json",
+                  "code": "{ \"type\": \"text\", \"props\": { \"text\": \"Hello\" } }"
+                }
+              }
+            ]
+          },
+          {
+            "title": "Render",
+            "description": "Choose a trusted adapter.",
+            "nodes": [
+              {
+                "type": "text",
+                "props": {
+                  "text": "The renderer owns styling and accessibility."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "knowledge-check",
+      "props": {
+        "prompt": "Which layer owns visual styling?",
+        "choices": [
+          {
+            "id": "agent",
+            "label": "The agent",
+            "feedback": "The agent chooses nodes, not CSS."
+          },
+          {
+            "id": "renderer",
+            "label": "The renderer"
+          }
+        ],
+        "answerId": "renderer",
+        "explanation": "Trusted renderer components own visual behavior.",
+        "hint": "Look for the layer that maps node types to adapters."
+      }
+    }
+  ]
+}

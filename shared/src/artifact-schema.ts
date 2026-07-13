@@ -180,7 +180,7 @@ function countNodesIterative(
     }
 
     if (
-      (node.type === "tabs" || node.type === "accordion") &&
+      (node.type === "tabs" || node.type === "accordion" || node.type === "visual-sequence") &&
       isPlainObject(node.props) &&
       Array.isArray(node.props.items)
     ) {
@@ -428,6 +428,41 @@ const FlowItemSchema = z
   })
   .strict()
 
+const KnowledgeCheckChoiceSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    feedback: z.string().min(1).optional(),
+  })
+  .strict()
+
+const KnowledgeCheckPropsSchema = z
+  .object({
+    prompt: z.string().min(1),
+    choices: z.array(KnowledgeCheckChoiceSchema).min(2).max(6),
+    answerId: z.string().min(1),
+    explanation: z.string().min(1),
+    hint: z.string().min(1).optional(),
+  })
+  .strict()
+  .superRefine((props, context) => {
+    const ids = props.choices.map((choice) => choice.id)
+    if (new Set(ids).size !== ids.length) {
+      context.addIssue({
+        code: "custom",
+        message: "knowledge-check choice ids must be unique",
+        path: ["choices"],
+      })
+    }
+    if (!ids.includes(props.answerId)) {
+      context.addIssue({
+        code: "custom",
+        message: "knowledge-check answerId must match a choice id",
+        path: ["answerId"],
+      })
+    }
+  })
+
 type FileTreeItem = {
   name: string
   type?: "file" | "directory"
@@ -468,6 +503,28 @@ const ColumnSchema = z.union([
 export type ArtifactNode =
   | { type: "definition-list"; props: { items: { term: string; description: string }[] }; metadata?: { id?: string } }
   | {
+      type: "annotated-visual"
+      props: {
+        src: string
+        alt: string
+        caption?: string
+        aspect?: "square" | "video" | "wide"
+        markers: { title: string; description: string; x: number; y: number }[]
+      }
+      metadata?: { id?: string }
+    }
+  | {
+      type: "knowledge-check"
+      props: {
+        prompt: string
+        choices: { id: string; label: string; feedback?: string }[]
+        answerId: string
+        explanation: string
+        hint?: string
+      }
+      metadata?: { id?: string }
+    }
+  | {
       type: "file-tree"
       props: {
         items: FileTreeItem[]
@@ -501,6 +558,15 @@ export type ArtifactNode =
   | {
       type: "stepper"
       props: { items: { title: string; description?: string; status?: "complete" | "current" | "pending" }[] }
+      metadata?: { id?: string }
+    }
+  | {
+      type: "visual-sequence"
+      props: {
+        title?: string
+        caption?: string
+        items: { title: string; description?: string; nodes: ArtifactNode[] }[]
+      }
       metadata?: { id?: string }
     }
   | {
@@ -692,6 +758,32 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
           .strict(),
       ).min(1),
     }),
+    leafSchema("annotated-visual", {
+      src: z.string().min(1),
+      alt: z.string(),
+      caption: z.string().min(1).optional(),
+      aspect: z.enum(["square", "video", "wide"]).optional(),
+      markers: z
+        .array(
+          z
+            .object({
+              title: z.string().min(1),
+              description: z.string().min(1),
+              x: z.number().min(0).max(100),
+              y: z.number().min(0).max(100),
+            })
+            .strict(),
+        )
+        .min(1)
+        .max(12),
+    }),
+    z
+      .object({
+        type: z.literal("knowledge-check"),
+        props: KnowledgeCheckPropsSchema,
+        metadata: metadataSchema,
+      })
+      .strict(),
     leafSchema("file-tree", {
       items: z.array(FileTreeItemSchema).min(1),
       flattenEmpty: z.boolean().optional(),
@@ -725,6 +817,22 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
           })
           .strict(),
       ).min(1),
+    }),
+    leafSchema("visual-sequence", {
+      title: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+      items: z
+        .array(
+          z
+            .object({
+              title: z.string().min(1),
+              description: z.string().min(1).optional(),
+              nodes: requiredChildNodes,
+            })
+            .strict(),
+        )
+        .min(2)
+        .max(12),
     }),
     leafSchema("image", {
       src: z.string(),
@@ -999,10 +1107,13 @@ const VisualArtifactSpecShapeSchema = z
           visit(node.children, [...nodePath, "children"])
         }
 
-        if (node.type === "image" && /^file:\/\//i.test(node.props.src)) {
+        if (
+          (node.type === "image" || node.type === "annotated-visual") &&
+          /^file:\/\//i.test(node.props.src)
+        ) {
           context.addIssue({
             code: "custom",
-            message: "image src must not use file:// URLs; use a relative sidecar path or an HTTPS URL",
+            message: `${node.type} src must not use file:// URLs; use a relative sidecar path or an HTTPS URL`,
             path: [...nodePath, "props", "src"],
           })
         }
@@ -1022,6 +1133,12 @@ const VisualArtifactSpecShapeSchema = z
         }
 
         if (node.type === "accordion") {
+          node.props.items.forEach((item, itemIndex) => {
+            visit(item.nodes, [...nodePath, "props", "items", itemIndex, "nodes"])
+          })
+        }
+
+        if (node.type === "visual-sequence") {
           node.props.items.forEach((item, itemIndex) => {
             visit(item.nodes, [...nodePath, "props", "items", itemIndex, "nodes"])
           })

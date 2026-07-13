@@ -44,12 +44,13 @@ The renderer uses `display: contents` for the boundary so grids, tabs, accordion
 
 ## Node set
 
-Visualizer ships **30+** node types:
+Visualizer ships **39** node types:
 
 ```txt
-alert, area-chart, radar-chart, scatter-chart, heatmap, log,
-definition-list, diff, donut-chart, file-tree, heading, image,
-pie-chart, stepper, text, card, metric, stat-card, badge,
+alert, annotated-visual, area-chart, radar-chart, scatter-chart,
+heatmap, log, definition-list, diff, donut-chart, file-tree,
+heading, image, knowledge-check, pie-chart, stepper, visual-sequence,
+text, card, metric, stat-card, badge,
 button, separator, table, data-table, comparison-table, chart,
 mermaid, svg-diagram, flow, timeline, code-block, status-grid,
 grid, section, tabs, accordion, prose
@@ -79,6 +80,9 @@ grid, section, tabs, accordion, prose
 | Matrix/correlation intensity | `heatmap` |
 | Term definitions | `definition-list` |
 | Images | `image` |
+| Image anatomy / hotspots | `annotated-visual` |
+| Learner-paced worked progression | `visual-sequence` |
+| Retrieval with explanatory feedback | `knowledge-check` |
 | Alternate detail | `tabs`, `accordion` |
 
 ## Composition guidance
@@ -92,10 +96,19 @@ Prefer visual structure over card soup:
 - Use `flow` for linear handoffs and `mermaid` for richer diagrams.
 - Use `svg-diagram` only when Mermaid cannot express the layout or interaction.
 - Use `timeline` or `stepper` for phases and runbooks.
+- Use `annotated-visual` for visible anatomy, `visual-sequence` for one-change-at-a-time progression, and `knowledge-check` for retrieval feedback.
 - Use `code-block` for exact commands/config, not whole source files.
 - Use `tabs` for alternate views of the same subject.
 - Use `accordion` for secondary detail, never for conclusions.
 - Avoid `file://` links. Use app routes, HTTPS URLs, or relative sidecar assets.
+
+## Lesson nodes
+
+- `annotated-visual` places 1–12 numbered markers over an image using `x`/`y` percentages from 0–100. Match the declared aspect to the source image so markers stay aligned.
+- `visual-sequence` contains 2–12 learner-controlled frames. Each frame has a title, optional description, and regular artifact nodes. Frame nodes count toward total-node and depth limits.
+- `knowledge-check` contains 2–6 choices with unique IDs, one matching `answerId`, optional choice feedback, a required explanation, and an optional hint. Interaction state is local-only and resets on reload.
+
+Authoring recipes and a full example: [`skill/references/content-types/explainers.md`](../../skill/references/content-types/explainers.md).
 
 ## Data-backed nodes
 

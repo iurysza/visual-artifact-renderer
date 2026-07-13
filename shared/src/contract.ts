@@ -77,6 +77,7 @@ export const ARTIFACT_SPEC_CONSTRAINTS = {
 
 export const ARTIFACT_NODE_TYPES = [
   "alert",
+  "annotated-visual",
   "area-chart",
   "radar-chart",
   "scatter-chart",
@@ -88,8 +89,10 @@ export const ARTIFACT_NODE_TYPES = [
   "file-tree",
   "heading",
   "image",
+  "knowledge-check",
   "pie-chart",
   "stepper",
+  "visual-sequence",
   "text",
   "card",
   "metric",
@@ -189,6 +192,47 @@ export const artifactPatternExamples = {
       { type: "code-block", props: { title: "Env contract", language: "bash", code: "MODEL_NAME=...\nTEXT_EMBEDDING_MODEL=text-embedding-005\nTOP_K=5" } },
     ],
   },
+  lesson: {
+    description: "Lesson: opening mental model, annotated visual, learner-paced worked sequence, then retrieval with explanatory feedback.",
+    nodes: [
+      { type: "text", props: { text: "A request crosses three boundaries before the renderer can display it.", size: "lg" } },
+      {
+        type: "annotated-visual",
+        props: {
+          src: "request-path.png",
+          alt: "Request path from agent to rendered artifact",
+          caption: "Select a marker to connect each boundary to its responsibility.",
+          aspect: "wide",
+          markers: [
+            { title: "Contract", description: "The agent emits constrained JSON.", x: 20, y: 50 },
+            { title: "Renderer", description: "Trusted adapters turn nodes into UI.", x: 80, y: 50 },
+          ],
+        },
+      },
+      {
+        type: "visual-sequence",
+        props: {
+          title: "Follow one request",
+          items: [
+            { title: "Describe", description: "Express the idea with semantic nodes.", nodes: [{ type: "code-block", props: { language: "json", code: "{ \"type\": \"text\", \"props\": { \"text\": \"Hello\" } }" } }] },
+            { title: "Render", description: "The registry chooses a trusted adapter.", nodes: [{ type: "text", props: { text: "No arbitrary JSX crosses the contract boundary." } }] },
+          ],
+        },
+      },
+      {
+        type: "knowledge-check",
+        props: {
+          prompt: "Which layer owns visual styling?",
+          choices: [
+            { id: "agent", label: "The agent", feedback: "The agent chooses semantic nodes, not CSS." },
+            { id: "renderer", label: "The renderer" },
+          ],
+          answerId: "renderer",
+          explanation: "The renderer owns component behavior, tokens, layout, and accessibility.",
+        },
+      },
+    ],
+  },
 }
 
 export const artifactManifest = {
@@ -198,6 +242,13 @@ export const artifactManifest = {
     props: { title: "string", description: "string?", variant: '"default" | "destructive"?' },
     children: false,
     example: { type: "alert", props: { title: "Heads up", description: "This is important." } },
+  },
+  "annotated-visual": {
+    type: "annotated-visual",
+    description: "An image with numbered percentage-positioned hotspots and adjacent explanations. Use for anatomy, screenshots, interfaces, and system diagrams. Keep markers to the few details the learner needs now.",
+    props: { src: "string", alt: "string", caption: "string?", aspect: '"square" | "video" | "wide"?', markers: "{ title: string, description: string, x: number 0-100, y: number 0-100 }[] (1-12)" },
+    children: false,
+    example: { type: "annotated-visual", props: { src: "lesson-diagram.png", alt: "Three-stage request path", aspect: "wide", markers: [{ title: "Boundary", description: "Validation happens before storage.", x: 48, y: 42 }] } },
   },
   "definition-list": {
     type: "definition-list",
@@ -275,6 +326,13 @@ export const artifactManifest = {
     children: false,
     example: { type: "image", props: { src: "hero.png", alt: "Placeholder", zoom: true } },
   },
+  "knowledge-check": {
+    type: "knowledge-check",
+    description: "A local-only multiple-choice retrieval check with submit, explanatory feedback, an optional hint, and retry. Use after the learner has encountered the idea; do not leak the answer through choice length or formatting.",
+    props: { prompt: "string", choices: "{ id: string, label: string, feedback?: string }[] (2-6, unique ids)", answerId: "string matching a choice id", explanation: "string", hint: "string?" },
+    children: false,
+    example: { type: "knowledge-check", props: { prompt: "Where is artifact JSON validated first?", choices: [{ id: "cli", label: "At the CLI boundary" }, { id: "adapter", label: "Inside each adapter", feedback: "Adapters receive an already parsed node." }], answerId: "cli", explanation: "The CLI validates before writing; the renderer parses again before rendering." } },
+  },
   "pie-chart": {
     type: "pie-chart",
     description: "A pie chart for proportional data.",
@@ -289,6 +347,13 @@ export const artifactManifest = {
     props: { items: "{ title: string, description?: string, status?: \"complete\" | \"current\" | \"pending\" }[]" },
     children: false,
     example: { type: "stepper", props: { items: [{ title: "Step 1", status: "complete" }, { title: "Step 2", status: "current" }] } },
+  },
+  "visual-sequence": {
+    type: "visual-sequence",
+    description: "A learner-controlled sequence that reveals one frame at a time. Each frame contains regular artifact nodes. Use for worked examples, procedures, causal changes, or code execution; use stepper only for static progress.",
+    props: { title: "string?", caption: "string?", items: "{ title: string, description?: string, nodes: nodes[] }[] (2-12)" },
+    children: "items",
+    example: { type: "visual-sequence", props: { title: "Trace the request", items: [{ title: "Parse", nodes: [{ type: "text", props: { text: "Validate the JSON contract." } }] }, { title: "Render", nodes: [{ type: "text", props: { text: "Map each node to its adapter." } }] }] } },
   },
   heading: {
     type: "heading",

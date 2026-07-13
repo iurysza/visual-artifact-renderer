@@ -4,6 +4,7 @@ import {
   childrenNodePath,
   tabItemNodePath,
   accordionItemNodePath,
+  sequenceItemNodePath,
   resolveNodePath,
 } from "@/lib/artifacts/node-paths"
 import type { AIColabComment, AIColabFormatOptions } from "./types"
@@ -141,6 +142,12 @@ function collectNodePathsInOrder(spec: VisualArtifactSpec): string[] {
           for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
             walk(items[itemIndex].nodes, accordionItemNodePath(nodePath, itemIndex))
           }
+        }
+      }
+
+      if (node.type === "visual-sequence") {
+        for (let itemIndex = 0; itemIndex < node.props.items.length; itemIndex++) {
+          walk(node.props.items[itemIndex].nodes, sequenceItemNodePath(nodePath, itemIndex))
         }
       }
     }
@@ -323,7 +330,7 @@ function inferLabel(node: ArtifactNode): string {
       candidate = props.label
       break
     default:
-      candidate = props.title ?? props.text ?? props.label ?? props.content
+      candidate = props.title ?? props.text ?? props.label ?? props.content ?? props.prompt ?? props.alt
   }
 
   if (typeof candidate !== "string" || candidate.length === 0) return ""
@@ -363,6 +370,12 @@ function buildNodeIdIndex(spec: VisualArtifactSpec): Map<string, string> {
           for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
             walk(items[itemIndex].nodes, accordionItemNodePath(nodePath, itemIndex))
           }
+        }
+      }
+
+      if (node.type === "visual-sequence") {
+        for (let itemIndex = 0; itemIndex < node.props.items.length; itemIndex++) {
+          walk(node.props.items[itemIndex].nodes, sequenceItemNodePath(nodePath, itemIndex))
         }
       }
     }

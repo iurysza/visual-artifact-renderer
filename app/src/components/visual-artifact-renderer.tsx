@@ -426,7 +426,7 @@ function nodeLabel(node: ArtifactNode): string | undefined {
   const props = node.props as Record<string, unknown> | undefined
   if (!props) return undefined
 
-  const raw = props.title ?? props.text ?? props.label ?? props.content
+  const raw = props.title ?? props.text ?? props.label ?? props.content ?? props.prompt ?? props.alt
   if (typeof raw === "string" && raw.length > 0) {
     return raw.slice(0, 80)
   }

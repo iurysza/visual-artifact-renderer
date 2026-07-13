@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import Image from "next/image"
 import { Maximize2Icon, XIcon } from "lucide-react"
 
@@ -19,6 +19,7 @@ export type ArtifactImageProps = {
   caption?: string
   aspect?: "auto" | "square" | "video" | "wide"
   zoom?: boolean
+  overlay?: ReactNode
   className?: string
 }
 
@@ -35,6 +36,7 @@ export function ArtifactImage({
   caption,
   aspect = "auto",
   zoom = true,
+  overlay,
   className,
 }: ArtifactImageProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -68,6 +70,7 @@ export function ArtifactImage({
             )}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
           />
+          {overlay}
           {zoomable && (
             <div className="pointer-events-none absolute right-3 top-3 rounded-full border bg-background/80 p-1.5 text-muted-foreground opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100">
               <Maximize2Icon className="h-4 w-4" />

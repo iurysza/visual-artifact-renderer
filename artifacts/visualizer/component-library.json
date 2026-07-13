@@ -71,7 +71,7 @@
 
     { "type": "section", "props": { "title": "Stat band: grid + stat-card + card + metric", "description": "Top-level KPI tiles and nested metric display." }, "children": [
       { "type": "grid", "props": { "columns": 3 }, "children": [
-        { "type": "stat-card", "props": { "label": "Node types", "value": 36, "delta": "full coverage", "trend": "up", "caption": "Every contract node type rendered.", "tone": "accent" } },
+        { "type": "stat-card", "props": { "label": "Node types", "value": 39, "delta": "full coverage", "trend": "up", "caption": "Every contract node type rendered.", "tone": "accent" } },
         { "type": "stat-card", "props": { "label": "Data-backed", "value": 13, "caption": "Nodes requiring embedded data rows.", "tone": "success" } },
         { "type": "card", "props": { "title": "Card + metric", "description": "Cards hold child nodes, including metric tiles.", "tone": "default" }, "children": [
           { "type": "metric", "props": { "label": "Avg parse time", "value": "8ms", "delta": "-2ms", "trend": "up" } }
@@ -108,6 +108,42 @@
 
     { "type": "section", "props": { "title": "Diagrams: mermaid", "description": "Client-rendered Mermaid diagrams. svg-diagram omitted (requires full HTML document)." }, "children": [
       { "type": "mermaid", "props": { "caption": "Node registry", "code": "flowchart TD\n  Spec[VisualArtifactSpec] --> Reg[componentRegistry]\n  Reg --> Adapters[adapters/]\n  Adapters --> UI[components/ui/]" } }
+    ] },
+
+    { "type": "section", "props": { "title": "Lessons: annotated-visual, visual-sequence, knowledge-check", "description": "Image anatomy, learner-paced progression, and retrieval feedback." }, "children": [
+      { "type": "annotated-visual", "props": {
+        "src": "https://placehold.co/1200x675/png?text=Agent+to+CLI+to+Renderer",
+        "alt": "A request moving from an agent through the CLI to the renderer",
+        "caption": "Hotspots connect visible boundaries to their responsibilities.",
+        "aspect": "wide",
+        "markers": [
+          { "title": "Agent", "description": "Chooses semantic nodes and fills their props.", "x": 18, "y": 50 },
+          { "title": "CLI", "description": "Validates and stores the artifact spec.", "x": 50, "y": 50 },
+          { "title": "Renderer", "description": "Maps nodes to trusted UI adapters.", "x": 82, "y": 50 }
+        ]
+      } },
+      { "type": "visual-sequence", "props": {
+        "title": "Trace one node",
+        "caption": "Each frame introduces one boundary.",
+        "items": [
+          { "title": "Describe", "description": "The agent emits a semantic node.", "nodes": [
+            { "type": "code-block", "props": { "language": "json", "code": "{ \"type\": \"text\", \"props\": { \"text\": \"Hello\" } }" } }
+          ] },
+          { "title": "Render", "description": "The registry chooses a trusted adapter.", "nodes": [
+            { "type": "text", "props": { "text": "Styling and behavior stay inside the renderer." } }
+          ] }
+        ]
+      } },
+      { "type": "knowledge-check", "props": {
+        "prompt": "Which layer owns visual styling?",
+        "choices": [
+          { "id": "agent", "label": "The agent", "feedback": "The agent chooses meaning, not CSS." },
+          { "id": "renderer", "label": "The renderer" }
+        ],
+        "answerId": "renderer",
+        "explanation": "Trusted renderer components enforce consistent layout, behavior, and accessibility.",
+        "hint": "Look for the layer that maps node types to components."
+      } }
     ] },
 
     { "type": "section", "props": { "title": "Code & data: code-block, file-tree, diff, log", "description": "Code snippets, file structure, diffs, and log output." }, "children": [

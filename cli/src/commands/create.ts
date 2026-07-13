@@ -286,7 +286,10 @@ async function resolveFileTreeSources(
       if (Array.isArray(propsObj.children)) {
         for (const child of propsObj.children) await visit(child)
       }
-      if ((obj.type === "tabs" || obj.type === "accordion") && Array.isArray(propsObj.items)) {
+      if (
+        (obj.type === "tabs" || obj.type === "accordion" || obj.type === "visual-sequence") &&
+        Array.isArray(propsObj.items)
+      ) {
         for (const item of propsObj.items) {
           if (item && typeof item === "object" && Array.isArray((item as Record<string, unknown>).nodes)) {
             for (const child of (item as Record<string, unknown>).nodes as unknown[]) await visit(child)

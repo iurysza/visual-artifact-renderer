@@ -93,6 +93,15 @@ const baseSpec = VisualArtifactSpecSchema.parse({
       props: { dataKey: "checks", columns: ["check", "status", "evidence"] },
       metadata: { id: "table-1" },
     },
+    {
+      type: "visual-sequence",
+      props: {
+        items: [
+          { title: "First", nodes: [{ type: "text", props: { text: "Sequence frame" }, metadata: { id: "sequence-frame" } }] },
+          { title: "Second", nodes: [{ type: "text", props: { text: "Sequence frame two" } }] },
+        ],
+      },
+    },
   ],
 }) satisfies VisualArtifactSpec
 
@@ -178,6 +187,23 @@ describe("formatArtifactForAI", () => {
     ]
     const output = formatArtifactForAI(baseSpec, { comments })
     assert.match(output, /1\. \(lines 116-124\) Feedback on: "Accordion item 1 node"/)
+  })
+
+  it("finds comments inside visual sequence frames", () => {
+    const comments: AIColabComment[] = [
+      {
+        id: "c1",
+        target: {
+          kind: "node",
+          nodePath: "nodes.99",
+          nodeId: "sequence-frame",
+        },
+        body: "Sequence frame comment.",
+      },
+    ]
+    const output = formatArtifactForAI(baseSpec, { comments })
+    assert.match(output, /Feedback on: "Sequence frame"/)
+    assert.match(output, /\n\| Sequence frame comment\.\n/)
   })
 
   it("prefixes every line of a multi-line comment body with |", () => {

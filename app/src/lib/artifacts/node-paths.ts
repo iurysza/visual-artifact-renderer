@@ -16,6 +16,10 @@ export function accordionItemNodePath(parentPath: string, itemIndex: number): st
   return `${parentPath}.props.items.${itemIndex}.nodes`
 }
 
+export function sequenceItemNodePath(parentPath: string, itemIndex: number): string {
+  return `${parentPath}.props.items.${itemIndex}.nodes`
+}
+
 export function resolveNodePath(spec: VisualArtifactSpec, nodePath: string): ArtifactNode | undefined {
   const segments = nodePath.split(".")
   let current: unknown = spec

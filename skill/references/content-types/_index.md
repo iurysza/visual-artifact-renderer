@@ -11,6 +11,7 @@ High-level patterns for common artifact shapes. Pick the content shape first, th
 
 | Pattern | Use when | Primary nodes |
 |---|---|---|
+| [Explainers & lessons](./explainers.md) | Teach a mental model, procedure, mechanism, or decision | `annotated-visual`, `visual-sequence`, `knowledge-check` |
 | [Architecture diagrams](./architecture-diagrams.md) | System topology, module relationships, runtime flows | `mermaid`, `flow`, `grid`, `card` |
 | [Dashboards & metrics](./dashboards.md) | KPIs, status boards, health overviews | `stat-card`, `status-grid`, `chart`, `table` |
 | [Timelines & roadmaps](./timelines.md) | Sequences of events, phases, milestones | `timeline`, `stepper`, `section`, `card` |

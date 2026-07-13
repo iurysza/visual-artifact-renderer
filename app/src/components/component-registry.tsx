@@ -19,6 +19,7 @@ function renderMermaid({ node }: AdapterArgs<"mermaid">) {
 
 export const componentRegistry = {
   alert: createAdapter(adapters.renderAlert),
+  "annotated-visual": createAdapter(adapters.renderAnnotatedVisual),
   "area-chart": createAdapter(adapters.renderAreaChart),
   "radar-chart": createAdapter(adapters.renderRadarChart),
   "scatter-chart": createAdapter(adapters.renderScatterChart),
@@ -30,8 +31,10 @@ export const componentRegistry = {
   "file-tree": createAdapter(adapters.renderFileTree),
   heading: createAdapter(adapters.renderHeading),
   image: createAdapter(adapters.renderImage),
+  "knowledge-check": createAdapter(adapters.renderKnowledgeCheck),
   "pie-chart": createAdapter(adapters.renderPieChart),
   stepper: createAdapter(adapters.renderStepper),
+  "visual-sequence": createAdapter(adapters.renderVisualSequence),
   text: createAdapter(adapters.renderText),
   card: createAdapter(adapters.renderCard),
   metric: createAdapter(adapters.renderMetric),

@@ -142,11 +142,12 @@ describe("create: source read containment", () => {
     expect(written.nodes[0].props.items[0].src).toBeUndefined()
   })
 
-  test("resolves file-tree sources nested in tabs and accordions", async () => {
+  test("resolves file-tree sources nested in tabs, accordions, and visual sequences", async () => {
     const project = join(dir, "project")
     await mkdir(project, { recursive: true })
     await writeFile(join(project, "tab.txt"), "tab content", "utf8")
     await writeFile(join(project, "accordion.txt"), "accordion content", "utf8")
+    await writeFile(join(project, "sequence.txt"), "sequence content", "utf8")
     const specPath = await writeSpec(dir, {
       slug: "nested-sources",
       title: "Nested sources",
@@ -186,6 +187,28 @@ describe("create: source read containment", () => {
             ],
           },
         },
+        {
+          type: "visual-sequence",
+          props: {
+            items: [
+              {
+                title: "One",
+                nodes: [
+                  {
+                    type: "file-tree",
+                    props: {
+                      items: [{ name: "sequence.txt", type: "file", src: "sequence.txt" }],
+                    },
+                  },
+                ],
+              },
+              {
+                title: "Two",
+                nodes: [{ type: "text", props: { text: "Done" } }],
+              },
+            ],
+          },
+        },
       ],
     })
 
@@ -195,7 +218,7 @@ describe("create: source read containment", () => {
 
     const outLine = log._logs.find((line) => line.startsWith("output: "))
     const result = JSON.parse(outLine!.slice("output: ".length))
-    expect(result.safety.diskSources.count).toBe(2)
+    expect(result.safety.diskSources.count).toBe(3)
     const written = JSON.parse(await readFile(result.path, "utf8"))
     expect(written.nodes[0].props.items[0].nodes[0].props.items[0]).toEqual({
       name: "tab.txt",
@@ -206,6 +229,11 @@ describe("create: source read containment", () => {
       name: "accordion.txt",
       type: "file",
       content: "accordion content",
+    })
+    expect(written.nodes[2].props.items[0].nodes[0].props.items[0]).toEqual({
+      name: "sequence.txt",
+      type: "file",
+      content: "sequence content",
     })
   })
 

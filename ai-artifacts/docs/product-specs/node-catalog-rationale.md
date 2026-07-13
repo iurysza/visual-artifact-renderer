@@ -13,6 +13,7 @@
 | Diagrams/flows | `mermaid`, `svg-diagram`, `flow` | Architecture, sequence, topology, and handoff maps. |
 | Code/dev content | `code-block`, `diff`, `file-tree`, `log` | Developer-facing evidence and examples. |
 | Sequencing | `timeline`, `stepper` | Phases, runbooks, progress, and lifecycle states. |
+| Lessons | `annotated-visual`, `visual-sequence`, `knowledge-check` | Visible anatomy, learner-paced worked progressions, and retrieval feedback. |
 | Layout/disclosure | `grid`, `tabs`, `accordion` | Composition and secondary detail without custom CSS. |
 | Reference | `definition-list`, `image` | Glossaries and visual assets. |
 

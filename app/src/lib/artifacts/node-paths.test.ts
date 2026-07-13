@@ -38,6 +38,15 @@ const specFixture = VisualArtifactSpecSchema.parse({
         ],
       },
     },
+    {
+      type: "visual-sequence",
+      props: {
+        items: [
+          { title: "Step 1", nodes: [{ type: "text", props: { text: "Sequence step 1 node" } }] },
+          { title: "Step 2", nodes: [{ type: "text", props: { text: "Sequence step 2 node" } }] },
+        ],
+      },
+    },
   ],
 }) satisfies VisualArtifactSpec
 
@@ -73,6 +82,12 @@ describe("resolveNodePath", () => {
     const node = resolveNodePath(specFixture, "nodes.3.props.items.0.nodes.0")
     assert.equal(node?.type, "text")
     assert.equal(node?.props.text, "Accordion item 1 node")
+  })
+
+  it("resolves nodes inside visual sequences", () => {
+    const node = resolveNodePath(specFixture, "nodes.4.props.items.1.nodes.0")
+    assert.equal(node?.type, "text")
+    assert.equal(node?.props.text, "Sequence step 2 node")
   })
 
   it("returns undefined for unknown paths", () => {
