@@ -18,11 +18,11 @@ For Pi, use its package manager for the extension and skill while the release in
 
 ```bash
 curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
-pi install git:github.com/iurysouza/visual-artifact-renderer
+pi install git:github.com/iurysza/visual-artifact-renderer
 visual-artifact doctor
 ```
 
-Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysouza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. The package includes the extension and skill.
+Run `/reload` or restart Pi. Use `pi update --extensions` to update an unpinned package, `pi config` to toggle its resources, and `pi remove git:github.com/iurysza/visual-artifact-renderer` to remove it. Pin `@v<version>` when reproducibility matters. The package includes the extension and skill.
 
 Install from this repo:
 
@@ -46,7 +46,7 @@ The Pi package provides the extension and skill.
 
 For Pi, run `/reload` or restart Pi after install.
 
-Other compatible agents can install the skill with `npx skills add iurysouza/visual-artifact-renderer --skill visual-artifact`.
+Other compatible agents can install the skill with `npx skills add iurysza/visual-artifact-renderer --skill visual-artifact`.
 
 ## Command map
 

@@ -86,7 +86,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 Install the CLI, renderer, and agent skill:
 
 ```bash
-curl -fsSL https://github.com/iurysouza/visual-artifact-renderer/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 npx skills add iurysza/visual-artifact-renderer --skill visual-artifact
 visual-artifact doctor
@@ -99,7 +99,7 @@ Restart your agent if it was already running.
 Install the CLI and renderer, then let Pi manage the skill and extension:
 
 ```bash
-curl -fsSL https://github.com/iurysouza/visual-artifact-renderer/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 pi install git:github.com/iurysza/visual-artifact-renderer
 visual-artifact doctor
