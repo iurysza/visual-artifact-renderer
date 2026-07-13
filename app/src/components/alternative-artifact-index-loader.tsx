@@ -8,9 +8,9 @@ import { SearchXIcon } from "lucide-react"
 import {
   ALL_PROJECTS_SENTINEL as ALL_PROJECTS,
   ALL_TYPES_SENTINEL as ALL_TYPES,
-  ARTIFACT_TYPES,
   artifactFilterSearch,
   artifactFiltersFromSearch,
+  artifactTypesPresentIn,
   filterArtifacts,
   groupArtifactsByDay,
   pathWithArtifactFilters,
@@ -110,16 +110,32 @@ export function AlternativeArtifactIndexLoader() {
     () => index?.artifacts ?? index?.recent ?? [],
     [index],
   )
+  const availableArtifactTypes = useMemo(
+    () => artifactTypesPresentIn(libraryArtifacts),
+    [libraryArtifacts],
+  )
+  const effectiveArtifactType = artifactType === ALL_TYPES || availableArtifactTypes.includes(artifactType)
+    ? artifactType
+    : ALL_TYPES
+  const effectiveFilters = useMemo(
+    () => ({ ...filters, artifactType: effectiveArtifactType }),
+    [effectiveArtifactType, filters],
+  )
   const filteredArtifacts = useMemo(
-    () => filterArtifacts(libraryArtifacts, { query, project, artifactType }),
-    [artifactType, libraryArtifacts, project, query],
+    () => filterArtifacts(libraryArtifacts, { query, project, artifactType: effectiveArtifactType }),
+    [effectiveArtifactType, libraryArtifacts, project, query],
   )
   const dayGroups = useMemo(() => groupArtifactsByDay(filteredArtifacts), [filteredArtifacts])
   const projectItems = useMemo(() => [
     { label: "All projects", value: ALL_PROJECTS },
     ...(index?.projects.map((item) => ({ label: item.name, value: item.name })) ?? []),
   ], [index])
-  const hasFilters = query.trim().length > 0 || project !== ALL_PROJECTS || artifactType !== ALL_TYPES
+  const hasFilters = query.trim().length > 0 || project !== ALL_PROJECTS || effectiveArtifactType !== ALL_TYPES
+
+  useEffect(() => {
+    if (!index || artifactType === effectiveArtifactType) return
+    replaceLocationSearch(artifactFilterSearch(effectiveFilters))
+  }, [artifactType, effectiveArtifactType, effectiveFilters, index])
 
   if (error) {
     return (
@@ -224,7 +240,7 @@ export function AlternativeArtifactIndexLoader() {
             <ToggleGroup
               variant="outline"
               size="sm"
-              value={[artifactType]}
+              value={[effectiveArtifactType]}
               onValueChange={(values) => {
                 const selected = values.at(-1)
                 if (selected) updateFilters({ artifactType: selected as ArtifactType | typeof ALL_TYPES })
@@ -232,7 +248,7 @@ export function AlternativeArtifactIndexLoader() {
               aria-label="Filter by artifact type"
             >
               <ToggleGroupItem value={ALL_TYPES}>All</ToggleGroupItem>
-              {ARTIFACT_TYPES.map((type) => (
+              {availableArtifactTypes.map((type) => (
                 <ToggleGroupItem key={type} value={type}>{typeLabel(type)}</ToggleGroupItem>
               ))}
             </ToggleGroup>
@@ -269,7 +285,7 @@ export function AlternativeArtifactIndexLoader() {
                         key={`${artifact.project}-${artifact.slug}`}
                         href={pathWithArtifactFilters(
                           artifactPagePath(artifact.project, artifact.slug),
-                          filters,
+                          effectiveFilters,
                         )}
                         className="group grid gap-2 py-3.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-3 sm:py-4 sm:-mx-3"
                       >

@@ -6,6 +6,7 @@ import {
   ALL_TYPES_SENTINEL,
   artifactFilterSearch,
   artifactFiltersFromSearch,
+  artifactTypesPresentIn,
   filterArtifacts,
   groupArtifactsByDay,
   homeFilterSearchFromSearch,
@@ -60,6 +61,10 @@ describe("alternative artifact index", () => {
     assert.equal(groups.length, 2)
     assert.equal(groups[0].artifacts[0].slug, "renderer-map")
     assert.equal(groups[1].artifacts[0].slug, "review-notes")
+  })
+
+  test("offers only artifact types present in the library", () => {
+    assert.deepEqual(artifactTypesPresentIn(artifacts), ["review", "diagram"])
   })
 
   test("round-trips filters through home and artifact URLs", () => {

@@ -82,6 +82,11 @@ export interface ArtifactDayGroup {
   artifacts: RecentArtifact[]
 }
 
+export function artifactTypesPresentIn(artifacts: RecentArtifact[]): ArtifactType[] {
+  const presentTypes = new Set(artifacts.map((artifact) => artifact.artifactType))
+  return ARTIFACT_TYPES.filter((type) => presentTypes.has(type))
+}
+
 export function filterArtifacts(
   artifacts: RecentArtifact[],
   { query, project, artifactType }: ArtifactFilters,
