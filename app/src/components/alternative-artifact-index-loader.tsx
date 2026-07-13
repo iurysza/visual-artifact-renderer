@@ -7,13 +7,19 @@ import { SearchXIcon } from "lucide-react"
 
 import {
   ALL_PROJECTS_SENTINEL as ALL_PROJECTS,
+  ALL_TYPES_SENTINEL as ALL_TYPES,
   ARTIFACT_TYPES,
+  artifactFilterSearch,
+  artifactFiltersFromSearch,
   filterArtifacts,
   groupArtifactsByDay,
+  pathWithArtifactFilters,
+  type ArtifactFilters,
   type ArtifactIndex,
   type ArtifactType,
 } from "@/lib/artifacts/alternative-index"
 import { artifactIndexUrl, artifactPagePath } from "@/lib/artifacts/paths"
+import { replaceLocationSearch, useLocationSearch } from "@/lib/navigation/location-search"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,8 +43,6 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-
-const ALL_TYPES = "all"
 
 function typeLabel(type: ArtifactType): string {
   return type.charAt(0).toUpperCase() + type.slice(1)
@@ -68,9 +72,9 @@ function AlternativeIndexSkeleton() {
 export function AlternativeArtifactIndexLoader() {
   const [index, setIndex] = useState<ArtifactIndex | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [query, setQuery] = useState("")
-  const [project, setProject] = useState(ALL_PROJECTS)
-  const [artifactType, setArtifactType] = useState<ArtifactType | typeof ALL_TYPES>(ALL_TYPES)
+  const locationSearch = useLocationSearch()
+  const filters = useMemo(() => artifactFiltersFromSearch(locationSearch), [locationSearch])
+  const { query, project, artifactType } = filters
 
   useEffect(() => {
     let cancelled = false
@@ -132,10 +136,12 @@ export function AlternativeArtifactIndexLoader() {
 
   if (!index) return <AlternativeIndexSkeleton />
 
+  function updateFilters(values: Partial<ArtifactFilters>) {
+    replaceLocationSearch(artifactFilterSearch({ ...filters, ...values }))
+  }
+
   function clearFilters() {
-    setQuery("")
-    setProject(ALL_PROJECTS)
-    setArtifactType(ALL_TYPES)
+    replaceLocationSearch("")
   }
 
   return (
@@ -166,7 +172,7 @@ export function AlternativeArtifactIndexLoader() {
             <Button
               variant={project === ALL_PROJECTS ? "secondary" : "ghost"}
               className="w-full justify-between"
-              onClick={() => setProject(ALL_PROJECTS)}
+              onClick={() => updateFilters({ project: ALL_PROJECTS })}
             >
               <span>All projects</span>
               <span className="font-mono text-xs text-muted-foreground">{libraryArtifacts.length}</span>
@@ -176,7 +182,7 @@ export function AlternativeArtifactIndexLoader() {
                 key={item.name}
                 variant={project === item.name ? "secondary" : "ghost"}
                 className="w-full justify-between"
-                onClick={() => setProject(item.name)}
+                onClick={() => updateFilters({ project: item.name })}
               >
                 <span className="truncate">{item.name}</span>
                 <span className="font-mono text-xs text-muted-foreground">{item.artifactCount}</span>
@@ -190,12 +196,16 @@ export function AlternativeArtifactIndexLoader() {
             <Input
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => updateFilters({ query: event.target.value })}
               placeholder="Search titles, descriptions, projects, topics…"
               aria-label="Search artifacts"
               className="h-9"
             />
-            <Select items={projectItems} value={project} onValueChange={(value) => setProject(value ?? ALL_PROJECTS)}>
+            <Select
+              items={projectItems}
+              value={project}
+              onValueChange={(value) => updateFilters({ project: value ?? ALL_PROJECTS })}
+            >
               <SelectTrigger className="h-9 w-full sm:w-52 lg:hidden" aria-label="Filter by project">
                 <SelectValue placeholder="All projects" />
               </SelectTrigger>
@@ -217,7 +227,7 @@ export function AlternativeArtifactIndexLoader() {
               value={[artifactType]}
               onValueChange={(values) => {
                 const selected = values.at(-1)
-                if (selected) setArtifactType(selected as ArtifactType | typeof ALL_TYPES)
+                if (selected) updateFilters({ artifactType: selected as ArtifactType | typeof ALL_TYPES })
               }}
               aria-label="Filter by artifact type"
             >
@@ -257,7 +267,10 @@ export function AlternativeArtifactIndexLoader() {
                     {group.artifacts.map((artifact) => (
                       <Link
                         key={`${artifact.project}-${artifact.slug}`}
-                        href={artifactPagePath(artifact.project, artifact.slug)}
+                        href={pathWithArtifactFilters(
+                          artifactPagePath(artifact.project, artifact.slug),
+                          filters,
+                        )}
                         className="group grid gap-2 py-3.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-3 sm:py-4 sm:-mx-3"
                       >
                         <div className="min-w-0">

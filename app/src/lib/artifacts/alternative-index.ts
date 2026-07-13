@@ -10,6 +10,7 @@ export type { ArtifactType }
  * project name (min length 1), so it cannot collide with a real project.
  */
 export const ALL_PROJECTS_SENTINEL = ""
+export const ALL_TYPES_SENTINEL = "all"
 
 export interface ProjectListing {
   name: string
@@ -36,7 +37,43 @@ export interface ArtifactIndex {
 export interface ArtifactFilters {
   query: string
   project: string
-  artifactType: ArtifactType | "all"
+  artifactType: ArtifactType | typeof ALL_TYPES_SENTINEL
+}
+
+export function artifactFiltersFromSearch(search: string): ArtifactFilters {
+  const params = new URLSearchParams(search)
+  const rawType = params.get("type")
+  const artifactType = ARTIFACT_TYPES.includes(rawType as ArtifactType)
+    ? rawType as ArtifactType
+    : ALL_TYPES_SENTINEL
+
+  return {
+    query: params.get("q") ?? "",
+    project: params.get("project") ?? ALL_PROJECTS_SENTINEL,
+    artifactType,
+  }
+}
+
+export function artifactFilterSearch(filters: ArtifactFilters): string {
+  const params = new URLSearchParams()
+  const query = filters.query.trim()
+  if (query) params.set("q", query)
+  if (filters.project !== ALL_PROJECTS_SENTINEL) params.set("project", filters.project)
+  if (filters.artifactType !== ALL_TYPES_SENTINEL) params.set("type", filters.artifactType)
+  const search = params.toString()
+  return search ? `?${search}` : ""
+}
+
+export function homePathWithFilters(filters: ArtifactFilters): string {
+  return `/${artifactFilterSearch(filters)}`
+}
+
+export function pathWithArtifactFilters(path: string, filters: ArtifactFilters): string {
+  return `${path}${artifactFilterSearch(filters)}`
+}
+
+export function homeFilterSearchFromSearch(search: string): string {
+  return artifactFilterSearch(artifactFiltersFromSearch(search))
 }
 
 export interface ArtifactDayGroup {
@@ -53,7 +90,7 @@ export function filterArtifacts(
 
   return artifacts.filter((artifact) => {
     if (project !== ALL_PROJECTS_SENTINEL && artifact.project !== project) return false
-    if (artifactType !== "all" && artifact.artifactType !== artifactType) return false
+    if (artifactType !== ALL_TYPES_SENTINEL && artifact.artifactType !== artifactType) return false
     if (!normalizedQuery) return true
 
     return [

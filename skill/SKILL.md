@@ -57,6 +57,7 @@ Use `visual-artifact contract` to print the full contract, `visual-artifact cont
 
 Rules:
 
+- Always include exactly one `artifactType` and 2–5 concise lowercase kebab-case `topics` for discovery and search. Runtime validation keeps these optional only for legacy artifacts.
 - Follow `visual-artifact contract` for root spec, node constraints, and resource limits.
 - Data-backed nodes need `data.<dataKey>` arrays.
 - Keep data values well-formed. The shared executable schema validates the same contract in the CLI and renderer.

@@ -1,7 +1,18 @@
 import assert from "node:assert/strict"
 import { describe, test } from "node:test"
 
-import { ALL_PROJECTS_SENTINEL, filterArtifacts, groupArtifactsByDay, type RecentArtifact } from "./alternative-index"
+import {
+  ALL_PROJECTS_SENTINEL,
+  ALL_TYPES_SENTINEL,
+  artifactFilterSearch,
+  artifactFiltersFromSearch,
+  filterArtifacts,
+  groupArtifactsByDay,
+  homeFilterSearchFromSearch,
+  homePathWithFilters,
+  pathWithArtifactFilters,
+  type RecentArtifact,
+} from "./alternative-index"
 
 const artifacts: RecentArtifact[] = [
   {
@@ -49,6 +60,43 @@ describe("alternative artifact index", () => {
     assert.equal(groups.length, 2)
     assert.equal(groups[0].artifacts[0].slug, "renderer-map")
     assert.equal(groups[1].artifacts[0].slug, "review-notes")
+  })
+
+  test("round-trips filters through home and artifact URLs", () => {
+    const filters = {
+      query: "agent runtime",
+      project: "agents",
+      artifactType: "review" as const,
+    }
+
+    assert.equal(
+      artifactFilterSearch(filters),
+      "?q=agent+runtime&project=agents&type=review",
+    )
+    assert.equal(
+      homePathWithFilters(filters),
+      "/?q=agent+runtime&project=agents&type=review",
+    )
+    assert.equal(
+      pathWithArtifactFilters("/agents/review-notes/", filters),
+      "/agents/review-notes/?q=agent+runtime&project=agents&type=review",
+    )
+    assert.deepEqual(
+      artifactFiltersFromSearch("?q=agent+runtime&project=agents&type=review"),
+      filters,
+    )
+  })
+
+  test("keeps only valid home filters from navigation query parameters", () => {
+    assert.equal(
+      homeFilterSearchFromSearch("?q=runtime&project=agents&type=review&panel=comments&thread=1"),
+      "?q=runtime&project=agents&type=review",
+    )
+    assert.deepEqual(artifactFiltersFromSearch("?type=unknown"), {
+      query: "",
+      project: ALL_PROJECTS_SENTINEL,
+      artifactType: ALL_TYPES_SENTINEL,
+    })
   })
 
   test("project sentinel shows all projects and does not collide with a project named all", () => {

@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { homeFilterSearchFromSearch } from "@/lib/artifacts/alternative-index"
 import { projectIndexUrl, artifactPagePath, projectParamsFromPath } from "@/lib/artifacts/paths"
+import { useLocationSearch } from "@/lib/navigation/location-search"
 import { formatDateTime } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
@@ -27,6 +29,8 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
 
   const [index, setIndex] = useState<ProjectIndex | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const locationSearch = useLocationSearch()
+  const homeFilterSearch = homeFilterSearchFromSearch(locationSearch)
 
   useEffect(() => {
     if (!project) return
@@ -114,7 +118,7 @@ export function ProjectIndexLoader({ project: projectProp }: { project?: string 
         {artifacts.map((artifact) => (
           <Link
             key={artifact.slug}
-            href={artifactPagePath(project, artifact.slug)}
+            href={`${artifactPagePath(project, artifact.slug)}${homeFilterSearch}`}
             className="group rounded-xl border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
           >
             <div className="flex items-start justify-between gap-4">
