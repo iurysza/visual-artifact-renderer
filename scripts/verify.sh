@@ -104,6 +104,9 @@ echo "--- app: build ---"
 pnpm build
 ok "app build passed"
 
+VISUAL_ARTIFACT_CLOUD_ROUTE_STRATEGY=placeholder pnpm verify:cloud-build
+ok "local build artifact leak check passed"
+
 echo ""
 echo "--- app: current-route health smoke ---"
 HEALTH_DIR="$(mktemp -d)"

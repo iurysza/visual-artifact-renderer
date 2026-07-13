@@ -1,5 +1,6 @@
+import { spawnSync } from "node:child_process"
 import { access, chmod, copyFile, cp, lstat, mkdir, rm, writeFile } from "node:fs/promises"
-import { constants } from "node:fs"
+import { constants, existsSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { homedir } from "node:os"
@@ -16,6 +17,7 @@ const BIN_PATH = resolve(BIN_DIR, "visual-artifact")
 const DATA_DIR = resolve(HOME, ".local", "share", "visual-artifact")
 const APP_OUT_DIR = resolve(DATA_DIR, "app", "out")
 const VERSION_PATH = resolve(DATA_DIR, "VERSION")
+const ARTIFACTS_DIR = resolve(HOME, ".agents", "skills", "visual-artifact", "artifacts")
 
 async function ensureExecutable(path: string): Promise<void> {
   try {
@@ -75,6 +77,17 @@ async function writeVersionStamp(): Promise<void> {
   console.log(`[install] Version stamp: ${VERSION_PATH}`)
 }
 
+function stopInstalledServer(): void {
+  if (!existsSync(BIN_PATH)) return
+  const result = spawnSync(BIN_PATH, ["--quiet", "--json", "serve", "stop"], {
+    encoding: "utf8",
+    timeout: 10_000,
+  })
+  if (result.status !== 0) {
+    throw new Error("Could not stop the existing renderer; no artifacts or runtime files were changed")
+  }
+}
+
 async function main(): Promise<void> {
   console.log("[install] Installing visual-artifact...")
 
@@ -84,10 +97,14 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
+  stopInstalledServer()
+  await mkdir(ARTIFACTS_DIR, { recursive: true })
+
   await copyFileReplacing(BINARY, BIN_PATH, "CLI binary")
   await ensureExecutable(BIN_PATH)
   await copyAppOut()
   await writeVersionStamp()
+  console.log(`[install] Artifact store: ${ARTIFACTS_DIR}`)
 
   const pathEnv = process.env.PATH ?? ""
   if (!pathEnv.split(":").includes(BIN_DIR)) {

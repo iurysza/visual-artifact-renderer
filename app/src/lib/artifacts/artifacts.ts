@@ -1,4 +1,5 @@
 import { promises as fs } from "fs"
+import { homedir } from "os"
 import path from "path"
 
 import {
@@ -10,9 +11,15 @@ import {
 } from "@/lib/contract/artifact-schema"
 import { readArtifactFileBounded } from "@/lib/artifacts/read-artifact-file"
 
+const SKILL_ROOT = process.env.VISUAL_ARTIFACT_SKILL_ROOT
+  ? path.resolve(process.env.VISUAL_ARTIFACT_SKILL_ROOT)
+  : path.resolve(homedir(), ".agents", "skills", "visual-artifact")
+
+const SHELL_ONLY_BUILD = process.env.NODE_ENV === "production" && !process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
+
 const ARTIFACTS_DIR = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
   ? path.resolve(process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR)
-  : path.resolve(process.cwd(), "..", "artifacts")
+  : path.resolve(SKILL_ROOT, "artifacts")
 
 const ARTIFACT_JSON = "artifact.json"
 
@@ -42,6 +49,7 @@ export interface RecentArtifact extends ArtifactListing {
 }
 
 export async function listProjects(): Promise<ProjectListing[]> {
+  if (SHELL_ONLY_BUILD) return []
   try {
     const entries = await fs.readdir(ARTIFACTS_DIR, { withFileTypes: true })
     const projects: ProjectListing[] = []
@@ -72,6 +80,7 @@ export async function listProjects(): Promise<ProjectListing[]> {
 }
 
 export async function listArtifactsInProject(projectName: string): Promise<ArtifactListing[]> {
+  if (SHELL_ONLY_BUILD) return []
   const projectDir = path.join(ARTIFACTS_DIR, projectName)
 
   try {
@@ -121,6 +130,7 @@ export async function listArtifactsInProject(projectName: string): Promise<Artif
 }
 
 export async function getVisualArtifactSpec(projectName: string, slug: string): Promise<VisualArtifactSpec | null> {
+  if (SHELL_ONLY_BUILD) return null
   const parsedProject = ArtifactSlugSchema.safeParse(projectName)
   const parsedSlug = ArtifactSlugSchema.safeParse(slug)
 
@@ -144,6 +154,7 @@ export async function getVisualArtifactSpec(projectName: string, slug: string): 
 }
 
 export async function listRecentArtifacts(limit = 6): Promise<RecentArtifact[]> {
+  if (SHELL_ONLY_BUILD) return []
   const projects = await listProjects()
   const recent: RecentArtifact[] = []
 

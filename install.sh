@@ -6,6 +6,7 @@ DEFAULT_MANIFEST_URL="https://github.com/iurysza/visual-artifact-renderer/releas
 MANIFEST_URL="${VISUAL_ARTIFACT_MANIFEST_URL:-$DEFAULT_MANIFEST_URL}"
 INSTALL_DIR="${VISUAL_ARTIFACT_INSTALL_DIR:-$HOME/.local/bin}"
 DATA_DIR="${VISUAL_ARTIFACT_DATA_DIR:-$HOME/.local/share/visual-artifact}"
+ARTIFACTS_DIR="${VISUAL_ARTIFACT_ARTIFACTS_DIR:-$HOME/.agents/skills/visual-artifact/artifacts}"
 
 log() { printf '[install] %s\n' "$*"; }
 err() { printf '[install] error: %s\n' "$*" >&2; exit 1; }
@@ -112,6 +113,14 @@ main() {
   out_src="${pkg}out"
 
   [ -f "$bin_src" ] || err "binary not found in archive: ${bin_src}"
+  chmod +x "$bin_src"
+
+  if [ -x "${INSTALL_DIR}/${BIN}" ]; then
+    "${INSTALL_DIR}/${BIN}" --quiet --json serve stop >/dev/null \
+      || err "could not stop the existing renderer; no artifacts or runtime files were changed"
+  fi
+
+  mkdir -p "$ARTIFACTS_DIR"
 
   # Install binary
   mkdir -p "$INSTALL_DIR"
@@ -134,6 +143,8 @@ main() {
   mkdir -p "$DATA_DIR"
   printf '%s\n' "${version:-latest}" > "${DATA_DIR}/VERSION"
   log "wrote version stamp to ${DATA_DIR}/VERSION"
+
+  log "artifact store at ${ARTIFACTS_DIR}"
 
   # Check PATH
   case ":${PATH}:" in

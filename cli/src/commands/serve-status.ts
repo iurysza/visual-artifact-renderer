@@ -5,6 +5,7 @@ import {
   processExists,
   readServerState,
   removeServerState,
+  serverStateMatchesConfig,
   serverStatePath,
 } from "../lib/server-lifecycle.ts"
 import type { Logger, ResultData } from "../logger.ts"
@@ -27,6 +28,9 @@ interface StatusOutput {
   statePath: string
   pid?: number
   state: "valid" | "missing" | "corrupt" | "stale"
+  artifactsDir?: string
+  expectedArtifactsDir?: string
+  configMatches?: boolean
   staleStateRemoved?: boolean
   error?: string
 }
@@ -56,6 +60,9 @@ function emitResult(log: Logger, output: StatusOutput): void {
     tracked: output.tracked,
     pid: output.pid,
     state: output.state,
+    artifactsDir: output.artifactsDir,
+    expectedArtifactsDir: output.expectedArtifactsDir,
+    configMatches: output.configMatches,
     staleStateRemoved: output.staleStateRemoved,
     error: output.error,
   })
@@ -88,7 +95,17 @@ export async function serveStatus(log: Logger, opts: ServeStatusOpts = {}): Prom
     const processCommand = pidExists ? await command(pid) : null
     const tracked = running && pidExists && commandLooksLikeVisualizerServer(processCommand, stateResult.state)
     if (tracked) {
-      emitResult(log, { running, tracked: true, url: stateResult.state.url, statePath, pid, state: "valid" })
+      emitResult(log, {
+        running,
+        tracked: true,
+        url: stateResult.state.url,
+        statePath,
+        pid,
+        state: "valid",
+        artifactsDir: stateResult.state.artifactsDir,
+        expectedArtifactsDir: config.artifactsDir,
+        configMatches: serverStateMatchesConfig(stateResult.state, config),
+      })
       return 0
     }
 

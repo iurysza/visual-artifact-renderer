@@ -100,13 +100,13 @@ visual-artifact contract --format summary
 
 ## Storage and URLs
 
-Default installed artifact storage:
+Default artifact storage for both installed and development runtimes:
 
 ```text
-~/.local/share/visual-artifact/artifacts/<project>/<slug>/artifact.json
+~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/artifact.json
 ```
 
-Development mode uses `<project-root>/artifacts` when the CLI detects the source tree. Each bundle may also contain `annotations.json`, `publish.json`, and `assets/`.
+Each bundle may also contain `annotations.json`, `publish.json`, and `assets/`. Use `VISUAL_ARTIFACT_ARTIFACTS_DIR` only when an explicit alternate store is required.
 
 The project name is derived from the caller's git root or directory.
 
@@ -198,7 +198,7 @@ for the full run order.
 Place local image assets in the artifact bundle:
 
 ```text
-~/.local/share/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
+~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 Use a relative source:

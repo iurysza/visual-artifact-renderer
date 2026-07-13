@@ -67,12 +67,15 @@ export function findProjectRoot(): string | null {
   return null
 }
 
+export function defaultSkillRoot(): string {
+  return resolveFsPath(
+    process.env.VISUAL_ARTIFACT_SKILL_ROOT,
+    () => resolve(homedir(), ".agents", "skills", "visual-artifact"),
+  )
+}
+
 export function defaultArtifactsDir(): string {
-  const envDir = process.env.VISUAL_ARTIFACT_ARTIFACTS_DIR
-  if (envDir === "") throw new ConfigValidationError("VISUAL_ARTIFACT_ARTIFACTS_DIR is empty")
-  const projectRoot = findProjectRoot()
-  if (projectRoot) return resolve(projectRoot, "artifacts")
-  return resolve(homedir(), ".local", "share", "visual-artifact", "artifacts")
+  return resolve(defaultSkillRoot(), "artifacts")
 }
 
 export function defaultOutDir(): string {

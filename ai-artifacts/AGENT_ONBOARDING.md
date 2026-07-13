@@ -130,7 +130,7 @@ visual-artifact serve status
 visual-artifact open <project>/<slug>
 ```
 
-The installed server serves static files from `~/.local/share/visual-artifact/app/out` and live JSON from the configured artifacts directory (`~/.local/share/visual-artifact/artifacts` by default).
+The installed server serves static files from `~/.local/share/visual-artifact/app/out` and live JSON from the shared skill store (`~/.agents/skills/visual-artifact/artifacts` by default).
 
 ## 6. Verification
 
@@ -154,7 +154,7 @@ pnpm validate:mermaid path/to/diagram.mmd
 
 - **Contract drift.** Schema and manifest changes are not done until `cli/assets/contract.json` is regenerated and `visual-artifact contract` reflects them.
 - **Wrong working directory.** Renderer commands run in `app/`; CLI commands run in `cli/`.
-- **Storage location confusion.** Development defaults to the source repo's `artifacts/`; installed use defaults to the skill's `artifacts/`. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
+- **Storage location confusion.** Development and installed runtimes both default to `~/.agents/skills/visual-artifact/artifacts`. Override with `VISUAL_ARTIFACT_ARTIFACTS_DIR`.
 - **Base path.** App routes are root-relative (`/<project>/<slug>/`); data routes live under `/data/artifacts/...` and the annotation API under `/api/annotations/...`.
 - **Generated artifacts are local output.** Do not commit `artifacts/<project>/<slug>/` unless explicitly asked.
 - **Extension delegates.** `pi-extension/visual-artifact.ts` does not implement rendering; it finds the CLI and sends JSON through stdin.

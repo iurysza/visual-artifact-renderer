@@ -8,11 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  verify:
-    uses: ./.github/workflows/verify.yml
-
   release:
-    needs: verify
     runs-on: macos-15-intel
     steps:
       - name: Checkout

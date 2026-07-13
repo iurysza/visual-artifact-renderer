@@ -1,6 +1,6 @@
 # ADR-0011: Separate Runtime and Agent Resource Installation
 
-> **Quick Reference** | Status: Accepted | Date: 2026-07-10
+> **Quick Reference** | Status: Superseded by [ADR-0012](./ADR-0012-skill-namespace-artifact-store.md) | Date: 2026-07-10
 > **Decision**: Install the CLI and renderer as runtime files; install the Pi extension and skill through package managers; store artifacts under dedicated runtime data.
 > **Context**: Copying agent resources into global discovery paths duplicates Pi package ownership and couples mutable artifacts to replaceable skill files.
 > **Alternatives**: Keep convenience copies, bundle resources in release archives, store artifacts under the skill
@@ -34,5 +34,6 @@ Release archives and bootstrap install only the CLI and renderer. Pi installs th
 
 ## Related
 
+- [ADR-0012](./ADR-0012-skill-namespace-artifact-store.md): Replaces the dedicated runtime-data store with a stable skill-namespace store.
 - [ADR-0003](./ADR-0003-self-contained-skill-directory.md): Superseded skill-owned installation model.
 - [ADR-0007](./ADR-0007-artifact-bundle-storage.md): Bundle shape remains unchanged under the new artifacts root.

@@ -65,7 +65,7 @@ Agents should also read [`AGENTS.md`](../../AGENTS.md), which is the repo operat
 
 - Source renderer lives under `app/`, not repo root.
 - CLI lives under `cli/` and is the runtime boundary for create, validate, serve, and publish.
-- Installed artifact storage is `~/.local/share/visual-artifact/artifacts/<project>/<slug>/artifact.json`; source development uses `<project-root>/artifacts`.
+- Installed and source-development artifact storage is `~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/artifact.json`.
 - Public pages are served from the URL root (`/<project>/<slug>/`); public JSON is under `/data/artifacts`.
 - The contract source of truth is `shared/src/contract.ts`; `pnpm export:contract` writes `cli/assets/contract.json` for docs and tooling. Inspect it with `visual-artifact contract`.
 

@@ -30,7 +30,7 @@ Names like `VisualArtifactSpec`, `ArtifactNode`, `dataKey`, and `ArtifactManifes
 
 ## 5. Storage is runtime output
 
-Generated artifact bundles are local output under the source repo's `artifacts/` in development or the installed skill's `artifacts/` by default. Do not commit generated artifacts unless the user explicitly asks.
+Generated artifact bundles are local output under `~/.agents/skills/visual-artifact/artifacts` by default for both development and installed runtimes. Do not commit generated artifacts unless the user explicitly asks.
 
 ## 6. Progressive disclosure for agents
 

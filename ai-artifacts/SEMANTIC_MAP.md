@@ -50,7 +50,7 @@
 │ Next.js shell → client loaders → renderer → adapters.         │
 ├─────────────────────────────────────────────────────────────┤
 │ Storage                                                      │
-│ ~/.local/share/visual-artifact/artifacts/<project>/<slug>/.   │
+│ ~/.agents/skills/visual-artifact/artifacts/<project>/<slug>/ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
