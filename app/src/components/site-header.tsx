@@ -19,7 +19,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { homeFilterSearchFromSearch } from "@/lib/artifacts/alternative-index"
+import { homeFilterSearchFromSearch } from "@/lib/artifacts/artifact-index"
 import { useLocationSearch } from "@/lib/navigation/location-search"
 import { cn } from "@/lib/utils"
 

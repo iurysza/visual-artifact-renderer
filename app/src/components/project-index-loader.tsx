@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { homeFilterSearchFromSearch } from "@/lib/artifacts/alternative-index"
+import { homeFilterSearchFromSearch } from "@/lib/artifacts/artifact-index"
 import { projectIndexUrl, artifactPagePath, projectParamsFromPath } from "@/lib/artifacts/paths"
 import { useLocationSearch } from "@/lib/navigation/location-search"
 import { formatDateTime } from "@/lib/utils"

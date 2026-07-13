@@ -88,7 +88,7 @@ Agent JSON
 /
   → ArtifactIndexLoader
   → /data/artifacts/index.json
-  → projects + recent artifacts
+  → chronological artifact library with search, project filter, and type filter
 
 /<project>/
   → ProjectIndexLoader
