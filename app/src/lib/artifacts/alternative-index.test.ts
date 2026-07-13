@@ -63,8 +63,16 @@ describe("alternative artifact index", () => {
     assert.equal(groups[1].artifacts[0].slug, "review-notes")
   })
 
-  test("offers only artifact types present in the library", () => {
+  test("offers only artifact types present in the current project", () => {
     assert.deepEqual(artifactTypesPresentIn(artifacts), ["review", "diagram"])
+    assert.deepEqual(
+      artifactTypesPresentIn(filterArtifacts(artifacts, {
+        query: "",
+        project: "visualizer",
+        artifactType: ALL_TYPES_SENTINEL,
+      })),
+      ["diagram"],
+    )
   })
 
   test("round-trips filters through home and artifact URLs", () => {

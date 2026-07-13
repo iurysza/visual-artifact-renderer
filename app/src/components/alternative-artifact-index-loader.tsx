@@ -110,9 +110,17 @@ export function AlternativeArtifactIndexLoader() {
     () => index?.artifacts ?? index?.recent ?? [],
     [index],
   )
+  const projectArtifacts = useMemo(
+    () => filterArtifacts(libraryArtifacts, {
+      query: "",
+      project,
+      artifactType: ALL_TYPES,
+    }),
+    [libraryArtifacts, project],
+  )
   const availableArtifactTypes = useMemo(
-    () => artifactTypesPresentIn(libraryArtifacts),
-    [libraryArtifacts],
+    () => artifactTypesPresentIn(projectArtifacts),
+    [projectArtifacts],
   )
   const effectiveArtifactType = artifactType === ALL_TYPES || availableArtifactTypes.includes(artifactType)
     ? artifactType
@@ -249,14 +257,19 @@ export function AlternativeArtifactIndexLoader() {
             >
               <ToggleGroupItem value={ALL_TYPES}>All</ToggleGroupItem>
               {availableArtifactTypes.map((type) => (
-                <ToggleGroupItem key={type} value={type}>{typeLabel(type)}</ToggleGroupItem>
+                <ToggleGroupItem className="va-library-filter-enter" key={type} value={type}>
+                  {typeLabel(type)}
+                </ToggleGroupItem>
               ))}
             </ToggleGroup>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
           {dayGroups.length === 0 ? (
-            <Empty className="mt-6 border">
+            <Empty
+              key={`${project}:${effectiveArtifactType}:empty`}
+              className="va-library-results mt-6 border"
+            >
               <EmptyHeader>
                 <EmptyMedia variant="icon"><SearchXIcon /></EmptyMedia>
                 <EmptyTitle>{libraryArtifacts.length === 0 ? "No artifacts yet" : "No matching artifacts"}</EmptyTitle>
@@ -273,7 +286,10 @@ export function AlternativeArtifactIndexLoader() {
               )}
             </Empty>
           ) : (
-            <div className="mt-4 flex flex-col gap-7 sm:mt-6 sm:gap-9">
+            <div
+              key={`${project}:${effectiveArtifactType}:results`}
+              className="va-library-results mt-4 flex flex-col gap-7 sm:mt-6 sm:gap-9"
+            >
               {dayGroups.map((group) => (
                 <section key={group.key} aria-labelledby={`day-${group.key}`}>
                   <div className="border-b pb-2">
@@ -287,7 +303,7 @@ export function AlternativeArtifactIndexLoader() {
                           artifactPagePath(artifact.project, artifact.slug),
                           effectiveFilters,
                         )}
-                        className="group grid gap-2 py-3.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-3 sm:py-4 sm:-mx-3"
+                        className="va-library-artifact group grid gap-2 py-3.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-3 sm:py-4 sm:-mx-3"
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -299,7 +315,7 @@ export function AlternativeArtifactIndexLoader() {
                               <span key={topic} className="hidden text-xs text-muted-foreground sm:inline">{topic}</span>
                             ))}
                           </div>
-                          <h4 className="mt-1.5 font-serif text-lg font-medium tracking-[-0.015em] group-hover:text-clay-dark">
+                          <h4 className="va-library-artifact-title mt-1.5 font-serif text-lg font-medium tracking-[-0.015em] group-hover:text-clay-dark">
                             {artifact.title}
                           </h4>
                           {artifact.description && (
