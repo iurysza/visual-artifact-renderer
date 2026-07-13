@@ -7,23 +7,14 @@ on:
   push:
     branches:
       - main
-  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
   verify:
-    name: Verify (${{ matrix.os }}, ${{ matrix.arch }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            arch: x64
-          - os: macos-15-intel
-            arch: x64
-    runs-on: ${{ matrix.os }}
+    name: Verify
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,9 +35,6 @@ jobs:
           node-version: 22.22.3
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
-
-      - name: Verify runner architecture
-        run: test "$(node -p 'process.arch')" = "${{ matrix.arch }}"
 
       - name: Run verification gate
         run: ./scripts/verify.sh
