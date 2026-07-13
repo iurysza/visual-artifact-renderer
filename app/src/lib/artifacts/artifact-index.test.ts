@@ -13,7 +13,7 @@ import {
   homePathWithFilters,
   pathWithArtifactFilters,
   type RecentArtifact,
-} from "./alternative-index"
+} from "./artifact-index"
 
 const artifacts: RecentArtifact[] = [
   {
@@ -35,7 +35,7 @@ const artifacts: RecentArtifact[] = [
   },
 ]
 
-describe("alternative artifact index", () => {
+describe("artifact index", () => {
   test("searches metadata while combining project and type filters", () => {
     assert.deepEqual(
       filterArtifacts(artifacts, {

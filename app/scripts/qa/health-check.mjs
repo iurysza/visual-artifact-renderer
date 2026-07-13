@@ -62,7 +62,7 @@ async function main() {
   const artifactPath = `/${ARTIFACT_PROJECT}/${ARTIFACT_SLUG}/`
   const dataPath = `/data/artifacts/${ARTIFACT_PROJECT}/${ARTIFACT_SLUG}`
 
-  await checkText("home page", "/", ["<title>Artifacts</title>", "Loading index"])
+  await checkText("home page", "/", ["<title>Artifacts</title>", "Loading artifact library"])
   await checkText("artifact shell", artifactPath, ["Shell Artifact", "Loading artifact"])
   await checkJson("artifact data", `${dataPath}/artifact.json`, (document, url) => {
     requireEqual(document.slug, ARTIFACT_SLUG, "artifact slug", url)

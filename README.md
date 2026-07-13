@@ -5,9 +5,9 @@
 
 ![Visual Artifact Renderer cover](./assets/cover.jpg)
 
-Visual Artifact Renderer turns agent output into polished visual pages: reports, code reviews, architecture briefs, dashboards, explainers, and structured summaries.
+Turn an agent's work into something you can scan, understand, and share. Instead of another wall of Markdown, get a consistent visual page for a code review, architecture walkthrough, report, comparison, or dashboard.
 
-The rule is simple: **agents emit JSON, not HTML or React.** The renderer owns layout, styling, validation, and interaction.
+Agents provide structured JSON; the CLI validates it, and the renderer turns it into a styled, interactive page.
 
 ## Demo 
 Recorded with [terminal-control](https://github.com/anomalyco/terminal-control)
