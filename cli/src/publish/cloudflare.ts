@@ -154,7 +154,7 @@ export function remoteArtifactPageUrl(profile: CloudflarePublishProfile, project
 }
 
 export function localArtifactPageUrl(project: string, slug: string): string {
-  return `http://127.0.0.1:9998/artifacts/${encodeSegment(project)}/${encodeSegment(slug)}/`
+  return `http://127.0.0.1:9998/${encodeSegment(project)}/${encodeSegment(slug)}/`
 }
 
 export function buildPublishMetadata(

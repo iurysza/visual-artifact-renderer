@@ -9,7 +9,7 @@ import { spawn } from "node:child_process"
 const DEFAULT_QA_BASE_URL = process.env.VISUAL_QA_BASE_URL ?? "http://localhost:9999"
 const DEFAULT_PROJECT = process.env.VISUAL_QA_PROJECT ?? "visualizer"
 const DEFAULT_SLUG = process.env.VISUAL_QA_SLUG ?? "agent-stack-report"
-const url = process.argv[2] ?? `${DEFAULT_QA_BASE_URL.replace(/\/+$/, "")}/artifacts/${DEFAULT_PROJECT}/${DEFAULT_SLUG}/`
+const url = process.argv[2] ?? `${DEFAULT_QA_BASE_URL.replace(/\/+$/, "")}/${DEFAULT_PROJECT}/${DEFAULT_SLUG}/`
 const outDir = process.argv[3] ?? "ai-artifacts/visual-qa"
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 const port = Number(process.env.VISUAL_QA_PORT ?? 9333)

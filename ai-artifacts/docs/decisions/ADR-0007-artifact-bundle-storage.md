@@ -25,7 +25,7 @@ The canonical layout is:
   assets/
 ```
 
-Public page URLs stay `/artifacts/<project>/<slug>/`; runtime data URLs point inside the bundle.
+Public page URLs stay `/<project>/<slug>/`; runtime data URLs point inside the bundle.
 
 ## Alternatives Considered
 

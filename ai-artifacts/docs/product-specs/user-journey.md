@@ -10,7 +10,7 @@
 4. CLI validates the spec with the shared executable schema and resource envelope.
 5. CLI writes `<artifacts-dir>/<project>/<slug>/artifact.json`.
 6. CLI starts the renderer if needed.
-7. User opens `/artifacts/<project>/<slug>/`.
+7. User opens `/<project>/<slug>/`.
 8. Renderer fetches JSON and displays the page.
 
 ## CLI-first creation
@@ -33,10 +33,10 @@ create_visual_artifact({ slug, title, description, data, nodes })
 
 ## Local viewing
 
-- Dev renderer: `cd app && pnpm dev` at `http://127.0.0.1:9999/artifacts`.
-- Built renderer: `visual-artifact serve --no-open` at `http://127.0.0.1:9998/artifacts`.
+- Dev renderer: `cd app && pnpm dev` at `http://127.0.0.1:9999/`.
+- Built renderer: `visual-artifact serve --no-open` at `http://127.0.0.1:9998/`.
 - New artifacts appear without rebuilding because the CLI server serves live JSON.
 
 ## Sharing
 
-Set `VISUAL_ARTIFACT_BASE_URL` to the externally reachable `/artifacts` base URL when serving through a tunnel, reverse proxy, or tailnet route.
+Set `VISUAL_ARTIFACT_BASE_URL` to the externally reachable root URL when serving through a tunnel, reverse proxy, or tailnet route.

@@ -1,15 +1,13 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === 'development'
-const isCloudBuild = process.env.VISUAL_ARTIFACT_CLOUD_BUILD === '1'
 
 const nextConfig: NextConfig = {
   // Development needs a regular server so rewrites can proxy artifact data to
   // the static CLI server. The static export is only used for production builds.
   output: isDev ? undefined : 'export',
-  // Cloud builds are served from the Worker's root path on workers.dev;
-  // local builds and the static preview server keep the `/artifacts` prefix.
-  basePath: isCloudBuild ? '' : '/artifacts',
+  // The renderer is served from the URL root both locally and on Cloudflare.
+  basePath: '',
   trailingSlash: true,
   images: { unoptimized: true },
   allowedDevOrigins: ['127.0.0.1', 'localhost', 'iurys-macbook-pro.taila5dafe.ts.net'],
@@ -22,11 +20,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/data/artifacts/:path*',
-        destination: 'http://localhost:9998/artifacts/data/artifacts/:path*',
+        destination: 'http://localhost:9998/data/artifacts/:path*',
       },
       {
         source: '/api/annotations/:path*',
-        destination: 'http://localhost:9998/artifacts/api/annotations/:path*',
+        destination: 'http://localhost:9998/api/annotations/:path*',
       },
     ]
   },

@@ -41,7 +41,7 @@ describe("AIColabProvider", () => {
 
   before(() => {
     const dom = new JSDOM(`<!DOCTYPE html><html><body></body></html>`, {
-      url: "http://localhost:9999/artifacts/",
+      url: "http://localhost:9999/",
     })
     ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
     global.window = dom.window as unknown as Window & typeof globalThis
@@ -147,7 +147,7 @@ describe("AIColabProvider", () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     assert.equal(written.length, 1)
-    assert.ok(written[0].includes("/artifacts/data/artifacts/demo/slug/artifact.json"))
+    assert.ok(written[0].includes("/data/artifacts/demo/slug/artifact.json"))
     assert.ok(written[0].includes("Feedback"))
   })
 })

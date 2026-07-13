@@ -344,6 +344,20 @@ export function preflightArtifactSpec(value: unknown): {
 
 export const ARTIFACT_SLUG_MAX_LENGTH = 80
 
+export const ARTIFACT_TYPES = [
+  "explainer",
+  "dashboard",
+  "review",
+  "comparison",
+  "report",
+  "plan",
+  "diagram",
+  "idea",
+] as const
+
+export const ArtifactTypeSchema = z.enum(ARTIFACT_TYPES)
+export type ArtifactType = z.infer<typeof ArtifactTypeSchema>
+
 export const ArtifactSlugSchema = z
   .string()
   .min(1)
@@ -943,6 +957,8 @@ const VisualArtifactSpecShapeSchema = z
     title: z.string().min(1),
     description: z.string().min(1).optional(),
     createdAt: z.string().min(1).optional(),
+    artifactType: ArtifactTypeSchema.optional(),
+    topics: z.array(z.string().min(1)).optional(),
     layout: z
       .object({
         type: z.enum(["default", "grid"]).optional(),

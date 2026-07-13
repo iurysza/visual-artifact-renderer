@@ -106,8 +106,8 @@ describe("formatArtifactForAI", () => {
     const comments: AIColabComment[] = [
       { id: "c1", target: { kind: "artifact" }, body: "Overall layout feels too busy." },
     ]
-    const output = formatArtifactForAI(baseSpec, { comments, filePath: "/artifacts/data/artifacts/demo/formatter-demo/artifact.json" })
-    assert.match(output, /^Markdown Annotations\n\nFile:\n\/artifacts\/data\/artifacts\/demo\/formatter-demo\/artifact.json\n\nFile Feedback\n\nI've reviewed this file and have 1 piece of feedback:\n\n1\. \(lines 3-3\) Feedback on: "Formatter Demo"/)
+    const output = formatArtifactForAI(baseSpec, { comments, filePath: "/data/artifacts/demo/formatter-demo/artifact.json" })
+    assert.match(output, /^Markdown Annotations\n\nFile:\n\/data\/artifacts\/demo\/formatter-demo\/artifact.json\n\nFile Feedback\n\nI've reviewed this file and have 1 piece of feedback:\n\n1\. \(lines 3-3\) Feedback on: "Formatter Demo"/)
     assert.match(output, /\n\| Overall layout feels too busy\.\n/)
     assert.match(output, /Please address the annotation feedback above\.$/)
   })

@@ -96,6 +96,16 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
         slug: { type: "string", description: "kebab-case artifact slug. Example: revenue-dashboard" },
         title: { type: "string", description: "Artifact title" },
         description: { type: "string", description: "Short artifact description" },
+        artifactType: {
+          type: "string",
+          enum: ["explainer", "dashboard", "review", "comparison", "report", "plan", "diagram", "idea"],
+          description: "Optional closed classification used for artifact discovery.",
+        },
+        topics: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional searchable topics.",
+        },
         layout: { type: "object", description: "Layout options" },
         projectPath: { type: "string", description: "Directory to derive the project name from. Defaults to caller's cwd." },
         data: { type: "object", description: "Embedded datasets. Max 20 datasets." },

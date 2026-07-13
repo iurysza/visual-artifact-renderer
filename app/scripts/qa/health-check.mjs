@@ -5,7 +5,7 @@
  * verify.sh creates the fixture and supplies its isolated server URL.
  */
 
-const BASE_URL = (process.env.BASE_URL || "http://127.0.0.1:9998/artifacts").replace(/\/$/, "")
+const BASE_URL = (process.env.BASE_URL || "http://127.0.0.1:9998").replace(/\/$/, "")
 const ARTIFACT_PROJECT = process.env.ARTIFACT_PROJECT || "health-project"
 const ARTIFACT_SLUG = process.env.ARTIFACT_SLUG || "health-check"
 const TIMEOUT_MS = Number(process.env.HEALTH_TIMEOUT_MS || "5000")

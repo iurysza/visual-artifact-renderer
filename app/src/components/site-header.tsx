@@ -21,8 +21,6 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
-const BASE_PATH = "/artifacts"
-
 function humanize(slug: string) {
   return slug
     .replace(/-/g, " ")
@@ -34,9 +32,7 @@ export function SiteHeader() {
   const annotationCtx = useOptionalAnnotationContext()
   const aiColabCtx = useOptionalAIColabContext()
   const [panelParams, setPanelParams] = usePanelParams()
-  const routePath = pathname?.startsWith(BASE_PATH)
-    ? pathname.slice(BASE_PATH.length) || "/"
-    : pathname || "/"
+  const routePath = pathname || "/"
 
   const segments = routePath.split("/").filter(Boolean)
 

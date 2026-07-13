@@ -2,7 +2,7 @@ import { resolve, join } from "node:path"
 import { spawn } from "node:child_process"
 import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
 import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
-import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
+import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, isReservedRootSegment, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
 import {
   ArtifactNotFoundError,
@@ -66,21 +66,6 @@ function isLoopbackHost(host: string): boolean {
   return false
 }
 
-function normalizeMountPath(value: string): string {
-  value = value.trim()
-  if (!value || value === "/") return ""
-  if (!value.startsWith("/")) value = `/${value}`
-  return value.replace(/\/+$/, "")
-}
-
-function stripMountPath(urlPath: string, mountPath: string): string | null {
-  if (!mountPath) return urlPath
-  if (urlPath === mountPath || urlPath.startsWith(`${mountPath}/`)) {
-    return urlPath.slice(mountPath.length) || "/"
-  }
-  return null
-}
-
 export interface ServeOpts {
   port?: number
   host?: string
@@ -88,7 +73,6 @@ export interface ServeOpts {
   noOpen?: boolean
   outDir?: string
   artifactsDir?: string
-  mountPath?: string
   dataPath?: string
   allowRemote?: boolean
 }
@@ -101,7 +85,6 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     if (opts.host !== undefined) overrides.host = opts.host
     if (opts.outDir !== undefined) overrides.outDir = opts.outDir
     if (opts.artifactsDir !== undefined) overrides.artifactsDir = opts.artifactsDir
-    if (opts.mountPath !== undefined) overrides.mountPath = opts.mountPath
     if (opts.dataPath !== undefined) overrides.dataPath = opts.dataPath
     if (opts.open === false) overrides.open = false
     if (opts.open === true) overrides.open = true
@@ -127,8 +110,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
 
   const outDir = config.outDir
   const artifactsDir = config.artifactsDir
-  const mountPath = normalizeMountPath(config.mountPath)
-  const dataPath = normalizeMountPath(config.dataPath) || "/data/artifacts"
+  const dataPath = config.dataPath
   const apiPath = "/api/annotations"
 
   if (!(await dirExists(outDir))) {
@@ -158,15 +140,7 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
       async fetch(req) {
         const url = new URL(req.url)
         const pathname = decodeURIComponent(url.pathname)
-
-        if (mountPath && pathname === mountPath) {
-          return new Response(null, { status: 302, headers: { Location: `${mountPath}/` } })
-        }
-
-        const stripped = stripMountPath(pathname, mountPath)
-        if (stripped === null) {
-          return new Response("Not found", { status: 404 })
-        }
+        const stripped = pathname
 
         if (stripped === shutdownPath) {
           return serveShutdownApi(req, stripped, shutdownPath, shutdownToken, () => {
@@ -180,6 +154,22 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
 
         if (stripped.startsWith(`${dataPath}/`)) {
           return await serveData(stripped, artifactsDir, dataPath)
+        }
+
+        const firstSegment = stripped.split("/").filter(Boolean)[0]
+
+        // _next static assets must be served from the build output before the
+        // reserved-root guard rejects the segment, but missing _next files must
+        // still 404 rather than fall back to the shell.
+        if (firstSegment === "_next") {
+          const nextResponse = await serveStatic(stripped, outDir)
+          if (nextResponse) return nextResponse
+          return notFound()
+        }
+
+        // Reserved root segments must not become project/artifact shells.
+        if (firstSegment && isReservedRootSegment(firstSegment)) {
+          return notFound()
         }
 
         const staticResponse = await serveStatic(stripped, outDir)
@@ -315,7 +305,11 @@ export async function serveData(stripped: string, artifactsDir: string, dataPath
 
   if (reqPath === `${dataPath}/index.json`) {
     const { projects, artifacts } = await scanArtifacts(artifactsDir)
-    const body = JSON.stringify({ projects, recent: artifacts.slice(0, 3) }, null, 2)
+    const body = JSON.stringify({
+      projects,
+      recent: artifacts.slice(0, 3),
+      artifacts: artifacts.slice(0, 100),
+    }, null, 2)
     return jsonResponse(body)
   }
 

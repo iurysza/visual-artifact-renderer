@@ -1,19 +1,33 @@
 /**
  * Single source of truth for visualizer URL/path construction.
  *
- * The app is mounted under `basePath: "/artifacts"` in Next.js. Page links
- * must be relative to that basePath (Next.js adds it automatically), while
- * runtime artifact JSON fetches need the full public path. All other code
- * should import helpers from here instead of assembling paths by hand.
+ * The app is served from the URL root. Page links are root-relative; runtime
+ * artifact JSON fetches use the full public path. All other code should import
+ * helpers from here instead of assembling paths by hand.
  */
 
-export const BASE_PATH = "/artifacts"
+export const BASE_PATH = ""
 
 export const ARTIFACT_DATA_SEGMENT = "data/artifacts"
 
 export const ANNOTATION_API_SEGMENT = "api/annotations"
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/** Root path segments reserved by the runtime. Project/slug names must not collide. */
+export const ROOT_RESERVED_SEGMENTS = [
+  "artifacts",
+  "data",
+  "api",
+  "_next",
+  "shell-artifact",
+  "shell-project",
+] as const
+
+/** True when `segment` is reserved for a runtime namespace and cannot be a project or slug. */
+export function isReservedRootSegment(segment: string): boolean {
+  return (ROOT_RESERVED_SEGMENTS as readonly string[]).includes(segment)
+}
 
 export interface ArtifactRouteParams {
   project: string
@@ -32,7 +46,7 @@ export function projectPagePath(project: string): string {
 
 /** Join the base path and data segment for an absolute public artifact JSON path. */
 function publicDataPath(segments: string[]): string {
-  return `${BASE_PATH}/${ARTIFACT_DATA_SEGMENT}/${segments.join("/")}`
+  return `/${ARTIFACT_DATA_SEGMENT}/${segments.join("/")}`
 }
 
 /** Absolute public path to a bundled artifact JSON payload. */
@@ -58,25 +72,10 @@ export function projectIndexPath(project: string): string {
 /**
  * Resolve the deployment base path at runtime.
  *
- * On the server we return the constant. On the client we prefer the basePath
- * injected by Next.js, then fall back to inferring it from `window.location`.
- * This keeps the fetch URL correct whether the app is served by Next.js dev,
- * the static export server, or another host/proxy — including Cloudflare
- * Workers.dev deployments that serve the renderer at root.
+ * The app is always served from root, so this returns an empty string. It is
+ * kept for compatibility with existing callers.
  */
 export function resolveBasePath(): string {
-  if (typeof window === "undefined") return BASE_PATH
-
-  const nextData = (window as { __NEXT_DATA__?: { basePath?: string } }).__NEXT_DATA__
-  if (nextData && typeof nextData.basePath === "string") {
-    return nextData.basePath
-  }
-
-  const pathname = window.location.pathname
-  if (pathname === BASE_PATH || pathname.startsWith(`${BASE_PATH}/`)) {
-    return BASE_PATH
-  }
-
   return ""
 }
 
@@ -118,18 +117,14 @@ export function artifactAnnotationsAuthorUrl(): string {
  * the canonical URL and the client resolves `<project>/<slug>` from the URL.
  */
 export function artifactParamsFromPath(pathname: string): ArtifactRouteParams | null {
-  let normalized = pathname.split("?")[0]?.split("#")[0] ?? pathname
-
-  if (normalized === BASE_PATH || normalized.startsWith(`${BASE_PATH}/`)) {
-    normalized = normalized.slice(BASE_PATH.length) || "/"
-  }
+  const normalized = pathname.split("?")[0]?.split("#")[0] ?? pathname
 
   const segments = normalized.split("/").filter(Boolean).map(decodeURIComponent)
   if (segments.length !== 2) return null
 
   const [project, slug] = segments
   if (!SLUG_RE.test(project) || !SLUG_RE.test(slug)) return null
-  if (project === "data" || project === "_next" || project === "shell-artifact" || project === "shell-project") return null
+  if (isReservedRootSegment(project) || isReservedRootSegment(slug)) return null
 
   return { project, slug }
 }
@@ -143,18 +138,14 @@ export function artifactParamsFromPath(pathname: string): ArtifactRouteParams | 
  * from the URL.
  */
 export function projectParamsFromPath(pathname: string): { project: string } | null {
-  let normalized = pathname.split("?")[0]?.split("#")[0] ?? pathname
-
-  if (normalized === BASE_PATH || normalized.startsWith(`${BASE_PATH}/`)) {
-    normalized = normalized.slice(BASE_PATH.length) || "/"
-  }
+  const normalized = pathname.split("?")[0]?.split("#")[0] ?? pathname
 
   const segments = normalized.split("/").filter(Boolean).map(decodeURIComponent)
   if (segments.length !== 1) return null
 
   const [project] = segments
   if (!SLUG_RE.test(project)) return null
-  if (project === "data" || project === "_next" || project === "shell-artifact" || project === "shell-project") return null
+  if (isReservedRootSegment(project)) return null
 
   return { project }
 }
@@ -163,9 +154,9 @@ export function projectParamsFromPath(pathname: string): { project: string } | n
  * Full canonical public URL for an artifact page.
  *
  * `baseUrl` is the *root* of the deployment (e.g. `http://localhost:9999` or
- * `https://blog.example.com`). The `/artifacts` basePath is always appended.
+ * `https://blog.example.com`).
  */
 export function artifactPageUrl(project: string, slug: string, baseUrl?: string): string {
   const base = (baseUrl ?? "").replace(/\/+$/, "")
-  return `${base}${BASE_PATH}/${project}/${slug}/`
+  return `${base}/${project}/${slug}/`
 }

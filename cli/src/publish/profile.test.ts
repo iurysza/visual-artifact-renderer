@@ -28,7 +28,7 @@ function profile(overrides: Partial<CloudflarePublishProfile> = {}): CloudflareP
     accountId: "saved-account",
     bucketName: "saved-bucket",
     workerName: "saved-worker",
-    baseUrl: "https://saved.example.com/artifacts",
+    baseUrl: "https://saved.example.com",
     cloudBuildRouteStrategy: "placeholder",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -90,7 +90,7 @@ describe("Cloudflare publish profiles", () => {
 
   test("normalizes custom base URLs without adding an artifacts mount", () => {
     expect(normalizeBaseUrl("https://viz.example.com")).toBe("https://viz.example.com")
-    expect(normalizeBaseUrl("https://viz.example.com/artifacts/")).toBe("https://viz.example.com/artifacts")
+    expect(normalizeBaseUrl("https://viz.example.com/")).toBe("https://viz.example.com")
     expect(normalizeBaseUrl("https://viz.example.com/viewer")).toBe("https://viz.example.com/viewer")
   })
 

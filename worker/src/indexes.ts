@@ -1,7 +1,11 @@
+import { ARTIFACT_TYPES, type ArtifactType } from "@agents/visual-artifact-annotations/contract"
+
 export interface ArtifactListing {
   slug: string
   title: string
   description?: string
+  artifactType?: ArtifactType
+  topics?: string[]
   modifiedAt: string
 }
 
@@ -14,12 +18,15 @@ export interface ProjectListing {
 export interface HomeIndex {
   projects: ProjectListing[]
   recent: RecentArtifact[]
+  artifacts: RecentArtifact[]
 }
 
 export interface RecentArtifact {
   slug: string
   title: string
   description?: string
+  artifactType?: ArtifactType
+  topics?: string[]
   modifiedAt: string
   project: string
 }
@@ -72,8 +79,8 @@ export async function buildHomeIndex(bucket: R2Bucket): Promise<HomeIndex> {
     }))
     .sort((a, b) => b.lastModifiedAt.localeCompare(a.lastModifiedAt))
 
-  const recent = await buildRecentArtifacts(bucket)
-  return { projects: projectList, recent }
+  const artifacts = await buildRecentArtifacts(bucket)
+  return { projects: projectList, recent: artifacts.slice(0, 6), artifacts }
 }
 
 export async function buildProjectIndex(bucket: R2Bucket, project: string): Promise<ProjectIndex> {
@@ -92,10 +99,13 @@ export async function buildProjectIndex(bucket: R2Bucket, project: string): Prom
 
   const artifactList: ArtifactListing[] = []
   for (const [slug, { modifiedAt }] of artifacts.entries()) {
-    const title = await readArtifactTitle(bucket, project, slug)
+    const metadata = await readArtifactMetadata(bucket, project, slug)
     artifactList.push({
       slug,
-      title: title ?? slug,
+      title: metadata.title ?? slug,
+      description: metadata.description,
+      artifactType: metadata.artifactType,
+      topics: metadata.topics,
       modifiedAt: modifiedAt.toISOString(),
     })
   }
@@ -106,36 +116,54 @@ export async function buildProjectIndex(bucket: R2Bucket, project: string): Prom
   }
 }
 
-async function buildRecentArtifacts(bucket: R2Bucket, limit = 6): Promise<RecentArtifact[]> {
+async function buildRecentArtifacts(bucket: R2Bucket, limit = 100): Promise<RecentArtifact[]> {
   const list = await bucket.list({ prefix: BUNDLE_PREFIX })
-  const artifacts: RecentArtifact[] = []
-
-  for (const object of list.objects) {
-    const parsed = parseBundleKey(object.key)
-    if (!parsed || parsed.filename !== ARTIFACT_FILE) continue
-    const title = await readArtifactTitle(bucket, parsed.project, parsed.slug)
-    artifacts.push({
-      project: parsed.project,
-      slug: parsed.slug,
-      title: title ?? parsed.slug,
-      modifiedAt: object.uploaded.toISOString(),
-    })
-  }
-
-  return artifacts
-    .sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt))
+  const artifactObjects = list.objects
+    .map((object) => ({ object, parsed: parseBundleKey(object.key) }))
+    .filter(({ parsed }) => parsed?.filename === ARTIFACT_FILE)
+    .sort((a, b) => b.object.uploaded.getTime() - a.object.uploaded.getTime())
     .slice(0, limit)
+
+  return Promise.all(artifactObjects.map(async ({ object, parsed }) => {
+    const metadata = await readArtifactMetadata(bucket, parsed!.project, parsed!.slug)
+    return {
+      project: parsed!.project,
+      slug: parsed!.slug,
+      title: metadata.title ?? parsed!.slug,
+      description: metadata.description,
+      artifactType: metadata.artifactType,
+      topics: metadata.topics,
+      modifiedAt: object.uploaded.toISOString(),
+    }
+  }))
 }
 
-async function readArtifactTitle(bucket: R2Bucket, project: string, slug: string): Promise<string | undefined> {
+interface ArtifactMetadata {
+  title?: string
+  description?: string
+  artifactType?: ArtifactType
+  topics?: string[]
+}
+
+function isArtifactType(value: unknown): value is ArtifactType {
+  return typeof value === "string" && ARTIFACT_TYPES.some((type) => type === value)
+}
+
+async function readArtifactMetadata(bucket: R2Bucket, project: string, slug: string): Promise<ArtifactMetadata> {
   const key = `${BUNDLE_PREFIX}${project}/${slug}/${ARTIFACT_FILE}`
   try {
     const object = await bucket.get(key)
-    if (!object) return undefined
-    const text = await object.text()
-    const parsed = JSON.parse(text) as { title?: string; description?: string }
-    return parsed.title
+    if (!object) return {}
+    const parsed = JSON.parse(await object.text()) as Record<string, unknown>
+    return {
+      title: typeof parsed.title === "string" && parsed.title.length > 0 ? parsed.title : undefined,
+      description: typeof parsed.description === "string" && parsed.description.length > 0 ? parsed.description : undefined,
+      artifactType: isArtifactType(parsed.artifactType) ? parsed.artifactType : undefined,
+      topics: Array.isArray(parsed.topics)
+        ? parsed.topics.filter((topic): topic is string => typeof topic === "string" && topic.length > 0)
+        : undefined,
+    }
   } catch {
-    return undefined
+    return {}
   }
 }

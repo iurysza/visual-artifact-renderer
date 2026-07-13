@@ -149,7 +149,7 @@ Then reference it with a relative path:
 The renderer serves it as:
 
 ```text
-/artifacts/data/artifacts/<project>/<slug>/assets/hero.png
+/data/artifacts/<project>/<slug>/assets/hero.png
 ```
 
 ## Copyable pattern: architecture brief

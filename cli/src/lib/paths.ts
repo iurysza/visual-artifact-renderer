@@ -1,6 +1,21 @@
 import { resolve } from "node:path"
 import { isKebabCase } from "../util.ts"
 
+/** Root path segments reserved by the runtime. Project/slug names must not collide. */
+export const ROOT_RESERVED_SEGMENTS = [
+  "artifacts",
+  "data",
+  "api",
+  "_next",
+  "shell-artifact",
+  "shell-project",
+] as const
+
+/** True when `segment` is reserved for a runtime namespace and cannot be a project or slug. */
+export function isReservedRootSegment(segment: string): boolean {
+  return (ROOT_RESERVED_SEGMENTS as readonly string[]).includes(segment)
+}
+
 export const BUNDLE_FILES = {
   artifact: "artifact.json",
   annotations: "annotations.json",
@@ -27,6 +42,7 @@ export interface ProjectRoute {
 export function parseBundleRoute(project: unknown, slug: unknown): BundleRoute | null {
   if (typeof project !== "string" || typeof slug !== "string") return null
   if (!isKebabCase(project) || !isKebabCase(slug)) return null
+  if (isReservedRootSegment(project) || isReservedRootSegment(slug)) return null
   return { project, slug }
 }
 
@@ -36,6 +52,7 @@ export function parseBundleRoute(project: unknown, slug: unknown): BundleRoute |
 export function parseProjectRoute(project: unknown): ProjectRoute | null {
   if (typeof project !== "string") return null
   if (!isKebabCase(project)) return null
+  if (isReservedRootSegment(project)) return null
   return { project }
 }
 

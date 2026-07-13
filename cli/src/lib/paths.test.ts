@@ -6,9 +6,24 @@ import {
   assetsDirPath,
   bundleDirPath,
   isInsideArtifactsDir,
+  isReservedRootSegment,
   parseBundleRoute,
   parseProjectRoute,
+  ROOT_RESERVED_SEGMENTS,
 } from "./paths.ts"
+
+describe("isReservedRootSegment", () => {
+  test("reserves the runtime namespace segments", () => {
+    for (const segment of ROOT_RESERVED_SEGMENTS) {
+      expect(isReservedRootSegment(segment)).toBe(true)
+    }
+  })
+
+  test("does not reserve ordinary project names", () => {
+    expect(isReservedRootSegment("demo")).toBe(false)
+    expect(isReservedRootSegment("my-project")).toBe(false)
+  })
+})
 
 describe("parseBundleRoute", () => {
   test("accepts valid kebab-case segments", () => {
@@ -27,6 +42,13 @@ describe("parseBundleRoute", () => {
     expect(parseBundleRoute("MyProject", "my-artifact")).toBeNull()
     expect(parseBundleRoute("my_project", "my-artifact")).toBeNull()
   })
+
+  test("rejects reserved root segments", () => {
+    for (const segment of ROOT_RESERVED_SEGMENTS) {
+      expect(parseBundleRoute(segment, "my-artifact")).toBeNull()
+      expect(parseBundleRoute("my-project", segment)).toBeNull()
+    }
+  })
 })
 
 describe("parseProjectRoute", () => {
@@ -37,6 +59,12 @@ describe("parseProjectRoute", () => {
   test("rejects invalid project", () => {
     expect(parseProjectRoute("../secret")).toBeNull()
     expect(parseProjectRoute("MyProject")).toBeNull()
+  })
+
+  test("rejects reserved root segments", () => {
+    for (const segment of ROOT_RESERVED_SEGMENTS) {
+      expect(parseProjectRoute(segment)).toBeNull()
+    }
   })
 })
 

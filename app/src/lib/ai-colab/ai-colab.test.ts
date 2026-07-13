@@ -194,13 +194,13 @@ describe("AI Colab copy handler", () => {
     const markdown = await copyAIColabMarkdown({
       spec: baseSpec,
       comments,
-      filePath: "/artifacts/data/artifacts/demo/ai-colab-demo/artifact.json",
+      filePath: "/data/artifacts/demo/ai-colab-demo/artifact.json",
     })
 
     assert.equal(written.length, 1)
     assert.equal(written[0], markdown)
     assert.ok(markdown.includes("Feedback"))
-    assert.ok(markdown.includes("/artifacts/data/artifacts/demo/ai-colab-demo/artifact.json"))
+    assert.ok(markdown.includes("/data/artifacts/demo/ai-colab-demo/artifact.json"))
 
     Object.defineProperty(globalThis.navigator, "clipboard", {
       value: originalClipboard,
@@ -236,7 +236,7 @@ describe("AI Colab copy handler", () => {
     const markdown = await copyAIColabMarkdown({
       spec: baseSpec,
       comments: [],
-      filePath: "/artifacts/data/artifacts/demo/ai-colab-demo/artifact.json",
+      filePath: "/data/artifacts/demo/ai-colab-demo/artifact.json",
     })
 
     assert.equal(written.length, 1)

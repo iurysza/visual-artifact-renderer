@@ -171,19 +171,37 @@ describe("Worker routes", () => {
     expect(response.status).toBe(404)
   })
 
-  test("generates home index from R2 list", async () => {
-    const objects = new Map([
-      ["artifacts/demo/hello/artifact.json", { body: '{"title":"Hello"}', uploaded: new Date("2026-01-02T00:00:00Z") }],
-      ["artifacts/demo/world/artifact.json", { body: '{"title":"World"}', uploaded: new Date("2026-01-01T00:00:00Z") }],
-    ])
+  test("generates a one-hundred-item home index with discovery metadata", async () => {
+    const objects = new Map<string, { body: string; uploaded: Date }>()
+    for (let index = 0; index < 105; index++) {
+      objects.set(`artifacts/demo/artifact-${index}/artifact.json`, {
+        body: JSON.stringify({
+          title: `Artifact ${index}`,
+          description: `Description ${index}`,
+          artifactType: index === 104 ? "report" : undefined,
+          topics: index === 104 ? ["release"] : undefined,
+        }),
+        uploaded: new Date(Date.UTC(2026, 0, index + 1)),
+      })
+    }
     const env = envWithObjects(objects)
     const response = await handleRequest(new Request("https://example.com/data/artifacts/index.json"), env, {} as ExecutionContext)
     expect(response.status).toBe(200)
-    const body = (await response.json()) as { projects: Array<{ name: string; artifactCount: number }>; recent: unknown[] }
+    const body = (await response.json()) as {
+      projects: Array<{ name: string; artifactCount: number }>
+      recent: Array<{ title: string; artifactType?: string; topics?: string[] }>
+      artifacts: Array<{ title: string; artifactType?: string; topics?: string[] }>
+    }
     expect(body.projects).toHaveLength(1)
     expect(body.projects[0].name).toBe("demo")
-    expect(body.projects[0].artifactCount).toBe(2)
-    expect(body.recent).toHaveLength(2)
+    expect(body.projects[0].artifactCount).toBe(105)
+    expect(body.recent).toHaveLength(6)
+    expect(body.artifacts).toHaveLength(100)
+    expect(body.artifacts[0]).toMatchObject({
+      title: "Artifact 104",
+      artifactType: "report",
+      topics: ["release"],
+    })
   })
 
   test("generates project index from R2 list", async () => {
@@ -409,5 +427,21 @@ describe("Worker routes", () => {
     const env = envWithObjects(new Map())
     const response = await handleRequest(new Request("https://example.com/artifacts/demo/hello/"), env, {} as ExecutionContext)
     expect(response.status).toBe(404)
+  })
+
+  test("returns 404 for all reserved root segment depths", async () => {
+    const env = envWithObjects(new Map())
+    const cases = [
+      { path: "/artifacts/", description: "old mount root" },
+      { path: "/artifacts/demo/", description: "old project depth" },
+      { path: "/artifacts/demo/hello/", description: "old artifact depth" },
+      { path: "/data/foo/", description: "data namespace as project" },
+      { path: "/api/foo/", description: "api namespace as project" },
+      { path: "/shell-artifact/foo/", description: "shell-artifact as project" },
+    ]
+    for (const { path } of cases) {
+      const response = await handleRequest(new Request(`https://example.com${path}`), env, {} as ExecutionContext)
+      expect(response.status).toBe(404)
+    }
   })
 })

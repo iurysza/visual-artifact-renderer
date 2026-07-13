@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
 
 function isArtifactDetail(pathname: string) {
-  const base = "/artifacts"
-  const routePath = pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname
-  const segments = routePath.replace(/^\/|\/$/g, "").split("/").filter(Boolean)
+  const segments = pathname.replace(/^\/|\/$/g, "").split("/").filter(Boolean)
   return segments.length === 2
 }
 

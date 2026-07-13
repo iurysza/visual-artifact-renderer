@@ -9,12 +9,16 @@ describe("artifactSpecFromParams", () => {
       artifactSpecFromParams({
         slug: "demo",
         title: "Demo",
+        artifactType: "explainer",
+        topics: ["runtime"],
         projectPath: "/tmp/project",
         nodes: [{ type: "text", props: { text: "Hello" } }],
       }),
     ).toEqual({
       slug: "demo",
       title: "Demo",
+      artifactType: "explainer",
+      topics: ["runtime"],
       nodes: [{ type: "text", props: { text: "Hello" } }],
     })
   })

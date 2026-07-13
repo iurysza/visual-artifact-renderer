@@ -20,7 +20,6 @@ export interface Config {
   outDir: string
   port: number
   host: string
-  mountPath: string
   dataPath: string
   open: boolean
   allowRemote: boolean

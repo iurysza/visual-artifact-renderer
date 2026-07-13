@@ -109,7 +109,7 @@ describe("AnnotationProvider queue and reconciliation", () => {
 
   before(() => {
     const dom = new JSDOM(`<!DOCTYPE html><html><body></body></html>`, {
-      url: "http://localhost:9999/artifacts/demo/slug/",
+      url: "http://localhost:9999/demo/slug/",
     })
     ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
     global.window = dom.window as unknown as Window & typeof globalThis

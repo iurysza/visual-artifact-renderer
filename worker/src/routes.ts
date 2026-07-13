@@ -1,5 +1,5 @@
 import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
-import { isSafeAssetPath, parseArtifactPath, parseProjectPath } from "./paths.ts"
+import { isReservedRootSegment, isSafeAssetPath, parseArtifactPath, parseProjectPath } from "./paths.ts"
 import { buildHomeIndex, buildProjectIndex } from "./indexes.ts"
 import {
   AnnotationValidationError,
@@ -25,8 +25,8 @@ export async function handleRequest(request: Request, env: Env, _ctx: ExecutionC
   const url = new URL(request.url)
   const pathname = url.pathname
 
-  // Data endpoints at root so the same renderer can be mounted locally under
-  // `/artifacts` and on Workers.dev at root without path rewriting.
+  // Data endpoints at root so the same renderer is served locally and on
+  // Workers.dev without path rewriting.
   if (pathname.startsWith(`/${DATA_SEGMENT}/`)) {
     return handleDataRequest(request.method, pathname.slice(`/${DATA_SEGMENT}/`.length), env)
   }
@@ -149,11 +149,13 @@ async function handlePageOrAssetRequest(request: Request, env: Env, pathname: st
 
   // Project index shell
   if (segments.length === 1) {
+    if (isReservedRootSegment(segments[0])) return notFound()
     return env.ASSETS.fetch(newShellRequest(request, "/shell-project/"))
   }
 
   // Artifact page shell
   if (segments.length === 2) {
+    if (isReservedRootSegment(segments[0]) || isReservedRootSegment(segments[1])) return notFound()
     return env.ASSETS.fetch(newShellRequest(request, "/shell-artifact/"))
   }
 

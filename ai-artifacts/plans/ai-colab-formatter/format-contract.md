@@ -8,7 +8,7 @@
 Markdown Annotations
 
 File:
-/artifacts/data/artifacts/<project>/<slug>/artifact.json
+/data/artifacts/<project>/<slug>/artifact.json
 
 File Feedback
 

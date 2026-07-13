@@ -69,7 +69,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Features
 
-- Constrained JSON contract for `slug`, `title`, optional `data`, and typed `nodes`.
+- Constrained JSON contract for `slug`, `title`, optional `artifactType`/`topics` discovery metadata, optional `data`, and typed `nodes`.
 - 30+ node types for prose, cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, and diffs.
 - Data-backed components that reference shared datasets by `dataKey`.
 - Local-first storage under `~/.local/share/visual-artifact/artifacts` unless overridden.
@@ -145,7 +145,7 @@ Minimal spec:
 The CLI returns a local URL like:
 
 ```text
-http://127.0.0.1:9998/artifacts/my-project/demo-report/
+http://127.0.0.1:9998/my-project/demo-report/
 ```
 
 `file-tree` items may use `src` as create-time input. Relative paths must stay inside the canonical project root. Outside-project reads require a repeatable explicit `--allow-read <dir>` grant; the Pi tool never grants one. The CLI strips `src` after safely inlining `content`.
@@ -207,7 +207,7 @@ For renderer development:
 ```bash
 cd app
 pnpm install --frozen-lockfile
-pnpm dev              # http://localhost:9999/artifacts/
+pnpm dev              # http://localhost:9999/
 pnpm test
 pnpm lint
 pnpm export:contract
