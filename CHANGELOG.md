@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/iurysza/visual-artifact-renderer/compare/v0.7.0...v0.7.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* make artifact library the default home ([ed68194](https://github.com/iurysza/visual-artifact-renderer/commit/ed681940c31034d74b8e5cd452ac8d00c0f29f5d))
+* make artifact library the default home ([b7f8040](https://github.com/iurysza/visual-artifact-renderer/commit/b7f8040e7397fe52769d239a66fbfcf3fb9aaf8d))
+
 ## [0.7.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.6.0...v0.7.0) (2026-07-13)
 
 
