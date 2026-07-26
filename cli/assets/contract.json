@@ -800,7 +800,7 @@
       }
     },
     "execution-trace": {
-      "description": "Debugger-style execution review with one persistent call stack. Previous/next moves the current frame, updates active-line source context, and shows typed inputs/outputs for that frame. Event code may use content directly or a create-time src path that the CLI safely reads and inlines.",
+      "description": "Debugger-style execution review with one persistent, scrollable call stack capped at six visible frames. Previous/next moves the current frame, updates active-line source context, and shows typed inputs/outputs for that frame. Event code may use content directly or a create-time src path that the CLI safely reads and inlines.",
       "props": {
         "title": "string?",
         "caption": "string?",

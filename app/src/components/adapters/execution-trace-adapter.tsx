@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeft,
   ArrowRight,
@@ -158,7 +158,7 @@ function TraceToolbar({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="min-h-10 min-w-10 text-clay-dark hover:bg-clay/10 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11"
+              className="min-h-10 min-w-10 text-clay-dark hover:bg-clay/10 disabled:bg-transparent disabled:text-muted-foreground disabled:hover:bg-transparent [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11"
               onClick={onPrevious}
               disabled={current === 1}
               aria-label="Previous call-stack item"
@@ -170,7 +170,7 @@ function TraceToolbar({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="min-h-10 min-w-10 bg-clay/15 text-clay-dark hover:bg-clay/25 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11"
+              className="min-h-10 min-w-10 text-clay-dark hover:bg-clay/10 disabled:bg-transparent disabled:text-muted-foreground disabled:hover:bg-transparent [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11"
               onClick={onNext}
               disabled={current === total}
               aria-label="Next call-stack item"
@@ -209,8 +209,23 @@ function CallStackPanel({
   visible: boolean
   onSelect: (id: string) => void
 }) {
+  const listRef = useRef<HTMLOListElement>(null)
+
+  useEffect(() => {
+    const list = listRef.current
+    const current = list?.querySelector<HTMLElement>('[data-current="true"]')
+    if (!list || !current) return
+
+    const rowTop = current.offsetTop
+    const rowBottom = rowTop + current.offsetHeight
+    if (rowTop < list.scrollTop) list.scrollTop = rowTop
+    if (rowBottom > list.scrollTop + list.clientHeight) {
+      list.scrollTop = rowBottom - list.clientHeight
+    }
+  }, [selectedId])
+
   return (
-    <aside className="order-2 flex min-w-0 flex-col border-t bg-muted/15 lg:order-1 lg:min-h-[44rem] lg:border-r lg:border-t-0">
+    <aside className="order-2 flex min-w-0 flex-col border-t bg-muted/15 lg:order-1 lg:border-r lg:border-t-0">
       <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-foreground">Call stack</p>
@@ -219,7 +234,11 @@ function CallStackPanel({
       </div>
 
       {visible ? (
-        <ol className="divide-y">
+        <ol
+          ref={listRef}
+          className="relative mx-3 my-3 max-h-[calc(36rem+2px)] divide-y overflow-y-auto overscroll-contain rounded-lg border bg-background [scrollbar-gutter:stable]"
+          aria-label="Execution call stack"
+        >
           {events.map((event, index) => (
             <CallStackRow
               key={event.id}
@@ -258,10 +277,13 @@ function CallStackRow({
   const line = frame?.line ?? event.codeRef?.line
 
   return (
-    <li className={cn("min-w-0", selected && "bg-clay/10")}>
+    <li
+      className={cn("h-24 min-w-0 overflow-hidden", selected && "bg-clay/10")}
+      data-current={selected ? "true" : undefined}
+    >
       <button
         type="button"
-        className="flex min-h-14 w-full min-w-0 items-start gap-2.5 px-3 py-3 text-left hover:bg-clay/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11"
+        className="flex h-full w-full min-w-0 items-start gap-2.5 overflow-hidden px-3 py-3 text-left hover:bg-clay/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         onClick={onSelect}
         aria-current={selected ? "step" : undefined}
       >

@@ -28,6 +28,18 @@ export function artifactSpecFromParams(params: Record<string, unknown>): Record<
   return spec
 }
 
+export function visualDiffRequest(scope: string, cwd: string): string {
+  return (
+    `Run a visual diff review for this repo.\n\n` +
+    `Scope: ${scope}\n` +
+    `Working directory: ${cwd}\n\n` +
+    `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +
+    `When the change has a meaningful behavior path, add an execution-trace derived from source without running the program: use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +
+    `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +
+    `Then call create_visual_artifact with the diff-review artifact and return its URL.`
+  )
+}
+
 function runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {
   const result = spawnSync(cli, ["create", "-", "--project", projectPath, "--json"], {
     input: `${JSON.stringify(spec)}\n`,
@@ -53,13 +65,7 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     argumentHint: "[branch|commit|range|#PR|HEAD]",
     handler: async (args, ctx) => {
       const scope = args.trim() || "main"
-      await pi.sendUserMessage(
-        `Run a visual diff review for this repo.\n\n` +
-        `Scope: ${scope}\n` +
-        `Working directory: ${ctx.cwd}\n\n` +
-        `Use the visual-artifact skill. Gather git data, inspect changed files, ` +
-        `then call create_visual_artifact with a diff-review artifact. Return the artifact URL.`,
-      )
+      await pi.sendUserMessage(visualDiffRequest(scope, ctx.cwd))
     },
   })
 

@@ -347,4 +347,6 @@ The renderer serves it as:
 }
 ```
 
-Render events as one persistent call stack; previous/next moves the current frame instead of replacing the stack. Prefer boundary events over raw call transcripts. Always model static/runtime types and provenance separately. Use `event.code.src` for repo-relative source; `visual-artifact create` safely inlines it into `content` and strips `src` before saving. Omit timings unless they are real monotonic runtime measurements; simulated and debugger-stepped traces should not carry durations.
+Render events as one persistent call stack; previous/next moves the current frame instead of replacing the stack. The renderer bounds the list at six visible frames and keeps the current frame visible while the stack scrolls. Prefer boundary events over raw call transcripts. Always model static/runtime types and provenance separately. Use `event.code.src` for repo-relative source; `visual-artifact create` safely inlines it into `content` and strips `src` before saving. Omit timings unless they are real monotonic runtime measurements; simulated and debugger-stepped traces should not carry durations.
+
+For code reviews, static analysis is the default: follow changed entrypoints, callers, imports, types, boundaries, and relevant tests without executing the program. Use `mode: "inferred"` with `method: "static-analysis"`; keep unknown values symbolic, label test/fixture examples as derived with a source note, and never claim captured runtime evidence or branch outcomes that source alone cannot prove.
