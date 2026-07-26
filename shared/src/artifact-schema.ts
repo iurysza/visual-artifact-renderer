@@ -479,6 +479,125 @@ const ColumnSchema = z.union([
     .strict(),
 ])
 
+export type ExecutionTraceProvenanceOrigin =
+  | "captured"
+  | "inferred"
+  | "simulated"
+  | "derived"
+  | "redacted"
+
+export type ExecutionTracePhase =
+  | "input"
+  | "validate"
+  | "resolve"
+  | "map"
+  | "read"
+  | "write"
+  | "process"
+  | "network"
+  | "render"
+  | "output"
+
+export type ExecutionTraceBoundaryKind =
+  | "validation"
+  | "parse"
+  | "file-read"
+  | "file-write"
+  | "process-spawn"
+  | "network-request"
+  | "registry-adapter"
+  | "runtime"
+  | "input"
+  | "output"
+
+export interface ExecutionTraceValueField {
+  name: string
+  type: string
+  preview?: string
+}
+
+export interface ExecutionTraceTypedValue {
+  id: string
+  name: string
+  staticType?: string
+  runtimeType?: "string" | "number" | "boolean" | "null" | "array" | "object" | "unknown"
+  preview: {
+    kind: "scalar" | "object" | "array" | "redacted" | "absent"
+    text: string
+    fields?: ExecutionTraceValueField[]
+    itemCount?: number
+    truncated?: boolean
+  }
+  provenance: ExecutionTraceProvenanceOrigin
+}
+
+export interface ExecutionTraceSystemRef {
+  label: string
+  system: "user" | "cli" | "filesystem" | "network" | "renderer" | "process" | "runtime"
+}
+
+export interface ExecutionTraceBoundary {
+  kind: ExecutionTraceBoundaryKind
+  from: ExecutionTraceSystemRef
+  to: ExecutionTraceSystemRef
+  operation: string
+  outcome: "passed" | "blocked" | "failed" | "skipped"
+  policy?: string
+}
+
+export interface ExecutionTraceMapping {
+  from: string
+  to: string
+  operation: "parse" | "validate" | "select" | "serialize" | "lookup" | "adapt" | "redact" | "pass"
+}
+
+export interface ExecutionTraceCallFrame {
+  id: string
+  fn: string
+  file?: string
+  line?: number
+  signature?: string
+  returnType?: string
+  args?: ExecutionTraceTypedValue[]
+  active?: boolean
+}
+
+export interface ExecutionTraceEvidence {
+  origin: Exclude<ExecutionTraceProvenanceOrigin, "redacted">
+  confidence: "high" | "medium" | "low"
+  note?: string
+}
+
+export interface ExecutionTraceEvent {
+  id: string
+  order: number
+  parentFrameId?: string
+  frameId?: string
+  phase: ExecutionTracePhase
+  kind: "boundary" | "call" | "return" | "throw" | "note"
+  label: string
+  summary?: string
+  codeRef?: { file: string; line: number; column?: number }
+  boundary?: ExecutionTraceBoundary
+  inputs?: ExecutionTraceTypedValue[]
+  outputs?: ExecutionTraceTypedValue[]
+  transformation?: {
+    summary: string
+    mappings?: ExecutionTraceMapping[]
+  }
+  evidence: ExecutionTraceEvidence
+  callStack?: ExecutionTraceCallFrame[]
+  note?: string
+}
+
+export interface ExecutionTraceProvenance {
+  mode: "captured" | "inferred" | "simulated" | "mixed"
+  method: "runtime-probe" | "inspector" | "static-analysis" | "author-curated"
+  summary: string
+  confidence: "high" | "medium" | "low"
+  codeRevision?: string
+}
+
 export type ArtifactNode =
   | { type: "definition-list"; props: { items: { term: string; description: string }[] }; metadata?: { id?: string } }
   | {
@@ -682,17 +801,236 @@ export type ArtifactNode =
       metadata?: { id?: string }
     }
   | {
-      type: "trace-tree"
+      type: "execution-trace"
       props: {
-        dataKey: string
         title?: string
         caption?: string
-        defaultExpandedDepth?: number
-        showDurations?: boolean
-        showLocations?: boolean
+        provenance: ExecutionTraceProvenance
+        events: ExecutionTraceEvent[]
+        initialFilter?: "boundaries" | "all" | "validation" | "io" | "runtime" | "mapping" | "failures"
+        initialEventId?: string
+        showCallStack?: boolean
       }
       metadata?: { id?: string }
     }
+
+const TraceStringSchema = z.string().min(1).max(500)
+const TraceIdSchema = z.string().min(1).max(80)
+const TraceOriginSchema = z.enum(["captured", "inferred", "simulated", "derived", "redacted"])
+const TraceEvidenceOriginSchema = z.enum(["captured", "inferred", "simulated", "derived"])
+const TraceConfidenceSchema = z.enum(["high", "medium", "low"])
+
+const ExecutionTraceValueFieldSchema = z
+  .object({
+    name: TraceStringSchema,
+    type: TraceStringSchema,
+    preview: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceTypedValueSchema = z
+  .object({
+    id: TraceIdSchema,
+    name: TraceStringSchema,
+    staticType: TraceStringSchema.optional(),
+    runtimeType: z.enum(["string", "number", "boolean", "null", "array", "object", "unknown"]).optional(),
+    preview: z
+      .object({
+        kind: z.enum(["scalar", "object", "array", "redacted", "absent"]),
+        text: TraceStringSchema,
+        fields: z.array(ExecutionTraceValueFieldSchema).max(12).optional(),
+        itemCount: z.number().int().min(0).optional(),
+        truncated: z.boolean().optional(),
+      })
+      .strict(),
+    provenance: TraceOriginSchema,
+  })
+  .strict()
+
+const ExecutionTraceSystemRefSchema = z
+  .object({
+    label: TraceStringSchema,
+    system: z.enum(["user", "cli", "filesystem", "network", "renderer", "process", "runtime"]),
+  })
+  .strict()
+
+const ExecutionTraceBoundarySchema = z
+  .object({
+    kind: z.enum([
+      "validation",
+      "parse",
+      "file-read",
+      "file-write",
+      "process-spawn",
+      "network-request",
+      "registry-adapter",
+      "runtime",
+      "input",
+      "output",
+    ]),
+    from: ExecutionTraceSystemRefSchema,
+    to: ExecutionTraceSystemRefSchema,
+    operation: TraceStringSchema,
+    outcome: z.enum(["passed", "blocked", "failed", "skipped"]),
+    policy: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceMappingSchema = z
+  .object({
+    from: TraceStringSchema,
+    to: TraceStringSchema,
+    operation: z.enum(["parse", "validate", "select", "serialize", "lookup", "adapt", "redact", "pass"]),
+  })
+  .strict()
+
+const ExecutionTraceCallFrameSchema = z
+  .object({
+    id: TraceIdSchema,
+    fn: TraceStringSchema,
+    file: TraceStringSchema.optional(),
+    line: z.number().int().min(1).optional(),
+    signature: TraceStringSchema.optional(),
+    returnType: TraceStringSchema.optional(),
+    args: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
+    active: z.boolean().optional(),
+  })
+  .strict()
+
+const ExecutionTraceEventBaseSchema = z
+  .object({
+    id: TraceIdSchema,
+    order: z.number().int().min(0),
+    parentFrameId: TraceIdSchema.optional(),
+    frameId: TraceIdSchema.optional(),
+    phase: z.enum(["input", "validate", "resolve", "map", "read", "write", "process", "network", "render", "output"]),
+    label: TraceStringSchema,
+    summary: TraceStringSchema.optional(),
+    codeRef: z
+      .object({
+        file: TraceStringSchema,
+        line: z.number().int().min(1),
+        column: z.number().int().min(1).optional(),
+      })
+      .strict()
+      .optional(),
+    inputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
+    outputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
+    transformation: z
+      .object({
+        summary: TraceStringSchema,
+        mappings: z.array(ExecutionTraceMappingSchema).max(20).optional(),
+      })
+      .strict()
+      .optional(),
+    evidence: z
+      .object({
+        origin: TraceEvidenceOriginSchema,
+        confidence: TraceConfidenceSchema,
+        note: TraceStringSchema.optional(),
+      })
+      .strict(),
+    callStack: z.array(ExecutionTraceCallFrameSchema).max(20).optional(),
+    note: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceEventSchema = z.discriminatedUnion("kind", [
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("boundary"),
+    boundary: ExecutionTraceBoundarySchema,
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("call"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("return"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("throw"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("note"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+])
+
+const ExecutionTraceProvenanceSchema = z
+  .object({
+    mode: z.enum(["captured", "inferred", "simulated", "mixed"]),
+    method: z.enum(["runtime-probe", "inspector", "static-analysis", "author-curated"]),
+    summary: TraceStringSchema,
+    confidence: TraceConfidenceSchema,
+    codeRevision: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTracePropsSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    caption: z.string().min(1).optional(),
+    provenance: ExecutionTraceProvenanceSchema,
+    events: z.array(ExecutionTraceEventSchema).min(1).max(100),
+    initialFilter: z.enum(["boundaries", "all", "validation", "io", "runtime", "mapping", "failures"]).optional(),
+    initialEventId: TraceIdSchema.optional(),
+    showCallStack: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine((props, context) => {
+    const eventIds = new Set<string>()
+    const eventOrders = new Set<number>()
+
+    props.events.forEach((event, eventIndex) => {
+      if (eventIds.has(event.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["events", eventIndex, "id"],
+          message: `Execution trace event id must be unique: ${event.id}`,
+        })
+      }
+      eventIds.add(event.id)
+
+      if (eventOrders.has(event.order)) {
+        context.addIssue({
+          code: "custom",
+          path: ["events", eventIndex, "order"],
+          message: `Execution trace event order must be unique: ${event.order}`,
+        })
+      }
+      eventOrders.add(event.order)
+
+      const frameIds = new Set<string>()
+      event.callStack?.forEach((frame, frameIndex) => {
+        if (frameIds.has(frame.id)) {
+          context.addIssue({
+            code: "custom",
+            path: ["events", eventIndex, "callStack", frameIndex, "id"],
+            message: `Call-stack frame id must be unique within an event: ${frame.id}`,
+          })
+        }
+        frameIds.add(frame.id)
+      })
+    })
+
+    if (props.initialEventId && !eventIds.has(props.initialEventId)) {
+      context.addIssue({
+        code: "custom",
+        path: ["initialEventId"],
+        message: `initialEventId must reference an event id: ${props.initialEventId}`,
+      })
+    }
+  })
+
+const ExecutionTraceNodeSchema = z
+  .object({
+    type: z.literal("execution-trace"),
+    props: ExecutionTracePropsSchema,
+    metadata: metadataSchema,
+  })
+  .strict()
 
 const DiagramHeightSchema = z.number().int().min(240).max(1600)
 
@@ -960,14 +1298,7 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
         )
         .min(1),
     }),
-    leafSchema("trace-tree", {
-      dataKey: z.string().min(1),
-      title: z.string().min(1).optional(),
-      caption: z.string().min(1).optional(),
-      defaultExpandedDepth: z.number().int().min(0).optional(),
-      showDurations: z.boolean().optional(),
-      showLocations: z.boolean().optional(),
-    }),
+    ExecutionTraceNodeSchema,
   ])
 })
 

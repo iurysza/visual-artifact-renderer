@@ -154,6 +154,7 @@ Prefer semantic nodes over generic containers:
 | Evidence rows | `data-table` or `comparison-table` |
 | Status/risk board | `status-grid` |
 | Architecture/data flow | `mermaid` or `flow` |
+| Code execution boundaries, typed transformations, call stack | `execution-trace` |
 | Custom interactive diagram | `svg-diagram` |
 | Commands/config | `code-block` |
 | File structure | `file-tree` |

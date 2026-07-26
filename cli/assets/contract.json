@@ -102,7 +102,7 @@
     "svg-diagram",
     "flow",
     "timeline",
-    "trace-tree",
+    "execution-trace",
     "code-block",
     "status-grid",
     "grid",
@@ -799,27 +799,102 @@
         }
       }
     },
-    "trace-tree": {
-      "description": "A collapsible call-tree overview of an execution path, showing callers, arguments, return values, durations, and file locations for code-review artifacts.",
+    "execution-trace": {
+      "description": "Boundary-first code execution review. Shows where data/control crosses validation, I/O, process, network, runtime, and registry-adapter boundaries; exposes typed inputs/outputs, transformations, evidence provenance, code references, and call-stack context.",
       "props": {
-        "dataKey": "string",
         "title": "string?",
         "caption": "string?",
-        "defaultExpandedDepth": "number?",
-        "showDurations": "boolean?",
-        "showLocations": "boolean?"
+        "provenance": "{ mode: 'captured' | 'inferred' | 'simulated' | 'mixed', method: 'runtime-probe' | 'inspector' | 'static-analysis' | 'author-curated', summary: string, confidence: 'high' | 'medium' | 'low', codeRevision?: string }",
+        "events": "ExecutionTraceEvent[] (1-100; boundary events require boundary.from/to/kind/outcome; values require typed preview + provenance; callStack carries typed frames)",
+        "initialFilter": "'boundaries' | 'all' | 'validation' | 'io' | 'runtime' | 'mapping' | 'failures'?",
+        "initialEventId": "string? (select the most review-relevant event on load)",
+        "showCallStack": "boolean?"
       },
       "children": false,
-      "data": "data[dataKey] must be an array of trace steps: { kind: 'call' | 'return' | 'throw' | 'note', fn: string, file?: string, line?: number, depth: number, args?: {name,type?,value}[], locals?: {name,type?,value}[], result?: string, durationMs?: number, note?: string }.",
-      "requiresData": true,
       "metadata": {
         "id": "string?"
       },
       "example": {
-        "type": "trace-tree",
+        "type": "execution-trace",
         "props": {
-          "dataKey": "renderTrace",
-          "title": "Render execution"
+          "title": "Artifact validation boundary",
+          "provenance": {
+            "mode": "inferred",
+            "method": "static-analysis",
+            "summary": "Types and control flow derived from the reviewed source.",
+            "confidence": "high"
+          },
+          "events": [
+            {
+              "id": "validate-spec",
+              "order": 0,
+              "phase": "validate",
+              "kind": "boundary",
+              "label": "Validate artifact JSON",
+              "boundary": {
+                "kind": "validation",
+                "from": {
+                  "label": "Parsed JSON",
+                  "system": "runtime"
+                },
+                "to": {
+                  "label": "Renderer contract",
+                  "system": "renderer"
+                },
+                "operation": "VisualArtifactSpecSchema.safeParse",
+                "outcome": "passed"
+              },
+              "inputs": [
+                {
+                  "id": "raw",
+                  "name": "data",
+                  "staticType": "unknown",
+                  "runtimeType": "object",
+                  "preview": {
+                    "kind": "object",
+                    "text": "{ slug, nodes, data }"
+                  },
+                  "provenance": "inferred"
+                }
+              ],
+              "outputs": [
+                {
+                  "id": "spec",
+                  "name": "spec",
+                  "staticType": "VisualArtifactSpec",
+                  "runtimeType": "object",
+                  "preview": {
+                    "kind": "object",
+                    "text": "validated artifact spec"
+                  },
+                  "provenance": "inferred"
+                }
+              ],
+              "transformation": {
+                "summary": "Untrusted JSON becomes a validated renderer contract.",
+                "mappings": [
+                  {
+                    "from": "data",
+                    "to": "spec",
+                    "operation": "validate"
+                  }
+                ]
+              },
+              "evidence": {
+                "origin": "inferred",
+                "confidence": "high"
+              },
+              "callStack": [
+                {
+                  "id": "safe-parse",
+                  "fn": "VisualArtifactSpecSchema.safeParse",
+                  "signature": "safeParse(data: unknown)",
+                  "returnType": "SafeParseReturnType<VisualArtifactSpec>",
+                  "active": true
+                }
+              ]
+            }
+          ]
         }
       }
     },
@@ -993,7 +1068,6 @@
     "comparison-table",
     "chart",
     "timeline",
-    "trace-tree",
     "status-grid"
   ],
   "patternExamples": {

@@ -32,7 +32,7 @@ export {
   renderStatusGrid,
 } from "./data-adapters"
 
-export { renderTraceTree } from "./trace-tree-adapter"
+export { renderExecutionTrace } from "./execution-trace-adapter"
 
 export {
   renderCard,

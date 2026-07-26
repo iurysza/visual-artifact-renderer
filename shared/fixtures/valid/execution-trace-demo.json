@@ -1,0 +1,747 @@
+{
+  "slug": "execution-trace-demo",
+  "title": "Execution path: artifact JSON to trusted adapter",
+  "description": "Boundary-first review of how external artifact JSON becomes validated renderer input and maps to a trusted execution-trace adapter.",
+  "nodes": [
+    {
+      "type": "text",
+      "props": {
+        "text": "Review the crossings, not every line: network response → parsed value → validated contract → registry-selected adapter → rendered output. Select a boundary to inspect types, field mappings, evidence, and call stack.",
+        "size": "lg"
+      }
+    },
+    {
+      "type": "execution-trace",
+      "metadata": {
+        "id": "artifact-render-boundaries"
+      },
+      "props": {
+        "title": "Artifact render boundaries",
+        "caption": "Boundary overview with typed input/output transformations and call context. Durations are intentionally omitted.",
+        "initialFilter": "boundaries",
+        "initialEventId": "validate-artifact-contract",
+        "showCallStack": true,
+        "provenance": {
+          "mode": "mixed",
+          "method": "author-curated",
+          "summary": "Control flow and static types are derived from the reviewed source. Example runtime previews are representative, not captured values.",
+          "confidence": "medium"
+        },
+        "events": [
+          {
+            "id": "fetch-artifact-json",
+            "order": 0,
+            "frameId": "loader-fetch",
+            "phase": "network",
+            "kind": "boundary",
+            "label": "Fetch artifact JSON",
+            "summary": "The client loader requests the latest artifact bundle from the configured data endpoint.",
+            "codeRef": {
+              "file": "app/src/components/client-artifact-loader.tsx",
+              "line": 78
+            },
+            "boundary": {
+              "kind": "network-request",
+              "from": {
+                "label": "ClientArtifactLoader",
+                "system": "renderer"
+              },
+              "to": {
+                "label": "Artifact data endpoint",
+                "system": "network"
+              },
+              "operation": "fetch(url)",
+              "outcome": "passed",
+              "policy": "Same-origin artifact URL derived from project and slug"
+            },
+            "inputs": [
+              {
+                "id": "artifact-url",
+                "name": "url",
+                "staticType": "string",
+                "runtimeType": "string",
+                "preview": {
+                  "kind": "scalar",
+                  "text": "\"/artifacts/data/visualizer/execution-trace-demo/artifact.json\""
+                },
+                "provenance": "simulated"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "fetch-response",
+                "name": "res",
+                "staticType": "Response",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "Response { ok: true, status: 200, body: ReadableStream }",
+                  "fields": [
+                    {
+                      "name": "ok",
+                      "type": "boolean",
+                      "preview": "true"
+                    },
+                    {
+                      "name": "status",
+                      "type": "number",
+                      "preview": "200"
+                    },
+                    {
+                      "name": "body",
+                      "type": "ReadableStream<Uint8Array>",
+                      "preview": "stream"
+                    }
+                  ]
+                },
+                "provenance": "simulated"
+              }
+            ],
+            "transformation": {
+              "summary": "A route-derived URL becomes an HTTP response whose body is still untrusted external input.",
+              "mappings": [
+                {
+                  "from": "url: string",
+                  "to": "res: Response",
+                  "operation": "pass"
+                }
+              ]
+            },
+            "evidence": {
+              "origin": "inferred",
+              "confidence": "high",
+              "note": "Control flow and types come directly from ClientArtifactLoader; values are representative."
+            },
+            "callStack": [
+              {
+                "id": "fetch-frame",
+                "fn": "fetch",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 78,
+                "signature": "fetch(input: RequestInfo | URL, init?: RequestInit)",
+                "returnType": "Promise<Response>",
+                "args": [
+                  {
+                    "id": "fetch-url-arg",
+                    "name": "url",
+                    "staticType": "string",
+                    "runtimeType": "string",
+                    "preview": {
+                      "kind": "scalar",
+                      "text": "artifactDataUrl(project, slug)"
+                    },
+                    "provenance": "inferred"
+                  }
+                ],
+                "active": true
+              },
+              {
+                "id": "loader-frame",
+                "fn": "ClientArtifactLoader",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 58,
+                "signature": "ClientArtifactLoader({ project, slug, initialSpec })",
+                "returnType": "ReactNode"
+              }
+            ]
+          },
+          {
+            "id": "parse-response-text",
+            "order": 1,
+            "parentFrameId": "loader-fetch",
+            "frameId": "parse-json",
+            "phase": "validate",
+            "kind": "boundary",
+            "label": "Parse bounded response text",
+            "summary": "The bounded UTF-8 response string becomes an unknown JavaScript value; it is not trusted yet.",
+            "codeRef": {
+              "file": "app/src/components/client-artifact-loader.tsx",
+              "line": 82
+            },
+            "boundary": {
+              "kind": "parse",
+              "from": {
+                "label": "Bounded response text",
+                "system": "renderer"
+              },
+              "to": {
+                "label": "Untrusted JSON value",
+                "system": "runtime"
+              },
+              "operation": "parseRawArtifactJson(text)",
+              "outcome": "passed",
+              "policy": "2 MiB raw artifact limit before JSON.parse"
+            },
+            "inputs": [
+              {
+                "id": "raw-text",
+                "name": "text",
+                "staticType": "string",
+                "runtimeType": "string",
+                "preview": {
+                  "kind": "scalar",
+                  "text": "{ \"slug\": \"execution-trace-demo\", \"nodes\": [...] }",
+                  "truncated": true
+                },
+                "provenance": "simulated"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "unknown-json",
+                "name": "data",
+                "staticType": "unknown",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "{ slug, title, description, nodes }",
+                  "fields": [
+                    {
+                      "name": "slug",
+                      "type": "unknown",
+                      "preview": "\"execution-trace-demo\""
+                    },
+                    {
+                      "name": "nodes",
+                      "type": "unknown",
+                      "preview": "Array(3)"
+                    }
+                  ]
+                },
+                "provenance": "simulated"
+              }
+            ],
+            "transformation": {
+              "summary": "Parsing changes representation from text to a runtime value, but does not establish contract safety.",
+              "mappings": [
+                {
+                  "from": "text: string",
+                  "to": "data: unknown",
+                  "operation": "parse"
+                }
+              ]
+            },
+            "evidence": {
+              "origin": "inferred",
+              "confidence": "high",
+              "note": "The shared parser returns unknown by design so validation remains an explicit boundary."
+            },
+            "callStack": [
+              {
+                "id": "parse-frame",
+                "fn": "parseRawArtifactJson",
+                "file": "shared/src/artifact-schema.ts",
+                "line": 67,
+                "signature": "parseRawArtifactJson(raw: string, maxBytes?: number)",
+                "returnType": "unknown",
+                "active": true
+              },
+              {
+                "id": "fetch-then-frame",
+                "fn": "fetch(url).then",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 79,
+                "signature": "then(async (res: Response) => unknown)",
+                "returnType": "Promise<unknown>"
+              },
+              {
+                "id": "loader-frame-parse",
+                "fn": "ClientArtifactLoader",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 58,
+                "returnType": "ReactNode"
+              }
+            ]
+          },
+          {
+            "id": "validate-artifact-contract",
+            "order": 2,
+            "parentFrameId": "parse-json",
+            "frameId": "validate-spec",
+            "phase": "validate",
+            "kind": "boundary",
+            "label": "Validate renderer contract",
+            "summary": "The shared Zod contract turns an unknown runtime object into a trusted VisualArtifactSpec or stops the render.",
+            "codeRef": {
+              "file": "app/src/components/client-artifact-loader.tsx",
+              "line": 85
+            },
+            "boundary": {
+              "kind": "validation",
+              "from": {
+                "label": "Untrusted JSON value",
+                "system": "runtime"
+              },
+              "to": {
+                "label": "Trusted renderer contract",
+                "system": "renderer"
+              },
+              "operation": "VisualArtifactSpecSchema.safeParse(data)",
+              "outcome": "passed",
+              "policy": "Shared strict Zod schema plus artifact resource preflight"
+            },
+            "inputs": [
+              {
+                "id": "validation-input",
+                "name": "data",
+                "staticType": "unknown",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "untrusted { slug, title, nodes, data? }",
+                  "fields": [
+                    {
+                      "name": "slug",
+                      "type": "unknown",
+                      "preview": "\"execution-trace-demo\""
+                    },
+                    {
+                      "name": "nodes",
+                      "type": "unknown",
+                      "preview": "Array(3)"
+                    }
+                  ]
+                },
+                "provenance": "simulated"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "validated-spec",
+                "name": "parsed.data",
+                "staticType": "VisualArtifactSpec",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "validated artifact contract",
+                  "fields": [
+                    {
+                      "name": "slug",
+                      "type": "string",
+                      "preview": "\"execution-trace-demo\""
+                    },
+                    {
+                      "name": "title",
+                      "type": "string",
+                      "preview": "\"Execution path: artifact JSON to trusted adapter\""
+                    },
+                    {
+                      "name": "nodes",
+                      "type": "ArtifactNode[]",
+                      "preview": "3 validated nodes"
+                    }
+                  ]
+                },
+                "provenance": "simulated"
+              }
+            ],
+            "transformation": {
+              "summary": "Unknown external data becomes a statically typed, renderer-safe contract after strict validation.",
+              "mappings": [
+                {
+                  "from": "data.slug: unknown",
+                  "to": "spec.slug: string",
+                  "operation": "validate"
+                },
+                {
+                  "from": "data.nodes: unknown",
+                  "to": "spec.nodes: ArtifactNode[]",
+                  "operation": "validate"
+                },
+                {
+                  "from": "data",
+                  "to": "parsed.data: VisualArtifactSpec",
+                  "operation": "validate"
+                }
+              ]
+            },
+            "evidence": {
+              "origin": "inferred",
+              "confidence": "high",
+              "note": "Static types and failure behavior are derived from the shared executable schema."
+            },
+            "callStack": [
+              {
+                "id": "safe-parse-frame",
+                "fn": "VisualArtifactSpecSchema.safeParse",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 85,
+                "signature": "safeParse(data: unknown)",
+                "returnType": "SafeParseReturnType<VisualArtifactSpec>",
+                "args": [
+                  {
+                    "id": "safe-parse-data",
+                    "name": "data",
+                    "staticType": "unknown",
+                    "runtimeType": "object",
+                    "preview": {
+                      "kind": "object",
+                      "text": "{ slug, title, nodes }"
+                    },
+                    "provenance": "simulated"
+                  }
+                ],
+                "active": true
+              },
+              {
+                "id": "validation-then-frame",
+                "fn": "fetch(url).then",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 84,
+                "signature": "then((data: unknown) => void)",
+                "returnType": "Promise<void>"
+              },
+              {
+                "id": "loader-frame-validation",
+                "fn": "ClientArtifactLoader",
+                "file": "app/src/components/client-artifact-loader.tsx",
+                "line": 58,
+                "returnType": "ReactNode"
+              }
+            ]
+          },
+          {
+            "id": "select-trusted-adapter",
+            "order": 3,
+            "frameId": "registry-dispatch",
+            "phase": "map",
+            "kind": "boundary",
+            "label": "Map node type to trusted adapter",
+            "summary": "The validated node discriminator selects a renderer-owned adapter; artifact JSON cannot inject React code.",
+            "codeRef": {
+              "file": "app/src/components/visual-artifact-renderer.tsx",
+              "line": 407
+            },
+            "boundary": {
+              "kind": "registry-adapter",
+              "from": {
+                "label": "Validated ArtifactNode",
+                "system": "renderer"
+              },
+              "to": {
+                "label": "Trusted component registry",
+                "system": "renderer"
+              },
+              "operation": "componentRegistry[node.type]",
+              "outcome": "passed",
+              "policy": "ArtifactNode discriminated union must match a registered adapter"
+            },
+            "inputs": [
+              {
+                "id": "execution-trace-node",
+                "name": "node",
+                "staticType": "Extract<ArtifactNode, { type: \"execution-trace\" }>",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "{ type: \"execution-trace\", props: { provenance, events } }",
+                  "fields": [
+                    {
+                      "name": "type",
+                      "type": "\"execution-trace\"",
+                      "preview": "registry key"
+                    },
+                    {
+                      "name": "props",
+                      "type": "ExecutionTraceProps",
+                      "preview": "validated boundary events"
+                    }
+                  ]
+                },
+                "provenance": "derived"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "execution-trace-adapter",
+                "name": "Component",
+                "staticType": "RegistryAdapter",
+                "runtimeType": "unknown",
+                "preview": {
+                  "kind": "scalar",
+                  "text": "renderExecutionTrace"
+                },
+                "provenance": "derived"
+              }
+            ],
+            "transformation": {
+              "summary": "A string discriminator is looked up in a closed registry and resolves to the execution-trace adapter.",
+              "mappings": [
+                {
+                  "from": "node.type = \"execution-trace\"",
+                  "to": "componentRegistry[\"execution-trace\"]",
+                  "operation": "lookup"
+                },
+                {
+                  "from": "componentRegistry[\"execution-trace\"]",
+                  "to": "renderExecutionTrace",
+                  "operation": "select"
+                }
+              ]
+            },
+            "evidence": {
+              "origin": "derived",
+              "confidence": "high",
+              "note": "The mapping is explicit in component-registry.tsx and exhaustively typed against ArtifactNode[\"type\"]."
+            },
+            "callStack": [
+              {
+                "id": "render-node-frame",
+                "fn": "RenderNode",
+                "file": "app/src/components/visual-artifact-renderer.tsx",
+                "line": 396,
+                "signature": "RenderNode({ node, context, nodePath, renderNodes })",
+                "returnType": "ReactNode",
+                "args": [
+                  {
+                    "id": "render-node-arg",
+                    "name": "node",
+                    "staticType": "ArtifactNode",
+                    "runtimeType": "object",
+                    "preview": {
+                      "kind": "object",
+                      "text": "execution-trace node"
+                    },
+                    "provenance": "derived"
+                  }
+                ],
+                "active": true
+              },
+              {
+                "id": "render-nodes-frame",
+                "fn": "renderNodes",
+                "file": "app/src/components/visual-artifact-renderer.tsx",
+                "line": 412,
+                "signature": "renderNodes(nodes: ArtifactNode[], context, prefix?)",
+                "returnType": "ReactNode"
+              },
+              {
+                "id": "renderer-content-frame",
+                "fn": "VisualArtifactRendererContent",
+                "file": "app/src/components/visual-artifact-renderer.tsx",
+                "line": 36,
+                "returnType": "ReactNode"
+              }
+            ]
+          },
+          {
+            "id": "render-execution-trace",
+            "order": 4,
+            "parentFrameId": "registry-dispatch",
+            "frameId": "adapter-call",
+            "phase": "render",
+            "kind": "call",
+            "label": "Render execution trace review",
+            "summary": "The selected trusted adapter receives typed node props and creates the boundary overview plus detail inspector.",
+            "codeRef": {
+              "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+              "line": 73
+            },
+            "inputs": [
+              {
+                "id": "adapter-node",
+                "name": "node",
+                "staticType": "Extract<ArtifactNode, { type: \"execution-trace\" }>",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "validated execution-trace node"
+                },
+                "provenance": "derived"
+              },
+              {
+                "id": "adapter-context",
+                "name": "context",
+                "staticType": "ArtifactRenderContext",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "{ data, project, slug }"
+                },
+                "provenance": "derived"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "trace-react-node",
+                "name": "reviewUi",
+                "staticType": "ReactNode",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "<ExecutionTraceReview />"
+                },
+                "provenance": "derived"
+              }
+            ],
+            "transformation": {
+              "summary": "Validated trace events become renderer-controlled React elements; no JSX or CSS comes from artifact JSON.",
+              "mappings": [
+                {
+                  "from": "node.props.events",
+                  "to": "BoundaryOverview rows",
+                  "operation": "adapt"
+                },
+                {
+                  "from": "selected event",
+                  "to": "typed detail + call stack",
+                  "operation": "select"
+                }
+              ]
+            },
+            "evidence": {
+              "origin": "derived",
+              "confidence": "high",
+              "note": "Adapter signature and output are derived from the TypeScript implementation."
+            },
+            "callStack": [
+              {
+                "id": "adapter-frame",
+                "fn": "renderExecutionTrace",
+                "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+                "line": 73,
+                "signature": "renderExecutionTrace(args: AdapterArgs<\"execution-trace\">)",
+                "returnType": "ReactNode",
+                "active": true
+              },
+              {
+                "id": "registry-frame",
+                "fn": "componentRegistry[\"execution-trace\"]",
+                "file": "app/src/components/component-registry.tsx",
+                "line": 50,
+                "signature": "RegistryAdapter(args)",
+                "returnType": "ReactNode"
+              },
+              {
+                "id": "render-node-adapter-frame",
+                "fn": "RenderNode",
+                "file": "app/src/components/visual-artifact-renderer.tsx",
+                "line": 396,
+                "returnType": "ReactNode"
+              }
+            ]
+          },
+          {
+            "id": "commit-rendered-output",
+            "order": 5,
+            "parentFrameId": "adapter-call",
+            "phase": "output",
+            "kind": "boundary",
+            "label": "Commit trusted UI output",
+            "summary": "React reconciles the adapter-owned element tree into browser DOM that the reviewer can inspect and interact with.",
+            "boundary": {
+              "kind": "output",
+              "from": {
+                "label": "Trusted adapter ReactNode",
+                "system": "renderer"
+              },
+              "to": {
+                "label": "Interactive artifact DOM",
+                "system": "runtime"
+              },
+              "operation": "React reconciliation",
+              "outcome": "passed",
+              "policy": "Only registered renderer adapters create DOM"
+            },
+            "inputs": [
+              {
+                "id": "react-node-output",
+                "name": "reviewUi",
+                "staticType": "ReactNode",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "<ExecutionTraceReview />"
+                },
+                "provenance": "derived"
+              }
+            ],
+            "outputs": [
+              {
+                "id": "artifact-dom",
+                "name": "artifactDom",
+                "staticType": "HTMLElement",
+                "runtimeType": "object",
+                "preview": {
+                  "kind": "object",
+                  "text": "interactive boundary list and detail inspector"
+                },
+                "provenance": "inferred"
+              }
+            ],
+            "transformation": {
+              "summary": "Renderer-owned React elements become interactive DOM without executing artifact-authored code.",
+              "mappings": [
+                {
+                  "from": "ReactNode",
+                  "to": "HTMLElement",
+                  "operation": "adapt"
+                }
+              ]
+            },
+            "evidence": {
+              "origin": "inferred",
+              "confidence": "high",
+              "note": "The renderer controls all adapters; DOM output follows normal React reconciliation."
+            },
+            "callStack": [
+              {
+                "id": "execution-review-frame",
+                "fn": "ExecutionTraceReview",
+                "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+                "line": 77,
+                "signature": "ExecutionTraceReview(props)",
+                "returnType": "ReactNode",
+                "active": true
+              },
+              {
+                "id": "render-execution-frame",
+                "fn": "renderExecutionTrace",
+                "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+                "line": 73,
+                "returnType": "ReactNode"
+              },
+              {
+                "id": "render-node-output-frame",
+                "fn": "RenderNode",
+                "file": "app/src/components/visual-artifact-renderer.tsx",
+                "line": 396,
+                "returnType": "ReactNode"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "accordion",
+      "props": {
+        "items": [
+          {
+            "title": "How to review this trace",
+            "nodes": [
+              {
+                "type": "prose",
+                "props": {
+                  "content": "Start with **Boundaries**. Select a crossing to compare typed inputs and outputs, then inspect field mappings and the current-first call stack. Use **All events** only when call context is needed. Provenance is shown at trace, event, and value level so representative previews cannot masquerade as captured runtime evidence."
+                }
+              }
+            ]
+          },
+          {
+            "title": "Why there are no durations",
+            "nodes": [
+              {
+                "type": "text",
+                "props": {
+                  "text": "Simulated traces and debugger-stepped captures do not provide trustworthy function timings. This component omits duration rather than presenting false precision.",
+                  "tone": "muted"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
