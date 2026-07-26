@@ -104,7 +104,7 @@ Agent builds spec
   → CLI create reads JSON from stdin
   → CLI validates with the shared executable schema
   → CLI derives project from git root / directory
-  → CLI resolves project-contained or explicitly granted file-tree sources
+  → CLI resolves project-contained or explicitly granted disk sources for file-tree items and execution-trace code
   → CLI writes <artifacts-dir>/<project>/<slug>/artifact.json
   → CLI starts server if needed
   → extension returns URL

@@ -568,6 +568,14 @@ export interface ExecutionTraceEvidence {
   note?: string
 }
 
+export interface ExecutionTraceCodeContext {
+  /** Inlined source shown by the renderer. */
+  content?: string
+  /** Create-time source path; the CLI reads it safely, writes content, then strips src. */
+  src?: string
+  language?: string
+}
+
 export interface ExecutionTraceEvent {
   id: string
   order: number
@@ -578,6 +586,7 @@ export interface ExecutionTraceEvent {
   label: string
   summary?: string
   codeRef?: { file: string; line: number; column?: number }
+  code?: ExecutionTraceCodeContext
   boundary?: ExecutionTraceBoundary
   inputs?: ExecutionTraceTypedValue[]
   outputs?: ExecutionTraceTypedValue[]
@@ -807,7 +816,6 @@ export type ArtifactNode =
         caption?: string
         provenance: ExecutionTraceProvenance
         events: ExecutionTraceEvent[]
-        initialFilter?: "boundaries" | "all" | "validation" | "io" | "runtime" | "mapping" | "failures"
         initialEventId?: string
         showCallStack?: boolean
       }
@@ -884,6 +892,22 @@ const ExecutionTraceMappingSchema = z
   })
   .strict()
 
+const ExecutionTraceCodeContextSchema = z
+  .object({
+    content: z.string().max(MAX_FILE_SOURCE_BYTES).optional(),
+    src: z.string().min(1).optional(),
+    language: z.string().min(1).max(40).optional(),
+  })
+  .strict()
+  .superRefine((code, context) => {
+    if (code.content === undefined && code.src === undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "Execution trace code requires content or src",
+      })
+    }
+  })
+
 const ExecutionTraceCallFrameSchema = z
   .object({
     id: TraceIdSchema,
@@ -914,6 +938,7 @@ const ExecutionTraceEventBaseSchema = z
       })
       .strict()
       .optional(),
+    code: ExecutionTraceCodeContextSchema.optional(),
     inputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
     outputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
     transformation: z
@@ -974,7 +999,6 @@ const ExecutionTracePropsSchema = z
     caption: z.string().min(1).optional(),
     provenance: ExecutionTraceProvenanceSchema,
     events: z.array(ExecutionTraceEventSchema).min(1).max(100),
-    initialFilter: z.enum(["boundaries", "all", "validation", "io", "runtime", "mapping", "failures"]).optional(),
     initialEventId: TraceIdSchema.optional(),
     showCallStack: z.boolean().optional(),
   })

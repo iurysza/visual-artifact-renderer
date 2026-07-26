@@ -170,6 +170,7 @@ Full reference: `ai-artifacts/docs/nodes.md` in the source repo, or `visual-arti
 - Use tables for structured facts.
 - Do not pad with node counts or implementation stats unless they answer the user's question.
 - Avoid card soup.
+- For `execution-trace`, render one persistent call stack; previous/next moves its current frame. Keep static/runtime types explicit and use `event.code.src` to inline repo source at create-time.
 - Keep diagrams under control; split if they stop scanning.
 - Use `accordion` only for secondary detail.
 

@@ -298,6 +298,8 @@ The renderer serves it as:
         "phase": "validate",
         "kind": "boundary",
         "label": "Validate renderer contract",
+        "codeRef": { "file": "shared/src/artifact-schema.ts", "line": 1410 },
+        "code": { "src": "shared/src/artifact-schema.ts", "language": "typescript" },
         "boundary": {
           "kind": "validation",
           "from": { "label": "Untrusted JSON", "system": "runtime" },
@@ -345,4 +347,4 @@ The renderer serves it as:
 }
 ```
 
-Prefer boundary events over raw call transcripts. Always model static/runtime types and provenance separately. Omit timings unless they are real monotonic runtime measurements; simulated and debugger-stepped traces should not carry durations.
+Render events as one persistent call stack; previous/next moves the current frame instead of replacing the stack. Prefer boundary events over raw call transcripts. Always model static/runtime types and provenance separately. Use `event.code.src` for repo-relative source; `visual-artifact create` safely inlines it into `content` and strips `src` before saving. Omit timings unless they are real monotonic runtime measurements; simulated and debugger-stepped traces should not carry durations.

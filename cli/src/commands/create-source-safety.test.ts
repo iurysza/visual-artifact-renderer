@@ -142,6 +142,64 @@ describe("create: source read containment", () => {
     expect(written.nodes[0].props.items[0].src).toBeUndefined()
   })
 
+  test("execution-trace code source is inlined and src is stripped", async () => {
+    const project = join(dir, "project")
+    const srcDir = join(project, "src")
+    await mkdir(srcDir, { recursive: true })
+    const body = "export function validate(input: unknown) { return input }\n"
+    await writeFile(join(srcDir, "validate.ts"), body, "utf8")
+
+    const specPath = await writeSpec(dir, {
+      slug: "trace-source",
+      title: "Trace source",
+      nodes: [
+        {
+          type: "execution-trace",
+          props: {
+            provenance: {
+              mode: "inferred",
+              method: "static-analysis",
+              summary: "Control flow derived from source.",
+              confidence: "high",
+            },
+            events: [
+              {
+                id: "validate",
+                order: 0,
+                phase: "validate",
+                kind: "boundary",
+                label: "Validate input",
+                codeRef: { file: "src/validate.ts", line: 1 },
+                code: { src: "src/validate.ts", language: "typescript" },
+                boundary: {
+                  kind: "validation",
+                  from: { label: "Input", system: "runtime" },
+                  to: { label: "Output", system: "renderer" },
+                  operation: "validate(input)",
+                  outcome: "passed",
+                },
+                evidence: { origin: "inferred", confidence: "high" },
+              },
+            ],
+          },
+        },
+      ],
+    })
+
+    const log = makeLogger()
+    const rc = await create(specPath, { ...EMPTY_GLOBAL_OPTS, project, serve: false }, log as any)
+    expect(rc).toBe(0)
+
+    const outLine = log._logs.find((line) => line.startsWith("output: "))
+    const result = JSON.parse(outLine!.slice("output: ".length))
+    expect(result.safety.diskSources.count).toBe(1)
+    expect(result.safety.diskSources.files[0].displayPath).toBe("src/validate.ts")
+
+    const written = JSON.parse(await readFile(result.path, "utf8"))
+    expect(written.nodes[0].props.events[0].code.content).toBe(body)
+    expect(written.nodes[0].props.events[0].code.src).toBeUndefined()
+  })
+
   test("resolves file-tree sources nested in tabs and accordions", async () => {
     const project = join(dir, "project")
     await mkdir(project, { recursive: true })
@@ -279,7 +337,7 @@ describe("create: source read containment", () => {
       log as any,
     )
     expect(rc).toBe(2)
-    expect(log._logs.some((l) => l.includes("absolute file-tree src is outside"))).toBe(true)
+    expect(log._logs.some((l) => l.includes("absolute artifact source is outside"))).toBe(true)
   })
 
   test("rejects outside absolute src without grant", async () => {
@@ -303,7 +361,7 @@ describe("create: source read containment", () => {
       log as any,
     )
     expect(rc).toBe(2)
-    expect(log._logs.some((l) => l.includes("absolute file-tree src is outside"))).toBe(true)
+    expect(log._logs.some((l) => l.includes("absolute artifact source is outside"))).toBe(true)
   })
 
   test("allows outside absolute src under repeated --allow-read", async () => {

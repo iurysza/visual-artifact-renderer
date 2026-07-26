@@ -1,24 +1,16 @@
 {
   "slug": "execution-trace-demo",
   "title": "Execution path: artifact JSON to trusted adapter",
-  "description": "Boundary-first review of how external artifact JSON becomes validated renderer input and maps to a trusted execution-trace adapter.",
+  "description": "Debugger-style review of how external artifact JSON becomes validated renderer input and maps to a trusted adapter.",
   "nodes": [
-    {
-      "type": "text",
-      "props": {
-        "text": "Review the crossings, not every line: network response → parsed value → validated contract → registry-selected adapter → rendered output. Select a boundary to inspect types, field mappings, evidence, and call stack.",
-        "size": "lg"
-      }
-    },
     {
       "type": "execution-trace",
       "metadata": {
         "id": "artifact-render-boundaries"
       },
       "props": {
-        "title": "Artifact render boundaries",
-        "caption": "Boundary overview with typed input/output transformations and call context. Durations are intentionally omitted.",
-        "initialFilter": "boundaries",
+        "title": "Artifact render call stack",
+        "caption": "Step through frames and inspect source, types, and values.",
         "initialEventId": "validate-artifact-contract",
         "showCallStack": true,
         "provenance": {
@@ -143,7 +135,11 @@
                 "signature": "ClientArtifactLoader({ project, slug, initialSpec })",
                 "returnType": "ReactNode"
               }
-            ]
+            ],
+            "code": {
+              "src": "app/src/components/client-artifact-loader.tsx",
+              "language": "typescript"
+            }
           },
           {
             "id": "parse-response-text",
@@ -251,7 +247,11 @@
                 "line": 58,
                 "returnType": "ReactNode"
               }
-            ]
+            ],
+            "code": {
+              "src": "app/src/components/client-artifact-loader.tsx",
+              "language": "typescript"
+            }
           },
           {
             "id": "validate-artifact-contract",
@@ -398,7 +398,11 @@
                 "line": 58,
                 "returnType": "ReactNode"
               }
-            ]
+            ],
+            "code": {
+              "src": "app/src/components/client-artifact-loader.tsx",
+              "language": "typescript"
+            }
           },
           {
             "id": "select-trusted-adapter",
@@ -522,7 +526,11 @@
                 "line": 36,
                 "returnType": "ReactNode"
               }
-            ]
+            ],
+            "code": {
+              "src": "app/src/components/visual-artifact-renderer.tsx",
+              "language": "typescript"
+            }
           },
           {
             "id": "render-execution-trace",
@@ -535,7 +543,7 @@
             "summary": "The selected trusted adapter receives typed node props and creates the boundary overview plus detail inspector.",
             "codeRef": {
               "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-              "line": 73
+              "line": 46
             },
             "inputs": [
               {
@@ -575,7 +583,7 @@
               }
             ],
             "transformation": {
-              "summary": "Validated trace events become renderer-controlled React elements; no JSX or CSS comes from artifact JSON.",
+              "summary": "Validated trace events become a renderer-controlled debugger workspace; no JSX or CSS comes from artifact JSON.",
               "mappings": [
                 {
                   "from": "node.props.events",
@@ -599,7 +607,7 @@
                 "id": "adapter-frame",
                 "fn": "renderExecutionTrace",
                 "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-                "line": 73,
+                "line": 46,
                 "signature": "renderExecutionTrace(args: AdapterArgs<\"execution-trace\">)",
                 "returnType": "ReactNode",
                 "active": true
@@ -619,7 +627,11 @@
                 "line": 396,
                 "returnType": "ReactNode"
               }
-            ]
+            ],
+            "code": {
+              "src": "app/src/components/adapters/execution-trace-adapter.tsx",
+              "language": "typescript"
+            }
           },
           {
             "id": "commit-rendered-output",
@@ -689,7 +701,7 @@
                 "id": "execution-review-frame",
                 "fn": "ExecutionTraceReview",
                 "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-                "line": 77,
+                "line": 50,
                 "signature": "ExecutionTraceReview(props)",
                 "returnType": "ReactNode",
                 "active": true
@@ -698,7 +710,7 @@
                 "id": "render-execution-frame",
                 "fn": "renderExecutionTrace",
                 "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-                "line": 73,
+                "line": 46,
                 "returnType": "ReactNode"
               },
               {
@@ -708,37 +720,15 @@
                 "line": 396,
                 "returnType": "ReactNode"
               }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "type": "accordion",
-      "props": {
-        "items": [
-          {
-            "title": "How to review this trace",
-            "nodes": [
-              {
-                "type": "prose",
-                "props": {
-                  "content": "Start with **Boundaries**. Select a crossing to compare typed inputs and outputs, then inspect field mappings and the current-first call stack. Use **All events** only when call context is needed. Provenance is shown at trace, event, and value level so representative previews cannot masquerade as captured runtime evidence."
-                }
-              }
-            ]
-          },
-          {
-            "title": "Why there are no durations",
-            "nodes": [
-              {
-                "type": "text",
-                "props": {
-                  "text": "Simulated traces and debugger-stepped captures do not provide trustworthy function timings. This component omits duration rather than presenting false precision.",
-                  "tone": "muted"
-                }
-              }
-            ]
+            ],
+            "codeRef": {
+              "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+              "line": 50
+            },
+            "code": {
+              "src": "app/src/components/adapters/execution-trace-adapter.tsx",
+              "language": "typescript"
+            }
           }
         ]
       }

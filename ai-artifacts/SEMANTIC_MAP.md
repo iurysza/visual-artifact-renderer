@@ -63,7 +63,7 @@ Agent JSON
   → create_visual_artifact
   → visual-artifact create - --project <cwd> --json
   → validate with the shared executable schema/resource preflight
-  → resolve contained or explicitly granted file-tree sources
+  → resolve contained or explicitly granted disk sources for file-tree items and execution-trace code
   → write <artifacts-dir>/<project>/<slug>/artifact.json
   → return /<project>/<slug>/
 ```

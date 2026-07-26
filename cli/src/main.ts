@@ -94,7 +94,7 @@ setupCmd
 
 const allowReadOption = new Option(
   "--allow-read <dir>",
-  "Authorize reading file-tree sources under this directory (repeatable)",
+  "Authorize reading artifact sources under this directory (repeatable)",
 ).argParser((value: string, previous: string[] = []) => [...previous, value])
 
 program

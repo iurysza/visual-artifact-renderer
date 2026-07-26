@@ -100,6 +100,23 @@ describe("execution-trace schema", () => {
     assert.equal(result.success, false)
   })
 
+  it("accepts create-time file-backed code context", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+      ...validBoundaryEvent,
+      codeRef: { file: "src/validate.ts", line: 12 },
+      code: { src: "src/validate.ts", language: "typescript" },
+    }))
+    assert.equal(result.success, true)
+  })
+
+  it("rejects code context without content or src", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+      ...validBoundaryEvent,
+      code: { language: "typescript" },
+    }))
+    assert.equal(result.success, false)
+  })
+
   it("rejects timing fields to prevent false precision", () => {
     const result = VisualArtifactSpecSchema.safeParse(traceSpec({
       ...validBoundaryEvent,

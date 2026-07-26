@@ -35,6 +35,7 @@ export {
   type ExecutionTraceBoundary,
   type ExecutionTraceBoundaryKind,
   type ExecutionTraceCallFrame,
+  type ExecutionTraceCodeContext,
   type ExecutionTraceEvent,
   type ExecutionTraceEvidence,
   type ExecutionTraceMapping,

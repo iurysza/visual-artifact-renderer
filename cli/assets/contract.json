@@ -800,13 +800,12 @@
       }
     },
     "execution-trace": {
-      "description": "Boundary-first code execution review. Shows where data/control crosses validation, I/O, process, network, runtime, and registry-adapter boundaries; exposes typed inputs/outputs, transformations, evidence provenance, code references, and call-stack context.",
+      "description": "Debugger-style execution review with one persistent call stack. Previous/next moves the current frame, updates active-line source context, and shows typed inputs/outputs for that frame. Event code may use content directly or a create-time src path that the CLI safely reads and inlines.",
       "props": {
         "title": "string?",
         "caption": "string?",
         "provenance": "{ mode: 'captured' | 'inferred' | 'simulated' | 'mixed', method: 'runtime-probe' | 'inspector' | 'static-analysis' | 'author-curated', summary: string, confidence: 'high' | 'medium' | 'low', codeRevision?: string }",
-        "events": "ExecutionTraceEvent[] (1-100; boundary events require boundary.from/to/kind/outcome; values require typed preview + provenance; callStack carries typed frames)",
-        "initialFilter": "'boundaries' | 'all' | 'validation' | 'io' | 'runtime' | 'mapping' | 'failures'?",
+        "events": "ExecutionTraceEvent[] (1-100; boundary events require boundary.from/to/kind/outcome; values require typed preview + provenance; callStack carries typed frames; code accepts { content?, src?, language? } and requires content or src)",
         "initialEventId": "string? (select the most review-relevant event on load)",
         "showCallStack": "boolean?"
       },
@@ -831,6 +830,14 @@
               "phase": "validate",
               "kind": "boundary",
               "label": "Validate artifact JSON",
+              "codeRef": {
+                "file": "shared/src/artifact-schema.ts",
+                "line": 1410
+              },
+              "code": {
+                "src": "shared/src/artifact-schema.ts",
+                "language": "typescript"
+              },
               "boundary": {
                 "kind": "validation",
                 "from": {
