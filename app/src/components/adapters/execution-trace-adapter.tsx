@@ -16,7 +16,15 @@ import {
 import { Figure } from "@/components/artifact-primitives"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DARK_CODE_THEME,
+  getCodeHighlighter,
+  LIGHT_CODE_THEME,
+  normalizeCodeLanguage,
+  useIsDarkTheme,
+} from "@/lib/code-highlighting"
 import { cn } from "@/lib/utils"
+import type { ThemedToken } from "shiki"
 
 import type { AdapterArgs } from "@/components/artifact-types"
 import type {
@@ -109,7 +117,6 @@ function ExecutionTraceReview({
           <CallStackPanel
             events={orderedEvents}
             selectedId={selectedEvent.id}
-            provenance={provenance}
             visible={showCallStack}
             onSelect={setSelectedId}
           />
@@ -119,6 +126,8 @@ function ExecutionTraceReview({
             <EventInspector event={selectedEvent} />
           </main>
         </div>
+
+        <TraceProvenance provenance={provenance} />
       </div>
     </Figure>
   )
@@ -148,7 +157,7 @@ function TraceToolbar({
           <Layers3 className="size-4 shrink-0 text-clay-dark" />
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold text-foreground">{title}</h3>
-            {caption && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{caption}</p>}
+            {caption && <p className="mt-0.5 break-words text-xs leading-4 text-muted-foreground">{caption}</p>}
           </div>
         </div>
 
@@ -199,13 +208,11 @@ function TraceToolbar({
 function CallStackPanel({
   events,
   selectedId,
-  provenance,
   visible,
   onSelect,
 }: {
   events: ExecutionTraceEvent[]
   selectedId: string
-  provenance: ExecutionTraceProvenance
   visible: boolean
   onSelect: (id: string) => void
 }) {
@@ -236,7 +243,7 @@ function CallStackPanel({
       {visible ? (
         <ol
           ref={listRef}
-          className="relative mx-3 my-3 max-h-[calc(36rem+2px)] divide-y overflow-y-auto overscroll-contain rounded-lg border bg-background [scrollbar-gutter:stable]"
+          className="relative mx-3 my-3 max-h-[calc(30rem+2px)] divide-y overflow-y-auto overscroll-contain rounded-lg border bg-background [scrollbar-gutter:stable]"
           aria-label="Execution call stack"
         >
           {events.map((event, index) => (
@@ -252,12 +259,16 @@ function CallStackPanel({
       ) : (
         <div className="px-4 py-8 text-sm text-muted-foreground">Call stack hidden for this trace.</div>
       )}
-
-      <div className="mt-auto border-t px-4 py-3 text-xs leading-5 text-muted-foreground">
-        <p className="font-medium text-foreground">About this trace</p>
-        <p className="mt-1">{provenance.summary}</p>
-      </div>
     </aside>
+  )
+}
+
+function TraceProvenance({ provenance }: { provenance: ExecutionTraceProvenance }) {
+  return (
+    <footer className="grid min-w-0 gap-1 border-t bg-muted/15 px-4 py-3 text-xs leading-5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-4">
+      <p className="font-medium text-foreground">About this trace</p>
+      <p className="text-muted-foreground">{provenance.summary}</p>
+    </footer>
   )
 }
 
@@ -278,7 +289,7 @@ function CallStackRow({
 
   return (
     <li
-      className={cn("h-24 min-w-0 overflow-hidden", selected && "bg-clay/10")}
+      className={cn("h-20 min-w-0 overflow-hidden", selected && "bg-clay/10")}
       data-current={selected ? "true" : undefined}
     >
       <button
@@ -296,11 +307,8 @@ function CallStackRow({
           {index}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="min-w-0 truncate font-mono text-xs font-semibold text-foreground">
-              {frame?.fn ?? event.label}
-            </span>
-            {selected && <Badge variant="outline">current</Badge>}
+          <span className="block min-w-0 truncate font-mono text-xs font-semibold text-foreground">
+            {frame?.fn ?? event.label}
           </span>
           <span className="mt-1 block truncate text-[11px] text-muted-foreground">{event.label}</span>
           {file && (
@@ -308,13 +316,38 @@ function CallStackRow({
               {file}:{line ?? "—"}
             </span>
           )}
-          {frame?.returnType && (
-            <span className="mt-1 block truncate font-mono text-[10px] text-muted-foreground">→ {frame.returnType}</span>
-          )}
         </span>
       </button>
     </li>
   )
+}
+
+function useHighlightedLines(code: string, language: string) {
+  const isDark = useIsDarkTheme()
+  const [highlighted, setHighlighted] = useState<{ code: string; lines: ThemedToken[][] | null } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getCodeHighlighter()
+      .then((highlighter) => {
+        const lang = normalizeCodeLanguage(language, highlighter)
+        const lines = highlighter.codeToTokens(code, {
+          lang,
+          theme: isDark ? DARK_CODE_THEME : LIGHT_CODE_THEME,
+        }).tokens
+        if (!cancelled) setHighlighted({ code, lines })
+      })
+      .catch(() => {
+        if (!cancelled) setHighlighted({ code, lines: null })
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [code, language, isDark])
+
+  return highlighted?.code === code ? highlighted.lines : null
 }
 
 function SourcePane({ event }: { event: ExecutionTraceEvent }) {
@@ -328,6 +361,10 @@ function SourcePane({ event }: { event: ExecutionTraceEvent }) {
   const endIndex = Math.min(allLines.length, startIndex + SOURCE_WINDOW_LINES)
   startIndex = Math.max(0, endIndex - SOURCE_WINDOW_LINES)
   const visibleLines = allLines.slice(startIndex, endIndex)
+  const highlightedLines = useHighlightedLines(
+    visibleLines.join("\n"),
+    event.code?.language ?? "text",
+  )
 
   return (
     <section className="min-w-0">
@@ -364,7 +401,23 @@ function SourcePane({ event }: { event: ExecutionTraceEvent }) {
                   <span className="flex items-center justify-center text-clay-dark">
                     {active && <ArrowRight className="size-3" />}
                   </span>
-                  <code className="whitespace-pre pr-6 text-foreground/85">{line || " "}</code>
+                  <code className="whitespace-pre pr-6 text-foreground/85">
+                    {highlightedLines?.[offset]?.length
+                      ? highlightedLines[offset].map((token, tokenIndex) => (
+                          <span
+                            key={`${token.offset}-${tokenIndex}`}
+                            style={{
+                              color: token.color,
+                              fontStyle: token.fontStyle && token.fontStyle & 1 ? "italic" : undefined,
+                              fontWeight: token.fontStyle && token.fontStyle & 2 ? 700 : undefined,
+                              textDecoration: token.fontStyle && token.fontStyle & 4 ? "underline" : undefined,
+                            }}
+                          >
+                            {token.content}
+                          </span>
+                        ))
+                      : line || " "}
+                  </code>
                 </div>
               )
             })}
