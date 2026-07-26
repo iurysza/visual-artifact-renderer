@@ -32,6 +32,8 @@ export {
   renderStatusGrid,
 } from "./data-adapters"
 
+export { renderTraceTree } from "./trace-tree-adapter"
+
 export {
   renderCard,
   renderGrid,

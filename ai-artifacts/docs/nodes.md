@@ -51,7 +51,7 @@ alert, area-chart, radar-chart, scatter-chart, heatmap, log,
 definition-list, diff, donut-chart, file-tree, heading, image,
 pie-chart, stepper, text, card, metric, stat-card, badge,
 button, separator, table, data-table, comparison-table, chart,
-mermaid, svg-diagram, flow, timeline, code-block, status-grid,
+mermaid, svg-diagram, flow, timeline, trace-tree, code-block, status-grid,
 grid, section, tabs, accordion, prose
 ```
 
@@ -71,6 +71,7 @@ grid, section, tabs, accordion, prose
 | Architecture/topology | `mermaid`, `svg-diagram` |
 | Request/deploy/data path | `flow` |
 | Release/runbook sequence | `timeline`, `stepper` |
+| Execution path / call-tree walkthrough | `trace-tree` |
 | Commands/config/file maps | `code-block`, `file-tree` (with `gitStatus`, `flattenEmpty`, `searchable`, `density`, `iconSet`, `defaultExpanded`), `diff` (with `content`, `mode`, `showLineNumbers`, `indicators`, `highlightInline`, `hunkSeparator`, `caption`), `log` |
 | Proportional data | `pie-chart`, `donut-chart` |
 | Cumulative/trend data | `area-chart` |
@@ -274,5 +275,32 @@ The renderer serves it as:
     "before": "func Get(key string) (*Item, bool) {\n    return item.Value, true\n}",
     "after": "func Get(key string) (*Item, bool) {\n    delete(c.items, key)\n    return item.Value, true\n}"
   }
+}
+```
+
+## Copyable pattern: execution call tree
+
+```json
+{
+  "data": {
+    "trace": [
+      { "kind": "call", "fn": "validateSpec(raw)", "file": "shared/src/artifact-schema.ts", "line": 118, "depth": 0, "args": [{ "name": "raw", "type": "string", "value": "{...}" }] },
+      { "kind": "call", "fn": "preflightArtifactSpec(data)", "file": "shared/src/artifact-schema.ts", "line": 134, "depth": 1, "args": [{ "name": "data", "type": "object", "value": "{...}" }], "result": "{ topLevelNodes: 4 }", "durationMs": 0.3 },
+      { "kind": "return", "fn": "validateSpec", "file": "shared/src/artifact-schema.ts", "line": 118, "depth": 0, "result": "Spec", "durationMs": 0.1 }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "trace-tree",
+      "props": {
+        "dataKey": "trace",
+        "title": "Execution call tree",
+        "caption": "Overview of the code path with arguments, return values, and durations.",
+        "defaultExpandedDepth": 2,
+        "showDurations": true,
+        "showLocations": true
+      }
+    }
+  ]
 }
 ```

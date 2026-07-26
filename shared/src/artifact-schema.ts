@@ -681,6 +681,18 @@ export type ArtifactNode =
       }
       metadata?: { id?: string }
     }
+  | {
+      type: "trace-tree"
+      props: {
+        dataKey: string
+        title?: string
+        caption?: string
+        defaultExpandedDepth?: number
+        showDurations?: boolean
+        showLocations?: boolean
+      }
+      metadata?: { id?: string }
+    }
 
 const DiagramHeightSchema = z.number().int().min(240).max(1600)
 
@@ -947,6 +959,14 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
             .strict(),
         )
         .min(1),
+    }),
+    leafSchema("trace-tree", {
+      dataKey: z.string().min(1),
+      title: z.string().min(1).optional(),
+      caption: z.string().min(1).optional(),
+      defaultExpandedDepth: z.number().int().min(0).optional(),
+      showDurations: z.boolean().optional(),
+      showLocations: z.boolean().optional(),
     }),
   ])
 })

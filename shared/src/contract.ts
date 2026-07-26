@@ -118,6 +118,7 @@ export const ARTIFACT_NODE_TYPES = [
   "svg-diagram",
   "flow",
   "timeline",
+  "trace-tree",
   "code-block",
   "status-grid",
   "grid",
@@ -431,6 +432,15 @@ export const artifactManifest = {
     requiresData: true,
     data: "data[dataKey] must be an array of row objects. Defaults: title, marker, description, status.",
     example: { type: "timeline", props: { dataKey: "releasePhases", titleKey: "phase", markerKey: "step", descriptionKey: "action", statusKey: "status" } },
+  },
+  "trace-tree": {
+    type: "trace-tree",
+    description: "A collapsible call-tree overview of an execution path, showing callers, arguments, return values, durations, and file locations for code-review artifacts.",
+    props: { dataKey: "string", title: "string?", caption: "string?", defaultExpandedDepth: "number?", showDurations: "boolean?", showLocations: "boolean?" },
+    children: false,
+    requiresData: true,
+    data: "data[dataKey] must be an array of trace steps: { kind: 'call' | 'return' | 'throw' | 'note', fn: string, file?: string, line?: number, depth: number, args?: {name,type?,value}[], locals?: {name,type?,value}[], result?: string, durationMs?: number, note?: string }.",
+    example: { type: "trace-tree", props: { dataKey: "renderTrace", title: "Render execution" } },
   },
   "code-block": {
     type: "code-block",
