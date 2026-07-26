@@ -127,12 +127,12 @@ function TraceTree({
 
   return (
     <Figure title={title} caption={caption}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="xs" onClick={expandAll}>
+          <Button className="min-h-11 px-3 sm:min-h-7 [@media(pointer:coarse)]:min-h-11" variant="ghost" size="xs" onClick={expandAll}>
             Expand all
           </Button>
-          <Button variant="ghost" size="xs" onClick={collapseAll}>
+          <Button className="min-h-11 px-3 sm:min-h-7 [@media(pointer:coarse)]:min-h-11" variant="ghost" size="xs" onClick={collapseAll}>
             Collapse all
           </Button>
         </div>
@@ -224,8 +224,8 @@ function TreeRow({
         )}
       >
         <div
-          className="flex items-start gap-1 py-1.5"
-          style={{ paddingLeft: `${node.depth * 1.25}rem` }}
+          className="flex min-w-0 items-start gap-1 py-1.5"
+          style={{ paddingLeft: `${Math.min(node.depth, 3) * 0.75}rem` }}
         >
           {hasChildren ? (
             <button
@@ -233,7 +233,7 @@ function TreeRow({
               onClick={() => onToggle(node.id, !isOpen)}
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon-xs" }),
-                "mt-0.5 shrink-0"
+                "mt-0.5 size-11 shrink-0 sm:size-6 [@media(pointer:coarse)]:size-11"
               )}
               aria-label={isOpen ? "Collapse" : "Expand"}
             >
@@ -244,19 +244,19 @@ function TreeRow({
               )}
             </button>
           ) : (
-            <span className="mt-0.5 size-6 shrink-0" />
+            <span className="mt-0.5 size-11 shrink-0 sm:size-6 [@media(pointer:coarse)]:size-11" />
           )}
 
           <button
             type="button"
             onClick={() => onSelect(isSelected ? null : node.id)}
-            className="flex min-w-0 flex-1 items-start gap-2 py-1 text-left"
+            className="flex min-h-11 min-w-0 flex-1 items-start gap-2 py-1 text-left sm:min-h-0 [@media(pointer:coarse)]:min-h-11"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span
                   className={cn(
-                    "font-mono text-sm font-semibold",
+                    "min-w-0 break-all font-mono text-sm font-semibold",
                     node.kind === "throw" ? "text-destructive" : "text-foreground"
                   )}
                 >
@@ -264,13 +264,13 @@ function TreeRow({
                 </span>
 
                 {node.args && node.args.length > 0 && (
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="min-w-0 break-all font-mono text-xs text-muted-foreground">
                     ({node.args.map((a) => `${a.name}: ${formatArgValue(a)}`).join(", ")})
                   </span>
                 )}
 
                 {node.returnChild && (
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="min-w-0 break-all font-mono text-xs text-muted-foreground">
                     →{" "}
                     <span className="text-foreground">
                       {node.returnChild.result ?? "void"}
@@ -292,7 +292,12 @@ function TreeRow({
               </div>
 
               {node.note && (
-                <p className="text-xs italic text-muted-foreground">{node.note}</p>
+                <p className="break-words text-xs italic text-muted-foreground">{node.note}</p>
+              )}
+              {showLocations && node.file && (
+                <span className="break-all font-mono text-[10px] text-muted-foreground sm:hidden">
+                  {node.file}:{node.line ?? "-"}
+                </span>
               )}
             </div>
 
