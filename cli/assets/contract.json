@@ -11,6 +11,15 @@
     "fileSourceBytes": 524288,
     "aggregateFileSourceBytes": 1048576
   },
+  "executionTrace": {
+    "sourceLanguages": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "jsx",
+      "ruby"
+    ]
+  },
   "spec": {
     "slug": {
       "type": "string",
@@ -800,7 +809,7 @@
       }
     },
     "execution-trace": {
-      "description": "Source-backed call stack for planning or reviewing code changes, especially API surfaces: interfaces, types, transformations, and boundaries. Select ordered file spans, run `visual-artifact trace inspect` for canonical focus/scope facts, then add narrative context. Create-time verification rejects stale or edited code identity.",
+      "description": "Source-backed call stack for planning or reviewing code changes, especially API surfaces: interfaces, types, transformations, and boundaries. JavaScript-family and Ruby adapters normalize ast-grep facts into one shared trace contract. Select ordered file spans, run `visual-artifact trace inspect` for canonical focus/scope facts, then add narrative context. Create-time verification rejects stale or edited code identity.",
       "props": {
         "title": "string?",
         "caption": "string?",

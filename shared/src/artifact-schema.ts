@@ -566,6 +566,16 @@ export interface ExecutionTraceImpact {
   codeRef?: { file: string; line: number; column?: number }
 }
 
+export const EXECUTION_TRACE_SOURCE_LANGUAGES = [
+  "typescript",
+  "tsx",
+  "javascript",
+  "jsx",
+  "ruby",
+] as const
+
+export type ExecutionTraceSourceLanguage = typeof EXECUTION_TRACE_SOURCE_LANGUAGES[number]
+
 export type ExecutionTraceSourceFocusKind =
   | "call"
   | "declaration"
@@ -605,7 +615,7 @@ export interface ExecutionTraceSourceFacts {
   sourceHash: string
   revision?: string
   worktree: "clean" | "dirty" | "unknown"
-  language: "typescript" | "tsx" | "javascript" | "jsx"
+  language: ExecutionTraceSourceLanguage
   syntaxKind: string
   focus: ExecutionTraceSourceFocus
   scope?: ExecutionTraceSourceScope
@@ -997,7 +1007,7 @@ const ExecutionTraceSourceFactsSchema = z
     sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
     revision: TraceStringSchema.optional(),
     worktree: z.enum(["clean", "dirty", "unknown"]),
-    language: z.enum(["typescript", "tsx", "javascript", "jsx"]),
+    language: z.enum(EXECUTION_TRACE_SOURCE_LANGUAGES),
     syntaxKind: TraceStringSchema,
     focus: ExecutionTraceSourceFocusSchema,
     scope: ExecutionTraceSourceScopeSchema.optional(),

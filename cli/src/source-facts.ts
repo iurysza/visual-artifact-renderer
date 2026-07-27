@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { extname } from "node:path"
 
 import type {
   ExecutionTraceSourceFacts,
@@ -9,33 +8,19 @@ import type {
   ExecutionTraceSourceScope,
 } from "@agents/visual-artifact-annotations/contract"
 
+import { sourceLanguageForPath } from "./source-language-adapters/index.ts"
+import type {
+  AstMatch,
+  AstRange,
+  SourceLanguageAdapter,
+  SourceNodeMapping,
+} from "./source-language-adapters/language-adapter.ts"
 import { ValidationError } from "./validate.ts"
 
 export interface SourceAnchor {
   src: string
   startLine: number
   endLine: number
-}
-
-interface AstPosition {
-  line: number
-  column: number
-}
-
-interface AstRange {
-  byteOffset: { start: number; end: number }
-  start: AstPosition
-  end: AstPosition
-}
-
-interface AstMatch {
-  text: string
-  range: AstRange
-  language: string
-  ruleId?: string
-  metaVariables?: {
-    single?: Record<string, { text?: string }>
-  }
 }
 
 interface SemanticNode {
@@ -76,61 +61,6 @@ export interface ExtractSourceFactsInput {
   projectRoot: string
   startLine: number
   endLine: number
-}
-
-const RULE_KINDS = [
-  ["function-declaration", "function_declaration"],
-  ["method-definition", "method_definition"],
-  ["arrow-function", "arrow_function"],
-  ["function-expression", "function_expression"],
-  ["variable-declarator", "variable_declarator"],
-  ["return-statement", "return_statement"],
-  ["assignment-expression", "assignment_expression"],
-  ["if-statement", "if_statement"],
-  ["switch-statement", "switch_statement"],
-  ["for-statement", "for_statement"],
-  ["for-in-statement", "for_in_statement"],
-  ["while-statement", "while_statement"],
-  ["do-statement", "do_statement"],
-  ["ternary-expression", "ternary_expression"],
-] as const
-
-const FOCUS_RULES: Record<string, ExecutionTraceSourceFocusKind> = {
-  "function-declaration": "declaration",
-  "method-definition": "declaration",
-  "return-statement": "return",
-  "assignment-expression": "assignment",
-  "variable-declarator": "assignment",
-  "if-statement": "branch",
-  "switch-statement": "branch",
-  "for-statement": "branch",
-  "for-in-statement": "branch",
-  "while-statement": "branch",
-  "do-statement": "branch",
-  "ternary-expression": "branch",
-}
-
-function languageForPath(path: string): {
-  cli: "ts" | "tsx" | "js" | "jsx"
-  rule: "TypeScript" | "Tsx" | "JavaScript"
-  fact: ExecutionTraceSourceFacts["language"]
-} {
-  switch (extname(path).toLowerCase()) {
-    case ".ts":
-    case ".mts":
-    case ".cts":
-      return { cli: "ts", rule: "TypeScript", fact: "typescript" }
-    case ".tsx":
-      return { cli: "tsx", rule: "Tsx", fact: "tsx" }
-    case ".js":
-    case ".mjs":
-    case ".cjs":
-      return { cli: "js", rule: "JavaScript", fact: "javascript" }
-    case ".jsx":
-      return { cli: "jsx", rule: "Tsx", fact: "jsx" }
-    default:
-      throw new ValidationError(`execution trace source language is unsupported: ${path}`)
-  }
 }
 
 function parseAstMatches(stdout: string, operation: string): AstMatch[] {
@@ -193,14 +123,14 @@ function runAstGrep(args: string[], cwd: string, operation: string): AstMatch[] 
   return parseAstMatches(String(result.stdout), operation)
 }
 
-function inlineRules(language: string): string {
-  return RULE_KINDS.map(([id, kind]) => [
-    `id: ${id}`,
+function inlineRules(language: string, mappings: readonly SourceNodeMapping[]): string {
+  return mappings.map((mapping) => [
+    `id: ${mapping.id}`,
     `language: ${language}`,
     "rule:",
-    `  kind: ${kind}`,
+    `  kind: ${mapping.astKind}`,
     "severity: hint",
-    `message: ${id}`,
+    `message: ${mapping.id}`,
   ].join("\n")).join("\n---\n")
 }
 
@@ -233,65 +163,59 @@ function normalizedSymbol(value: string | undefined): string | undefined {
   return normalized.length > 0 && normalized.length <= 500 ? normalized : undefined
 }
 
-function scopeSymbol(ruleId: string, text: string): string | undefined {
-  if (ruleId === "function-declaration" || ruleId === "function-expression") {
-    return /\bfunction\s*\*?\s*([A-Za-z_$][\w$]*)/.exec(text)?.[1]
-  }
-  if (ruleId === "variable-declarator" && text.includes("=>")) {
-    return /^\s*([A-Za-z_$][\w$]*)\s*=/.exec(text)?.[1]
-  }
-  if (ruleId === "method-definition") {
-    return /^(?:\s*(?:public|private|protected|static|async|abstract|override|readonly|get|set)\s+)*([A-Za-z_$][\w$]*)\s*(?:<[^>]*>)?\s*\(/.exec(text)?.[1]
-  }
-  return undefined
+function mappingForMatch(
+  adapter: SourceLanguageAdapter,
+  match: AstMatch,
+): SourceNodeMapping | undefined {
+  if (!match.ruleId) return undefined
+  return adapter.nodes.find((mapping) => mapping.id === match.ruleId)
 }
 
-function scopeKind(ruleId: string): ExecutionTraceSourceScope["kind"] | undefined {
-  if (ruleId === "method-definition") return "method"
-  if (ruleId === "function-declaration" || ruleId === "function-expression") return "function"
-  if (ruleId === "arrow-function" || ruleId === "variable-declarator") return "callback"
-  return undefined
-}
-
-function semanticNodes(callMatches: AstMatch[], scanMatches: AstMatch[]): SemanticNode[] {
+function semanticNodes(
+  adapter: SourceLanguageAdapter,
+  callMatches: AstMatch[],
+  scanMatches: AstMatch[],
+): SemanticNode[] {
   const calls = callMatches.map((match): SemanticNode => ({
-    syntaxKind: "call_expression",
+    syntaxKind: adapter.calls.syntaxKind,
     focusKind: "call",
     text: match.text.trim(),
-    symbol: normalizedSymbol(match.metaVariables?.single?.CALLEE?.text),
+    symbol: normalizedSymbol(adapter.calls.extractSymbol(match)),
     range: match.range,
   }))
   const others = scanMatches.flatMap((match): SemanticNode[] => {
-    const focusKind = match.ruleId ? FOCUS_RULES[match.ruleId] : undefined
-    if (!focusKind) return []
+    const mapping = mappingForMatch(adapter, match)
+    if (!mapping?.focusKind) return []
     return [{
-      syntaxKind: match.ruleId!,
-      focusKind,
+      syntaxKind: mapping.syntaxKind,
+      focusKind: mapping.focusKind,
       text: match.text.trim(),
-      symbol: match.ruleId ? scopeSymbol(match.ruleId, match.text) : undefined,
+      symbol: normalizedSymbol(mapping.extractSymbol?.(match)),
       range: match.range,
     }]
   })
   return [...calls, ...others]
 }
 
-function scopeNodes(matches: AstMatch[]): ScopeNode[] {
+function scopeNodes(adapter: SourceLanguageAdapter, matches: AstMatch[]): ScopeNode[] {
   return matches.flatMap((match): ScopeNode[] => {
-    if (!match.ruleId) return []
-    const kind = scopeKind(match.ruleId)
-    if (!kind) return []
-    if (match.ruleId === "variable-declarator" && !match.text.includes("=>")) return []
+    const mapping = mappingForMatch(adapter, match)
+    if (!mapping?.scopeKind || mapping.includeAsScope?.(match) === false) return []
     return [{
-      kind,
+      kind: mapping.scopeKind,
       text: match.text,
-      symbol: scopeSymbol(match.ruleId, match.text),
+      symbol: normalizedSymbol(mapping.extractSymbol?.(match)),
       range: match.range,
     }]
   })
 }
 
-function sourceScope(focus: SemanticNode, matches: AstMatch[]): ExecutionTraceSourceScope | undefined {
-  const enclosing = scopeNodes(matches)
+function sourceScope(
+  adapter: SourceLanguageAdapter,
+  focus: SemanticNode,
+  matches: AstMatch[],
+): ExecutionTraceSourceScope | undefined {
+  const enclosing = scopeNodes(adapter, matches)
     .filter((scope) => !sameRange(scope.range, focus.range) && rangeContains(scope.range, focus.range))
     .sort((left, right) => {
       const namedDifference = Number(Boolean(right.symbol)) - Number(Boolean(left.symbol))
@@ -342,7 +266,10 @@ export function parseSourceAnchor(value: string): SourceAnchor {
 }
 
 export function extractSourceFacts(input: ExtractSourceFactsInput): SourceFactsResult {
-  const language = languageForPath(input.canonicalPath)
+  const language = sourceLanguageForPath(input.canonicalPath)
+  if (!language) {
+    throw new ValidationError(`execution trace source language is unsupported: ${input.canonicalPath}`)
+  }
   const normalizedContent = input.content.replace(/\r\n/g, "\n")
   const lines = normalizedContent.split("\n")
   if (input.endLine > lines.length) {
@@ -355,18 +282,33 @@ export function extractSourceFacts(input: ExtractSourceFactsInput): SourceFactsR
     throw new ValidationError(`execution trace source span is blank: ${input.displayPath}:${input.startLine}-${input.endLine}`)
   }
 
+  const callQuery = language.adapter.calls.query
   const callMatches = runAstGrep(
-    ["run", "--pattern", "$CALLEE($$$ARGS)", "--lang", language.cli, "--json=compact", input.canonicalPath],
+    [
+      "run",
+      callQuery.type === "pattern" ? "--pattern" : "--kind",
+      callQuery.value,
+      "--lang",
+      language.astGrepCliLanguage,
+      "--json=compact",
+      input.canonicalPath,
+    ],
     input.projectRoot,
     `extracting calls from ${input.displayPath}`,
   )
   const scanMatches = runAstGrep(
-    ["scan", "--inline-rules", inlineRules(language.rule), "--json=compact", input.canonicalPath],
+    [
+      "scan",
+      "--inline-rules",
+      inlineRules(language.astGrepRuleLanguage, language.adapter.nodes),
+      "--json=compact",
+      input.canonicalPath,
+    ],
     input.projectRoot,
     `extracting scopes from ${input.displayPath}`,
   )
 
-  const contained = semanticNodes(callMatches, scanMatches)
+  const contained = semanticNodes(language.adapter, callMatches, scanMatches)
     .filter((node) => containedByLines(node.range, input.startLine, input.endLine))
   const containedCalls = contained.filter((node) => node.focusKind === "call")
   const candidates = outermost(containedCalls.length > 0 ? containedCalls : contained).sort(
@@ -411,14 +353,14 @@ export function extractSourceFacts(input: ExtractSourceFactsInput): SourceFactsR
     },
   }
   const git = gitMetadata(input.projectRoot, input.canonicalPath)
-  const scope = sourceScope(focusNode, scanMatches)
+  const scope = sourceScope(language.adapter, focusNode, scanMatches)
   const facts: ExecutionTraceSourceFacts = {
     span,
     excerpt,
     sourceHash: createHash("sha256").update(normalizedContent).digest("hex"),
     ...(git.revision ? { revision: git.revision } : {}),
     worktree: git.worktree,
-    language: language.fact,
+    language: language.factsLanguage,
     syntaxKind: focusNode.syntaxKind,
     focus: {
       kind: focusNode.focusKind,

@@ -30,6 +30,8 @@ const EMPTY_GLOBAL_OPTS = {
   noInput: false,
 }
 
+const rubyFixturePath = resolve(import.meta.dir, "../../test-fixtures/source-facts/ruby-trace.rb")
+
 function baseSpec(overrides: { slug?: string; items?: unknown[] } = {}) {
   return {
     slug: overrides.slug ?? "source-safety",
@@ -43,6 +45,33 @@ function baseSpec(overrides: { slug?: string; items?: unknown[] } = {}) {
         },
       },
     ],
+  }
+}
+
+function executionTraceSpec(slug: string, src: string, facts: unknown) {
+  return {
+    slug,
+    title: "Trace source",
+    nodes: [{
+      type: "execution-trace",
+      props: {
+        provenance: {
+          mode: "inferred",
+          method: "static-analysis",
+          summary: "Control flow derived from source.",
+          confidence: "high",
+        },
+        events: [{
+          id: "source-call",
+          order: 0,
+          phase: "process",
+          kind: "call",
+          label: "Process source call",
+          source: { src, facts },
+          evidence: { origin: "inferred", confidence: "high" },
+        }],
+      },
+    }],
   }
 }
 
@@ -268,6 +297,68 @@ describe("create: source read containment", () => {
     const rc = await create(specPath, { ...EMPTY_GLOBAL_OPTS, project, serve: false }, log as any)
     expect(rc).toBe(2)
     expect(log._logs.join("\n")).toContain("source facts conflict at facts.focus.symbol")
+  })
+
+  test("verifies and persists real Ruby execution-trace sources", async () => {
+    const project = join(dir, "project")
+    const srcDir = join(project, "src")
+    await mkdir(srcDir, { recursive: true })
+    const body = await readFile(rubyFixturePath, "utf8")
+    const sourcePath = join(srcDir, "processor.rb")
+    await writeFile(sourcePath, body, "utf8")
+    const inspected = extractSourceFacts({
+      canonicalPath: sourcePath,
+      displayPath: "src/processor.rb",
+      content: body,
+      projectRoot: project,
+      startLine: 4,
+      endLine: 4,
+    })
+    if (inspected.resolution !== "resolved") throw new Error("expected resolved source facts")
+    const specPath = await writeSpec(
+      dir,
+      executionTraceSpec("ruby-trace-source", "src/processor.rb", inspected.facts),
+    )
+
+    const log = makeLogger()
+    const rc = await create(specPath, { ...EMPTY_GLOBAL_OPTS, project, serve: false }, log as any)
+    expect(rc).toBe(0)
+
+    const outLine = log._logs.find((line) => line.startsWith("output: "))
+    const result = JSON.parse(outLine!.slice("output: ".length))
+    const source = JSON.parse(await readFile(result.path, "utf8")).nodes[0].props.events[0].source
+    expect(source.src).toBeUndefined()
+    expect(source.content).toBe(body)
+    expect(source.facts.language).toBe("ruby")
+    expect(source.facts.focus.symbol).toBe("validator.validate")
+  })
+
+  test("rejects Ruby sources changed after inspection", async () => {
+    const project = join(dir, "project")
+    const srcDir = join(project, "src")
+    await mkdir(srcDir, { recursive: true })
+    const body = await readFile(rubyFixturePath, "utf8")
+    const sourcePath = join(srcDir, "processor.rb")
+    await writeFile(sourcePath, body, "utf8")
+    const inspected = extractSourceFacts({
+      canonicalPath: sourcePath,
+      displayPath: "src/processor.rb",
+      content: body,
+      projectRoot: project,
+      startLine: 4,
+      endLine: 4,
+    })
+    if (inspected.resolution !== "resolved") throw new Error("expected resolved source facts")
+    const specPath = await writeSpec(
+      dir,
+      executionTraceSpec("tampered-ruby-trace", "src/processor.rb", inspected.facts),
+    )
+    await writeFile(sourcePath, body.replace("validator.validate(order)", "validator.verify(order)"), "utf8")
+
+    const log = makeLogger()
+    const rc = await create(specPath, { ...EMPTY_GLOBAL_OPTS, project, serve: false }, log as any)
+    expect(rc).toBe(2)
+    expect(log._logs.join("\n")).toContain("source facts conflict at facts.excerpt")
   })
 
   test("resolves file-tree sources nested in tabs and accordions", async () => {

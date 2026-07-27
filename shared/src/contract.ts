@@ -5,14 +5,17 @@ import {
   ARTIFACT_SLUG_MAX_LENGTH,
   ARTIFACT_SPEC_RESOURCE_LIMITS,
   ARTIFACT_TYPES,
+  EXECUTION_TRACE_SOURCE_LANGUAGES,
   MAX_TOP_LEVEL_NODES,
   type ArtifactSpecResourceLimits,
+  type ExecutionTraceSourceLanguage,
 } from "./artifact-schema.js"
 
 export {
   ARTIFACT_SLUG_MAX_LENGTH,
   ARTIFACT_SPEC_RESOURCE_LIMITS,
   ARTIFACT_TYPES,
+  EXECUTION_TRACE_SOURCE_LANGUAGES,
   ArtifactNodeSchema,
   ArtifactTypeSchema,
   ArtifactResourceError,
@@ -55,6 +58,7 @@ export {
   type ExecutionTraceSourceFocusKind,
   type ExecutionTraceSourceScope,
   type ExecutionTraceSourceScopeKind,
+  type ExecutionTraceSourceLanguage,
   type ExecutionTraceSourceSpan,
   type ExecutionTraceSystemRef,
   type ExecutionTraceTypeDefinition,
@@ -455,7 +459,7 @@ export const artifactManifest = {
   },
   "execution-trace": {
     type: "execution-trace",
-    description: "Source-backed call stack for planning or reviewing code changes, especially API surfaces: interfaces, types, transformations, and boundaries. Select ordered file spans, run `visual-artifact trace inspect` for canonical focus/scope facts, then add narrative context. Create-time verification rejects stale or edited code identity.",
+    description: "Source-backed call stack for planning or reviewing code changes, especially API surfaces: interfaces, types, transformations, and boundaries. JavaScript-family and Ruby adapters normalize ast-grep facts into one shared trace contract. Select ordered file spans, run `visual-artifact trace inspect` for canonical focus/scope facts, then add narrative context. Create-time verification rejects stale or edited code identity.",
     props: {
       title: "string?",
       caption: "string?",
@@ -606,6 +610,9 @@ export interface ArtifactContract {
   version: string
   spec: SpecConstraints
   limits: ArtifactSpecResourceLimits
+  executionTrace: {
+    sourceLanguages: readonly ExecutionTraceSourceLanguage[]
+  }
   nodeTypes: readonly string[]
   nodes: Record<string, NodeDef>
   dataNodes: readonly string[]
@@ -616,6 +623,9 @@ export function createArtifactContract(): ArtifactContract {
   return {
     version: "1.0.0",
     limits: ARTIFACT_SPEC_RESOURCE_LIMITS,
+    executionTrace: {
+      sourceLanguages: EXECUTION_TRACE_SOURCE_LANGUAGES,
+    },
     spec: {
       slug: ARTIFACT_SPEC_CONSTRAINTS.slug,
       title: ARTIFACT_SPEC_CONSTRAINTS.title,

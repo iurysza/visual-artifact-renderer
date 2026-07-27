@@ -115,6 +115,10 @@ visual-artifact create my-spec.json --allow-read ../approved-source
 
 Relative `src` paths must resolve inside the canonical project root. Absolute paths and outside-project reads require a matching canonical `--allow-read` root. Raw `..` segments and symlink escapes are rejected. For `file-tree`, explicit `content` wins over `src`, and successful creation strips `src` after inlining.
 
+Execution traces support TypeScript (`.ts`, `.mts`, `.cts`), TSX (`.tsx`), JavaScript (`.js`, `.mjs`, `.cjs`), JSX (`.jsx`), and Ruby (`.rb`).
+
+Tracing uses small CLI source-analysis adapters. Each adapter maps file extensions, ast-grep language identifiers, call queries, semantic/scope node kinds, and symbols into the shared `ExecutionTraceSourceFacts` shape. Source reads, span selection, ambiguity handling, hashing, Git provenance, create-time identity verification, persistence, and rendering remain language-agnostic. Ruby bare identifiers without a receiver or arguments remain expressions because the parser cannot distinguish a local read from a zero-argument call. Unsupported languages must use non-trace nodes until a real adapter exists; do not create a mirror file in another language.
+
 Execution traces use inspected spans:
 
 ```bash

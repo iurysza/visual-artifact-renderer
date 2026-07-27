@@ -94,6 +94,23 @@ describe("execution-trace schema", () => {
     assert.equal(result.success, true)
   })
 
+  it("accepts Ruby source facts", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+      ...validBoundaryEvent,
+      source: {
+        src: "lib/validate.rb",
+        facts: {
+          ...sourceFacts,
+          span: { file: "lib/validate.rb", startLine: 1, endLine: 1 },
+          excerpt: "validate(input)",
+          language: "ruby",
+          syntaxKind: "call",
+        },
+      },
+    }))
+    assert.equal(result.success, true)
+  })
+
   it("requires boundary metadata for boundary events", () => {
     const result = VisualArtifactSpecSchema.safeParse(traceSpec({
       ...validBoundaryEvent,

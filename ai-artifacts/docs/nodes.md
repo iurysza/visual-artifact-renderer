@@ -280,6 +280,8 @@ The renderer serves it as:
 
 ## Copyable pattern: source-backed call stack
 
+Source-backed frames support TypeScript/TSX, JavaScript/JSX, and Ruby. The CLI selects a small source-analysis adapter for the file extension and normalizes its ast-grep calls, declarations, scopes, assignments, returns, and branches into the same renderer contract. Unsupported source must stay in non-trace nodes; never use a fake file in a supported language to manufacture verified facts.
+
 First inspect the ordered span:
 
 ```bash
