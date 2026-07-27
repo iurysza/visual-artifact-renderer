@@ -516,6 +516,15 @@ export interface ExecutionTraceValueField {
   preview?: string
 }
 
+export interface ExecutionTraceTypeDefinition {
+  name: string
+  definition: string
+  language?: string
+  file?: string
+  line?: number
+  provenance: "inferred" | "derived"
+}
+
 export interface ExecutionTraceTypedValue {
   id: string
   name: string
@@ -540,7 +549,6 @@ export interface ExecutionTraceBoundary {
   kind: ExecutionTraceBoundaryKind
   from: ExecutionTraceSystemRef
   to: ExecutionTraceSystemRef
-  operation: string
   outcome: "passed" | "blocked" | "failed" | "skipped"
   policy?: string
 }
@@ -551,29 +559,71 @@ export interface ExecutionTraceMapping {
   operation: "parse" | "validate" | "select" | "serialize" | "lookup" | "adapt" | "redact" | "pass"
 }
 
-export interface ExecutionTraceCallFrame {
-  id: string
-  fn: string
-  file?: string
-  line?: number
-  signature?: string
-  returnType?: string
-  args?: ExecutionTraceTypedValue[]
-  active?: boolean
+export interface ExecutionTraceImpact {
+  kind: "effect" | "error"
+  title: string
+  description?: string
+  codeRef?: { file: string; line: number; column?: number }
+}
+
+export type ExecutionTraceSourceFocusKind =
+  | "call"
+  | "declaration"
+  | "return"
+  | "assignment"
+  | "branch"
+  | "expression"
+
+export type ExecutionTraceSourceScopeKind =
+  | "function"
+  | "method"
+  | "callback"
+  | "module"
+
+export interface ExecutionTraceSourceSpan {
+  file: string
+  startLine: number
+  endLine: number
+}
+
+export interface ExecutionTraceSourceFocus {
+  kind: ExecutionTraceSourceFocusKind
+  text: string
+  symbol?: string
+}
+
+export interface ExecutionTraceSourceScope {
+  kind: ExecutionTraceSourceScopeKind
+  symbol?: string
+  startLine?: number
+  endLine?: number
+}
+
+export interface ExecutionTraceSourceFacts {
+  span: ExecutionTraceSourceSpan
+  excerpt: string
+  sourceHash: string
+  revision?: string
+  worktree: "clean" | "dirty" | "unknown"
+  language: "typescript" | "tsx" | "javascript" | "jsx"
+  syntaxKind: string
+  focus: ExecutionTraceSourceFocus
+  scope?: ExecutionTraceSourceScope
+  resolution: "resolved"
+}
+
+export interface ExecutionTraceSourceContext {
+  /** Create-time source path. The CLI re-extracts facts, inlines content, then strips src. */
+  src?: string
+  /** Full source persisted only after CLI verification. */
+  content?: string
+  facts: ExecutionTraceSourceFacts
 }
 
 export interface ExecutionTraceEvidence {
   origin: Exclude<ExecutionTraceProvenanceOrigin, "redacted">
   confidence: "high" | "medium" | "low"
   note?: string
-}
-
-export interface ExecutionTraceCodeContext {
-  /** Inlined source shown by the renderer. */
-  content?: string
-  /** Create-time source path; the CLI reads it safely, writes content, then strips src. */
-  src?: string
-  language?: string
 }
 
 export interface ExecutionTraceEvent {
@@ -585,8 +635,7 @@ export interface ExecutionTraceEvent {
   kind: "boundary" | "call" | "return" | "throw" | "note"
   label: string
   summary?: string
-  codeRef?: { file: string; line: number; column?: number }
-  code?: ExecutionTraceCodeContext
+  source: ExecutionTraceSourceContext
   boundary?: ExecutionTraceBoundary
   inputs?: ExecutionTraceTypedValue[]
   outputs?: ExecutionTraceTypedValue[]
@@ -594,8 +643,8 @@ export interface ExecutionTraceEvent {
     summary: string
     mappings?: ExecutionTraceMapping[]
   }
+  impacts?: ExecutionTraceImpact[]
   evidence: ExecutionTraceEvidence
-  callStack?: ExecutionTraceCallFrame[]
   note?: string
 }
 
@@ -816,6 +865,7 @@ export type ArtifactNode =
         caption?: string
         provenance: ExecutionTraceProvenance
         events: ExecutionTraceEvent[]
+        typeDefinitions?: ExecutionTraceTypeDefinition[]
         initialEventId?: string
         showCallStack?: boolean
       }
@@ -833,6 +883,17 @@ const ExecutionTraceValueFieldSchema = z
     name: TraceStringSchema,
     type: TraceStringSchema,
     preview: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceTypeDefinitionSchema = z
+  .object({
+    name: TraceStringSchema,
+    definition: z.string().min(1).max(12_000),
+    language: z.string().min(1).max(40).optional(),
+    file: TraceStringSchema.optional(),
+    line: z.number().int().min(1).optional(),
+    provenance: z.enum(["inferred", "derived"]),
   })
   .strict()
 
@@ -878,7 +939,6 @@ const ExecutionTraceBoundarySchema = z
     ]),
     from: ExecutionTraceSystemRefSchema,
     to: ExecutionTraceSystemRefSchema,
-    operation: TraceStringSchema,
     outcome: z.enum(["passed", "blocked", "failed", "skipped"]),
     policy: TraceStringSchema.optional(),
   })
@@ -892,32 +952,89 @@ const ExecutionTraceMappingSchema = z
   })
   .strict()
 
-const ExecutionTraceCodeContextSchema = z
+const ExecutionTraceSourceSpanSchema = z
   .object({
-    content: z.string().max(MAX_FILE_SOURCE_BYTES).optional(),
-    src: z.string().min(1).optional(),
-    language: z.string().min(1).max(40).optional(),
+    file: TraceStringSchema,
+    startLine: z.number().int().min(1),
+    endLine: z.number().int().min(1),
   })
   .strict()
-  .superRefine((code, context) => {
-    if (code.content === undefined && code.src === undefined) {
+  .refine((span) => span.endLine >= span.startLine, {
+    message: "Execution trace source endLine must be greater than or equal to startLine",
+    path: ["endLine"],
+  })
+
+const ExecutionTraceSourceFocusSchema = z
+  .object({
+    kind: z.enum(["call", "declaration", "return", "assignment", "branch", "expression"]),
+    text: z.string().min(1).max(4_000),
+    symbol: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceSourceScopeSchema = z
+  .object({
+    kind: z.enum(["function", "method", "callback", "module"]),
+    symbol: TraceStringSchema.optional(),
+    startLine: z.number().int().min(1).optional(),
+    endLine: z.number().int().min(1).optional(),
+  })
+  .strict()
+  .superRefine((scope, context) => {
+    if (scope.startLine !== undefined && scope.endLine !== undefined && scope.endLine < scope.startLine) {
       context.addIssue({
         code: "custom",
-        message: "Execution trace code requires content or src",
+        path: ["endLine"],
+        message: "Execution trace scope endLine must be greater than or equal to startLine",
       })
     }
   })
 
-const ExecutionTraceCallFrameSchema = z
+const ExecutionTraceSourceFactsSchema = z
   .object({
-    id: TraceIdSchema,
-    fn: TraceStringSchema,
-    file: TraceStringSchema.optional(),
-    line: z.number().int().min(1).optional(),
-    signature: TraceStringSchema.optional(),
-    returnType: TraceStringSchema.optional(),
-    args: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
-    active: z.boolean().optional(),
+    span: ExecutionTraceSourceSpanSchema,
+    excerpt: z.string().min(1).max(MAX_FILE_SOURCE_BYTES),
+    sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
+    revision: TraceStringSchema.optional(),
+    worktree: z.enum(["clean", "dirty", "unknown"]),
+    language: z.enum(["typescript", "tsx", "javascript", "jsx"]),
+    syntaxKind: TraceStringSchema,
+    focus: ExecutionTraceSourceFocusSchema,
+    scope: ExecutionTraceSourceScopeSchema.optional(),
+    resolution: z.literal("resolved"),
+  })
+  .strict()
+
+const ExecutionTraceSourceContextSchema = z
+  .object({
+    content: z.string().max(MAX_FILE_SOURCE_BYTES).optional(),
+    src: z.string().min(1).optional(),
+    facts: ExecutionTraceSourceFactsSchema,
+  })
+  .strict()
+  .superRefine((source, context) => {
+    if ((source.content === undefined) === (source.src === undefined)) {
+      context.addIssue({
+        code: "custom",
+        message: "Execution trace source requires exactly one of content or src",
+      })
+    }
+  })
+
+const ExecutionTraceCodeRefSchema = z
+  .object({
+    file: TraceStringSchema,
+    line: z.number().int().min(1),
+    column: z.number().int().min(1).optional(),
+  })
+  .strict()
+
+const ExecutionTraceImpactSchema = z
+  .object({
+    kind: z.enum(["effect", "error"]),
+    title: TraceStringSchema,
+    description: TraceStringSchema.optional(),
+    codeRef: ExecutionTraceCodeRefSchema.optional(),
   })
   .strict()
 
@@ -930,15 +1047,7 @@ const ExecutionTraceEventBaseSchema = z
     phase: z.enum(["input", "validate", "resolve", "map", "read", "write", "process", "network", "render", "output"]),
     label: TraceStringSchema,
     summary: TraceStringSchema.optional(),
-    codeRef: z
-      .object({
-        file: TraceStringSchema,
-        line: z.number().int().min(1),
-        column: z.number().int().min(1).optional(),
-      })
-      .strict()
-      .optional(),
-    code: ExecutionTraceCodeContextSchema.optional(),
+    source: ExecutionTraceSourceContextSchema,
     inputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
     outputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
     transformation: z
@@ -948,6 +1057,7 @@ const ExecutionTraceEventBaseSchema = z
       })
       .strict()
       .optional(),
+    impacts: z.array(ExecutionTraceImpactSchema).max(12).optional(),
     evidence: z
       .object({
         origin: TraceEvidenceOriginSchema,
@@ -955,7 +1065,6 @@ const ExecutionTraceEventBaseSchema = z
         note: TraceStringSchema.optional(),
       })
       .strict(),
-    callStack: z.array(ExecutionTraceCallFrameSchema).max(20).optional(),
     note: TraceStringSchema.optional(),
   })
   .strict()
@@ -999,6 +1108,7 @@ const ExecutionTracePropsSchema = z
     caption: z.string().min(1).optional(),
     provenance: ExecutionTraceProvenanceSchema,
     events: z.array(ExecutionTraceEventSchema).min(1).max(100),
+    typeDefinitions: z.array(ExecutionTraceTypeDefinitionSchema).max(40).optional(),
     initialEventId: TraceIdSchema.optional(),
     showCallStack: z.boolean().optional(),
   })
@@ -1026,17 +1136,50 @@ const ExecutionTracePropsSchema = z
       }
       eventOrders.add(event.order)
 
-      const frameIds = new Set<string>()
-      event.callStack?.forEach((frame, frameIndex) => {
-        if (frameIds.has(frame.id)) {
+      if (event.source.content !== undefined) {
+        const sourceLines = event.source.content.replace(/\r\n/g, "\n").split("\n")
+        const { span, excerpt } = event.source.facts
+        const expectedExcerpt = sourceLines.slice(span.startLine - 1, span.endLine).join("\n")
+
+        if (span.endLine > sourceLines.length) {
           context.addIssue({
             code: "custom",
-            path: ["events", eventIndex, "callStack", frameIndex, "id"],
-            message: `Call-stack frame id must be unique within an event: ${frame.id}`,
+            path: ["events", eventIndex, "source", "facts", "span", "endLine"],
+            message: `Execution trace source span exceeds file length: ${span.endLine}`,
+          })
+        } else if (expectedExcerpt !== excerpt.replace(/\r\n/g, "\n")) {
+          context.addIssue({
+            code: "custom",
+            path: ["events", eventIndex, "source", "facts", "excerpt"],
+            message: "Execution trace source excerpt must exactly match its inlined span",
           })
         }
-        frameIds.add(frame.id)
-      })
+
+        event.impacts?.forEach((impact, impactIndex) => {
+          if (!impact.codeRef || impact.codeRef.file !== span.file) return
+
+          const impactLine = sourceLines[impact.codeRef.line - 1]
+          if (impactLine === undefined || impactLine.trim().length === 0) {
+            context.addIssue({
+              code: "custom",
+              path: ["events", eventIndex, "impacts", impactIndex, "codeRef", "line"],
+              message: `Execution trace impact codeRef.line must reference a non-empty source line: ${impact.codeRef.line}`,
+            })
+          }
+        })
+      }
+    })
+
+    const typeNames = new Set<string>()
+    props.typeDefinitions?.forEach((definition, definitionIndex) => {
+      if (typeNames.has(definition.name)) {
+        context.addIssue({
+          code: "custom",
+          path: ["typeDefinitions", definitionIndex, "name"],
+          message: `Execution trace type definition name must be unique: ${definition.name}`,
+        })
+      }
+      typeNames.add(definition.name)
     })
 
     if (props.initialEventId && !eventIds.has(props.initialEventId)) {

@@ -34,7 +34,7 @@ export function visualDiffRequest(scope: string, cwd: string): string {
     `Scope: ${scope}\n` +
     `Working directory: ${cwd}\n\n` +
     `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +
-    `When the change has a meaningful behavior path, add an execution-trace derived from source without running the program: use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +
+    `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +
     `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +
     `Then call create_visual_artifact with the diff-review artifact and return its URL.`
   )

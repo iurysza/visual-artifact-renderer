@@ -9,7 +9,7 @@
         "id": "artifact-render-boundaries"
       },
       "props": {
-        "title": "Artifact render call stack",
+        "title": "Artifact render execution path",
         "caption": "Step through frames and inspect source, types, and values.",
         "initialEventId": "validate-artifact-contract",
         "showCallStack": true,
@@ -19,6 +19,16 @@
           "summary": "Control flow and static types are derived from the reviewed source. Example runtime previews are representative, not captured values.",
           "confidence": "medium"
         },
+        "typeDefinitions": [
+          {
+            "name": "VisualArtifactSpec",
+            "definition": "export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecShapeSchema>",
+            "language": "typescript",
+            "file": "shared/src/artifact-schema.ts",
+            "line": 1458,
+            "provenance": "derived"
+          }
+        ],
         "events": [
           {
             "id": "fetch-artifact-json",
@@ -28,10 +38,6 @@
             "kind": "boundary",
             "label": "Fetch artifact JSON",
             "summary": "The client loader requests the latest artifact bundle from the configured data endpoint.",
-            "codeRef": {
-              "file": "app/src/components/client-artifact-loader.tsx",
-              "line": 78
-            },
             "boundary": {
               "kind": "network-request",
               "from": {
@@ -42,7 +48,6 @@
                 "label": "Artifact data endpoint",
                 "system": "network"
               },
-              "operation": "fetch(url)",
               "outcome": "passed",
               "policy": "Same-origin artifact URL derived from project and slug"
             },
@@ -104,41 +109,33 @@
               "confidence": "high",
               "note": "Control flow and types come directly from ClientArtifactLoader; values are representative."
             },
-            "callStack": [
-              {
-                "id": "fetch-frame",
-                "fn": "fetch",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 78,
-                "signature": "fetch(input: RequestInfo | URL, init?: RequestInit)",
-                "returnType": "Promise<Response>",
-                "args": [
-                  {
-                    "id": "fetch-url-arg",
-                    "name": "url",
-                    "staticType": "string",
-                    "runtimeType": "string",
-                    "preview": {
-                      "kind": "scalar",
-                      "text": "artifactDataUrl(project, slug)"
-                    },
-                    "provenance": "inferred"
-                  }
-                ],
-                "active": true
-              },
-              {
-                "id": "loader-frame",
-                "fn": "ClientArtifactLoader",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 58,
-                "signature": "ClientArtifactLoader({ project, slug, initialSpec })",
-                "returnType": "ReactNode"
-              }
-            ],
-            "code": {
+            "source": {
               "src": "app/src/components/client-artifact-loader.tsx",
-              "language": "typescript"
+              "facts": {
+                "span": {
+                  "file": "app/src/components/client-artifact-loader.tsx",
+                  "startLine": 78,
+                  "endLine": 78
+                },
+                "excerpt": "    fetch(url)",
+                "sourceHash": "efc574cf869f567156271779fe6cd5e20d132c7cf8b62ee227cc701ac2d4ff76",
+                "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+                "worktree": "clean",
+                "language": "tsx",
+                "syntaxKind": "call_expression",
+                "focus": {
+                  "kind": "call",
+                  "text": "fetch(url)",
+                  "symbol": "fetch"
+                },
+                "scope": {
+                  "kind": "function",
+                  "symbol": "ClientArtifactLoader",
+                  "startLine": 57,
+                  "endLine": 138
+                },
+                "resolution": "resolved"
+              }
             }
           },
           {
@@ -150,10 +147,6 @@
             "kind": "boundary",
             "label": "Parse bounded response text",
             "summary": "The bounded UTF-8 response string becomes an unknown JavaScript value; it is not trusted yet.",
-            "codeRef": {
-              "file": "app/src/components/client-artifact-loader.tsx",
-              "line": 82
-            },
             "boundary": {
               "kind": "parse",
               "from": {
@@ -164,7 +157,6 @@
                 "label": "Untrusted JSON value",
                 "system": "runtime"
               },
-              "operation": "parseRawArtifactJson(text)",
               "outcome": "passed",
               "policy": "2 MiB raw artifact limit before JSON.parse"
             },
@@ -222,35 +214,33 @@
               "confidence": "high",
               "note": "The shared parser returns unknown by design so validation remains an explicit boundary."
             },
-            "callStack": [
-              {
-                "id": "parse-frame",
-                "fn": "parseRawArtifactJson",
-                "file": "shared/src/artifact-schema.ts",
-                "line": 67,
-                "signature": "parseRawArtifactJson(raw: string, maxBytes?: number)",
-                "returnType": "unknown",
-                "active": true
-              },
-              {
-                "id": "fetch-then-frame",
-                "fn": "fetch(url).then",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 79,
-                "signature": "then(async (res: Response) => unknown)",
-                "returnType": "Promise<unknown>"
-              },
-              {
-                "id": "loader-frame-parse",
-                "fn": "ClientArtifactLoader",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 58,
-                "returnType": "ReactNode"
-              }
-            ],
-            "code": {
+            "source": {
               "src": "app/src/components/client-artifact-loader.tsx",
-              "language": "typescript"
+              "facts": {
+                "span": {
+                  "file": "app/src/components/client-artifact-loader.tsx",
+                  "startLine": 82,
+                  "endLine": 82
+                },
+                "excerpt": "        return parseRawArtifactJson(text)",
+                "sourceHash": "efc574cf869f567156271779fe6cd5e20d132c7cf8b62ee227cc701ac2d4ff76",
+                "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+                "worktree": "clean",
+                "language": "tsx",
+                "syntaxKind": "call_expression",
+                "focus": {
+                  "kind": "call",
+                  "text": "parseRawArtifactJson(text)",
+                  "symbol": "parseRawArtifactJson"
+                },
+                "scope": {
+                  "kind": "function",
+                  "symbol": "ClientArtifactLoader",
+                  "startLine": 57,
+                  "endLine": 138
+                },
+                "resolution": "resolved"
+              }
             }
           },
           {
@@ -262,10 +252,6 @@
             "kind": "boundary",
             "label": "Validate renderer contract",
             "summary": "The shared Zod contract turns an unknown runtime object into a trusted VisualArtifactSpec or stops the render.",
-            "codeRef": {
-              "file": "app/src/components/client-artifact-loader.tsx",
-              "line": 85
-            },
             "boundary": {
               "kind": "validation",
               "from": {
@@ -276,7 +262,6 @@
                 "label": "Trusted renderer contract",
                 "system": "renderer"
               },
-              "operation": "VisualArtifactSpecSchema.safeParse(data)",
               "outcome": "passed",
               "policy": "Shared strict Zod schema plus artifact resource preflight"
             },
@@ -355,53 +340,58 @@
                 }
               ]
             },
+            "impacts": [
+              {
+                "kind": "effect",
+                "title": "Updates the active artifact",
+                "description": "Stores the validated contract for the renderer.",
+                "codeRef": {
+                  "file": "app/src/components/client-artifact-loader.tsx",
+                  "line": 89
+                }
+              },
+              {
+                "kind": "error",
+                "title": "Rejects invalid artifact data",
+                "description": "A failed schema check stops this artifact update.",
+                "codeRef": {
+                  "file": "app/src/components/client-artifact-loader.tsx",
+                  "line": 87
+                }
+              }
+            ],
             "evidence": {
               "origin": "inferred",
               "confidence": "high",
               "note": "Static types and failure behavior are derived from the shared executable schema."
             },
-            "callStack": [
-              {
-                "id": "safe-parse-frame",
-                "fn": "VisualArtifactSpecSchema.safeParse",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 85,
-                "signature": "safeParse(data: unknown)",
-                "returnType": "SafeParseReturnType<VisualArtifactSpec>",
-                "args": [
-                  {
-                    "id": "safe-parse-data",
-                    "name": "data",
-                    "staticType": "unknown",
-                    "runtimeType": "object",
-                    "preview": {
-                      "kind": "object",
-                      "text": "{ slug, title, nodes }"
-                    },
-                    "provenance": "simulated"
-                  }
-                ],
-                "active": true
-              },
-              {
-                "id": "validation-then-frame",
-                "fn": "fetch(url).then",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 84,
-                "signature": "then((data: unknown) => void)",
-                "returnType": "Promise<void>"
-              },
-              {
-                "id": "loader-frame-validation",
-                "fn": "ClientArtifactLoader",
-                "file": "app/src/components/client-artifact-loader.tsx",
-                "line": 58,
-                "returnType": "ReactNode"
-              }
-            ],
-            "code": {
+            "source": {
               "src": "app/src/components/client-artifact-loader.tsx",
-              "language": "typescript"
+              "facts": {
+                "span": {
+                  "file": "app/src/components/client-artifact-loader.tsx",
+                  "startLine": 85,
+                  "endLine": 85
+                },
+                "excerpt": "        const parsed = VisualArtifactSpecSchema.safeParse(data)",
+                "sourceHash": "efc574cf869f567156271779fe6cd5e20d132c7cf8b62ee227cc701ac2d4ff76",
+                "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+                "worktree": "clean",
+                "language": "tsx",
+                "syntaxKind": "call_expression",
+                "focus": {
+                  "kind": "call",
+                  "text": "VisualArtifactSpecSchema.safeParse(data)",
+                  "symbol": "VisualArtifactSpecSchema.safeParse"
+                },
+                "scope": {
+                  "kind": "function",
+                  "symbol": "ClientArtifactLoader",
+                  "startLine": 57,
+                  "endLine": 138
+                },
+                "resolution": "resolved"
+              }
             }
           },
           {
@@ -412,10 +402,6 @@
             "kind": "boundary",
             "label": "Map node type to trusted adapter",
             "summary": "The validated node discriminator selects a renderer-owned adapter; artifact JSON cannot inject React code.",
-            "codeRef": {
-              "file": "app/src/components/visual-artifact-renderer.tsx",
-              "line": 407
-            },
             "boundary": {
               "kind": "registry-adapter",
               "from": {
@@ -426,7 +412,6 @@
                 "label": "Trusted component registry",
                 "system": "renderer"
               },
-              "operation": "componentRegistry[node.type]",
               "outcome": "passed",
               "policy": "ArtifactNode discriminated union must match a registered adapter"
             },
@@ -488,48 +473,32 @@
               "confidence": "high",
               "note": "The mapping is explicit in component-registry.tsx and exhaustively typed against ArtifactNode[\"type\"]."
             },
-            "callStack": [
-              {
-                "id": "render-node-frame",
-                "fn": "RenderNode",
-                "file": "app/src/components/visual-artifact-renderer.tsx",
-                "line": 396,
-                "signature": "RenderNode({ node, context, nodePath, renderNodes })",
-                "returnType": "ReactNode",
-                "args": [
-                  {
-                    "id": "render-node-arg",
-                    "name": "node",
-                    "staticType": "ArtifactNode",
-                    "runtimeType": "object",
-                    "preview": {
-                      "kind": "object",
-                      "text": "execution-trace node"
-                    },
-                    "provenance": "derived"
-                  }
-                ],
-                "active": true
-              },
-              {
-                "id": "render-nodes-frame",
-                "fn": "renderNodes",
-                "file": "app/src/components/visual-artifact-renderer.tsx",
-                "line": 412,
-                "signature": "renderNodes(nodes: ArtifactNode[], context, prefix?)",
-                "returnType": "ReactNode"
-              },
-              {
-                "id": "renderer-content-frame",
-                "fn": "VisualArtifactRendererContent",
-                "file": "app/src/components/visual-artifact-renderer.tsx",
-                "line": 36,
-                "returnType": "ReactNode"
-              }
-            ],
-            "code": {
+            "source": {
               "src": "app/src/components/visual-artifact-renderer.tsx",
-              "language": "typescript"
+              "facts": {
+                "span": {
+                  "file": "app/src/components/visual-artifact-renderer.tsx",
+                  "startLine": 407,
+                  "endLine": 407
+                },
+                "excerpt": "  const Component = componentRegistry[node.type]",
+                "sourceHash": "c1592fe5a0421d2b732e2a1b2972bb4ac554458431fd56c95967418b99ce31a5",
+                "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+                "worktree": "clean",
+                "language": "tsx",
+                "syntaxKind": "variable-declarator",
+                "focus": {
+                  "kind": "assignment",
+                  "text": "Component = componentRegistry[node.type]"
+                },
+                "scope": {
+                  "kind": "function",
+                  "symbol": "RenderNode",
+                  "startLine": 396,
+                  "endLine": 412
+                },
+                "resolution": "resolved"
+              }
             }
           },
           {
@@ -541,10 +510,6 @@
             "kind": "call",
             "label": "Render execution trace review",
             "summary": "The selected trusted adapter receives typed node props and creates the boundary overview plus detail inspector.",
-            "codeRef": {
-              "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-              "line": 46
-            },
             "inputs": [
               {
                 "id": "adapter-node",
@@ -592,7 +557,7 @@
                 },
                 {
                   "from": "selected event",
-                  "to": "typed detail + call stack",
+                  "to": "typed detail + active source frame",
                   "operation": "select"
                 }
               ]
@@ -602,35 +567,32 @@
               "confidence": "high",
               "note": "Adapter signature and output are derived from the TypeScript implementation."
             },
-            "callStack": [
-              {
-                "id": "adapter-frame",
-                "fn": "renderExecutionTrace",
-                "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-                "line": 46,
-                "signature": "renderExecutionTrace(args: AdapterArgs<\"execution-trace\">)",
-                "returnType": "ReactNode",
-                "active": true
-              },
-              {
-                "id": "registry-frame",
-                "fn": "componentRegistry[\"execution-trace\"]",
-                "file": "app/src/components/component-registry.tsx",
-                "line": 50,
-                "signature": "RegistryAdapter(args)",
-                "returnType": "ReactNode"
-              },
-              {
-                "id": "render-node-adapter-frame",
-                "fn": "RenderNode",
-                "file": "app/src/components/visual-artifact-renderer.tsx",
-                "line": 396,
-                "returnType": "ReactNode"
-              }
-            ],
-            "code": {
+            "source": {
               "src": "app/src/components/adapters/execution-trace-adapter.tsx",
-              "language": "typescript"
+              "facts": {
+                "span": {
+                  "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+                  "startLine": 55,
+                  "endLine": 55
+                },
+                "excerpt": "  return <ExecutionTraceReview {...node.props} />",
+                "sourceHash": "242f49b7444ec325a0e10371fe811aecb25ea95c1dd5bb66e812ca06df658f0c",
+                "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+                "worktree": "clean",
+                "language": "tsx",
+                "syntaxKind": "return-statement",
+                "focus": {
+                  "kind": "return",
+                  "text": "return <ExecutionTraceReview {...node.props} />"
+                },
+                "scope": {
+                  "kind": "function",
+                  "symbol": "renderExecutionTrace",
+                  "startLine": 54,
+                  "endLine": 56
+                },
+                "resolution": "resolved"
+              }
             }
           },
           {
@@ -651,7 +613,6 @@
                 "label": "Interactive artifact DOM",
                 "system": "runtime"
               },
-              "operation": "React reconciliation",
               "outcome": "passed",
               "policy": "Only registered renderer adapters create DOM"
             },
@@ -696,38 +657,32 @@
               "confidence": "high",
               "note": "The renderer controls all adapters; DOM output follows normal React reconciliation."
             },
-            "callStack": [
-              {
-                "id": "execution-review-frame",
-                "fn": "ExecutionTraceReview",
-                "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-                "line": 50,
-                "signature": "ExecutionTraceReview(props)",
-                "returnType": "ReactNode",
-                "active": true
-              },
-              {
-                "id": "render-execution-frame",
-                "fn": "renderExecutionTrace",
-                "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-                "line": 46,
-                "returnType": "ReactNode"
-              },
-              {
-                "id": "render-node-output-frame",
-                "fn": "RenderNode",
-                "file": "app/src/components/visual-artifact-renderer.tsx",
-                "line": 396,
-                "returnType": "ReactNode"
-              }
-            ],
-            "codeRef": {
-              "file": "app/src/components/adapters/execution-trace-adapter.tsx",
-              "line": 50
-            },
-            "code": {
+            "source": {
               "src": "app/src/components/adapters/execution-trace-adapter.tsx",
-              "language": "typescript"
+              "facts": {
+                "span": {
+                  "file": "app/src/components/adapters/execution-trace-adapter.tsx",
+                  "startLine": 92,
+                  "endLine": 92
+                },
+                "excerpt": "  return (",
+                "sourceHash": "242f49b7444ec325a0e10371fe811aecb25ea95c1dd5bb66e812ca06df658f0c",
+                "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+                "worktree": "clean",
+                "language": "tsx",
+                "syntaxKind": "source-span",
+                "focus": {
+                  "kind": "expression",
+                  "text": "return ("
+                },
+                "scope": {
+                  "kind": "function",
+                  "symbol": "ExecutionTraceReview",
+                  "startLine": 58,
+                  "endLine": 142
+                },
+                "resolution": "resolved"
+              }
             }
           }
         ]

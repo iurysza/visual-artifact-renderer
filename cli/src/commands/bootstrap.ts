@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { ConfigValidationError, loadConfig } from "../config.ts"
 import type { Logger, ResultData } from "../logger.ts"
+import { astGrepVersion, astGrepVersionIsSupported } from "../source-facts.ts"
 
 function commandExists(cmd: string): boolean {
   try {
@@ -83,6 +84,8 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
 
   const hasBun = commandExists("bun")
   const hasPnpm = commandExists("pnpm")
+  const parserVersion = astGrepVersion()
+  const hasAstGrep = astGrepVersionIsSupported(parserVersion)
   const appOutExists = existsSync(outDir)
   const binaryExists = existsSync(distBinary)
   const installed = existsSync(binPath)
@@ -91,6 +94,11 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
     const checks = [
       { prerequisite: "bun", ok: hasBun, message: hasBun ? "found" : "bun not found in PATH" },
       { prerequisite: "pnpm", ok: hasPnpm, message: hasPnpm ? "found" : "pnpm not found in PATH" },
+      {
+        prerequisite: "ast-grep",
+        ok: hasAstGrep,
+        message: parserVersion ? `version ${parserVersion}` : "ast-grep 0.43+ not found in PATH",
+      },
     ]
     const result: ResultData = {
       command: "bootstrap",
@@ -112,7 +120,7 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
       ],
     }
     log.result(result)
-    return hasBun && hasPnpm ? 0 : 1
+    return hasBun && hasPnpm && hasAstGrep ? 0 : 1
   }
 
   if (!hasBun) {
@@ -121,6 +129,10 @@ export async function bootstrap(opts: { dryRun?: boolean }, log: Logger): Promis
   }
   if (!hasPnpm) {
     log.error("pnpm is required to build the visual-artifact renderer")
+    return 1
+  }
+  if (!hasAstGrep) {
+    log.error("ast-grep 0.43+ is required for source-backed execution traces")
     return 1
   }
 

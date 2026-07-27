@@ -37,5 +37,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
 
+      - name: Install ast-grep
+        run: npm install --global @ast-grep/cli@0.43.0
+
       - name: Run verification gate
         run: ./scripts/verify.sh

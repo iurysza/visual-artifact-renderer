@@ -11,6 +11,7 @@ CLI_BIN="$ROOT/cli/dist/visual-artifact"
 NODE_VERSION="22.22.3"
 BUN_VERSION="1.1.34"
 PNPM_VERSION="11.5.2"
+AST_GREP_MIN_VERSION="0.43.0"
 
 fail() {
   echo "❌ $1" >&2
@@ -25,7 +26,15 @@ echo "=== Visual Artifact verification gate ==="
 [[ "$(node --version)" == "v${NODE_VERSION}" ]] || fail "Node ${NODE_VERSION} required"
 [[ "$(bun --version)" == "${BUN_VERSION}" ]] || fail "Bun ${BUN_VERSION} required"
 [[ "$(pnpm --version)" == "${PNPM_VERSION}" ]] || fail "pnpm ${PNPM_VERSION} required"
-ok "Runtime pins: Node ${NODE_VERSION}, Bun ${BUN_VERSION}, pnpm ${PNPM_VERSION}"
+command -v ast-grep >/dev/null 2>&1 || fail "ast-grep ${AST_GREP_MIN_VERSION}+ required"
+AST_GREP_VERSION="$(ast-grep --version)"
+AST_GREP_VERSION="${AST_GREP_VERSION#ast-grep }"
+node -e '
+const [actual, minimum] = process.argv.slice(1).map((value) => value.split(".").map(Number))
+const supported = actual[0] > minimum[0] || (actual[0] === minimum[0] && actual[1] >= minimum[1])
+process.exit(supported ? 0 : 1)
+' "$AST_GREP_VERSION" "$AST_GREP_MIN_VERSION" || fail "ast-grep ${AST_GREP_MIN_VERSION}+ required; found ${AST_GREP_VERSION}"
+ok "Runtime pins: Node ${NODE_VERSION}, Bun ${BUN_VERSION}, pnpm ${PNPM_VERSION}, ast-grep ${AST_GREP_VERSION}"
 
 # ---------------------------------------------------------------------------
 # Shared

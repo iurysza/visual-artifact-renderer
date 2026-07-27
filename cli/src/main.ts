@@ -15,6 +15,7 @@ import { doctor } from "./commands/doctor.ts"
 import { bootstrap } from "./commands/bootstrap.ts"
 import { contract } from "./commands/contract.ts"
 import { setupCloudflare } from "./commands/setup-cloudflare.ts"
+import { traceInspect } from "./commands/trace-inspect.ts"
 import { VERSION } from "./version.ts"
 
 function parsePort(value: string): number {
@@ -92,10 +93,12 @@ setupCmd
     await runAction("setup cloudflare", (log) => setupCloudflare({ ...globalOptsFromProgram(), ...opts }, log))
   })
 
-const allowReadOption = new Option(
-  "--allow-read <dir>",
-  "Authorize reading artifact sources under this directory (repeatable)",
-).argParser((value: string, previous: string[] = []) => [...previous, value])
+function allowReadOption(): Option {
+  return new Option(
+    "--allow-read <dir>",
+    "Authorize reading artifact sources under this directory (repeatable)",
+  ).argParser((value: string, previous: string[] = []) => [...previous, value])
+}
 
 program
   .command("create [spec]")
@@ -104,7 +107,7 @@ program
   .option("--dry-run", "Validate only; do not write the artifact")
   .option("--no-serve", "Do not auto-start the renderer")
   .option("--publish [profile]", "Publish the artifact to Cloudflare using the named profile")
-  .addOption(allowReadOption)
+  .addOption(allowReadOption())
   .action(async (spec, opts) => {
     await runAction("create", (log) => create(spec, { ...globalOptsFromProgram(), ...opts }, log))
   })
@@ -114,6 +117,24 @@ program
   .description("Validate an artifact spec without writing it.")
   .action(async (spec) => {
     await runAction("validate", (log) => validate(spec, globalOptsFromProgram(), log))
+  })
+
+const traceCmd = program
+  .command("trace")
+  .description("Inspect source-backed execution traces.")
+
+traceCmd
+  .command("inspect")
+  .description("Extract deterministic source facts from ordered file spans.")
+  .option("-p, --project <path>", "Project directory (default: current directory)")
+  .option(
+    "--anchor <file:start[-end]>",
+    "Source span to inspect (repeatable)",
+    (value: string, previous: string[] = []) => [...previous, value],
+  )
+  .addOption(allowReadOption())
+  .action(async (opts) => {
+    await runAction("trace inspect", (log) => traceInspect({ ...globalOptsFromProgram(), ...opts }, log))
   })
 
 const serveCmd = program

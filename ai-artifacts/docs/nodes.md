@@ -71,7 +71,7 @@ grid, section, tabs, accordion, prose
 | Architecture/topology | `mermaid`, `svg-diagram` |
 | Request/deploy/data path | `flow` |
 | Release/runbook sequence | `timeline`, `stepper` |
-| Execution boundaries, typed transformations, and call stack | `execution-trace` |
+| Plan/review API surfaces: interfaces, types, boundaries, transformations | `execution-trace` |
 | Commands/config/file maps | `code-block`, `file-tree` (with `gitStatus`, `flattenEmpty`, `searchable`, `density`, `iconSet`, `defaultExpanded`), `diff` (with `content`, `mode`, `showLineNumbers`, `indicators`, `highlightInline`, `hunkSeparator`, `caption`), `log` |
 | Proportional data | `pie-chart`, `donut-chart` |
 | Cumulative/trend data | `area-chart` |
@@ -278,7 +278,17 @@ The renderer serves it as:
 }
 ```
 
-## Copyable pattern: execution boundary with types and call stack
+## Copyable pattern: source-backed call stack
+
+First inspect the ordered span:
+
+```bash
+visual-artifact --json trace inspect \
+  --project . \
+  --anchor shared/src/artifact-schema.ts:1626
+```
+
+Copy the resolved `.sources[0].source` object unchanged into the event:
 
 ```json
 {
@@ -291,6 +301,16 @@ The renderer serves it as:
       "summary": "Control flow and types derived from reviewed source.",
       "confidence": "high"
     },
+    "typeDefinitions": [
+      {
+        "name": "VisualArtifactSpec",
+        "definition": "export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecShapeSchema>",
+        "language": "typescript",
+        "file": "shared/src/artifact-schema.ts",
+        "line": 1583,
+        "provenance": "derived"
+      }
+    ],
     "events": [
       {
         "id": "validate-spec",
@@ -298,13 +318,34 @@ The renderer serves it as:
         "phase": "validate",
         "kind": "boundary",
         "label": "Validate renderer contract",
-        "codeRef": { "file": "shared/src/artifact-schema.ts", "line": 1410 },
-        "code": { "src": "shared/src/artifact-schema.ts", "language": "typescript" },
+        "source": {
+          "src": "shared/src/artifact-schema.ts",
+          "facts": {
+            "span": { "file": "shared/src/artifact-schema.ts", "startLine": 1626, "endLine": 1626 },
+            "excerpt": "  return VisualArtifactSpecSchema.safeParse(value)",
+            "sourceHash": "390afc310771efa486c14e4145034df19dda460ff5595f92d2e4137957c66b3f",
+            "revision": "041a7a318091c47359a64e6d86bb7d62c2f0e625",
+            "worktree": "clean",
+            "language": "typescript",
+            "syntaxKind": "call_expression",
+            "focus": {
+              "kind": "call",
+              "text": "VisualArtifactSpecSchema.safeParse(value)",
+              "symbol": "VisualArtifactSpecSchema.safeParse"
+            },
+            "scope": {
+              "kind": "function",
+              "symbol": "safeParseVisualArtifactSpec",
+              "startLine": 1621,
+              "endLine": 1627
+            },
+            "resolution": "resolved"
+          }
+        },
         "boundary": {
           "kind": "validation",
           "from": { "label": "Untrusted JSON", "system": "runtime" },
           "to": { "label": "Renderer contract", "system": "renderer" },
-          "operation": "VisualArtifactSpecSchema.safeParse",
           "outcome": "passed"
         },
         "inputs": [
@@ -331,22 +372,21 @@ The renderer serves it as:
           "summary": "Unknown external data becomes a trusted renderer contract.",
           "mappings": [{ "from": "data", "to": "spec", "operation": "validate" }]
         },
-        "evidence": { "origin": "inferred", "confidence": "high" },
-        "callStack": [
+        "impacts": [
           {
-            "id": "safe-parse",
-            "fn": "VisualArtifactSpecSchema.safeParse",
-            "signature": "safeParse(data: unknown)",
-            "returnType": "SafeParseReturnType<VisualArtifactSpec>",
-            "active": true
+            "kind": "error",
+            "title": "Rejects invalid artifact data",
+            "description": "Validation failure prevents the renderer from accepting the external value.",
+            "codeRef": { "file": "shared/src/artifact-schema.ts", "line": 1626 }
           }
-        ]
+        ],
+        "evidence": { "origin": "inferred", "confidence": "high" }
       }
     ]
   }
 }
 ```
 
-Render events as one persistent call stack; previous/next moves the current frame instead of replacing the stack. The renderer bounds the list at six visible frames and keeps the current frame visible while the stack scrolls. Prefer boundary events over raw call transcripts. Always model static/runtime types and provenance separately. Use `event.code.src` for repo-relative source; `visual-artifact create` safely inlines it into `content` and strips `src` before saving. Omit timings unless they are real monotonic runtime measurements; simulated and debugger-stepped traces should not carry durations.
+Render events as one persistent call stack; previous/next moves the current step instead of replacing the list. The agent chooses ordered spans, but the call-stack primary identity, enclosing scope, excerpt, location, and hash come only from `trace inspect`. `visual-artifact create` re-runs extraction, rejects stale or edited code identity, and refreshes revision/worktree provenance before inlining source. If inspection returns `ambiguous`, narrow the span rather than choosing a candidate by prose. `event.label` remains the human narrative and never substitutes for verified code identity. Boundary `from`/`to` describe the conceptual handoff; there is no freeform code operation. Always model static/runtime types and provenance separately. Add `typeDefinitions` for important custom `staticType` names so their declarations appear transiently. Use `event.impacts` only for concise, source-established behavior besides the returned value: `effect` for observable work and `error` for possible failure. Omit timings unless they are real monotonic runtime measurements.
 
-For code reviews, static analysis is the default: follow changed entrypoints, callers, imports, types, boundaries, and relevant tests without executing the program. Use `mode: "inferred"` with `method: "static-analysis"`; keep unknown values symbolic, label test/fixture examples as derived with a source note, and never claim captured runtime evidence or branch outcomes that source alone cannot prove.
+For code-change plans and reviews, use this node when the main concern is API shape: interfaces, types, and boundaries. Prioritize boundary events and `typeDefinitions` over a long call transcript. Static analysis is the default: follow changed entrypoints, callers, imports, types, boundaries, and relevant tests without executing the program. Use `mode: "inferred"` with `method: "static-analysis"`; keep unknown values symbolic, label test/fixture examples as derived with a source note, and never claim captured runtime evidence or branch outcomes that source alone cannot prove. Source-backed frames may describe only code that exists; keep proposed target APIs in clearly labeled narrative or comparison content.

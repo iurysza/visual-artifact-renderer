@@ -3,17 +3,30 @@ import { describe, it } from "node:test"
 
 import { VisualArtifactSpecSchema } from "@/lib/contract/artifact-schema"
 
+const content = "const parsed = validate(input)\nsetSpec(parsed.data)"
+const sourceFacts = {
+  span: { file: "src/validate.ts", startLine: 1, endLine: 1 },
+  excerpt: "const parsed = validate(input)",
+  sourceHash: "0".repeat(64),
+  worktree: "dirty",
+  language: "typescript",
+  syntaxKind: "call_expression",
+  focus: { kind: "call", text: "validate(input)", symbol: "validate" },
+  scope: { kind: "function", symbol: "loadArtifact", startLine: 1, endLine: 2 },
+  resolution: "resolved",
+} as const
+
 const validBoundaryEvent = {
   id: "validate-spec",
   order: 0,
   phase: "validate",
   kind: "boundary",
   label: "Validate artifact JSON",
+  source: { content, facts: sourceFacts },
   boundary: {
     kind: "validation",
     from: { label: "Untrusted JSON", system: "runtime" },
     to: { label: "Renderer contract", system: "renderer" },
-    operation: "VisualArtifactSpecSchema.safeParse",
     outcome: "passed",
   },
   inputs: [
@@ -41,15 +54,6 @@ const validBoundaryEvent = {
     mappings: [{ from: "data", to: "spec", operation: "validate" }],
   },
   evidence: { origin: "inferred", confidence: "high" },
-  callStack: [
-    {
-      id: "safe-parse",
-      fn: "VisualArtifactSpecSchema.safeParse",
-      signature: "safeParse(data: unknown)",
-      returnType: "SafeParseReturnType<VisualArtifactSpec>",
-      active: true,
-    },
-  ],
 } as const
 
 function traceSpec(
@@ -78,8 +82,15 @@ function traceSpec(
 }
 
 describe("execution-trace schema", () => {
-  it("accepts typed boundary events with call-stack context", () => {
-    const result = VisualArtifactSpecSchema.safeParse(traceSpec())
+  it("accepts source-backed typed boundary events", () => {
+    assert.equal(VisualArtifactSpecSchema.safeParse(traceSpec()).success, true)
+  })
+
+  it("accepts create-time source paths with inspected facts", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+      ...validBoundaryEvent,
+      source: { src: "src/validate.ts", facts: sourceFacts },
+    }))
     assert.equal(result.success, true)
   })
 
@@ -92,37 +103,125 @@ describe("execution-trace schema", () => {
   })
 
   it("rejects display strings that omit typed previews", () => {
-    const invalid = {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
       ...validBoundaryEvent,
       inputs: [{ id: "data", name: "data", staticType: "unknown", provenance: "inferred" }],
-    }
-    const result = VisualArtifactSpecSchema.safeParse(traceSpec(invalid))
+    }))
     assert.equal(result.success, false)
   })
 
-  it("accepts create-time file-backed code context", () => {
+  it("rejects legacy freeform source identity", () => {
+    for (const legacy of [
+      { codeRef: { file: "src/validate.ts", line: 1 } },
+      { code: { content, language: "typescript" } },
+      { callStack: [{ id: "validate", fn: "validate", active: true }] },
+    ]) {
+      const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+        ...validBoundaryEvent,
+        ...legacy,
+      }))
+      assert.equal(result.success, false)
+    }
+  })
+
+  it("requires exactly one source input", () => {
+    for (const source of [
+      { facts: sourceFacts },
+      { src: "src/validate.ts", content, facts: sourceFacts },
+    ]) {
+      assert.equal(VisualArtifactSpecSchema.safeParse(traceSpec({
+        ...validBoundaryEvent,
+        source,
+      })).success, false)
+    }
+  })
+
+  it("rejects source excerpts that do not match persisted content", () => {
     const result = VisualArtifactSpecSchema.safeParse(traceSpec({
       ...validBoundaryEvent,
-      codeRef: { file: "src/validate.ts", line: 12 },
-      code: { src: "src/validate.ts", language: "typescript" },
+      source: {
+        content,
+        facts: { ...sourceFacts, excerpt: "validate(other)" },
+      },
+    }))
+    assert.equal(result.success, false)
+  })
+
+  it("rejects freeform boundary operations", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+      ...validBoundaryEvent,
+      boundary: { ...validBoundaryEvent.boundary, operation: "validate(input)" },
+    }))
+    assert.equal(result.success, false)
+  })
+
+  it("accepts minimal effect and error impacts", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+      ...validBoundaryEvent,
+      impacts: [
+        {
+          kind: "effect",
+          title: "Updates artifact state",
+          description: "Stores the validated artifact for rendering.",
+          codeRef: { file: "src/validate.ts", line: 2 },
+        },
+        {
+          kind: "error",
+          title: "Rejects invalid input",
+          codeRef: { file: "src/validate.ts", line: 1 },
+        },
+      ],
     }))
     assert.equal(result.success, true)
   })
 
-  it("rejects code context without content or src", () => {
+  it("rejects impact references to blank source lines", () => {
+    const blankContent = "const parsed = validate(input)\n\nsetSpec(parsed.data)"
     const result = VisualArtifactSpecSchema.safeParse(traceSpec({
       ...validBoundaryEvent,
-      code: { language: "typescript" },
+      impacts: [{
+        kind: "error",
+        title: "Rejects invalid input",
+        codeRef: { file: "src/validate.ts", line: 2 },
+      }],
+      source: { content: blankContent, facts: sourceFacts },
+    }))
+    assert.equal(result.success, false)
+  })
+
+  it("accepts reusable source-derived type definitions", () => {
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec(validBoundaryEvent, {
+      typeDefinitions: [
+        {
+          name: "VisualArtifactSpec",
+          definition: "export type VisualArtifactSpec = z.infer<typeof VisualArtifactSpecSchema>",
+          language: "typescript",
+          file: "shared/src/artifact-schema.ts",
+          line: 1490,
+          provenance: "derived",
+        },
+      ],
+    }))
+    assert.equal(result.success, true)
+  })
+
+  it("rejects duplicate type definition names", () => {
+    const definition = {
+      name: "VisualArtifactSpec",
+      definition: "export interface VisualArtifactSpec {}",
+      provenance: "derived",
+    }
+    const result = VisualArtifactSpecSchema.safeParse(traceSpec(validBoundaryEvent, {
+      typeDefinitions: [definition, definition],
     }))
     assert.equal(result.success, false)
   })
 
   it("rejects timing fields to prevent false precision", () => {
-    const result = VisualArtifactSpecSchema.safeParse(traceSpec({
+    assert.equal(VisualArtifactSpecSchema.safeParse(traceSpec({
       ...validBoundaryEvent,
       durationMs: 1.2,
-    }))
-    assert.equal(result.success, false)
+    })).success, false)
   })
 
   it("rejects duplicate event ids", () => {
@@ -133,9 +232,8 @@ describe("execution-trace schema", () => {
   })
 
   it("requires initialEventId to reference a real event", () => {
-    const result = VisualArtifactSpecSchema.safeParse(traceSpec(validBoundaryEvent, {
+    assert.equal(VisualArtifactSpecSchema.safeParse(traceSpec(validBoundaryEvent, {
       initialEventId: "missing-event",
-    }))
-    assert.equal(result.success, false)
+    })).success, false)
   })
 })
