@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.7.1...v0.8.0) (2026-07-27)
+
+
+### Features
+
+* add trace-tree call overview node ([d0e77fd](https://github.com/iurysza/visual-artifact-renderer/commit/d0e77fd94d11db18c41808c78d0c1339c6686b35))
+* **review:** add static execution traces ([31ef78d](https://github.com/iurysza/visual-artifact-renderer/commit/31ef78d8a26b5202cd2bd92b35b2d7be1f14825f))
+* **trace:** add boundary-first execution reviews ([86ba3a0](https://github.com/iurysza/visual-artifact-renderer/commit/86ba3a0053e0520e5d5ea2227750a5a1f98b94e0))
+* **trace:** add debugger-style call stack ([951bfd8](https://github.com/iurysza/visual-artifact-renderer/commit/951bfd8a917d7825fc53dd5313e63adc4dc73749))
+* **trace:** add source-backed API surface reviews ([76fb0e7](https://github.com/iurysza/visual-artifact-renderer/commit/76fb0e75ab46dd96e2b3c15b3e899d29a67b7caf))
+* **trace:** verify call stacks against source ([930ed09](https://github.com/iurysza/visual-artifact-renderer/commit/930ed093d673ff25dd7aaddbdbf98889d546b3d5))
+
+
+### Bug Fixes
+
+* **trace-tree:** support mobile and touch layouts ([68168dc](https://github.com/iurysza/visual-artifact-renderer/commit/68168dcef53c1260ac6ba2f53b103621fb29d18b))
+* **trace:** simplify debugger workspace ([dde5071](https://github.com/iurysza/visual-artifact-renderer/commit/dde507116cb227b29ef89a1ffa3409e3bf7965a6))
+
 ## [0.7.1](https://github.com/iurysza/visual-artifact-renderer/compare/v0.7.0...v0.7.1) (2026-07-13)
 
 
