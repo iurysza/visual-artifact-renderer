@@ -81,6 +81,7 @@ The artifact resource envelope is enforced before recursive Zod parsing: 2 MiB r
 
 The extension registers:
 
+- `choose_visual_artifact_direction` tool — presents 2–4 user-facing narrative/visual directions before an agent creates a requested artifact; the selected instruction is returned to the agent.
 - `create_visual_artifact` tool
 - `/visual-diff` command
 - `/visual-recap` command

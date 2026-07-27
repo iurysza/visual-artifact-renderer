@@ -28,11 +28,12 @@ Do not use for plain text answers or code changes that do not need rendering.
 
 ## Workflow
 
-1. Inspect the relevant source/data.
-2. Get the artifact contract with `visual-artifact contract` before choosing nodes.
-3. Build a focused `VisualArtifactSpec`.
-4. Validate/create with the CLI or call `create_visual_artifact`.
-5. Return the artifact URL.
+1. In Pi, call `choose_visual_artifact_direction` before source inspection when the user requested an artifact. Offer 2–4 distinct directions; use the selected instruction as a binding constraint and pass it unchanged as `directionInstruction` to `create_visual_artifact`. If the picker is unavailable or cancelled, ask in chat and wait.
+2. Inspect the relevant source/data.
+3. Get the artifact contract with `visual-artifact contract` before choosing nodes.
+4. Build a focused `VisualArtifactSpec`.
+5. Validate/create with the CLI or call `create_visual_artifact`.
+6. Return the artifact URL.
 
 Use `visual-artifact contract` to print the full contract, `visual-artifact contract --format summary` for a quick overview, or `visual-artifact contract --node <type>` to inspect one node.
 

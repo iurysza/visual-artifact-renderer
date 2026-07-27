@@ -24,9 +24,45 @@ function findCli(): string | null {
 }
 
 export function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {
-  const { projectPath: _projectPath, ...spec } = params
+  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params
   return spec
 }
+
+interface ArtifactDirection {
+  title: string
+  description: string
+  instruction: string
+}
+
+interface ArtifactDirectionDetails {
+  question: string
+  directions: ArtifactDirection[]
+  selected: ArtifactDirection | { title: "Custom"; description: string; instruction: string } | null
+  cancelled: boolean
+}
+
+const artifactDirectionSchema = {
+  type: "object",
+  properties: {
+    question: { type: "string", description: "Question that frames the visual direction decision" },
+    directions: {
+      type: "array",
+      minItems: 2,
+      maxItems: 4,
+      description: "Two to four distinct visual/narrative directions for the requested artifact",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short direction title shown in the picker" },
+          description: { type: "string", description: "One-sentence explanation of what the artifact will emphasize" },
+          instruction: { type: "string", minLength: 1, description: "Concrete generation instruction to apply after selection" },
+        },
+        required: ["title", "description", "instruction"],
+      },
+    },
+  },
+  required: ["question", "directions"],
+} as any
 
 export function visualDiffRequest(scope: string, cwd: string): string {
   return (
@@ -60,6 +96,115 @@ function runCreate(cli: string, spec: Record<string, unknown>, projectPath: stri
 }
 
 export default function visualArtifactExtension(pi: ExtensionAPI) {
+  let selectedDirection: ArtifactDirectionDetails["selected"] = null
+
+  pi.on("before_agent_start", () => {
+    selectedDirection = null
+  })
+
+  pi.on("tool_result", (event) => {
+    if (event.toolName !== "choose_visual_artifact_direction") return
+
+    const details = event.details as Partial<ArtifactDirectionDetails> | undefined
+    const selected = details?.cancelled === false ? details.selected : null
+    selectedDirection = selected?.instruction?.trim() ? selected : null
+  })
+
+  pi.on("tool_call", (event) => {
+    if (event.toolName !== "create_visual_artifact") return
+
+    if (!selectedDirection) {
+      return {
+        block: true,
+        reason: "Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.",
+      }
+    }
+
+    if (event.input.directionInstruction !== selectedDirection.instruction) {
+      return {
+        block: true,
+        reason: "Pass the exact selected instruction as directionInstruction when creating the artifact.",
+      }
+    }
+  })
+
+  pi.registerTool({
+    name: "choose_visual_artifact_direction",
+    label: "Choose Visual Artifact Direction",
+    description: "Ask the user to choose the narrative and visual direction before generating a visual artifact.",
+    promptSnippet: "Ask the user to choose an artifact direction before generating a requested visual artifact.",
+    promptGuidelines: [
+      "Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.",
+      "Use the selected instruction from choose_visual_artifact_direction as a binding generation constraint; do not replace it with an unselected direction. Pass that exact text as directionInstruction to create_visual_artifact.",
+      "If choose_visual_artifact_direction reports a cancellation or unavailable UI, do not create the artifact; ask the user for a direction in chat instead.",
+    ],
+    parameters: artifactDirectionSchema,
+    executionMode: "sequential",
+    async execute(
+      _toolCallId: string,
+      params: { question: string; directions: ArtifactDirection[] },
+      signal: AbortSignal | undefined,
+      _onUpdate: (update: { type: string; text: string }) => void,
+      ctx: { hasUI?: boolean; ui: { select: (title: string, options: string[], options?: { signal?: AbortSignal }) => Promise<string | undefined>; input: (title: string, placeholder?: string, options?: { signal?: AbortSignal }) => Promise<string | undefined> } },
+    ) {
+      const details = (selected: ArtifactDirectionDetails["selected"], cancelled: boolean): ArtifactDirectionDetails => ({
+        question: params.question,
+        directions: params.directions,
+        selected,
+        cancelled,
+      })
+
+      if (!ctx.hasUI) {
+        return {
+          content: [{ type: "text", text: "Artifact direction was not chosen because interactive UI is unavailable. Ask the user in chat and wait." }],
+          details: details(null, true),
+        }
+      }
+
+      const customLabel = "Other direction…"
+      const choice = await ctx.ui.select(
+        params.question,
+        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],
+        { signal },
+      )
+
+      if (!choice) {
+        return {
+          content: [{ type: "text", text: "User cancelled artifact direction selection." }],
+          details: details(null, true),
+        }
+      }
+
+      if (choice === customLabel) {
+        const instruction = (await ctx.ui.input("Artifact direction", "Describe what the artifact should emphasize", { signal }))?.trim()
+        if (!instruction) {
+          return {
+            content: [{ type: "text", text: "User cancelled custom artifact direction." }],
+            details: details(null, true),
+          }
+        }
+
+        const selected = { title: "Custom" as const, description: instruction, instruction }
+        return {
+          content: [{ type: "text", text: `User chose custom artifact direction: ${instruction}` }],
+          details: details(selected, false),
+        }
+      }
+
+      const selected = params.directions.find(
+        (direction) => `${direction.title} — ${direction.description}` === choice,
+      )
+      if (!selected) {
+        throw new Error("Artifact direction picker returned an unknown option")
+      }
+
+      return {
+        content: [{ type: "text", text: `User chose artifact direction: ${selected.title}\nInstruction: ${selected.instruction}` }],
+        details: details(selected, false),
+      }
+    },
+  })
+
   pi.registerCommand("visual-diff", {
     description: "Generate a visual diff review as a visual artifact.",
     argumentHint: "[branch|commit|range|#PR|HEAD]",
@@ -90,7 +235,8 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
     promptSnippet: "Create a polished visual artifact from any Pi session; save it via the CLI and return the URL.",
     promptGuidelines: [
       "For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.",
-      "For simple visual artifacts, call create_visual_artifact directly with a JSON spec.",
+      "For simple visual artifacts, call create_visual_artifact directly with a JSON spec after choosing a direction.",
+      "Set directionInstruction to the exact instruction returned by choose_visual_artifact_direction; it is an extension-only field and is not persisted in the artifact spec.",
       "Run `visual-artifact contract` and only use supported node types, props, and resource limits.",
       "Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.",
       "Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.",
@@ -123,10 +269,11 @@ export default function visualArtifactExtension(pi: ExtensionAPI) {
         },
         layout: { type: "object", description: "Layout options" },
         projectPath: { type: "string", description: "Directory to derive the project name from. Defaults to caller's cwd." },
+        directionInstruction: { type: "string", minLength: 1, description: "Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction." },
         data: { type: "object", description: "Embedded datasets. Max 20 datasets." },
         nodes: { type: "array", description: "ArtifactNode[]. Max 30 nodes." },
       },
-      required: ["slug", "title", "artifactType", "topics", "nodes"],
+      required: ["slug", "title", "artifactType", "topics", "nodes", "directionInstruction"],
     } as any,
     async execute(
       _toolCallId: string,
