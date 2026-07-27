@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.8.0...v0.9.0) (2026-07-27)
+
+
+### Features
+
+* **extension:** require artifact direction selection ([bdad485](https://github.com/iurysza/visual-artifact-renderer/commit/bdad485e768af4a0940b2cd355257424a190bf88))
+
+
+### Bug Fixes
+
+* **trace:** support Ruby source analysis ([2499e75](https://github.com/iurysza/visual-artifact-renderer/commit/2499e7567bdeac48119c171b3f699f799177fe6c))
+
 ## [0.8.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.7.1...v0.8.0) (2026-07-27)
 
 
