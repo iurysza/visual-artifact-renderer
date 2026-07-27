@@ -479,6 +479,183 @@ const ColumnSchema = z.union([
     .strict(),
 ])
 
+export type ExecutionTraceProvenanceOrigin =
+  | "captured"
+  | "inferred"
+  | "simulated"
+  | "derived"
+  | "redacted"
+
+export type ExecutionTracePhase =
+  | "input"
+  | "validate"
+  | "resolve"
+  | "map"
+  | "read"
+  | "write"
+  | "process"
+  | "network"
+  | "render"
+  | "output"
+
+export type ExecutionTraceBoundaryKind =
+  | "validation"
+  | "parse"
+  | "file-read"
+  | "file-write"
+  | "process-spawn"
+  | "network-request"
+  | "registry-adapter"
+  | "runtime"
+  | "input"
+  | "output"
+
+export interface ExecutionTraceValueField {
+  name: string
+  type: string
+  preview?: string
+}
+
+export interface ExecutionTraceTypeDefinition {
+  name: string
+  definition: string
+  language?: string
+  file?: string
+  line?: number
+  provenance: "inferred" | "derived"
+}
+
+export interface ExecutionTraceTypedValue {
+  id: string
+  name: string
+  staticType?: string
+  runtimeType?: "string" | "number" | "boolean" | "null" | "array" | "object" | "unknown"
+  preview: {
+    kind: "scalar" | "object" | "array" | "redacted" | "absent"
+    text: string
+    fields?: ExecutionTraceValueField[]
+    itemCount?: number
+    truncated?: boolean
+  }
+  provenance: ExecutionTraceProvenanceOrigin
+}
+
+export interface ExecutionTraceSystemRef {
+  label: string
+  system: "user" | "cli" | "filesystem" | "network" | "renderer" | "process" | "runtime"
+}
+
+export interface ExecutionTraceBoundary {
+  kind: ExecutionTraceBoundaryKind
+  from: ExecutionTraceSystemRef
+  to: ExecutionTraceSystemRef
+  outcome: "passed" | "blocked" | "failed" | "skipped"
+  policy?: string
+}
+
+export interface ExecutionTraceMapping {
+  from: string
+  to: string
+  operation: "parse" | "validate" | "select" | "serialize" | "lookup" | "adapt" | "redact" | "pass"
+}
+
+export interface ExecutionTraceImpact {
+  kind: "effect" | "error"
+  title: string
+  description?: string
+  codeRef?: { file: string; line: number; column?: number }
+}
+
+export type ExecutionTraceSourceFocusKind =
+  | "call"
+  | "declaration"
+  | "return"
+  | "assignment"
+  | "branch"
+  | "expression"
+
+export type ExecutionTraceSourceScopeKind =
+  | "function"
+  | "method"
+  | "callback"
+  | "module"
+
+export interface ExecutionTraceSourceSpan {
+  file: string
+  startLine: number
+  endLine: number
+}
+
+export interface ExecutionTraceSourceFocus {
+  kind: ExecutionTraceSourceFocusKind
+  text: string
+  symbol?: string
+}
+
+export interface ExecutionTraceSourceScope {
+  kind: ExecutionTraceSourceScopeKind
+  symbol?: string
+  startLine?: number
+  endLine?: number
+}
+
+export interface ExecutionTraceSourceFacts {
+  span: ExecutionTraceSourceSpan
+  excerpt: string
+  sourceHash: string
+  revision?: string
+  worktree: "clean" | "dirty" | "unknown"
+  language: "typescript" | "tsx" | "javascript" | "jsx"
+  syntaxKind: string
+  focus: ExecutionTraceSourceFocus
+  scope?: ExecutionTraceSourceScope
+  resolution: "resolved"
+}
+
+export interface ExecutionTraceSourceContext {
+  /** Create-time source path. The CLI re-extracts facts, inlines content, then strips src. */
+  src?: string
+  /** Full source persisted only after CLI verification. */
+  content?: string
+  facts: ExecutionTraceSourceFacts
+}
+
+export interface ExecutionTraceEvidence {
+  origin: Exclude<ExecutionTraceProvenanceOrigin, "redacted">
+  confidence: "high" | "medium" | "low"
+  note?: string
+}
+
+export interface ExecutionTraceEvent {
+  id: string
+  order: number
+  parentFrameId?: string
+  frameId?: string
+  phase: ExecutionTracePhase
+  kind: "boundary" | "call" | "return" | "throw" | "note"
+  label: string
+  summary?: string
+  source: ExecutionTraceSourceContext
+  boundary?: ExecutionTraceBoundary
+  inputs?: ExecutionTraceTypedValue[]
+  outputs?: ExecutionTraceTypedValue[]
+  transformation?: {
+    summary: string
+    mappings?: ExecutionTraceMapping[]
+  }
+  impacts?: ExecutionTraceImpact[]
+  evidence: ExecutionTraceEvidence
+  note?: string
+}
+
+export interface ExecutionTraceProvenance {
+  mode: "captured" | "inferred" | "simulated" | "mixed"
+  method: "runtime-probe" | "inspector" | "static-analysis" | "author-curated"
+  summary: string
+  confidence: "high" | "medium" | "low"
+  codeRevision?: string
+}
+
 export type ArtifactNode =
   | { type: "definition-list"; props: { items: { term: string; description: string }[] }; metadata?: { id?: string } }
   | {
@@ -681,6 +858,346 @@ export type ArtifactNode =
       }
       metadata?: { id?: string }
     }
+  | {
+      type: "execution-trace"
+      props: {
+        title?: string
+        caption?: string
+        provenance: ExecutionTraceProvenance
+        events: ExecutionTraceEvent[]
+        typeDefinitions?: ExecutionTraceTypeDefinition[]
+        initialEventId?: string
+        showCallStack?: boolean
+      }
+      metadata?: { id?: string }
+    }
+
+const TraceStringSchema = z.string().min(1).max(500)
+const TraceIdSchema = z.string().min(1).max(80)
+const TraceOriginSchema = z.enum(["captured", "inferred", "simulated", "derived", "redacted"])
+const TraceEvidenceOriginSchema = z.enum(["captured", "inferred", "simulated", "derived"])
+const TraceConfidenceSchema = z.enum(["high", "medium", "low"])
+
+const ExecutionTraceValueFieldSchema = z
+  .object({
+    name: TraceStringSchema,
+    type: TraceStringSchema,
+    preview: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceTypeDefinitionSchema = z
+  .object({
+    name: TraceStringSchema,
+    definition: z.string().min(1).max(12_000),
+    language: z.string().min(1).max(40).optional(),
+    file: TraceStringSchema.optional(),
+    line: z.number().int().min(1).optional(),
+    provenance: z.enum(["inferred", "derived"]),
+  })
+  .strict()
+
+const ExecutionTraceTypedValueSchema = z
+  .object({
+    id: TraceIdSchema,
+    name: TraceStringSchema,
+    staticType: TraceStringSchema.optional(),
+    runtimeType: z.enum(["string", "number", "boolean", "null", "array", "object", "unknown"]).optional(),
+    preview: z
+      .object({
+        kind: z.enum(["scalar", "object", "array", "redacted", "absent"]),
+        text: TraceStringSchema,
+        fields: z.array(ExecutionTraceValueFieldSchema).max(12).optional(),
+        itemCount: z.number().int().min(0).optional(),
+        truncated: z.boolean().optional(),
+      })
+      .strict(),
+    provenance: TraceOriginSchema,
+  })
+  .strict()
+
+const ExecutionTraceSystemRefSchema = z
+  .object({
+    label: TraceStringSchema,
+    system: z.enum(["user", "cli", "filesystem", "network", "renderer", "process", "runtime"]),
+  })
+  .strict()
+
+const ExecutionTraceBoundarySchema = z
+  .object({
+    kind: z.enum([
+      "validation",
+      "parse",
+      "file-read",
+      "file-write",
+      "process-spawn",
+      "network-request",
+      "registry-adapter",
+      "runtime",
+      "input",
+      "output",
+    ]),
+    from: ExecutionTraceSystemRefSchema,
+    to: ExecutionTraceSystemRefSchema,
+    outcome: z.enum(["passed", "blocked", "failed", "skipped"]),
+    policy: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceMappingSchema = z
+  .object({
+    from: TraceStringSchema,
+    to: TraceStringSchema,
+    operation: z.enum(["parse", "validate", "select", "serialize", "lookup", "adapt", "redact", "pass"]),
+  })
+  .strict()
+
+const ExecutionTraceSourceSpanSchema = z
+  .object({
+    file: TraceStringSchema,
+    startLine: z.number().int().min(1),
+    endLine: z.number().int().min(1),
+  })
+  .strict()
+  .refine((span) => span.endLine >= span.startLine, {
+    message: "Execution trace source endLine must be greater than or equal to startLine",
+    path: ["endLine"],
+  })
+
+const ExecutionTraceSourceFocusSchema = z
+  .object({
+    kind: z.enum(["call", "declaration", "return", "assignment", "branch", "expression"]),
+    text: z.string().min(1).max(4_000),
+    symbol: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceSourceScopeSchema = z
+  .object({
+    kind: z.enum(["function", "method", "callback", "module"]),
+    symbol: TraceStringSchema.optional(),
+    startLine: z.number().int().min(1).optional(),
+    endLine: z.number().int().min(1).optional(),
+  })
+  .strict()
+  .superRefine((scope, context) => {
+    if (scope.startLine !== undefined && scope.endLine !== undefined && scope.endLine < scope.startLine) {
+      context.addIssue({
+        code: "custom",
+        path: ["endLine"],
+        message: "Execution trace scope endLine must be greater than or equal to startLine",
+      })
+    }
+  })
+
+const ExecutionTraceSourceFactsSchema = z
+  .object({
+    span: ExecutionTraceSourceSpanSchema,
+    excerpt: z.string().min(1).max(MAX_FILE_SOURCE_BYTES),
+    sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
+    revision: TraceStringSchema.optional(),
+    worktree: z.enum(["clean", "dirty", "unknown"]),
+    language: z.enum(["typescript", "tsx", "javascript", "jsx"]),
+    syntaxKind: TraceStringSchema,
+    focus: ExecutionTraceSourceFocusSchema,
+    scope: ExecutionTraceSourceScopeSchema.optional(),
+    resolution: z.literal("resolved"),
+  })
+  .strict()
+
+const ExecutionTraceSourceContextSchema = z
+  .object({
+    content: z.string().max(MAX_FILE_SOURCE_BYTES).optional(),
+    src: z.string().min(1).optional(),
+    facts: ExecutionTraceSourceFactsSchema,
+  })
+  .strict()
+  .superRefine((source, context) => {
+    if ((source.content === undefined) === (source.src === undefined)) {
+      context.addIssue({
+        code: "custom",
+        message: "Execution trace source requires exactly one of content or src",
+      })
+    }
+  })
+
+const ExecutionTraceCodeRefSchema = z
+  .object({
+    file: TraceStringSchema,
+    line: z.number().int().min(1),
+    column: z.number().int().min(1).optional(),
+  })
+  .strict()
+
+const ExecutionTraceImpactSchema = z
+  .object({
+    kind: z.enum(["effect", "error"]),
+    title: TraceStringSchema,
+    description: TraceStringSchema.optional(),
+    codeRef: ExecutionTraceCodeRefSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceEventBaseSchema = z
+  .object({
+    id: TraceIdSchema,
+    order: z.number().int().min(0),
+    parentFrameId: TraceIdSchema.optional(),
+    frameId: TraceIdSchema.optional(),
+    phase: z.enum(["input", "validate", "resolve", "map", "read", "write", "process", "network", "render", "output"]),
+    label: TraceStringSchema,
+    summary: TraceStringSchema.optional(),
+    source: ExecutionTraceSourceContextSchema,
+    inputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
+    outputs: z.array(ExecutionTraceTypedValueSchema).max(12).optional(),
+    transformation: z
+      .object({
+        summary: TraceStringSchema,
+        mappings: z.array(ExecutionTraceMappingSchema).max(20).optional(),
+      })
+      .strict()
+      .optional(),
+    impacts: z.array(ExecutionTraceImpactSchema).max(12).optional(),
+    evidence: z
+      .object({
+        origin: TraceEvidenceOriginSchema,
+        confidence: TraceConfidenceSchema,
+        note: TraceStringSchema.optional(),
+      })
+      .strict(),
+    note: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTraceEventSchema = z.discriminatedUnion("kind", [
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("boundary"),
+    boundary: ExecutionTraceBoundarySchema,
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("call"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("return"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("throw"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+  ExecutionTraceEventBaseSchema.extend({
+    kind: z.literal("note"),
+    boundary: ExecutionTraceBoundarySchema.optional(),
+  }),
+])
+
+const ExecutionTraceProvenanceSchema = z
+  .object({
+    mode: z.enum(["captured", "inferred", "simulated", "mixed"]),
+    method: z.enum(["runtime-probe", "inspector", "static-analysis", "author-curated"]),
+    summary: TraceStringSchema,
+    confidence: TraceConfidenceSchema,
+    codeRevision: TraceStringSchema.optional(),
+  })
+  .strict()
+
+const ExecutionTracePropsSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    caption: z.string().min(1).optional(),
+    provenance: ExecutionTraceProvenanceSchema,
+    events: z.array(ExecutionTraceEventSchema).min(1).max(100),
+    typeDefinitions: z.array(ExecutionTraceTypeDefinitionSchema).max(40).optional(),
+    initialEventId: TraceIdSchema.optional(),
+    showCallStack: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine((props, context) => {
+    const eventIds = new Set<string>()
+    const eventOrders = new Set<number>()
+
+    props.events.forEach((event, eventIndex) => {
+      if (eventIds.has(event.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["events", eventIndex, "id"],
+          message: `Execution trace event id must be unique: ${event.id}`,
+        })
+      }
+      eventIds.add(event.id)
+
+      if (eventOrders.has(event.order)) {
+        context.addIssue({
+          code: "custom",
+          path: ["events", eventIndex, "order"],
+          message: `Execution trace event order must be unique: ${event.order}`,
+        })
+      }
+      eventOrders.add(event.order)
+
+      if (event.source.content !== undefined) {
+        const sourceLines = event.source.content.replace(/\r\n/g, "\n").split("\n")
+        const { span, excerpt } = event.source.facts
+        const expectedExcerpt = sourceLines.slice(span.startLine - 1, span.endLine).join("\n")
+
+        if (span.endLine > sourceLines.length) {
+          context.addIssue({
+            code: "custom",
+            path: ["events", eventIndex, "source", "facts", "span", "endLine"],
+            message: `Execution trace source span exceeds file length: ${span.endLine}`,
+          })
+        } else if (expectedExcerpt !== excerpt.replace(/\r\n/g, "\n")) {
+          context.addIssue({
+            code: "custom",
+            path: ["events", eventIndex, "source", "facts", "excerpt"],
+            message: "Execution trace source excerpt must exactly match its inlined span",
+          })
+        }
+
+        event.impacts?.forEach((impact, impactIndex) => {
+          if (!impact.codeRef || impact.codeRef.file !== span.file) return
+
+          const impactLine = sourceLines[impact.codeRef.line - 1]
+          if (impactLine === undefined || impactLine.trim().length === 0) {
+            context.addIssue({
+              code: "custom",
+              path: ["events", eventIndex, "impacts", impactIndex, "codeRef", "line"],
+              message: `Execution trace impact codeRef.line must reference a non-empty source line: ${impact.codeRef.line}`,
+            })
+          }
+        })
+      }
+    })
+
+    const typeNames = new Set<string>()
+    props.typeDefinitions?.forEach((definition, definitionIndex) => {
+      if (typeNames.has(definition.name)) {
+        context.addIssue({
+          code: "custom",
+          path: ["typeDefinitions", definitionIndex, "name"],
+          message: `Execution trace type definition name must be unique: ${definition.name}`,
+        })
+      }
+      typeNames.add(definition.name)
+    })
+
+    if (props.initialEventId && !eventIds.has(props.initialEventId)) {
+      context.addIssue({
+        code: "custom",
+        path: ["initialEventId"],
+        message: `initialEventId must reference an event id: ${props.initialEventId}`,
+      })
+    }
+  })
+
+const ExecutionTraceNodeSchema = z
+  .object({
+    type: z.literal("execution-trace"),
+    props: ExecutionTracePropsSchema,
+    metadata: metadataSchema,
+  })
+  .strict()
 
 const DiagramHeightSchema = z.number().int().min(240).max(1600)
 
@@ -948,6 +1465,7 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
         )
         .min(1),
     }),
+    ExecutionTraceNodeSchema,
   ])
 })
 

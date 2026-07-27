@@ -47,6 +47,7 @@ export const componentRegistry = {
   "svg-diagram": createAdapter(renderSvgDiagram),
   flow: createAdapter(adapters.renderFlow),
   timeline: createAdapter(adapters.renderTimeline),
+  "execution-trace": createAdapter(adapters.renderExecutionTrace),
   "code-block": createAdapter(adapters.renderCodeBlock),
   "status-grid": createAdapter(adapters.renderStatusGrid),
   grid: createAdapter(adapters.renderGrid),

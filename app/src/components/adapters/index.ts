@@ -32,6 +32,8 @@ export {
   renderStatusGrid,
 } from "./data-adapters"
 
+export { renderExecutionTrace } from "./execution-trace-adapter"
+
 export {
   renderCard,
   renderGrid,

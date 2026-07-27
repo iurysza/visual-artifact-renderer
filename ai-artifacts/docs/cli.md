@@ -6,6 +6,12 @@ Use this page when you need the command surface. For what the CLI hands to the r
 
 ## Install
 
+Source-backed execution traces require `ast-grep` 0.43 or newer in `PATH`:
+
+```bash
+npm install --global @ast-grep/cli@0.43.0
+```
+
 Install the latest release:
 
 ```bash
@@ -63,6 +69,7 @@ Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited
 | `visual-artifact bootstrap [--dry-run]` | Build and install the renderer and CLI. |
 | `visual-artifact create [spec.json or -] [--project path] [--dry-run] [--no-serve] [--publish [profile]] [--allow-read dir]` | Validate, write, serve, and optionally publish an artifact. `--allow-read` is repeatable. |
 | `visual-artifact validate [spec.json or -]` | Validate a spec without writing it. |
+| `visual-artifact trace inspect --project path --anchor file:start[-end]... [--allow-read dir]` | Extract ordered, deterministic source facts for execution-trace events. `--anchor` and `--allow-read` are repeatable. |
 | `visual-artifact contract` | Print the current artifact contract. |
 | `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer, live artifact JSON, and writable annotation API. Non-loopback binds require global `--allow-remote` or `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. |
 | `visual-artifact serve status [--host addr] [--port n]` | Check server health and whether it is tracked by local lifecycle state. |
@@ -106,7 +113,18 @@ Create-time `file-tree` sources are project-contained by default:
 visual-artifact create my-spec.json --allow-read ../approved-source
 ```
 
-Relative `src` paths must resolve inside the canonical project root. Absolute paths and outside-project reads require a matching canonical `--allow-read` root. Raw `..` segments and symlink escapes are rejected. `content` wins over `src`, and successful creation strips `src` after inlining.
+Relative `src` paths must resolve inside the canonical project root. Absolute paths and outside-project reads require a matching canonical `--allow-read` root. Raw `..` segments and symlink escapes are rejected. For `file-tree`, explicit `content` wins over `src`, and successful creation strips `src` after inlining.
+
+Execution traces use inspected spans:
+
+```bash
+visual-artifact --json trace inspect \
+  --project . \
+  --anchor src/load.ts:42 \
+  --anchor src/render.ts:18-22
+```
+
+The command preserves anchor order. Copy each resolved `.sources[].source` object unchanged into its event, then add narrative fields. Ambiguous spans return candidates instead of guessing; select a narrower span. `create` requires `source.src`, re-runs ast-grep, rejects stale or edited code identity, refreshes revision/worktree provenance, inlines the full source, and strips `src` before persistence.
 
 Publish after local write:
 

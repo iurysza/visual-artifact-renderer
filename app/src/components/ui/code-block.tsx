@@ -1,11 +1,17 @@
 "use client"
 
-import { useEffect, useId, useState, useSyncExternalStore } from "react"
+import { useEffect, useId, useState } from "react"
 import { Check, Copy } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  DARK_CODE_THEME,
+  getCodeHighlighter,
+  LIGHT_CODE_THEME,
+  normalizeCodeLanguage,
+  useIsDarkTheme,
+} from "@/lib/code-highlighting"
 import { cn } from "@/lib/utils"
-import type { Highlighter } from "shiki"
 
 export type CodeBlockProps = {
   code: string
@@ -13,46 +19,6 @@ export type CodeBlockProps = {
   title?: string
   caption?: string
   className?: string
-}
-
-const LIGHT_THEME = "github-light"
-const DARK_THEME = "github-dark"
-
-const COMMON_LANGUAGES = [
-  "bash",
-  "shell",
-  "typescript",
-  "tsx",
-  "javascript",
-  "jsx",
-  "python",
-  "yaml",
-  "yml",
-  "json",
-  "html",
-  "css",
-  "sql",
-  "markdown",
-  "md",
-  "rust",
-  "go",
-  "graphql",
-  "text",
-  "plaintext",
-]
-
-let highlighterPromise: Promise<Highlighter> | null = null
-
-function getHighlighter() {
-  if (!highlighterPromise) {
-    highlighterPromise = import("shiki").then(({ createHighlighter }) =>
-      createHighlighter({
-        themes: [LIGHT_THEME, DARK_THEME],
-        langs: COMMON_LANGUAGES,
-      })
-    )
-  }
-  return highlighterPromise
 }
 
 export function CodeBlock({
@@ -64,19 +30,19 @@ export function CodeBlock({
 }: CodeBlockProps) {
   const [html, setHtml] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const isDark = useIsDark()
+  const isDark = useIsDarkTheme()
   const [copied, setCopied] = useState(false)
   const titleId = useId()
 
   useEffect(() => {
     let cancelled = false
 
-    getHighlighter()
+    getCodeHighlighter()
       .then((highlighter) => {
-        const lang = normalizeLanguage(language, highlighter)
+        const lang = normalizeCodeLanguage(language, highlighter)
         const out = highlighter.codeToHtml(code, {
           lang,
-          theme: isDark ? DARK_THEME : LIGHT_THEME,
+          theme: isDark ? DARK_CODE_THEME : LIGHT_CODE_THEME,
         })
 
         if (!cancelled) {
@@ -173,29 +139,4 @@ export function CodeBlock({
       )}
     </figure>
   )
-}
-
-function useIsDark() {
-  return useSyncExternalStore(
-    (callback) => {
-      const observer = new MutationObserver(callback)
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["class"],
-      })
-      return () => observer.disconnect()
-    },
-    () => document.documentElement.classList.contains("dark"),
-    () => false
-  )
-}
-
-function normalizeLanguage(language: string, highlighter: Highlighter): string {
-  const normalized = language.toLowerCase()
-
-  if (highlighter.getLoadedLanguages().includes(normalized)) {
-    return normalized
-  }
-
-  return "text"
 }

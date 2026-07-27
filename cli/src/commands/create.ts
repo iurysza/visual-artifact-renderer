@@ -1,19 +1,19 @@
-import { isAbsolute, relative, resolve, sep } from "node:path"
-import { realpath, stat, writeFile } from "node:fs/promises"
+import { resolve } from "node:path"
+import { writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import {
-  MAX_AGGREGATE_FILE_SOURCE_BYTES,
-  MAX_FILE_SOURCE_BYTES,
   RAW_ARTIFACT_MAX_BYTES,
   preflightArtifactSpec,
 } from "@agents/visual-artifact-annotations/contract"
 
 import { artifactBaseUrl, ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { artifactJsonPath, assetsDirPath, bundleDirPath, publishJsonPath } from "../lib/paths.ts"
+import { createSourceReadContext, readSourceFile, type DiskSourceFileMeta, type SourceReadContext } from "../lib/source-files.ts"
 import { readServerState, serverStateMatchesConfig, serverStatePath } from "../lib/server-lifecycle.ts"
 import type { Logger, ResultData } from "../logger.ts"
 import { validateSpec, ValidationError } from "../validate.ts"
 import { validateMermaidNodes } from "../mermaid.ts"
+import { extractSourceFacts } from "../source-facts.ts"
 import { deriveProjectName, ensureDir, readStdinOrFile } from "../util.ts"
 import type { GlobalOpts } from "../types.ts"
 import { readCloudflareProfile } from "../publish/profile.ts"
@@ -103,11 +103,6 @@ async function ensureServer(log: Logger, config: ReturnType<typeof loadConfig>):
   log.warn(`Renderer did not become ready at ${url} within 3 seconds`)
 }
 
-interface DiskSourceFileMeta {
-  displayPath: string
-  bytes: number
-}
-
 interface DiskSourcesMeta {
   included: boolean
   count: number
@@ -115,129 +110,66 @@ interface DiskSourcesMeta {
   files: DiskSourceFileMeta[]
 }
 
-interface SourceReadContext {
-  projectRoot: string
-  allowRoots: string[]
-  log: Logger
-  verbose: boolean
-}
-
-interface SourceReadResult {
-  content: string
-  info: DiskSourceFileMeta & { canonicalPath: string }
-  newAggregateBytes: number
-}
-
-const SOURCE_LIMITS = {
-  perFile: MAX_FILE_SOURCE_BYTES,
-  aggregate: MAX_AGGREGATE_FILE_SOURCE_BYTES,
-}
-
-function hasDotDotSegment(p: string): boolean {
-  return p.split(/[/\\]+/).filter(Boolean).includes("..")
-}
-
-function isInside(child: string, parent: string): boolean {
-  const pathFromParent = relative(parent, child)
-  return (
-    pathFromParent === "" ||
-    (pathFromParent !== ".." && !pathFromParent.startsWith(`..${sep}`) && !isAbsolute(pathFromParent))
-  )
-}
-
-async function resolveSourcePath(
-  src: string,
-  projectRoot: string,
-  allowRoots: string[],
-): Promise<{ intendedRoot: string; canonicalPath: string }> {
-  if (hasDotDotSegment(src)) {
-    throw new ValidationError(`file-tree src contains a .. segment: ${src}`)
-  }
-
-  const isAbs = isAbsolute(src)
-  const candidate = isAbs ? resolve(src) : resolve(projectRoot, src)
-  let canonicalPath: string
-  try {
-    canonicalPath = await realpath(candidate)
-  } catch {
-    throw new ValidationError(`file-tree src could not be read: ${src}`)
-  }
-
-  // Absolute syntax is authority-bearing: it requires an explicit grant even
-  // when the canonical target happens to be inside the project.
-  const allowedRoots = isAbs ? allowRoots : [projectRoot]
-  const intendedRoot = allowedRoots
-    .filter((root) => isInside(canonicalPath, root))
-    .sort((a, b) => b.length - a.length)[0]
-  if (!intendedRoot) {
-    const reason = isAbs
-      ? "absolute file-tree src is outside authorized read roots"
-      : "relative file-tree src escapes project root"
-    throw new ValidationError(`${reason}: ${src}`)
-  }
-
-  return { intendedRoot, canonicalPath }
-}
-
-async function readSourceFile(
-  src: string,
-  context: SourceReadContext,
-  aggregateBytes: number,
-): Promise<SourceReadResult> {
-  const { projectRoot, allowRoots, log, verbose } = context
-  const { intendedRoot, canonicalPath } = await resolveSourcePath(src, projectRoot, allowRoots)
-
-  let content: string
-  try {
-    // Read the canonical target, not the original symlink-bearing path checked
-    // above. The bounded helper opens one regular-file handle.
-    content = await readStdinOrFile(canonicalPath, SOURCE_LIMITS.perFile)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    if (verbose) log.debug(`file-tree source read failed at ${canonicalPath}: ${message}`)
-    if (message.includes("larger than")) {
-      throw new ValidationError(`file-tree src exceeds ${SOURCE_LIMITS.perFile} bytes: ${src}`)
-    }
-    if (message.includes("not a regular file")) {
-      throw new ValidationError(`file-tree src is not a regular file: ${src}`)
-    }
-    throw new ValidationError(`file-tree src could not be read: ${src}`)
-  }
-  const bytes = Buffer.byteLength(content, "utf8")
-  if (aggregateBytes + bytes > SOURCE_LIMITS.aggregate) {
-    throw new ValidationError(
-      `file-tree src aggregate bytes would exceed ${SOURCE_LIMITS.aggregate}: ${src} (${bytes} bytes; already ${aggregateBytes})`,
-    )
-  }
-
-  if (verbose) {
-    log.debug(`file-tree source canonical: ${canonicalPath}`)
-  }
-
-  const displayPath = relative(intendedRoot, canonicalPath)
-
-  return {
-    content,
-    info: { displayPath: displayPath || src, canonicalPath, bytes },
-    newAggregateBytes: aggregateBytes + bytes,
-  }
-}
-
 /**
- * Walk a validated spec and expand file-tree `src` paths into inline `content`
- * by reading the referenced file. Explicit `content` wins; `src` is only
- * resolved when `content` is absent. Relative paths must canonicalize inside
- * the project root; absolute paths are denied unless they canonicalize inside
- * an explicit `--allow-read` root. Symlink escapes are rejected. After
- * resolution all create-time `src` fields are stripped from the spec so they
- * are never persisted or published.
+ * Walk a validated spec and expand supported `src` paths into inline `content`.
+ * File-tree items and execution-trace sources share containment rules. File-tree
+ * content may override src. Execution traces require src, re-extract ast-grep
+ * facts, reject conflicts, then persist verified content without src. Relative
+ * paths stay inside the project root; absolute paths require `--allow-read`.
  */
-async function resolveFileTreeSources(
+function firstDifference(expected: unknown, actual: unknown, path = "facts"): string | undefined {
+  if (Object.is(expected, actual)) return undefined
+  if (Array.isArray(expected) || Array.isArray(actual)) {
+    if (!Array.isArray(expected) || !Array.isArray(actual) || expected.length !== actual.length) return path
+    for (let index = 0; index < expected.length; index++) {
+      const difference = firstDifference(expected[index], actual[index], `${path}[${index}]`)
+      if (difference) return difference
+    }
+    return undefined
+  }
+  if (expected && actual && typeof expected === "object" && typeof actual === "object") {
+    const expectedObject = expected as Record<string, unknown>
+    const actualObject = actual as Record<string, unknown>
+    const keys = new Set([...Object.keys(expectedObject), ...Object.keys(actualObject)])
+    for (const key of [...keys].sort()) {
+      const difference = firstDifference(expectedObject[key], actualObject[key], `${path}.${key}`)
+      if (difference) return difference
+    }
+    return undefined
+  }
+  return path
+}
+
+async function resolveDiskSources(
   spec: unknown,
   context: SourceReadContext,
 ): Promise<DiskSourcesMeta> {
   const files: (DiskSourceFileMeta & { canonicalPath: string })[] = []
   let aggregateBytes = 0
+
+  const inlineSource = async (
+    source: Record<string, unknown>,
+    label: string,
+  ): Promise<void> => {
+    if (typeof source.src !== "string") return
+
+    if (source.content === undefined) {
+      const { content, info, newAggregateBytes } = await readSourceFile(
+        source.src,
+        context,
+        aggregateBytes,
+      )
+      source.content = content
+      aggregateBytes = newAggregateBytes
+      files.push(info)
+      if (context.verbose) {
+        context.log.debug(
+          `${label} source: ${source.src} -> ${info.displayPath} (${info.bytes} bytes)`,
+        )
+      }
+    }
+    delete source.src
+  }
 
   const visit = async (node: unknown): Promise<void> => {
     if (!node || typeof node !== "object") return
@@ -251,29 +183,82 @@ async function resolveFileTreeSources(
           if (!item || typeof item !== "object") continue
           const itemObj = item as Record<string, unknown>
 
-          if (typeof itemObj.src === "string") {
-            if (itemObj.content === undefined) {
-              const { content, info, newAggregateBytes } = await readSourceFile(
-                itemObj.src,
-                context,
-                aggregateBytes,
-              )
-              itemObj.content = content
-              aggregateBytes = newAggregateBytes
-              files.push(info)
-              if (context.verbose) {
-                context.log.debug(
-                  `file-tree source: ${itemObj.src} -> ${info.displayPath} (${info.bytes} bytes)`,
-                )
-              }
-            }
-            delete itemObj.src
-          }
+          await inlineSource(itemObj, "file-tree")
 
           if (Array.isArray(itemObj.children)) await walkItems(itemObj.children)
         }
       }
       await walkItems(propsObj.items)
+    }
+
+    if (obj.type === "execution-trace" && obj.props && typeof obj.props === "object") {
+      const propsObj = obj.props as Record<string, unknown>
+      if (Array.isArray(propsObj.events)) {
+        for (const event of propsObj.events) {
+          if (!event || typeof event !== "object") continue
+          const eventObject = event as Record<string, unknown>
+          const source = eventObject.source
+          if (!source || typeof source !== "object") continue
+          const sourceObject = source as Record<string, unknown>
+          const eventId = typeof eventObject.id === "string" ? eventObject.id : "unknown"
+          if (typeof sourceObject.src !== "string") {
+            throw new ValidationError(
+              `execution trace event ${eventId} requires source.src so create can verify repository facts`,
+            )
+          }
+
+          const suppliedFacts = sourceObject.facts as Record<string, unknown> & {
+            span: { startLine: number; endLine: number }
+          }
+          const { content, info, newAggregateBytes } = await readSourceFile(
+            sourceObject.src,
+            context,
+            aggregateBytes,
+          )
+          const extracted = extractSourceFacts({
+            canonicalPath: info.canonicalPath,
+            displayPath: info.displayPath,
+            content,
+            projectRoot: context.projectRoot,
+            startLine: suppliedFacts.span.startLine,
+            endLine: suppliedFacts.span.endLine,
+          })
+          if (extracted.resolution !== "resolved") {
+            throw new ValidationError(
+              `execution trace event ${eventId} source span is ambiguous; choose a span with one focus`,
+            )
+          }
+          const identityKeys = [
+            "span",
+            "excerpt",
+            "sourceHash",
+            "language",
+            "syntaxKind",
+            "focus",
+            "scope",
+            "resolution",
+          ] as const
+          const difference = identityKeys
+            .map((key) => firstDifference(suppliedFacts[key], extracted.facts[key], `facts.${key}`))
+            .find(Boolean)
+          if (difference) {
+            throw new ValidationError(
+              `execution trace event ${eventId} source facts conflict at ${difference}; rerun trace inspect`,
+            )
+          }
+
+          sourceObject.content = content
+          sourceObject.facts = extracted.facts
+          delete sourceObject.src
+          aggregateBytes = newAggregateBytes
+          files.push(info)
+          if (context.verbose) {
+            context.log.debug(
+              `execution-trace source: ${info.displayPath} (${info.bytes} bytes)`,
+            )
+          }
+        }
+      }
     }
 
     if (Array.isArray(obj.children)) {
@@ -361,51 +346,16 @@ export async function create(
     const totalNodes = preflight.totalNodes
     const datasetCount = spec.data ? Object.keys(spec.data).length : 0
 
-    // Expand file-tree `src` paths into inline `content` before saving.
+    // Expand supported `src` paths into inline `content` before saving.
     const projectPath = config.projectPath ?? resolve(process.cwd())
-    let projectRoot: string
-    try {
-      projectRoot = await realpath(projectPath)
-    } catch {
-      throw new ValidationError(`Project path could not be resolved: ${projectPath}`)
-    }
-    const projectStat = await stat(projectRoot).catch(() => undefined)
-    if (!projectStat?.isDirectory()) {
-      throw new ValidationError(`Project path is not a directory: ${projectRoot}`)
-    }
-
-    const allowRoots: string[] = []
-    for (const raw of opts.allowRead ?? []) {
-      if (hasDotDotSegment(raw)) {
-        throw new ValidationError(`--allow-read path contains a .. segment: ${raw}`)
-      }
-      const resolved = resolve(raw)
-      let real: string
-      try {
-        real = await realpath(resolved)
-      } catch {
-        throw new ValidationError(`--allow-read path could not be resolved: ${raw}`)
-      }
-      const rootStat = await stat(real).catch(() => undefined)
-      if (!rootStat?.isDirectory()) {
-        throw new ValidationError(`--allow-read path is not a directory: ${raw}`)
-      }
-      allowRoots.push(real)
-    }
-
-    if (opts.verbose) {
-      log.debug(`project root (canonical): ${projectRoot}`)
-      if (allowRoots.length > 0) {
-        log.debug(`authorized read roots:${allowRoots.map((r) => `\n  - ${r}`).join("")}`)
-      }
-    }
-
-    const diskSources = await resolveFileTreeSources(specJson, {
-      projectRoot,
-      allowRoots,
+    const sourceContext = await createSourceReadContext(
+      projectPath,
+      opts.allowRead ?? [],
       log,
-      verbose: opts.verbose,
-    })
+      opts.verbose,
+    )
+    const { projectRoot } = sourceContext
+    const diskSources = await resolveDiskSources(specJson, sourceContext)
     const safety = { diskSources }
 
     // Final serialized artifact must fit inside the advertised raw limit, and
@@ -413,7 +363,7 @@ export async function create(
     const serialized = `${JSON.stringify(specJson as Record<string, unknown>, null, 2)}\n`
     if (Buffer.byteLength(serialized, "utf8") > RAW_ARTIFACT_MAX_BYTES) {
       throw new ValidationError(
-        `Final artifact exceeds ${RAW_ARTIFACT_MAX_BYTES} bytes after inlining file-tree sources`,
+        `Final artifact exceeds ${RAW_ARTIFACT_MAX_BYTES} bytes after inlining disk sources`,
       )
     }
     const finalSpec = validateSpec(specJson)

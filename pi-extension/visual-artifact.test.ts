@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 
-import visualArtifactExtension, { artifactSpecFromParams } from "./visual-artifact"
+import visualArtifactExtension, { artifactSpecFromParams, visualDiffRequest } from "./visual-artifact"
 
 describe("artifactSpecFromParams", () => {
   test("keeps artifact fields and strips routing-only projectPath", () => {
@@ -21,6 +21,19 @@ describe("artifactSpecFromParams", () => {
       topics: ["runtime", "testing"],
       nodes: [{ type: "text", props: { text: "Hello" } }],
     })
+  })
+})
+
+describe("visualDiffRequest", () => {
+  test("requests an evidence-honest static execution trace when useful", () => {
+    const request = visualDiffRequest("HEAD", "/tmp/repo")
+
+    expect(request).toContain("Scope: HEAD")
+    expect(request).toContain("Working directory: /tmp/repo")
+    expect(request).toContain("relevant callers, entrypoints, dependencies, and tests")
+    expect(request).toContain("derived from source without running the program")
+    expect(request).toContain("inferred/static-analysis provenance")
+    expect(request).toContain("Omit the trace when it would be decorative")
   })
 })
 

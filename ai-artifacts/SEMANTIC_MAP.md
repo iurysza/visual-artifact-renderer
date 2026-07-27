@@ -16,6 +16,9 @@
 | Adapter | Trusted React renderer for one node type. | `app/src/components/adapters/*` |
 | Registry | Node dispatch table. | `app/src/components/component-registry.tsx` |
 | Contract | Exported JSON handshake used by agents and CLI validation. | `cli/assets/contract.json` (generated build artifact) |
+| Execution trace | Ordered call stack selected by the agent, with code-facing identity derived from verified source spans and narrative kept separate. | `ExecutionTraceEvent` in `shared/src/artifact-schema.ts` |
+| Trace source facts | ast-grep-derived span, excerpt, hash, syntax kind, focused expression/symbol, and enclosing scope. | `ExecutionTraceSourceFacts` in `shared/src/artifact-schema.ts` |
+| Trace type definition | Source-attributed custom type declaration matched to `staticType` names for transient hover, keyboard activation, and touch inspection. | `ExecutionTraceTypeDefinition` in `shared/src/artifact-schema.ts` |
 | Project | URL/storage namespace derived from caller git root or directory. | `cli/src/util.ts` |
 | Runtime data root | Dedicated installed storage for artifact bundles and renderer files. | `~/.local/share/visual-artifact/` |
 | Renderer | Next.js app that renders saved specs. | `app/` |
@@ -63,8 +66,10 @@ Agent JSON
   → create_visual_artifact
   → visual-artifact create - --project <cwd> --json
   → validate with the shared executable schema/resource preflight
-  → resolve contained or explicitly granted file-tree sources
-  → write <artifacts-dir>/<project>/<slug>/artifact.json
+  → resolve contained or explicitly granted disk sources
+  → re-extract execution-trace source facts with ast-grep
+  → reject ambiguous, stale, or edited code identity
+  → inline verified source and write <artifacts-dir>/<project>/<slug>/artifact.json
   → return /<project>/<slug>/
 ```
 
@@ -113,8 +118,8 @@ Browser mutation
 
 | Boundary | Rule |
 |---|---|
-| Agent → CLI | Agent supplies JSON only. |
-| CLI → disk | Validate before writing. |
+| Agent → CLI | Agent supplies JSON only; execution-trace code identity must come unchanged from `trace inspect`. |
+| CLI → disk | Validate, re-extract trace facts, then write. |
 | Disk → renderer | Zod parse before render. |
 | Renderer → UI | Only registered adapters render nodes. |
 | Images/buttons | No `file://`; use relative sidecar assets or HTTPS URLs. |

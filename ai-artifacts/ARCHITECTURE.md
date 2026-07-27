@@ -65,6 +65,9 @@ Source development and installed binaries share `~/.agents/skills/visual-artifac
 
 The `@agents/visual-artifact-annotations` package owns both the executable artifact schema/resource preflight and annotation data/request-policy schemas. The app compatibility layer and CLI call the same artifact parser; app, CLI, and Worker share annotation validation. It defines:
 
+- `ExecutionTraceEvent` — ordered call-stack steps whose narrative is agent-authored but whose code identity comes from verified source facts.
+- `ExecutionTraceSourceFacts` — ast-grep-derived span, excerpt, hash, syntax kind, focused expression/symbol, and enclosing scope. `trace inspect` emits them; `create` re-extracts and rejects conflicts.
+- `ExecutionTraceTypeDefinition` — unique, source-attributed custom declarations used for interactive static-type inspection.
 - `AnnotationAuthor` — name and email, with a local anonymous fallback.
 - `AnnotationAnchor` — `nodeId`, `nodePath`, `nodeType`, optional `textSnippet`, and optional `x`/`y` coordinates.
 - `AnnotationThread` — id, anchor, status (`open` | `resolved`), timestamps, and messages.
@@ -104,8 +107,9 @@ Agent builds spec
   → CLI create reads JSON from stdin
   → CLI validates with the shared executable schema
   → CLI derives project from git root / directory
-  → CLI resolves project-contained or explicitly granted file-tree sources
-  → CLI writes <artifacts-dir>/<project>/<slug>/artifact.json
+  → CLI resolves project-contained or explicitly granted disk sources
+  → CLI re-extracts execution-trace source facts with ast-grep and rejects stale/edited identity
+  → CLI inlines verified source and writes <artifacts-dir>/<project>/<slug>/artifact.json
   → CLI starts server if needed
   → extension returns URL
 ```
@@ -201,7 +205,7 @@ Agents lose arbitrary expressiveness, but gain stable rendering, smaller prompts
 
 ### Shared executable contract
 
-The CLI and renderer use the same Zod artifact schema from `shared/`; the app re-export preserves import compatibility. The tracked exported JSON remains the agent/tooling handshake and compiled CLI reference, while `verify.sh` rejects generated drift.
+The CLI and renderer use the same Zod artifact schema from `shared/`; the app re-export preserves import compatibility. The tracked exported JSON remains the agent/tooling handshake and compiled CLI reference, while `verify.sh` rejects generated drift. Execution traces add a stricter boundary: the agent selects ordered spans, ast-grep derives code identity, and create-time re-extraction prevents a model-authored function name from being persisted as verified source fact.
 
 ### Static app, live data, and annotations
 

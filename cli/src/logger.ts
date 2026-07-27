@@ -137,6 +137,19 @@ export function formatPlainRecords(data: ResultData): string[] {
       const { slug, totalNodes, datasetCount } = rest
       return [`VALID\t${sanitizePlainField(slug)}\t${sanitizePlainField(totalNodes)}\t${sanitizePlainField(datasetCount)}`]
     }
+    case "trace inspect": {
+      const sources = Array.isArray(rest.sources) ? rest.sources : []
+      return sources.map((source: {
+        resolution?: unknown
+        source?: { facts?: { span?: { file?: unknown; startLine?: unknown; endLine?: unknown }; focus?: { symbol?: unknown; text?: unknown } } }
+        span?: { file?: unknown; startLine?: unknown; endLine?: unknown }
+      }) => {
+        const facts = source.source?.facts
+        const span = facts?.span ?? source.span
+        const focus = facts?.focus?.symbol ?? facts?.focus?.text ?? "--"
+        return `${source.resolution === "resolved" ? "RESOLVED" : "AMBIGUOUS"}\t${sanitizePlainField(span?.file)}\t${sanitizePlainField(span?.startLine)}\t${sanitizePlainField(span?.endLine)}\t${sanitizePlainField(focus)}`
+      })
+    }
     case "list": {
       const lines: string[] = []
       if (Array.isArray(rest.projects)) {
@@ -230,6 +243,24 @@ export function formatHumanResult(data: ResultData): string {
       return `Visualizer server running at ${rest.url}`
     case "validate":
       return `Valid artifact: ${rest.slug}`
+    case "trace inspect": {
+      const sources = Array.isArray(rest.sources) ? rest.sources : []
+      return sources.map((source: {
+        resolution?: string
+        source?: { facts?: { span?: { file?: string; startLine?: number; endLine?: number }; focus?: { symbol?: string; text?: string }; scope?: { symbol?: string } } }
+        span?: { file?: string; startLine?: number; endLine?: number }
+        candidates?: unknown[]
+      }) => {
+        const facts = source.source?.facts
+        const span = facts?.span ?? source.span
+        const location = `${span?.file ?? "--"}:${span?.startLine ?? "--"}${span?.endLine && span.endLine !== span.startLine ? `-${span.endLine}` : ""}`
+        if (source.resolution !== "resolved") {
+          return `AMBIGUOUS  ${location} — ${source.candidates?.length ?? 0} candidates`
+        }
+        const focus = facts?.focus?.symbol ?? facts?.focus?.text ?? "--"
+        return `RESOLVED   ${location} — ${focus}${facts?.scope?.symbol ? ` inside ${facts.scope.symbol}` : ""}`
+      }).join("\n")
+    }
     case "list": {
       const lines: string[] = []
       if (Array.isArray(rest.projects)) {

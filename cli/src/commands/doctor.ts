@@ -5,6 +5,7 @@ import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { loadContract } from "../contract.ts"
 import { readServerState, serverStateMatchesConfig, serverStatePath } from "../lib/server-lifecycle.ts"
 import type { Logger, ResultData } from "../logger.ts"
+import { astGrepVersion, astGrepVersionIsSupported } from "../source-facts.ts"
 import { dirExists, fileExists } from "../util.ts"
 
 export async function doctor(log: Logger): Promise<number> {
@@ -70,6 +71,15 @@ export async function doctor(log: Logger): Promise<number> {
     results.push({ check: "pnpm", ok: false, message: "pnpm not found in PATH" })
     fail = true
   }
+
+  const parserVersion = astGrepVersion()
+  const parserOk = astGrepVersionIsSupported(parserVersion)
+  results.push({
+    check: "ast-grep",
+    ok: parserOk,
+    message: parserVersion ? `version ${parserVersion}` : "ast-grep 0.43+ not found in PATH",
+  })
+  if (!parserOk) fail = true
 
   const binaryPath = resolve(homedir(), ".local", "bin", "visual-artifact")
   const binaryOk = await fileExists(binaryPath)

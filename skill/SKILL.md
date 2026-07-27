@@ -154,6 +154,7 @@ Prefer semantic nodes over generic containers:
 | Evidence rows | `data-table` or `comparison-table` |
 | Status/risk board | `status-grid` |
 | Architecture/data flow | `mermaid` or `flow` |
+| Planning/reviewing API shape: interfaces, types, boundaries | `execution-trace` |
 | Custom interactive diagram | `svg-diagram` |
 | Commands/config | `code-block` |
 | File structure | `file-tree` |
@@ -169,6 +170,7 @@ Full reference: `ai-artifacts/docs/nodes.md` in the source repo, or `visual-arti
 - Use tables for structured facts.
 - Do not pad with node counts or implementation stats unless they answer the user's question.
 - Avoid card soup.
+- For `execution-trace`, first choose the ordered source spans, then run `visual-artifact --json trace inspect --project <root> --anchor <file:start[-end]> ...`. Copy each resolved `.sources[].source` into its event unchanged; `create` re-extracts and rejects stale or edited code identity. The call-stack primary label comes from verified `source.facts.focus`, while `event.label` remains narrative. Keep static/runtime types explicit, add `typeDefinitions` for important custom `staticType` names, and add minimal `event.impacts` only when inspected evidence establishes an observable effect or possible error. Omit uncertain facts rather than speculate. For code-change plans and reviews, prefer this node when the main concern is API shape—interfaces, types, and boundaries—and follow the code-review reference.
 - Keep diagrams under control; split if they stop scanning.
 - Use `accordion` only for secondary detail.
 
@@ -182,6 +184,7 @@ building:
 | Most artifacts (galleries, explainers, dashboards, quick diagrams) | [`references/direct-artifact/_index.md`](./references/direct-artifact/_index.md) |
 | Full codebase architecture overview | [`references/architecture-overview/_index.md`](./references/architecture-overview/_index.md) |
 | Dashboards & metrics | [`references/content-types/dashboards.md`](./references/content-types/dashboards.md) |
+| Code reviews and `/visual-diff` | [`references/content-types/code-reviews.md`](./references/content-types/code-reviews.md) |
 | Architecture diagrams | [`references/content-types/architecture-diagrams.md`](./references/content-types/architecture-diagrams.md) |
 | Timelines & roadmaps | [`references/content-types/timelines.md`](./references/content-types/timelines.md) |
 | Data organization (tables, comparisons) | [`references/content-types/data-organization.md`](./references/content-types/data-organization.md) |

@@ -56,6 +56,7 @@ Never use `file://` URLs.
 
 Pick a shape before building the spec:
 
+- [Code reviews and static execution traces](../content-types/code-reviews.md)
 - [Architecture diagrams](../content-types/architecture-diagrams.md)
 - [Data organization](../content-types/data-organization.md)
 - [Timelines & roadmaps](../content-types/timelines.md)

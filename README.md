@@ -81,6 +81,12 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 
 ## Quick start
 
+Source-backed execution traces require `ast-grep` 0.43 or newer:
+
+```bash
+npm install --global @ast-grep/cli@0.43.0
+```
+
 ### Most agents (default)
 
 Install the CLI, renderer, and agent skill:
@@ -177,6 +183,7 @@ Common commands:
 ```bash
 visual-artifact contract
 visual-artifact validate my-spec.json
+visual-artifact --json trace inspect --project . --anchor src/example.ts:42
 visual-artifact create my-spec.json
 visual-artifact serve --no-open
 visual-artifact doctor
