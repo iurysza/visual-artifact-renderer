@@ -30,6 +30,10 @@ Visualizer is a **JSON-to-UI runtime**: agents emit a constrained artifact spec,
 6. **Types are documentation.** Push semantic meaning into names. Use Zod to make illegal specs unrepresentable.
 7. **OpenSpec changes are local-only.** Keep `openspec/changes/` planning packages out of git. They can exist locally for discovery/implementation, but PRs must not add change specs or task markdown.
 
+## Git commits
+
+Never include Cursor (or any Cursor agent/bot) as git author, committer, or in a Co-authored-by / similar trailer.
+
 ## Before committing renderer/schema changes
 
 ```bash
