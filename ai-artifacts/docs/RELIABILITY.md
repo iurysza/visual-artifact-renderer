@@ -12,7 +12,7 @@
 
 ## Core checks
 
-The repository-wide executable gate uses exact Node 22.22.3, Bun 1.1.34, and pnpm 11.5.2 pins:
+The repository-wide executable gate uses exact Node 22.22.3, Bun 1.4.2, and pnpm 11.5.2 pins:
 
 ```bash
 ./scripts/verify.sh

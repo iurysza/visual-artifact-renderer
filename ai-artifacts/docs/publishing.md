@@ -116,7 +116,7 @@ Setup:
 3. In GitHub, open **Settings** → **Environments** → **production**.
 4. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
-After merging, run **Actions** → **Deploy Cloudflare Worker**. CI uses Node 22.22.3, Bun 1.1.34, pnpm 11.5.2, frozen installs, Worker tests, the cloud renderer build, and a deployed-root smoke request.
+After merging, run **Actions** → **Deploy Cloudflare Worker**. CI uses Node 22.22.3, Bun 1.4.2, pnpm 11.5.2, frozen installs, Worker tests, the cloud renderer build, and a deployed-root smoke request.
 
 ## Hosted comments
 

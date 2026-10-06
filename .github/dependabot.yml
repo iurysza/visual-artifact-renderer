@@ -1,0 +1,60 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      npm-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: bun
+    directory: /cli
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      bun-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: bun
+    directory: /shared
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      bun-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: bun
+    directory: /worker
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      bun-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      github-actions-patch-and-minor:
+        update-types:
+          - minor
+          - patch
