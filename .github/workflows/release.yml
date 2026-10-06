@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
 
