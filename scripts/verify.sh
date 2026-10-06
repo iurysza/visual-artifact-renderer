@@ -9,7 +9,7 @@ ROOT="$(pwd)"
 CLI_BIN="$ROOT/cli/dist/visual-artifact"
 
 NODE_VERSION="22.22.3"
-BUN_VERSION="1.1.34"
+BUN_VERSION="1.4.2"
 PNPM_VERSION="11.5.2"
 AST_GREP_MIN_VERSION="0.43.0"
 

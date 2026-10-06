@@ -32,7 +32,7 @@ release-please needs a PAT because the default `GITHUB_TOKEN` cannot trigger dow
    - `visual-artifact-linux-aarch64.tar.gz`
    - `visual-artifact-linux-x86_64.tar.gz`
 
-   Verification uses Node 22.22.3, Bun 1.1.34, pnpm 11.5.2, frozen lockfiles, native CLI smoke on Linux x64 and macOS x64, the complete app suite, contract drift checks, artifact verification, health smoke, and Worker tests.
+   Verification uses Node 22.22.3, Bun 1.4.2, pnpm 11.5.2, frozen lockfiles, native CLI smoke on Linux x64 and macOS x64, the complete app suite, contract drift checks, artifact verification, health smoke, and Worker tests.
 
 5. **Cloudflare deploys after the same gate.**
    The release-triggered deploy workflow verifies again before building and deploying the Worker. Manual deployment uses the selected `github.ref` when no release tag exists.
