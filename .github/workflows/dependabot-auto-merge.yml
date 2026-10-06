@@ -1,0 +1,102 @@
+name: Dependabot auto-merge
+
+# Dependabot-triggered pull_request workflows get a read-only token, so this
+# workflow uses pull_request_target and never checks out the pull request.
+# main has no required status checks, so `gh pr merge --auto` would merge
+# before CI finishes. Squash-merge only after Verify succeeds on this commit.
+# Semver-major updates stay open for a human.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  checks: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: Auto-merge
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Squash-merge after Verify succeeds
+        if: steps.metadata.outputs.update-type != '' && steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: |
+          set -euo pipefail
+
+          echo "Update type: ${UPDATE_TYPE}"
+          echo "Waiting for Verify on ${HEAD_SHA}"
+
+          for attempt in $(seq 1 40); do
+            pr_view=$(gh pr view "$PR_URL" --json headRefOid,state --jq '[.headRefOid, .state] | @tsv')
+            head_now=${pr_view%%$'\t'*}
+            state_now=${pr_view#*$'\t'}
+            if [ "$state_now" != "OPEN" ]; then
+              echo "Pull request is ${state_now}; nothing to merge."
+              exit 0
+            fi
+            if [ "$head_now" != "$HEAD_SHA" ]; then
+              echo "Head moved to ${head_now}; a newer run will merge."
+              exit 0
+            fi
+
+            conclusion=$(
+              gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs?per_page=100" --jq '
+                [.check_runs[]
+                  | select(.name == "Verify" and .app.slug == "github-actions")]
+                | sort_by(.started_at // "9999")
+                | if length == 0 then "missing"
+                  else (.[-1].conclusion | if . == null or . == "" then "pending" else . end)
+                  end
+              '
+            )
+            echo "Verify: ${conclusion} (attempt ${attempt})"
+
+            case "$conclusion" in
+              success)
+                if gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"; then
+                  exit 0
+                fi
+                pr_view=$(gh pr view "$PR_URL" --json headRefOid,state --jq '[.headRefOid, .state] | @tsv')
+                head_now=${pr_view%%$'\t'*}
+                state_now=${pr_view#*$'\t'}
+                if [ "$state_now" != "OPEN" ] || [ "$head_now" != "$HEAD_SHA" ]; then
+                  echo "Pull request is ${state_now} at ${head_now}; nothing to merge."
+                  exit 0
+                fi
+                exit 1
+                ;;
+              missing|pending)
+                ;;
+              *)
+                echo "Verify did not pass (${conclusion}); leaving the pull request open."
+                exit 0
+                ;;
+            esac
+
+            sleep 30
+          done
+
+          echo "Timed out waiting for Verify."
+          exit 1
