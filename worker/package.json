@@ -14,7 +14,7 @@
     "@agents/visual-artifact-annotations": "file:../shared"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240620.0",
+    "@cloudflare/workers-types": "^5.20261003.1",
     "bun-types": "latest",
     "typescript": "^5.6.3",
     "wrangler": "^4.147.0"
