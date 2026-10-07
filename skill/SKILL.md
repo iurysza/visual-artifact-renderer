@@ -155,7 +155,14 @@ Prefer semantic nodes over generic containers:
 | Evidence rows | `data-table` or `comparison-table` |
 | Status/risk board | `status-grid` |
 | Architecture/data flow | `mermaid` or `flow` |
-| Planning/reviewing API shape: interfaces, types, boundaries | `execution-trace` |
+| Verified API boundaries and types | `execution-trace` |
+| Plan sketch: what calls what and what changes | `call-stack` |
+| Implementation plan or RFC | `claim-tree` of `claim`s, with `decision`s |
+| Lifecycle or UI states | `state-machine` |
+| Messages a plan changes | `sequence-diagram` |
+| Components with proposed changes | `box-diagram` |
+| What the user will see | `mockup` + `wireframe` |
+| Change size / why we are doing this | `change-stats`, `quotes` |
 | Custom interactive diagram | `svg-diagram` |
 | Commands/config | `code-block` |
 | File structure | `file-tree` |
@@ -173,6 +180,13 @@ Full reference: `ai-artifacts/docs/nodes.md` in the source repo, or `visual-arti
 - Avoid card soup.
 - For `execution-trace`, first choose the ordered source spans, then run `visual-artifact --json trace inspect --project <root> --anchor <file:start[-end]> ...`. Copy each resolved `.sources[].source` into its event unchanged; `create` re-extracts and rejects stale or edited code identity. The call-stack primary label comes from verified `source.facts.focus`, while `event.label` remains narrative. Keep static/runtime types explicit, add `typeDefinitions` for important custom `staticType` names, and add minimal `event.impacts` only when inspected evidence establishes an observable effect or possible error. Omit uncertain facts rather than speculate. For code-change plans and reviews, prefer this node when the main concern is API shape—interfaces, types, and boundaries—and follow the code-review reference.
 - Keep diagrams under control; split if they stop scanning.
+
+### Plans
+
+- Use a `claim-tree` as the page structure. Each `claim` says one thing.
+- One exhibit per claim (call stack, state machine, sequence, box diagram, mockup or code). A second exhibit means a second claim.
+- Put a `decision` after the exhibit and before child claims, on the claim it changes. Ask 2 to 5 per plan, and mark the option you would pick `suggested`.
+- Keep captions to one sentence. Read [`references/content-types/plans.md`](./references/content-types/plans.md) first.
 - Use `accordion` only for secondary detail.
 
 ## References
@@ -185,6 +199,7 @@ building:
 | Most artifacts (galleries, explainers, dashboards, quick diagrams) | [`references/direct-artifact/_index.md`](./references/direct-artifact/_index.md) |
 | Full codebase architecture overview | [`references/architecture-overview/_index.md`](./references/architecture-overview/_index.md) |
 | Dashboards & metrics | [`references/content-types/dashboards.md`](./references/content-types/dashboards.md) |
+| Implementation plans and RFCs | [`references/content-types/plans.md`](./references/content-types/plans.md) |
 | Code reviews and `/visual-diff` | [`references/content-types/code-reviews.md`](./references/content-types/code-reviews.md) |
 | Architecture diagrams | [`references/content-types/architecture-diagrams.md`](./references/content-types/architecture-diagrams.md) |
 | Timelines & roadmaps | [`references/content-types/timelines.md`](./references/content-types/timelines.md) |

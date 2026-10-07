@@ -73,6 +73,22 @@ pnpm visual:qa
 
 Use after adapter, layout, theme, or typography changes. It captures light/dark/mobile screenshots and audits layout issues.
 
+### Free-port QA recipe
+
+`pnpm dev` proxies artifact JSON to `:9998`, so QA against repo artifacts on other ports should use the CLI static server. Build first, then:
+
+```bash
+# terminal A: static app + repo artifacts on a free port
+cd cli && bun run src/main.ts serve --port 9412 --out-dir ../app/out --artifacts-dir ../artifacts --no-open
+
+# terminal B: Chrome debug port must also be free
+cd app && VISUAL_QA_PORT=9413 pnpm visual:qa http://127.0.0.1:9412/visualizer/call-stack-excerpts/ ../ai-artifacts/visual-qa/thariq-port
+
+cd cli && bun run src/main.ts serve stop --port 9412
+```
+
+Open a screenshot before trusting `offenders: []`: an "Artifact not found" page also has no overflow. Delete any `annotations.json` QA leaves in the artifact bundle.
+
 ## Mermaid checks
 
 ```bash

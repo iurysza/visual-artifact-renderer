@@ -49,12 +49,15 @@ export function flattenEmptyDirectories(
       if (onlyChildIsDirectory) {
         // Flatten: keep the parent path and combine the name with the child chain.
         const flattened = flattenEmptyDirectories([onlyChild], currentPath, depth)
-        for (const child of flattened) {
-          result.push({
-            ...child,
-            flattenedName: item.name + "/" + (child.flattenedName ?? child.name),
-          })
-        }
+        // Only the head row (the collapsed directory chain) gets the prefix;
+        // its descendants keep their own names.
+        flattened.forEach((child, index) => {
+          result.push(
+            index === 0
+              ? { ...child, flattenedName: item.name + "/" + (child.flattenedName ?? child.name) }
+              : child,
+          )
+        })
         continue
       }
     }

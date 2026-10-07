@@ -1,0 +1,19 @@
+Visual Artifact Renderer
+Copyright Iury Souza
+
+Plan nodes (claim-tree, claim, decision, call-stack, state-machine,
+sequence-diagram, box-diagram, mockup, wireframe, change-stats, quotes) and the
+code-block, file-tree and alert improvements port ideas and the documented
+block grammar from the html-plan skill by Thariq Shihipar:
+
+  https://github.com/anthropics/claude-plugins-community/tree/main/html-plan
+  commit f60f0454df3045f724c43c6346ec80bdcc3472b2
+
+The call-stack idea is credited to @dillon_mulroy.
+
+Only ideas and grammar were ported. No html-plan JavaScript or CSS was copied;
+parsers, layout and rendering are original code in this repository.
+
+Licence note: the claude-plugins-community repository is Apache-2.0, while the
+html-plan plugin.json declares MIT. Because no code was copied, this note is
+given as attribution under either licence.

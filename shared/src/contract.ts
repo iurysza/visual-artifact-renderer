@@ -67,6 +67,21 @@ export {
   type VisualArtifactSpec,
 } from "./artifact-schema.js"
 
+export {
+  checkGrid,
+  parseGridRows,
+  parseMarkPrefix,
+  type GridCells,
+  type MarkPrefix,
+  type TerseError,
+} from "./terse/common.js"
+export * from "./plan-primitives.js"
+export * from "./plan-schemas.js"
+export * from "./terse/call-stack.js"
+export * from "./terse/sequence.js"
+export * from "./terse/edges.js"
+export * from "./terse/machine.js"
+
 export const ARTIFACT_SPEC_CONSTRAINTS = {
   slug: {
     type: "string",
@@ -150,6 +165,17 @@ export const ARTIFACT_NODE_TYPES = [
   "tabs",
   "accordion",
   "prose",
+  "claim-tree",
+  "claim",
+  "call-stack",
+  "state-machine",
+  "sequence-diagram",
+  "box-diagram",
+  "mockup",
+  "wireframe",
+  "decision",
+  "change-stats",
+  "quotes",
 ] as const satisfies readonly string[]
 
 export type ArtifactNodeType = (typeof ARTIFACT_NODE_TYPES)[number]
@@ -233,9 +259,9 @@ export const artifactManifest = {
   "alert": {
     type: "alert",
     description: "An alert message to call out important information.",
-    props: { title: "string", description: "string?", variant: '"default" | "destructive"?' },
+    props: { title: "string", description: "string?", variant: '"default" | "destructive"?', tone: '"info" | "warn" | "risk" | "ok" | "idea"? — callout tone; wins over variant (destructive = risk)' },
     children: false,
-    example: { type: "alert", props: { title: "Heads up", description: "This is important." } },
+    example: { type: "alert", props: { title: "No secret-file filter yet", description: "The sandbox stops path escapes, not reads of .env inside the root.", tone: "risk" } },
   },
   "definition-list": {
     type: "definition-list",
@@ -302,7 +328,7 @@ export const artifactManifest = {
   "file-tree": {
     type: "file-tree",
     description: "A collapsible file explorer tree. Defaults to the enhanced look: empty dirs are flattened, file-type icons (iconSet=standard), default density. Add gitStatus for status badges (rows auto-align), searchable for a filter box. File items may carry `content` + `language` (tapping renders a code-block below the tree) or `src` (a repo-relative or absolute path that `visual-artifact create` reads and inlines into `content` at save time).",
-    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[], content?: string, language?: string, src?: string }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"?', iconSet: '"minimal" | "standard" | "complete"?', defaultExpanded: "boolean?" },
+    props: { items: "{ name: string, type?: \"file\" | \"directory\", children?: file-tree[], content?: string, language?: string, src?: string }[]", flattenEmpty: "boolean?", searchable: "boolean?", gitStatus: "Record<string, GitStatus>?", density: '"compact" | "default" | "relaxed"?', iconSet: '"minimal" | "standard" | "complete"?', defaultExpanded: "boolean?", notes: "Record<path, string ≤80>? — right-aligned # note; keys are full slash-joined paths like gitStatus keys", statusStyle: '"letters" | "marks"? — marks shows + ~ − and strikes deleted names; plans use marks' },
     children: false,
     example: { type: "file-tree", props: { items: [{ name: "src", type: "directory", children: [{ name: "index.ts", type: "file" }] }], flattenEmpty: true, searchable: true } },
   },
@@ -516,9 +542,86 @@ export const artifactManifest = {
   "code-block": {
     type: "code-block",
     description: "Syntax-highlighted code block with a copy button. Use for commands, config snippets, env contracts, file maps, and ASCII trees. Set language for accurate highlighting (bash, typescript, python, yaml, json, etc.).",
-    props: { title: "string?", language: "string?", code: "string", caption: "string?" },
+    props: { title: "string?", language: "string?", code: "string", caption: "string?", lineNumbers: "boolean?", startLine: "number? — first gutter number", highlight: '(number | "a-b")[]?', annotations: '{ line: number, title: string ≤80, body?: string ≤280, tone?: "info" | "warn" | "risk" | "ok" }[]? — max 12, one per line, lines are real (startLine-based)', diff: 'boolean? — lines start with "+ ", "- ", "  " or "@@"', sketch: "boolean? — illustrative, not real code", src: '"path:12-30"? — create inlines the range' },
     children: false,
     example: { type: "code-block", props: { title: "Smoke release", language: "bash", code: "git tag smoke-v0.0.1\ngit push origin smoke-v0.0.1" } },
+  },
+  "claim-tree": {
+    type: "claim-tree",
+    description: "Plan spine: numbered, collapsible claims with a contents rail. Children must be claim nodes. At most one per spec. open: \"needs\" opens claims that hold a decision.",
+    props: { title: "string?", open: '"all" | 1 | 2 | "needs"?', contents: "boolean? — side contents rail (default true)" },
+    children: "nodes",
+    example: { type: "claim-tree", props: { open: "needs" }, children: [{ type: "claim", props: { text: "The user can pick a time in the composer." }, children: [{ type: "text", props: { text: "Exhibit goes first." } }] }] },
+  },
+  "claim": {
+    type: "claim",
+    description: "One numbered plan claim inside a claim-tree or claim (max 3 levels). Children order: one exhibit, then at most one decision or alert, then child claims. aux \"shared\" renders ✱, \"scope\" renders –. ref links to a call-stack row id.",
+    props: { text: "string ≤280", aux: '"shared" | "scope"?', ref: "call-stack row id?", open: "boolean?" },
+    children: "nodes",
+    example: { type: "claim", props: { text: "A worker claims due messages once a minute." }, children: [{ type: "text", props: { text: "Exhibit." } }] },
+  },
+  "call-stack": {
+    type: "call-stack",
+    description: "Annotated call stack. Terse rows: column 0 is a mark (+ added, - removed, ~ changed, ? proposed, space context), column 1 a space, the call from column 2; indent 2 spaces per depth. End with \" @ path/file.ts:12\" and \" -- note\". Use **bold** for the focus call. Object rows add id, kind and an inline excerpt shown on click.",
+    props: { title: "string?", caption: "string?", rows: '(string | { call, depth, mark?, at?, note?, kind?: "call"|"ui"|"net"|"cond"|"io"|"gap", id?, excerpt?: { code, language?, startLine? } })[] ≤60', repo: "{ name, ref?, baseUrl? (https) }? — links locations", initialRow: "number?" },
+    children: false,
+    example: { type: "call-stack", props: { title: "The list", rows: ["~ <Sidebar/> @ web/src/nav/Sidebar.tsx:30", "+   <ScheduledFolder/> @ web/src/scheduled/ScheduledFolder.tsx:14", "+     GET /api/scheduled @ web/src/api/scheduled.ts:21"] } },
+  },
+  "state-machine": {
+    type: "state-machine",
+    description: "Clickable state machine. Events are terse \"from -event-> to : label\" (event ids are kebab-case). Optional grid places states; traces replay event paths. Screen children (with metadata.id) are shown when a state with screen = that id is selected.",
+    props: { title: "string?", caption: "string?", initial: "state id", states: "{ id, label?, description?, final?, mark?, screen?, code?, sets? }[] 2-16", events: '(string | { from, event, to, label?, mark? })[]', grid: '("| a | b | . |" | (id | null)[])[]?', traces: "{ name, events: event[] }[]?" },
+    children: "nodes",
+    example: { type: "state-machine", props: { initial: "scheduled", states: [{ id: "scheduled" }, { id: "sending" }, { id: "sent", final: true }, { id: "failed", final: true }], events: ["scheduled -at-send-at-> sending : at send_at", "sending -ok-> sent", "+ sending -error-> failed"], grid: ["| scheduled | sending | sent |", "| . | failed | . |"] } },
+  },
+  "sequence-diagram": {
+    type: "sequence-diagram",
+    description: "Lifeline sequence diagram from terse steps: \"a -> b : text\" (call), \"a --> b\" (reply), \"a -x-> b\" (lost), \"note over a, b: text\", \"--- label ---\" divider. Prefix + - ~ to mark a message. caption is required (one line on why it matters).",
+    props: { title: "string?", caption: "string", participants: '{ id, label? ≤28, kind?: "actor"|"service"|"store"|"external", mark? }[] 2-8', steps: "(string | object)[] ≤40" },
+    children: false,
+    example: { type: "sequence-diagram", props: { caption: "Cancel wins only before the worker claims the row.", participants: [{ id: "user", kind: "actor" }, { id: "api" }, { id: "db", kind: "store" }], steps: ["user -> api : cancel", "api -> db : update status", "db --> api : 1 row", "api --> user : 204"] } },
+  },
+  "box-diagram": {
+    type: "box-diagram",
+    description: "Grid-placed box-and-arrow diagram. Terse edges: \"a -> b : label\" (solid), \"a --> b\" (dashed, needs props.dashed legend), \"a => b\" (bold), \"<->\" both ways, + prefix = proposed. Grid rows are \"| a | b | . |\" (max 4 columns).",
+    props: { title: "string?", caption: "string?", nodes: '{ id, label ≤40, sub?, shape?: "box"|"pill"|"diamond"|"db"|"circle"|"note"|"actor", tone?, mark?, href?: "#anchor" }[] ≤16', edges: "(string | { from, to, label?, style?, both?, mark? })[]", grid: "GridRow[] ≤6", groups: "{ label, ids }[]? — must fill a grid rectangle", dashed: "string? — what a dashed line means" },
+    children: false,
+    example: { type: "box-diagram", props: { nodes: [{ id: "web", label: "Web" }, { id: "api", label: "API" }, { id: "db", label: "Postgres", shape: "db" }], edges: ["web -> api : POST", "api -> db"], grid: ["| web | api | db |"] } },
+  },
+  "mockup": {
+    type: "mockup",
+    description: "Framed UI mockup built from child nodes (wireframe, text, badge, button, code-block…). Pins point at a child metadata.id or at x/y fractions. No claims, decisions, mockups or state-machines inside.",
+    props: { frame: '"none" | "browser" | "phone" | "desktop" | "terminal"', width: "number? 280-1440", label: "string? — URL bar or window title", caption: "string?", pins: "{ n?, target?: metadata.id, x?, y?, text ≤140 }[]? ≤12" },
+    children: "nodes",
+    example: { type: "mockup", props: { frame: "terminal", label: "zsh" }, children: [{ type: "wireframe", props: { element: "prompt", text: "visual-artifact create plan.json" } }, { type: "wireframe", props: { element: "output", text: "✓ created" } }] },
+  },
+  "wireframe": {
+    type: "wireframe",
+    description: "Low-fidelity UI primitive, only inside a mockup. prompt/output need a terminal frame.",
+    props: { element: '"navbar"|"sidebar"|"input"|"textarea"|"select"|"toggle"|"checkbox"|"avatar"|"placeholder"|"skeleton-lines"|"toast"|"modal-scrim"|"divider"|"prompt"|"output"|"spinner"', text: "string?", items: "string[]? ≤8", lines: "number? 1-8", state: '"default"|"active"|"disabled"|"error"|"checked"?', mark: "ChangeMark?" },
+    children: false,
+    example: { type: "wireframe", props: { element: "navbar", items: ["Inbox", "Scheduled"] } },
+  },
+  "decision": {
+    type: "decision",
+    description: "A question for the reader with option cards; exactly one suggested option for single choice. Answers are local page state; one \"Copy decisions as Markdown\" button exports them. Max 5 per spec; ids unique.",
+    props: { id: "PlanId", question: "string ≤200", mode: '"single" | "multiple"?', options: "{ id, label ≤80, consequence? ≤100, suggested? }[] 2-6", allowOther: "boolean?" },
+    children: false,
+    example: { type: "decision", props: { id: "limit", question: "How many scheduled messages per user?", options: [{ id: "fifty", label: "50", suggested: true }, { id: "five-hundred", label: "500" }, { id: "none", label: "No limit", consequence: "risk of abuse" }] } },
+  },
+  "change-stats": {
+    type: "change-stats",
+    description: "One-line change summary: +added ~changed −removed files and optional line counts.",
+    props: { label: "string?", added: "number", changed: "number", removed: "number", files: "number?", lines: "{ add, del }?" },
+    children: false,
+    example: { type: "change-stats", props: { added: 4, changed: 2, removed: 0, lines: { add: 212, del: 9 } } },
+  },
+  "quotes": {
+    type: "quotes",
+    description: "Collapsible list of verbatim source quotes (the \"why\") with source icon, author, date and link.",
+    props: { title: "string?", open: "boolean?", items: '{ text ≤600, via: "prompt"|"slack"|"github"|"doc"|"email"|"meeting"|"transcript", from?, date?: YYYY-MM-DD, href?: https }[] 1-8' },
+    children: false,
+    example: { type: "quotes", props: { items: [{ text: "Users keep asking to send later.", via: "slack", from: "Dana", date: "2026-09-30" }] } },
   },
   "status-grid": {
     type: "status-grid",
