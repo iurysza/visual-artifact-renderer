@@ -9,10 +9,12 @@ Turn an agent's work into something you can scan, understand, and share. Instead
 
 Agents provide structured JSON; the CLI validates it, and the renderer turns it into a styled, interactive page.
 
-## Demo 
-Recorded with [terminal-control](https://github.com/anomalyco/terminal-control)
+### Promo
 
-https://github.com/user-attachments/assets/3c3e7351-6321-426d-9b1d-f759e16e6640
+https://github.com/user-attachments/assets/3fbe7da2-e917-4e1e-a34f-01a68c56b101
+
+
+The agent writes a small JSON spec from a fixed set of nodes. VAR validates it, renders the page, files it in the artifact library by project, and can publish a link you can read on your phone.
 
 ## Try it with prompts
 
@@ -70,7 +72,7 @@ The LLM never writes routes, imports, JSX, CSS, or full HTML for the renderer.
 ## Features
 
 - Constrained JSON contract for `slug`, `title`, optional `artifactType`/`topics` discovery metadata, optional `data`, and typed `nodes`.
-- 30+ node types for prose, cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs, and diffs.
+- 48 node types for prose, cards, tables, charts, timelines, Mermaid, SVG diagrams, tabs, accordions, logs and diffs, plus plan and review nodes such as claim trees, decisions, call stacks, state machines, sequence and box diagrams, mockups and wireframes.
 - Data-backed components that reference shared datasets by `dataKey`.
 - Local-first storage under `~/.agents/skills/visual-artifact/artifacts` unless overridden.
 - Pi extension asks the user to choose an artifact direction before it generates a requested artifact, then exposes `create_visual_artifact` as the final writer.
@@ -269,3 +271,5 @@ artifacts/             # local generated bundles, gitignored
 ## Credits
 
 The plan nodes (`claim-tree`, `decision`, `call-stack`, `state-machine`, `sequence-diagram`, `box-diagram`, `mockup` and friends) port ideas and the block grammar from Thariq Shihipar's [html-plan](https://github.com/anthropics/claude-plugins-community/tree/main/html-plan) skill. The call-stack idea is credited to @dillon_mulroy. No html-plan code is copied. See [`NOTICE`](./NOTICE).
+
+Key sounds in the promo video: “Single Key Press Sounds” by eklee and qubodup, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), from [OpenGameArt](https://opengameart.org/content/single-key-press-sounds). Trimmed, filtered and mixed under the music.
