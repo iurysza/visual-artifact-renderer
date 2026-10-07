@@ -7,7 +7,7 @@ import {
   isReservedRootSegment,
   projectParamsFromPath,
   ROOT_RESERVED_SEGMENTS,
-} from "./paths.ts"
+} from "./paths"
 
 describe("paths", () => {
   describe("isReservedRootSegment", () => {
