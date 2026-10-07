@@ -11,17 +11,9 @@ Agents provide structured JSON; the CLI validates it, and the renderer turns it 
 
 ## Demo
 
-### Product tour (36 s)
-
 [![VAR product tour: fixed nodes, JSON in, rendered page out, artifact library, publish and mobile](./assets/var-tour.jpg)](./assets/var-tour.mp4)
 
 The agent writes a small JSON spec from a fixed set of nodes. VAR validates it, renders the page, files it in the artifact library by project, and can publish a link you can read on your phone. Click the image to play the video.
-
-### Terminal walkthrough
-
-Recorded with [terminal-control](https://github.com/anomalyco/terminal-control)
-
-https://github.com/user-attachments/assets/3c3e7351-6321-426d-9b1d-f759e16e6640
 
 ## Try it with prompts
 
