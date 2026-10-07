@@ -1,11 +1,15 @@
 "use client"
 
+import { CircleCheck, Info, Lightbulb, OctagonAlert, TriangleAlert } from "lucide-react"
+
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Prose } from "@/components/ui/prose"
 import { CodeBlock } from "@/components/ui/code-block"
+import { StructuredCodeBlock } from "@/components/ui/code-block-structured"
+import { codeBlockIsStructured } from "@/lib/contract/artifact-manifest"
 import { DefinitionList } from "@/components/ui/definition-list"
 import { Diff } from "@/components/ui/diff"
 import { FileTree } from "@/components/ui/file-tree"
@@ -24,12 +28,35 @@ import { resolveArtifactImageSrc } from "@/lib/artifacts/image-src"
 
 import type { AdapterArgs } from "@/components/artifact-types"
 
+const CALLOUT_TONES = {
+  info: { Icon: Info, className: "border-l-foreground/40 bg-muted/60" },
+  warn: { Icon: TriangleAlert, className: "border-l-change-changed bg-change-changed/10 [&>svg]:text-change-changed" },
+  risk: { Icon: OctagonAlert, className: "border-l-change-removed bg-change-removed/10 [&>svg]:text-change-removed" },
+  ok: { Icon: CircleCheck, className: "border-l-change-added bg-change-added/10 [&>svg]:text-change-added" },
+  idea: { Icon: Lightbulb, className: "border-l-clay bg-clay/10 [&>svg]:text-clay-dark dark:[&>svg]:text-clay" },
+} as const
+
 export function renderAlert({ node }: AdapterArgs<"alert">) {
-  const { title, description, variant } = node.props
+  const { title, description, variant, tone: explicitTone } = node.props
+  // variant alone keeps its legacy look; tone wins when both are set.
+  const tone = explicitTone
+  if (!tone) {
+    return (
+      <Alert variant={variant}>
+        <AlertTitle>{title}</AlertTitle>
+        {description && <AlertDescription>{description}</AlertDescription>}
+      </Alert>
+    )
+  }
+  const { Icon, className } = CALLOUT_TONES[tone]
   return (
-    <Alert variant={variant}>
-      <AlertTitle>{title}</AlertTitle>
-      {description && <AlertDescription>{description}</AlertDescription>}
+    <Alert data-tone={tone} className={cn("rounded-md border-l-[3px] px-3 py-2.5", className)}>
+      <Icon aria-hidden="true" />
+      <AlertTitle>
+        <span className="sr-only">{tone}: </span>
+        {title}
+      </AlertTitle>
+      {description && <AlertDescription className="text-foreground/80">{description}</AlertDescription>}
     </Alert>
   )
 }
@@ -131,7 +158,7 @@ export function renderDiff({ node }: AdapterArgs<"diff">) {
 }
 
 export function renderFileTree({ node }: AdapterArgs<"file-tree">) {
-  const { items, flattenEmpty, searchable, gitStatus, density, iconSet, defaultExpanded } = node.props
+  const { items, flattenEmpty, searchable, gitStatus, density, iconSet, defaultExpanded, notes, statusStyle } = node.props
   return (
     <FileTree
       items={items}
@@ -141,6 +168,8 @@ export function renderFileTree({ node }: AdapterArgs<"file-tree">) {
       density={density}
       iconSet={iconSet}
       defaultExpanded={defaultExpanded}
+      notes={notes}
+      statusStyle={statusStyle}
     />
   )
 }
@@ -302,5 +331,7 @@ export function renderSeparator() {
 }
 
 export function renderCodeBlock({ node }: AdapterArgs<"code-block">) {
-  return <CodeBlock {...node.props} />
+  if (codeBlockIsStructured(node.props)) return <StructuredCodeBlock {...node.props} />
+  const { title, language, code, caption } = node.props
+  return <CodeBlock title={title} language={language} code={code} caption={caption} />
 }

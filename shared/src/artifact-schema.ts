@@ -385,6 +385,48 @@ const ButtonSizeSchema = z.enum(["default", "xs", "sm", "lg"])
 const TrendSchema = z.enum(["up", "down", "neutral"])
 const ChartKindSchema = z.enum(["line", "bar"])
 const ToneSchema = z.enum(["default", "accent", "success", "warning", "danger"])
+
+export {
+  ChangeMarkSchema,
+  GridRowSchema,
+  PLAN_ID_RE,
+  PlanIdSchema,
+  ShortLabel,
+  SourceRefSchema,
+  type ChangeMark,
+  type GridRow,
+} from "./plan-primitives.js"
+import { ShortLabel } from "./plan-primitives.js"
+import {
+  BoxDiagramPropsSchema,
+  CallStackPropsSchema,
+  CalloutToneSchema,
+  ChangeStatsPropsSchema,
+  ClaimPropsSchema,
+  ClaimTreePropsSchema,
+  CodeBlockPropsSchema,
+  DecisionPropsSchema,
+  MockupPropsSchema,
+  QuotesPropsSchema,
+  SequenceDiagramPropsSchema,
+  StateMachinePropsSchema,
+  WireframePropsSchema,
+  flattenFileTreePaths,
+  lintPlanSpec,
+  type BoxDiagramProps,
+  type CallStackProps,
+  type CalloutTone,
+  type ChangeStatsProps,
+  type ClaimProps,
+  type ClaimTreeProps,
+  type CodeBlockProps,
+  type DecisionProps,
+  type MockupProps,
+  type QuotesProps,
+  type SequenceDiagramProps,
+  type StateMachineProps,
+  type WireframeProps,
+} from "./plan-schemas.js"
 const GridColumnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
 
 const metadataSchema = z
@@ -399,6 +441,16 @@ function leafSchema<T extends string, S extends z.ZodRawShape>(type: T, shape: S
     .object({
       type: z.literal(type),
       props: z.object(shape).strict(),
+      metadata: metadataSchema,
+    })
+    .strict()
+}
+
+function planLeaf<T extends string, P extends z.ZodType<unknown>>(type: T, props: P) {
+  return z
+    .object({
+      type: z.literal(type),
+      props,
       metadata: metadataSchema,
     })
     .strict()
@@ -678,6 +730,8 @@ export type ArtifactNode =
         density?: "compact" | "default" | "relaxed"
         iconSet?: "minimal" | "standard" | "complete"
         defaultExpanded?: boolean
+        notes?: Record<string, string>
+        statusStyle?: "letters" | "marks"
       }
       metadata?: { id?: string }
     }
@@ -711,7 +765,7 @@ export type ArtifactNode =
     }
   | {
       type: "alert"
-      props: { title: string; description?: string; variant?: "default" | "destructive" }
+      props: { title: string; description?: string; variant?: "default" | "destructive"; tone?: CalloutTone }
       metadata?: { id?: string }
     }
   | {
@@ -833,9 +887,20 @@ export type ArtifactNode =
     }
   | {
       type: "code-block"
-      props: { title?: string; language?: string; code: string; caption?: string }
+      props: CodeBlockProps
       metadata?: { id?: string }
     }
+  | { type: "call-stack"; props: CallStackProps; metadata?: { id?: string } }
+  | { type: "sequence-diagram"; props: SequenceDiagramProps; metadata?: { id?: string } }
+  | { type: "box-diagram"; props: BoxDiagramProps; metadata?: { id?: string } }
+  | { type: "wireframe"; props: WireframeProps; metadata?: { id?: string } }
+  | { type: "decision"; props: DecisionProps; metadata?: { id?: string } }
+  | { type: "change-stats"; props: ChangeStatsProps; metadata?: { id?: string } }
+  | { type: "quotes"; props: QuotesProps; metadata?: { id?: string } }
+  | { type: "claim-tree"; props?: ClaimTreeProps; children: ArtifactNode[]; metadata?: { id?: string } }
+  | { type: "claim"; props: ClaimProps; children?: ArtifactNode[]; metadata?: { id?: string } }
+  | { type: "state-machine"; props: StateMachineProps; children?: ArtifactNode[]; metadata?: { id?: string } }
+  | { type: "mockup"; props: MockupProps; children: ArtifactNode[]; metadata?: { id?: string } }
   | {
       type: "status-grid"
       props: { dataKey: string; titleKey?: string; statusKey: string; descriptionKey?: string; metaKey?: string; columns?: 1 | 2 | 3 | 4; caption?: string }
@@ -1241,6 +1306,8 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       density: z.enum(["compact", "default", "relaxed"]).optional(),
       iconSet: z.enum(["minimal", "standard", "complete"]).optional(),
       defaultExpanded: z.boolean().optional(),
+      notes: z.record(z.string().min(1).max(500), ShortLabel(80)).optional(),
+      statusStyle: z.enum(["letters", "marks"]).optional(),
     }),
     leafSchema("diff", {
       before: z.string().optional(),
@@ -1278,6 +1345,7 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       title: z.string().min(1),
       description: z.string().optional(),
       variant: z.enum(["default", "destructive"]).optional(),
+      tone: CalloutToneSchema.optional(),
     }),
     leafSchema("pie-chart", {
       dataKey: z.string().min(1),
@@ -1419,12 +1487,36 @@ export const ArtifactNodeSchema: z.ZodType<ArtifactNode> = z.lazy(() => {
       statusKey: z.string().min(1).optional(),
       caption: z.string().min(1).optional(),
     }),
-    leafSchema("code-block", {
-      title: z.string().min(1).optional(),
-      language: z.string().min(1).optional(),
-      code: z.string().min(1),
-      caption: z.string().min(1).optional(),
-    }),
+    planLeaf("code-block", CodeBlockPropsSchema),
+    planLeaf("call-stack", CallStackPropsSchema),
+    planLeaf("sequence-diagram", SequenceDiagramPropsSchema),
+    planLeaf("box-diagram", BoxDiagramPropsSchema),
+    planLeaf("wireframe", WireframePropsSchema),
+    planLeaf("decision", DecisionPropsSchema),
+    planLeaf("change-stats", ChangeStatsPropsSchema),
+    planLeaf("quotes", QuotesPropsSchema),
+    z
+      .object({
+        type: z.literal("claim-tree"),
+        props: ClaimTreePropsSchema.optional(),
+        children: requiredChildNodes,
+        metadata: metadataSchema,
+      })
+      .strict(),
+    z
+      .object({ type: z.literal("claim"), props: ClaimPropsSchema, children: childNodes, metadata: metadataSchema })
+      .strict(),
+    z
+      .object({
+        type: z.literal("state-machine"),
+        props: StateMachinePropsSchema,
+        children: childNodes,
+        metadata: metadataSchema,
+      })
+      .strict(),
+    z
+      .object({ type: z.literal("mockup"), props: MockupPropsSchema, children: requiredChildNodes, metadata: metadataSchema })
+      .strict(),
     leafSchema("status-grid", {
       dataKey: z.string().min(1),
       titleKey: z.string().min(1).optional(),
@@ -1539,8 +1631,21 @@ const VisualArtifactSpecShapeSchema = z
           }
         }
 
-        if ((node.type === "card" || node.type === "grid" || node.type === "section") && node.children) {
+        if ("children" in node && Array.isArray(node.children)) {
           visit(node.children, [...nodePath, "children"])
+        }
+
+        if (node.type === "file-tree" && node.props.notes) {
+          const known = new Set(flattenFileTreePaths(node.props.items))
+          for (const key of Object.keys(node.props.notes)) {
+            if (!known.has(key)) {
+              context.addIssue({
+                code: "custom",
+                message: `file-tree note "${key}" matches no item`,
+                path: [...nodePath, "props", "notes", key],
+              })
+            }
+          }
         }
 
         if (node.type === "image" && /^file:\/\//i.test(node.props.src)) {
@@ -1574,6 +1679,7 @@ const VisualArtifactSpecShapeSchema = z
     }
 
     visit(spec.nodes, ["nodes"])
+    lintPlanSpec(spec.nodes, context)
   })
 
 export const VisualArtifactSpecSchema = z

@@ -265,3 +265,7 @@ pi-extension/          # Pi tool wrapper for create_visual_artifact
 skill/                 # agent-facing skill bundle
 artifacts/             # local generated bundles, gitignored
 ```
+
+## Credits
+
+The plan nodes (`claim-tree`, `decision`, `call-stack`, `state-machine`, `sequence-diagram`, `box-diagram`, `mockup` and friends) port ideas and the block grammar from Thariq Shihipar's [html-plan](https://github.com/anthropics/claude-plugins-community/tree/main/html-plan) skill. The call-stack idea is credited to @dillon_mulroy. No html-plan code is copied. See [`NOTICE`](./NOTICE).

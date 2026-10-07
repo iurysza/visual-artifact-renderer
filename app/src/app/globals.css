@@ -45,6 +45,10 @@
   --color-clay-dark: var(--clay-dark);
   --color-olive: var(--olive);
   --color-rust: var(--rust);
+  --color-amber: var(--amber);
+  --color-change-added: var(--change-added);
+  --color-change-changed: var(--change-changed);
+  --color-change-removed: var(--change-removed);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -67,6 +71,7 @@
   --oat: #e3dacc;
   --olive: #788c5d;
   --rust: #b04a3f;
+  --amber: #a86b12;
   --gray-100: #f0eee6;
   --gray-200: #e6e3da;
   --gray-300: #d1cfc5;
@@ -92,6 +97,11 @@
   --border: var(--gray-300);
   --input: var(--gray-300);
   --ring: var(--clay);
+  /* Change semantics — see DESIGN.md "Change semantics". */
+  --change-added: #5f7444;
+  --change-changed: var(--amber);
+  --change-removed: var(--rust);
+  --canvas-dot: color-mix(in oklch, var(--slate), transparent 88%);
   /* Elevation tokens — see DESIGN.md §4. Flat by default; shadows are earned. */
   --shadow-card: 0 10px 34px rgba(20, 20, 19, 0.06);
   --shadow-card-sm: 0 8px 26px rgba(20, 20, 19, 0.05);
@@ -130,6 +140,7 @@ html.dark {
   --oat: #3a332b;
   --olive: #9faf7c;
   --rust: #ef8f86;
+  --amber: #e0b45c;
   --gray-100: #25231f;
   --gray-200: #302d27;
   --gray-300: #454038;
@@ -141,6 +152,8 @@ html.dark {
   --chart-3: #c9ad83;
   --chart-4: #f5f0e8;
   --sidebar-primary-foreground: #151412;
+  --change-added: var(--olive);
+  --canvas-dot: color-mix(in oklch, var(--slate), transparent 90%);
   /* Dark shadows use a deeper black tint so elevated surfaces still read. */
   --shadow-card: 0 10px 34px rgba(0, 0, 0, 0.2);
   --shadow-card-sm: 0 8px 26px rgba(0, 0, 0, 0.2);
@@ -233,6 +246,23 @@ html.dark {
 .dark .prose {
   --tw-prose-links: var(--clay);
   --tw-prose-pre-bg: var(--paper);
+}
+
+/* Plan nodes: diagram canvas, scroll fades and inert mockup surfaces. */
+.va-dot-grid {
+  background-color: var(--card);
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1.2px);
+  background-size: 16px 16px;
+}
+.va-scroll-fade {
+  overflow-x: auto;
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+[data-mock-surface] :is(a, button, input, select, textarea, summary, [role="button"]) {
+  pointer-events: none;
+}
+[data-frame="terminal"] [data-mock-surface] :is(p, pre, code, span, h1, h2, h3, h4) {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 /* Alternative artifact library motion: state feedback, not page choreography. */

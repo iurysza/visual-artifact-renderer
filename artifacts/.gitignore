@@ -6,3 +6,5 @@
 !.gitkeep
 !visualizer/
 !visualizer/component-library.json
+!visualizer/call-stack-excerpts/
+!visualizer/call-stack-excerpts/artifact.json

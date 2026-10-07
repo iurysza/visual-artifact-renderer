@@ -52,7 +52,9 @@ definition-list, diff, donut-chart, file-tree, heading, image,
 pie-chart, stepper, text, card, metric, stat-card, badge,
 button, separator, table, data-table, comparison-table, chart,
 mermaid, svg-diagram, flow, timeline, execution-trace, code-block, status-grid,
-grid, section, tabs, accordion, prose
+grid, section, tabs, accordion, prose,
+claim-tree, claim, decision, call-stack, state-machine, sequence-diagram,
+box-diagram, mockup, wireframe, change-stats, quotes
 ```
 
 ## Selection map
@@ -71,8 +73,17 @@ grid, section, tabs, accordion, prose
 | Architecture/topology | `mermaid`, `svg-diagram` |
 | Request/deploy/data path | `flow` |
 | Release/runbook sequence | `timeline`, `stepper` |
-| Plan/review API surfaces: interfaces, types, boundaries, transformations | `execution-trace` |
-| Commands/config/file maps | `code-block`, `file-tree` (with `gitStatus`, `flattenEmpty`, `searchable`, `density`, `iconSet`, `defaultExpanded`), `diff` (with `content`, `mode`, `showLineNumbers`, `indicators`, `highlightInline`, `hunkSeparator`, `caption`), `log` |
+| Verified API boundaries and types: interfaces, boundaries, transformations | `execution-trace` |
+| What calls what and what changes (plan sketch, optional excerpts) | `call-stack` |
+| A plan as a tree of claims, each proved by one exhibit | `claim-tree` + `claim` |
+| A fork the reader must choose, placed on the claim it changes | `decision` |
+| Lifecycle or UI states, with a screen per state | `state-machine` |
+| Messages between components when the plan changes them | `sequence-diagram` (use `mermaid` for generic sequences) |
+| Components and connections with grid placement and proposed marks | `box-diagram` (use `flow` for a linear strip) |
+| What the user or terminal will see | `mockup` + `wireframe` |
+| Size of a change at a glance | `change-stats` |
+| The requests or sources behind a plan | `quotes` |
+| Commands/config/file maps | `code-block` (with `annotations`, `highlight`, `diff`, `sketch`, `startLine`), `file-tree` (with `notes`, `statusStyle: "marks"`, `gitStatus`, `flattenEmpty`, `searchable`, `density`, `iconSet`, `defaultExpanded`), `diff` (with `content`, `mode`, `showLineNumbers`, `indicators`, `highlightInline`, `hunkSeparator`, `caption`), `log` |
 | Proportional data | `pie-chart`, `donut-chart` |
 | Cumulative/trend data | `area-chart` |
 | Multi-dimensional comparison | `radar-chart` |
@@ -80,6 +91,7 @@ grid, section, tabs, accordion, prose
 | Matrix/correlation intensity | `heatmap` |
 | Term definitions | `definition-list` |
 | Images | `image` |
+| Callouts with intent | `alert` with `tone`: `info`, `warn`, `risk`, `ok`, `idea` |
 | Alternate detail | `tabs`, `accordion` |
 
 ## Composition guidance
@@ -392,3 +404,65 @@ Copy the resolved `.sources[0].source` object unchanged into the event:
 Render events as one persistent call stack; previous/next moves the current step instead of replacing the list. The agent chooses ordered spans, but the call-stack primary identity, enclosing scope, excerpt, location, and hash come only from `trace inspect`. `visual-artifact create` re-runs extraction, rejects stale or edited code identity, and refreshes revision/worktree provenance before inlining source. If inspection returns `ambiguous`, narrow the span rather than choosing a candidate by prose. `event.label` remains the human narrative and never substitutes for verified code identity. Boundary `from`/`to` describe the conceptual handoff; there is no freeform code operation. Always model static/runtime types and provenance separately. Add `typeDefinitions` for important custom `staticType` names so their declarations appear transiently. Use `event.impacts` only for concise, source-established behavior besides the returned value: `effect` for observable work and `error` for possible failure. Omit timings unless they are real monotonic runtime measurements.
 
 For code-change plans and reviews, use this node when the main concern is API shape: interfaces, types, and boundaries. Prioritize boundary events and `typeDefinitions` over a long call transcript. Static analysis is the default: follow changed entrypoints, callers, imports, types, boundaries, and relevant tests without executing the program. Use `mode: "inferred"` with `method: "static-analysis"`; keep unknown values symbolic, label test/fixture examples as derived with a source note, and never claim captured runtime evidence or branch outcomes that source alone cannot prove. Source-backed frames may describe only code that exists; keep proposed target APIs in clearly labeled narrative or comparison content.
+
+## Copyable pattern: html-plan style plan
+
+A plan is one `claim-tree`. Each `claim` states one thing and proves it with one exhibit. A `decision` sits on the claim it changes, after the exhibit and before child claims. Keep 2 to 5 decisions per plan. The full worked example is `artifacts/visualizer/call-stack-excerpts/artifact.json`.
+
+```json
+{
+  "type": "claim-tree",
+  "props": { "open": "needs" },
+  "children": [
+    { "type": "claim", "props": { "text": "Inlining hooks into the existing source walker." }, "children": [
+      { "type": "call-stack", "props": { "title": "create → resolveDiskSources", "rows": [
+        "  **create(specArg, options)** @ cli/src/commands/create.ts:295",
+        "~   resolveDiskSources(specJson, ctx) @ cli/src/commands/create.ts:358",
+        "+     **sliceLines(content, start, end)** -- new, pure"
+      ] } },
+      { "type": "decision", "props": { "id": "walker-shape", "question": "Where does the call-stack branch go?", "options": [
+        { "id": "inline-branch", "label": "Another if in visit", "suggested": true },
+        { "id": "registry", "label": "A table of node → source props", "consequence": "Refactors two existing branches" }
+      ] } }
+    ] }
+  ]
+}
+```
+
+- `open: "needs"` opens claims that hold a decision, plus their ancestors. `"all"` and `"none"` also work.
+- Decisions keep local, unsaved answers. The tree ends with a "Copy decisions as Markdown" button.
+- `claim.ref` links a claim to a call-stack row id. `claim.aux` (for example `"scope"`) adds an unnumbered side claim.
+- Keyboard: `[` collapses all claims, `]` expands all, arrow keys move through call-stack rows and state-machine states.
+
+## Terse forms
+
+Structured JSON is canonical. Some array props also accept string items in a short form, and strings and objects can mix in one array. The same shared parser runs at `create`/`validate` time and in the renderer. A bad string fails with its JSON path and line, for example:
+
+```txt
+nodes.0.props.steps.1 → step 2: couldn't parse "a >> b" — expected "a -> b : text", "a --> b", "a -x-> b", "note over a: text" or "--- label ---"
+```
+
+Mark prefixes are shared: `+` added or proposed, `-` removed, `~` changed, `?` uncertain (call-stack only), nothing for context.
+
+| Prop | Form |
+|---|---|
+| `call-stack.rows` | Indented lines: `"  + **sendLater()** @ app/x.ts:12 -- note"`. Indent is depth, `**…**` marks the focus call, `@` is the location, `--` starts a note. |
+| `sequence-diagram.steps` | `"a -> b : msg"`, `"b --> a : reply"`, `"a -x-> b : lost"`, `"--- label"`, `"note over a,b: text"`, `"+ a -> b : new"` |
+| `box-diagram.edges` | `"a -> b : label"`, `"a --> b"` (dashed), `"a => b"` (bold), `"a <-> b"`, `"+ a -> b"` |
+| `box-diagram.grid`, `state-machine.grid` | Row strings `"| a | b | . |"` or arrays `["a", "b", null]`. `.` is an empty cell. |
+| `state-machine.events` | `"queued -review-> reviewing : /feedback"`, `"+ a -retry-> b"` |
+
+Nodes, states, decisions, claims, mockups, quotes and change-stats take objects only.
+
+## Mockups and wireframes
+
+`mockup` draws a frame (`none`, `browser`, `phone`, `desktop`, `terminal`) around ordinary child nodes. It never takes HTML. Child content is inert for the reader, but comment picking still works.
+
+- **Pins.** `pins: [{ "target": "<metadata.id>", "text": "…" }]` puts a numbered badge on the child with that `metadata.id` and lists the text under the frame. `x`/`y` fractions also work when there is no target.
+- **Wireframe vocabulary.** `wireframe.element` is one of `navbar`, `sidebar`, `input`, `textarea`, `select`, `toggle`, `checkbox`, `avatar`, `placeholder`, `skeleton-lines`, `toast`, `modal-scrim`, `divider`, `prompt`, `output`, `spinner`.
+- **Banned inside a mockup:** `claim-tree`, `claim`, `decision`, `mockup` and `state-machine`. Validation rejects them.
+- A `state-machine` state can name a mockup as its `screen` by `metadata.id`. The mockup must be a child of that state machine.
+
+## Credits
+
+The plan nodes (`claim-tree`, `claim`, `decision`, `call-stack`, `state-machine`, `sequence-diagram`, `box-diagram`, `mockup`, `wireframe`, `change-stats`, `quotes`) and the code-block, file-tree and alert improvements port ideas and the documented block grammar from Thariq Shihipar's [html-plan](https://github.com/anthropics/claude-plugins-community/tree/main/html-plan) skill (commit `f60f0454df3045f724c43c6346ec80bdcc3472b2`). The call-stack idea is credited to @dillon_mulroy. We wrote our own code; no html-plan JavaScript or CSS is copied. See `NOTICE` for the licence note.

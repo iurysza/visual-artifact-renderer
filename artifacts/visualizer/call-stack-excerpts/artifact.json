@@ -1,0 +1,768 @@
+{
+  "slug": "call-stack-excerpts",
+  "title": "Inline call-stack excerpts at create time",
+  "description": "An html-plan-style plan for teaching visual-artifact create to copy cited line ranges into call-stack rows.",
+  "artifactType": "plan",
+  "topics": [
+    "html-plan",
+    "cli",
+    "call-stack"
+  ],
+  "layout": {
+    "type": "default"
+  },
+  "nodes": [
+    {
+      "type": "text",
+      "props": {
+        "size": "lg",
+        "text": "Plans point at real code; create should copy the exact lines into the artifact so the page never drifts from the file it cites."
+      }
+    },
+    {
+      "type": "change-stats",
+      "props": {
+        "label": "Proposed · est.",
+        "added": 2,
+        "changed": 3,
+        "removed": 0,
+        "lines": {
+          "add": 140,
+          "del": 6
+        }
+      }
+    },
+    {
+      "type": "quotes",
+      "props": {
+        "open": false,
+        "title": "Why · 2 requests",
+        "items": [
+          {
+            "text": "Call stacks and annotated code should be excellent.",
+            "via": "prompt",
+            "from": "Iury",
+            "date": "2026-10-07"
+          },
+          {
+            "text": "The exhibits are the plan. Words only name them.",
+            "via": "doc",
+            "from": "Thariq Shihipar",
+            "href": "https://github.com/anthropics/claude-plugins-community/tree/main/html-plan"
+          }
+        ]
+      }
+    },
+    {
+      "type": "claim-tree",
+      "props": {
+        "open": "needs"
+      },
+      "children": [
+        {
+          "type": "claim",
+          "props": {
+            "text": "Authors cite a range; the artifact shows the lines."
+          },
+          "children": [
+            {
+              "type": "mockup",
+              "props": {
+                "frame": "browser",
+                "label": "127.0.0.1:9412/visualizer/call-stack-excerpts/",
+                "width": 960,
+                "pins": [
+                  {
+                    "target": "row-label",
+                    "text": "Click a row to open its excerpt"
+                  },
+                  {
+                    "target": "excerpt",
+                    "text": "Lines copied at create time, not fetched in the browser"
+                  },
+                  {
+                    "target": "loc",
+                    "text": "Range kept as provenance"
+                  }
+                ]
+              },
+              "children": [
+                {
+                  "type": "wireframe",
+                  "props": {
+                    "element": "navbar",
+                    "text": "Visualizer",
+                    "items": [
+                      "Plan",
+                      "Comments"
+                    ],
+                    "state": "active"
+                  }
+                },
+                {
+                  "type": "text",
+                  "metadata": {
+                    "id": "row-label"
+                  },
+                  "props": {
+                    "text": "resolveDiskSources(spec, context)"
+                  }
+                },
+                {
+                  "type": "code-block",
+                  "metadata": {
+                    "id": "excerpt"
+                  },
+                  "props": {
+                    "language": "ts",
+                    "startLine": 143,
+                    "code": "async function resolveDiskSources(\n  spec: unknown,\n  context: SourceReadContext,\n): Promise<DiskSourcesMeta> {\n  const files: (DiskSourceFileMeta & { canonicalPath: string })[] = []\n  let aggregateBytes = 0"
+                  }
+                },
+                {
+                  "type": "badge",
+                  "metadata": {
+                    "id": "loc"
+                  },
+                  "props": {
+                    "label": "cli/src/commands/create.ts:143–176",
+                    "variant": "outline"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "decision",
+              "props": {
+                "id": "range-syntax",
+                "question": "How is the line range written?",
+                "options": [
+                  {
+                    "id": "colon-range",
+                    "label": "path:12-30",
+                    "consequence": "Same as code-block src; one parser",
+                    "suggested": true
+                  },
+                  {
+                    "id": "fields",
+                    "label": "{ src, startLine, endLine }",
+                    "consequence": "More JSON; claim 1.1 grows"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "claim",
+              "props": {
+                "text": "The range parser lives in shared and is reused by the validator."
+              },
+              "children": [
+                {
+                  "type": "code-block",
+                  "props": {
+                    "language": "ts",
+                    "sketch": true,
+                    "title": "shared/src/terse/source-range.ts",
+                    "code": "export function parseSourceRange(ref: string) {\n  const m = /^(.+?):(\\d+)-(\\d+)$/.exec(ref)\n  if (!m || +m[3] < +m[2]) return { error: `bad range \"${ref}\"` }\n  const [, path, a, b] = m\n  const start = Number(a), end = Number(b)\n  if (end - start + 1 > 400) return { error: \"range over 400 lines\" }\n  return { path, start, end }\n}",
+                    "annotations": [
+                      {
+                        "line": 3,
+                        "title": "Rejects end < start",
+                        "tone": "info"
+                      },
+                      {
+                        "line": 6,
+                        "title": "Ranges over 400 lines rejected",
+                        "tone": "warn"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "claim",
+          "props": {
+            "text": "A row's excerpt moves through five states."
+          },
+          "children": [
+            {
+              "type": "state-machine",
+              "props": {
+                "title": "Excerpt lifecycle",
+                "initial": "cited",
+                "states": [
+                  {
+                    "id": "cited",
+                    "screen": "scr-cited",
+                    "description": "row has excerpt.src"
+                  },
+                  {
+                    "id": "reading",
+                    "description": "readSourceFile in the sandbox"
+                  },
+                  {
+                    "id": "inlined",
+                    "final": true,
+                    "screen": "scr-inlined",
+                    "sets": "excerpt.code"
+                  },
+                  {
+                    "id": "rejected",
+                    "final": true,
+                    "screen": "scr-rejected",
+                    "mark": "added"
+                  },
+                  {
+                    "id": "kept",
+                    "final": true,
+                    "description": "content was already supplied"
+                  }
+                ],
+                "events": [
+                  "cited -create-> reading",
+                  "cited -has-content-> kept : content already supplied",
+                  "reading -ok-> inlined",
+                  "+ reading -fail-> rejected : outside root or bad range"
+                ],
+                "grid": [
+                  "| cited | reading  | inlined |",
+                  "| kept  | rejected | .       |"
+                ],
+                "traces": [
+                  {
+                    "name": "happy",
+                    "events": [
+                      "create",
+                      "ok"
+                    ]
+                  }
+                ]
+              },
+              "children": [
+                {
+                  "type": "mockup",
+                  "metadata": {
+                    "id": "scr-cited"
+                  },
+                  "props": {
+                    "frame": "terminal",
+                    "width": 360
+                  },
+                  "children": [
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "prompt",
+                        "text": "visual-artifact create plan.json -p demo"
+                      }
+                    },
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "validating…"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "mockup",
+                  "metadata": {
+                    "id": "scr-inlined"
+                  },
+                  "props": {
+                    "frame": "terminal",
+                    "width": 360
+                  },
+                  "children": [
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "excerpt: cli/src/commands/create.ts:143-176 (34 lines)"
+                      }
+                    },
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "✓ created visualizer/call-stack-excerpts"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "mockup",
+                  "metadata": {
+                    "id": "scr-rejected"
+                  },
+                  "props": {
+                    "frame": "terminal",
+                    "width": 360
+                  },
+                  "children": [
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "error: source path outside project root: ../secrets.ts",
+                        "state": "error"
+                      }
+                    },
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "exit 1",
+                        "state": "error"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "claim",
+              "props": {
+                "text": "The sandbox already rejects paths outside the project root."
+              },
+              "children": [
+                {
+                  "type": "alert",
+                  "props": {
+                    "tone": "risk",
+                    "title": "No secret-file filter yet",
+                    "description": "The sandbox stops path escapes, not reads of .env inside the root. Out of scope here; tracked as a follow-up."
+                  }
+                },
+                {
+                  "type": "decision",
+                  "props": {
+                    "id": "size-cap",
+                    "question": "Cap per excerpt?",
+                    "options": [
+                      {
+                        "id": "lines-400",
+                        "label": "400 lines",
+                        "suggested": true
+                      },
+                      {
+                        "id": "bytes-only",
+                        "label": "Use the existing 512 KB file cap",
+                        "consequence": "Huge excerpts bloat the page"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "claim",
+          "props": {
+            "text": "Inlining hooks into the existing source walker."
+          },
+          "children": [
+            {
+              "type": "call-stack",
+              "props": {
+                "title": "visual-artifact create → resolveDiskSources",
+                "rows": [
+                  "  **create(specArg, options)** @ cli/src/commands/create.ts:295",
+                  "    validateSpec(specJson) @ cli/src/commands/create.ts:338",
+                  "    preflightArtifactSpec(specJson) @ cli/src/commands/create.ts:345",
+                  "    createSourceReadContext(...) @ cli/src/commands/create.ts:351",
+                  {
+                    "call": "resolveDiskSources(specJson, ctx)",
+                    "depth": 1,
+                    "mark": "changed",
+                    "at": "cli/src/commands/create.ts:358",
+                    "id": "walker",
+                    "excerpt": {
+                      "code": "async function resolveDiskSources(\n  spec: unknown,\n  context: SourceReadContext,\n): Promise<DiskSourcesMeta> {\n  const files: (DiskSourceFileMeta & { canonicalPath: string })[] = []\n  let aggregateBytes = 0\n\n  const inlineSource = async (\n    source: Record<string, unknown>,\n    label: string,\n  ): Promise<void> => {\n    if (typeof source.src !== \"string\") return\n\n    if (source.content === undefined) {\n      const { content, info, newAggregateBytes } = await readSourceFile(\n        source.src,\n        context,\n        aggregateBytes,\n      )\n      source.content = content\n      aggregateBytes = newAggregateBytes\n      files.push(info)\n      if (context.verbose) {\n        context.log.debug(\n          `${label} source: ${source.src} -> ${info.displayPath} (${info.bytes} bytes)`,\n        )\n      }\n    }\n    delete source.src\n  }\n\n  const visit = async (node: unknown): Promise<void> => {\n    if (!node || typeof node !== \"object\") return\n    const obj = node as Record<string, unknown>",
+                      "language": "ts",
+                      "startLine": 143
+                    }
+                  },
+                  {
+                    "call": "inlineSource(source, label)",
+                    "depth": 2,
+                    "mark": "changed",
+                    "at": "cli/src/commands/create.ts:150",
+                    "excerpt": {
+                      "code": "  const inlineSource = async (\n    source: Record<string, unknown>,\n    label: string,\n  ): Promise<void> => {\n    if (typeof source.src !== \"string\") return\n\n    if (source.content === undefined) {\n      const { content, info, newAggregateBytes } = await readSourceFile(\n        source.src,\n        context,\n        aggregateBytes,\n      )\n      source.content = content\n      aggregateBytes = newAggregateBytes\n      files.push(info)\n      if (context.verbose) {\n        context.log.debug(\n          `${label} source: ${source.src} -> ${info.displayPath} (${info.bytes} bytes)`,\n        )\n      }\n    }\n    delete source.src",
+                      "language": "ts",
+                      "startLine": 150
+                    }
+                  },
+                  "+       **sliceLines(content, start, end)** -- new, pure",
+                  {
+                    "call": "readSourceFile(src, ctx, bytes)",
+                    "depth": 3,
+                    "at": "cli/src/lib/source-files.ts:126",
+                    "excerpt": {
+                      "code": "export async function readSourceFile(\n  src: string,\n  context: SourceReadContext,\n  aggregateBytes = 0,\n): Promise<SourceReadResult> {\n  const { projectRoot, allowRoots, log, verbose } = context\n  const { intendedRoot, canonicalPath } = await resolveSourcePath(src, projectRoot, allowRoots)\n\n  let content: string",
+                      "language": "ts",
+                      "startLine": 126
+                    }
+                  },
+                  "          resolveSourcePath(src, root, allow) @ cli/src/lib/source-files.ts:94",
+                  "            isInside(child, parent) @ cli/src/lib/source-files.ts:86",
+                  "+     visit: call-stack rows to excerpt.src @ cli/src/commands/create.ts:178 -- beside the file-tree branch"
+                ],
+                "repo": {
+                  "name": "visual-artifact-renderer",
+                  "ref": "079d4fc",
+                  "baseUrl": "https://github.com/iurysza/visual-artifact-renderer"
+                },
+                "caption": "Three rows carry real excerpts from HEAD 079d4fc. Click one to read it."
+              }
+            },
+            {
+              "type": "decision",
+              "props": {
+                "id": "walker-shape",
+                "question": "Where does the call-stack branch go?",
+                "options": [
+                  {
+                    "id": "inline-branch",
+                    "label": "Another if in visit",
+                    "consequence": "Matches file-tree and execution-trace",
+                    "suggested": true
+                  },
+                  {
+                    "id": "registry",
+                    "label": "A table of node → source props",
+                    "consequence": "Cleaner, but refactors two existing branches"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "claim",
+              "props": {
+                "text": "One more branch in the walker, beside execution-trace.",
+                "ref": "walker"
+              },
+              "children": [
+                {
+                  "type": "code-block",
+                  "props": {
+                    "language": "ts",
+                    "diff": true,
+                    "startLine": 178,
+                    "title": "cli/src/commands/create.ts",
+                    "code": "@@ -178,3 +178,15 @@ const visit = async (node: unknown) => {\n  if (obj.type === \"file-tree\" && obj.props && typeof obj.props === \"object\") {\n    const propsObj = obj.props as Record<string, unknown>\n+ if (obj.type === \"call-stack\" && obj.props && typeof obj.props === \"object\") {\n+   const rows = (obj.props as Record<string, unknown>).rows\n+   if (Array.isArray(rows)) {\n+     for (const row of rows) {\n+       if (!row || typeof row !== \"object\") continue\n+       const excerpt = (row as Record<string, unknown>).excerpt\n+       if (!excerpt || typeof excerpt !== \"object\") continue\n+       await inlineSource(excerpt as Record<string, unknown>, \"call-stack row\")\n+     }\n+   }\n+ }",
+                    "annotations": [
+                      {
+                        "line": 180,
+                        "title": "Same aggregate byte budget",
+                        "body": "inlineSource shares aggregateBytes with file-tree and execution-trace.",
+                        "tone": "info"
+                      },
+                      {
+                        "line": 187,
+                        "title": "Delete src after inlining",
+                        "body": "inlineSource already drops src, so the stored artifact carries only content.",
+                        "tone": "warn"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "claim",
+              "props": {
+                "text": "Errors name the row, not just the file."
+              },
+              "children": [
+                {
+                  "type": "sequence-diagram",
+                  "props": {
+                    "title": "A bad range at create time",
+                    "participants": [
+                      {
+                        "id": "author",
+                        "kind": "actor"
+                      },
+                      {
+                        "id": "cli",
+                        "label": "visual-artifact create"
+                      },
+                      {
+                        "id": "walker",
+                        "label": "resolveDiskSources",
+                        "mark": "changed"
+                      },
+                      {
+                        "id": "fs",
+                        "label": "source-files",
+                        "kind": "store"
+                      }
+                    ],
+                    "steps": [
+                      "author -> cli : create plan.json",
+                      "cli -> walker : spec",
+                      "+ walker -> fs : readSourceFile(src)",
+                      "fs --> walker : content",
+                      "+ walker -> walker : sliceLines(12, 30)",
+                      "--- bad range ---",
+                      "fs -x-> walker : outside root",
+                      "walker --> cli : ValidationError(row 4)",
+                      "note over cli: nothing written",
+                      "cli --> author : exit 1"
+                    ],
+                    "caption": "A failed excerpt stops the whole create; the error points at the call-stack row."
+                  }
+                }
+              ]
+            },
+            {
+              "type": "claim",
+              "props": {
+                "text": "The CLI output says what it inlined."
+              },
+              "children": [
+                {
+                  "type": "mockup",
+                  "props": {
+                    "frame": "terminal",
+                    "label": "visual-artifact create --verbose"
+                  },
+                  "children": [
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "prompt",
+                        "text": "visual-artifact create plan.json -p visualizer --verbose"
+                      }
+                    },
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "call-stack row walker source: cli/src/commands/create.ts:143-176 (34 lines)"
+                      }
+                    },
+                    {
+                      "type": "wireframe",
+                      "props": {
+                        "element": "output",
+                        "text": "✓ wrote artifacts/visualizer/call-stack-excerpts"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "claim",
+          "props": {
+            "text": "Three files change; the renderer does not."
+          },
+          "children": [
+            {
+              "type": "box-diagram",
+              "props": {
+                "title": "Where the change lands",
+                "nodes": [
+                  {
+                    "id": "spec",
+                    "label": "plan.json",
+                    "shape": "note"
+                  },
+                  {
+                    "id": "create",
+                    "label": "create.ts"
+                  },
+                  {
+                    "id": "walker",
+                    "label": "resolveDiskSources",
+                    "mark": "changed"
+                  },
+                  {
+                    "id": "slice",
+                    "label": "sliceLines",
+                    "mark": "proposed"
+                  },
+                  {
+                    "id": "fs",
+                    "label": "source-files.ts"
+                  },
+                  {
+                    "id": "art",
+                    "label": "artifact.json",
+                    "shape": "db"
+                  },
+                  {
+                    "id": "app",
+                    "label": "Renderer"
+                  }
+                ],
+                "grid": [
+                  "| spec | create | walker |",
+                  "| .    | slice  | fs     |",
+                  "| .    | app    | art    |"
+                ],
+                "edges": [
+                  "spec -> create",
+                  "create -> walker",
+                  "+ walker -> slice",
+                  "walker -> fs",
+                  "create -> art : write",
+                  "art --> app : load"
+                ],
+                "dashed": "loaded at view time"
+              }
+            },
+            {
+              "type": "claim",
+              "props": {
+                "text": "Three changed files, two new tests."
+              },
+              "children": [
+                {
+                  "type": "file-tree",
+                  "props": {
+                    "statusStyle": "marks",
+                    "defaultExpanded": true,
+                    "items": [
+                      {
+                        "name": "app",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "src",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "lib",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "contract",
+                                    "type": "directory",
+                                    "children": [
+                                      {
+                                        "name": "source-range.test.ts",
+                                        "type": "file"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "cli",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "src",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "commands",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "create.ts",
+                                    "type": "file"
+                                  },
+                                  {
+                                    "name": "create-source-safety.test.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "shared",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "src",
+                            "type": "directory",
+                            "children": [
+                              {
+                                "name": "artifact-schema.ts",
+                                "type": "file"
+                              },
+                              {
+                                "name": "terse",
+                                "type": "directory",
+                                "children": [
+                                  {
+                                    "name": "source-range.ts",
+                                    "type": "file"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "gitStatus": {
+                      "cli/src/commands/create.ts": {
+                        "status": "modified"
+                      },
+                      "cli/src/commands/create-source-safety.test.ts": {
+                        "status": "modified"
+                      },
+                      "shared/src/artifact-schema.ts": {
+                        "status": "modified"
+                      },
+                      "shared/src/terse/source-range.ts": {
+                        "status": "added"
+                      },
+                      "app/src/lib/contract/source-range.test.ts": {
+                        "status": "added"
+                      }
+                    },
+                    "notes": {
+                      "cli/src/commands/create.ts": "call-stack branch in the walker",
+                      "cli/src/commands/create-source-safety.test.ts": "sandbox and range tests",
+                      "shared/src/artifact-schema.ts": "excerpt.src on call rows",
+                      "shared/src/terse/source-range.ts": "parseSourceRange",
+                      "app/src/lib/contract/source-range.test.ts": "range parser tests"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "claim",
+          "props": {
+            "text": "Out of scope: secret-file filtering.",
+            "aux": "scope"
+          },
+          "children": [
+            {
+              "type": "alert",
+              "props": {
+                "tone": "idea",
+                "title": "Deny-list belongs in readSourceFile",
+                "description": "A deny-list (.env, *.pem, id_*) belongs in readSourceFile for every node, not just call stacks. Separate change."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

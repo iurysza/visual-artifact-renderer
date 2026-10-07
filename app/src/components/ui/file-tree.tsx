@@ -43,8 +43,14 @@ export interface FileTreeProps {
   density?: FileTreeDensity
   iconSet?: FileTreeIconSet
   defaultExpanded?: boolean
+  /** Full slash-joined path → short note shown as a right-aligned "# note". */
+  notes?: Record<string, string>
+  /** "marks" shows + ~ − and strikes deleted names; default "letters". */
+  statusStyle?: "letters" | "marks"
   className?: string
 }
+
+const MARK_LABELS: Partial<Record<GitStatus["status"], string>> = { added: "+", modified: "~", deleted: "−" }
 
 type DisplayItem = FlattenedItem & {
   id: string
@@ -125,12 +131,16 @@ function StatusBadge({
   status,
   density,
   reserveSpace,
+  statusStyle = "letters",
 }: {
   status: GitStatus | undefined
   density: FileTreeDensity
   reserveSpace?: boolean
+  statusStyle?: "letters" | "marks"
 }) {
-  const indicator = getStatusIndicator(status)
+  const base = getStatusIndicator(status)
+  const markLabel = statusStyle === "marks" && status && !status.descendant ? MARK_LABELS[status.status] : undefined
+  const indicator = markLabel ? { ...base, label: markLabel } : base
   if (!indicator.label) {
     // Reserve the badge slot so rows align within git-aware trees.
     return reserveSpace ? (
@@ -179,6 +189,8 @@ export function FileTree({
   density = "default",
   iconSet = "standard",
   defaultExpanded = true,
+  notes,
+  statusStyle = "letters",
   className,
 }: FileTreeProps) {
   const [query, setQuery] = React.useState("")
@@ -218,10 +230,13 @@ export function FileTree({
     for (const item of flatItems) {
       const children = item.children ?? []
       const isDirectory = item.type === "directory" || children.length > 0
-      const parentPath = item.path.includes("/")
-        ? item.path.slice(0, item.path.lastIndexOf("/"))
-        : null
-      const parentId = parentPath ?? null
+      // Nearest rendered ancestor: collapsed directory chains (a/b/c shown as one row)
+      // have no row for their intermediate paths.
+      let parentPath = item.path.includes("/") ? item.path.slice(0, item.path.lastIndexOf("/")) : null
+      while (parentPath && !byPath.has(parentPath)) {
+        parentPath = parentPath.includes("/") ? parentPath.slice(0, parentPath.lastIndexOf("/")) : null
+      }
+      const parentId = parentPath
 
       const displayItem: DisplayItem = {
         ...item,
@@ -375,9 +390,29 @@ export function FileTree({
             const Icon = item.isDirectory ? Folder : FileIcon
             const statusTone = getStatusIndicator(status).tone
             const isIgnored = status?.status === "ignored"
+            const isStruck = statusStyle === "marks" && status?.status === "deleted" && !status.descendant
+            const note = notes?.[item.path]
+            const nameNode = (
+              <span
+                className={cn("truncate", isStruck && "text-rust line-through decoration-rust/70")}
+                data-struck={isStruck ? "true" : undefined}
+              >
+                {item.displayName}
+              </span>
+            )
+            const noteNode = note ? (
+              <span
+                className="order-last basis-full truncate pl-6 font-mono text-xs text-muted-foreground sm:order-none sm:ml-auto sm:basis-auto sm:max-w-[45%] sm:pl-0 sm:text-right"
+                title={note}
+                data-tree-note
+              >
+                # {note}
+              </span>
+            ) : null
 
             const rowClasses = cn(
               "group flex w-full min-w-0 items-center gap-2 rounded-md px-2 text-foreground outline-none transition-colors",
+              note && "flex-wrap gap-y-0 sm:flex-nowrap",
               densityStyles.row,
               densityStyles.font,
               "hover:bg-muted focus-visible:bg-muted focus-visible:ring-1 focus-visible:ring-ring",
@@ -433,8 +468,9 @@ export function FileTree({
                           )}
                         />
                         <Icon className={iconClasses} />
-                        <span className="truncate">{item.displayName}</span>
-                        <StatusBadge status={status} density={density} reserveSpace={reserveStatusSpace} />
+                        {nameNode}
+                        {noteNode}
+                        <StatusBadge status={status} density={density} reserveSpace={reserveStatusSpace} statusStyle={statusStyle} />
                       </CollapsibleTrigger>
                     <CollapsibleContent>
                       {/* children rendered by the flat displayItems list */}
@@ -484,8 +520,9 @@ export function FileTree({
                 }}
               >
                 <Icon className={iconClasses} />
-                <span className="truncate">{item.displayName}</span>
-                <StatusBadge status={status} density={density} reserveSpace={reserveStatusSpace} />
+                {nameNode}
+                {noteNode}
+                <StatusBadge status={status} density={density} reserveSpace={reserveStatusSpace} statusStyle={statusStyle} />
               </div>
             )
           })

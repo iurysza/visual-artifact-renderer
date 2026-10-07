@@ -72,6 +72,7 @@ export function visualDiffRequest(scope: string, cwd: string): string {
     `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +
     `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +
     `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +
+    `For a plan sketch of what calls what and what changes, use call-stack; keep execution-trace for verified API boundaries and types. ` +
     `Then call create_visual_artifact with the diff-review artifact and return its URL.`
   )
 }

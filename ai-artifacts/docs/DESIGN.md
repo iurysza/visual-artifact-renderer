@@ -58,6 +58,39 @@ Headings use the editorial stack for report-like weight. Code and data use mono.
 - `svg-diagram` is the escape hatch for precise layout or interactivity; it renders inside a sandboxed iframe.
 - SVG diagrams must carry their own theme variables and before-paint theme script.
 
+## Change semantics
+
+Plan nodes mark what a change adds, changes or removes. These marks are tokens in `app/src/app/globals.css`, not one-off Tailwind colours.
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `--change-added` | `#5f7444` (olive, darkened for AA text on paper) | `#9faf7c` | `+` added |
+| `--change-changed` | `var(--amber)` `#a86b12` | `var(--amber)` `#e0b45c` | `~` changed |
+| `--change-removed` | `var(--rust)` | `var(--rust)` | `-` removed, with strike-through |
+| proposed (pattern) | `--change-added` + `stroke-dasharray: 5 4` / `border-style: dashed` | same | proposed but not yet real |
+| dashed edge (pattern) | `--muted-foreground` stroke + `stroke-dasharray: 2 4` | same | a node's own `dashed` meaning |
+| `--canvas-dot` | `color-mix(in oklch, var(--slate), transparent 88%)` | `color-mix(in oklch, var(--slate), transparent 90%)` | diagram dot grid |
+| `--amber` | `#a86b12` | `#e0b45c` | palette colour, `--color-amber` in `@theme` |
+
+`--color-amber` and `--color-change-*` are mapped in `@theme inline`.
+
+Colour is never the only signal. Every mark also has a glyph (`+ ~ - ?`) or a dash pattern, and an accessible name such as "added", "changed" or "removed".
+
+### Diagram canvas
+
+Plan diagrams (`state-machine`, `box-diagram`) draw on a dot grid: the `.va-dot-grid` utility, a `--canvas-dot` radial-gradient on `--card` with a 16 px pitch. Diagrams that can overflow scroll horizontally in their own container and show a fade on the right edge.
+
+### Two kinds of dashed line
+
+- **Green long dash means proposed.** A `+` prefix or `mark: "proposed" | "added"` draws in `--change-added` with the `5 4` dash.
+- **Muted short dash is the node's own `dashed` meaning.** A `style: "dashed"` edge draws in muted ink with the `2 4` dash. In `box-diagram` the `dashed` prop names it in the legend. The `sequence-diagram` reply style uses the same pattern.
+
+Both can apply at once: a proposed dashed edge is green with the `2 4` pattern. `state-machine` and `call-stack` have no `style` prop, so there dashed always means proposed.
+
+### Callout tones are separate from `ToneSchema`
+
+`alert.tone` and `code-block.annotations[].tone` use a callout vocabulary: `info · warn · risk · ok · idea`. This is deliberately separate from `ToneSchema` (`default · accent · success · warning · danger`). Callout tones describe the author's intent for a note. `ToneSchema` describes status. Do not merge them.
+
 ## Sources of truth
 
 - Tokens/theme: `app/src/app/globals.css`

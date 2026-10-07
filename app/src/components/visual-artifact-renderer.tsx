@@ -11,6 +11,8 @@ import { useAnnotationContext, AnnotationPanel, NodePickHUD, type NodeIdentity }
 import { useAIColabContext } from "@/components/ai-colab/ai-colab-provider"
 import { AIColabPanel } from "@/components/ai-colab/ai-colab-panel"
 import { AIColabHUD } from "@/components/ai-colab/ai-colab-hud"
+import { DecisionAnswersProvider } from "@/components/plan/decision-answers"
+import { specHasPlanNodes } from "@/lib/plan/plan-spec"
 
 export function VisualArtifactRenderer({
   spec,
@@ -21,7 +23,8 @@ export function VisualArtifactRenderer({
   project: string
   slug: string
 }) {
-  return <VisualArtifactRendererContent spec={spec} project={project} slug={slug} />
+  const content = <VisualArtifactRendererContent spec={spec} project={project} slug={slug} />
+  return specHasPlanNodes(spec) ? <DecisionAnswersProvider spec={spec}>{content}</DecisionAnswersProvider> : content
 }
 
 function VisualArtifactRendererContent({
