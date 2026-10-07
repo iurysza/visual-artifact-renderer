@@ -44,7 +44,7 @@ The renderer uses `display: contents` for the boundary so grids, tabs, accordion
 
 ## Node set
 
-Visualizer ships **30+** node types:
+Visualizer ships **48** node types:
 
 ```txt
 alert, area-chart, radar-chart, scatter-chart, heatmap, log,
