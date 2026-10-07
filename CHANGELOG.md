@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.9.0...v0.10.0) (2026-10-07)
+
+
+### Features
+
+* **nodes:** add plan, diagram and review nodes from html-plan ([#48](https://github.com/iurysza/visual-artifact-renderer/issues/48)) ([388deef](https://github.com/iurysza/visual-artifact-renderer/commit/388deef5620c5a142276f55b78c9b7f1cfafc12e))
+
 ## [0.9.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.8.0...v0.9.0) (2026-07-27)
 
 
