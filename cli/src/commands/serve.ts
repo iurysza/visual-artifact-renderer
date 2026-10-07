@@ -132,12 +132,28 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     requestShutdown = resolve
   })
 
+  const rateLimitHits = new Map<string, { count: number; windowStart: number }>()
+  const RATE_LIMIT_WINDOW_MS = 10_000
+  const RATE_LIMIT_MAX_REQUESTS = 200
+
   let server: ReturnType<typeof Bun.serve>
   try {
     server = Bun.serve({
       port: config.port,
       hostname: config.host,
-      async fetch(req) {
+      async fetch(req, bunServer) {
+        const clientIp = bunServer.requestIP(req)?.address ?? "unknown"
+        const now = Date.now()
+        const hit = rateLimitHits.get(clientIp)
+        if (!hit || now - hit.windowStart > RATE_LIMIT_WINDOW_MS) {
+          rateLimitHits.set(clientIp, { count: 1, windowStart: now })
+        } else {
+          hit.count += 1
+          if (hit.count > RATE_LIMIT_MAX_REQUESTS) {
+            return tooManyRequests()
+          }
+        }
+
         const url = new URL(req.url)
         const pathname = decodeURIComponent(url.pathname)
         const stripped = pathname
@@ -370,6 +386,10 @@ function jsonResponse(body: string, init?: ResponseInit): Response {
 
 function notFound(): Response {
   return new Response("Not found", { status: 404 })
+}
+
+function tooManyRequests(): Response {
+  return jsonResponse(JSON.stringify({ error: "Too many requests" }, null, 2), { status: 429 })
 }
 
 function badRequest(message: string): Response {
