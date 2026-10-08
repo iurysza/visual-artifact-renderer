@@ -152,4 +152,4 @@ Browser mutation
 - The renderer is served from root (`/`); data and API namespaces remain `/data/artifacts` and `/api/annotations`.
 - Annotation JSON is read with the shared Zod schema in both renderer and CLI.
 - Local annotation mutations use the CLI's per-artifact atomic queue; published Cloudflare mutations use Worker R2 conditional retries.
-- Non-loopback local serving requires explicit remote-write exposure via `--allow-remote` or strict `VISUAL_ARTIFACT_ALLOW_REMOTE=1`.
+- Non-loopback local serving requires explicit remote-write exposure via `--allow-remote` or strict `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. Mutation bodies are capped. Remote exposure rate-limits annotation writes per client address. The default loopback bind is not rate limited.
