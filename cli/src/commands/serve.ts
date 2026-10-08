@@ -3,11 +3,6 @@ import { spawn } from "node:child_process"
 import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
 import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
 import { ANNOTATION_MUTATION_MAX_BYTES, readAnnotationMutationBody } from "../lib/annotation-body.ts"
-import {
-  createFixedWindowRateLimiter,
-  REMOTE_API_RATE_LIMIT,
-  type FixedWindowRateLimiter,
-} from "../lib/fixed-window-rate-limiter.ts"
 import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, isReservedRootSegment, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
 import {
@@ -70,55 +65,6 @@ function isLoopbackHost(host: string): boolean {
     if (parts.length === 4 && parts.every((p) => /^\d+$/.test(p) && Number(p) >= 0 && Number(p) <= 255)) return true
   }
   return false
-}
-
-export type ServeExposure = "loopback" | "remote"
-
-/**
- * Default loopback binds are not rate limited. `--allow-remote` or a
- * non-loopback host opts into the remote mutation budget.
- */
-export function serveExposure(config: { readonly allowRemote: boolean; readonly host: string }): ServeExposure {
-  if (config.allowRemote || !isLoopbackHost(config.host)) return "remote"
-  return "loopback"
-}
-
-export interface RemoteServeGuardInput {
-  readonly exposure: ServeExposure
-  readonly method: string
-  readonly pathname: string
-  readonly apiPath: string
-  readonly shutdownPath: string
-  readonly limiter: FixedWindowRateLimiter
-  readonly clientKey: string
-  readonly nowMs: number
-}
-
-export type RemoteServeGuard =
-  | { readonly action: "continue" }
-  | { readonly action: "respond"; readonly response: Response }
-
-export function guardRemoteServeRequest(input: RemoteServeGuardInput): RemoteServeGuard {
-  if (input.exposure === "loopback") return { action: "continue" }
-  if (!isRateLimitedServeRoute(input.method, input.pathname, input.apiPath, input.shutdownPath)) {
-    return { action: "continue" }
-  }
-
-  const decision = input.limiter.consume(input.clientKey, input.nowMs)
-  if (decision._tag === "allow") return { action: "continue" }
-  return { action: "respond", response: tooManyRequests(decision.retryAfterSeconds) }
-}
-
-function isRateLimitedServeRoute(method: string, pathname: string, apiPath: string, shutdownPath: string): boolean {
-  if (method !== "POST") return false
-  if (pathname === shutdownPath) return true
-  return matchMutationRoute(pathname, apiPath) !== null
-}
-
-function clientRateLimitKey(socket: { address: string } | null): string {
-  const address = socket?.address.trim() ?? ""
-  // One shared bucket: a missing address must not mint a new key per request.
-  return address === "" ? "unknown" : address
 }
 
 export interface ServeOpts {
@@ -187,34 +133,20 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     requestShutdown = resolve
   })
 
-  const exposure = serveExposure(config)
-  const rateLimiter = createFixedWindowRateLimiter(REMOTE_API_RATE_LIMIT)
-
   let server: ReturnType<typeof Bun.serve>
   try {
     server = Bun.serve({
       port: config.port,
       hostname: config.host,
-      // Transport cap matches the annotation parser. A larger declared
-      // Content-Length is refused before fetch. serveApi returns JSON 413
-      // for bodies that still reach the handler.
+      // Annotation mutations are small. Bun's default cap is 128MB, which is
+      // enough for one opted-in remote client to force a large parse and disk
+      // write. The same cap is enforced again in serveApi so the API returns
+      // JSON 413 when the handler actually reads the body.
       maxRequestBodySize: ANNOTATION_MUTATION_MAX_BYTES,
-      async fetch(req, bunServer) {
+      async fetch(req) {
         const url = new URL(req.url)
         const pathname = decodeURIComponent(url.pathname)
         const stripped = pathname
-
-        const guard = guardRemoteServeRequest({
-          exposure,
-          method: req.method,
-          pathname: stripped,
-          apiPath,
-          shutdownPath,
-          limiter: rateLimiter,
-          clientKey: clientRateLimitKey(bunServer.requestIP(req)),
-          nowMs: Date.now(),
-        })
-        if (guard.action === "respond") return guard.response
 
         if (stripped === shutdownPath) {
           return serveShutdownApi(req, stripped, shutdownPath, shutdownToken, () => {
@@ -454,13 +386,6 @@ function payloadTooLarge(): Response {
     JSON.stringify({ error: `Annotation mutation body exceeds ${ANNOTATION_MUTATION_MAX_BYTES} bytes` }, null, 2),
     { status: 413 },
   )
-}
-
-function tooManyRequests(retryAfterSeconds: number): Response {
-  return jsonResponse(JSON.stringify({ error: "Too many requests" }, null, 2), {
-    status: 429,
-    headers: { "Retry-After": String(retryAfterSeconds) },
-  })
 }
 
 function methodNotAllowed(allow: string): Response {

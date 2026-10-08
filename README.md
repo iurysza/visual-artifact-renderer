@@ -160,7 +160,7 @@ http://127.0.0.1:9998/my-project/demo-report/
 
 ## Annotations and AI Colab
 
-Artifacts support node-level comment threads. Open an artifact and use **Comments** to select nodes, post replies, resolve threads, and copy a page link. Local writes require an existing artifact, are serialized per bundle, and use atomic mode-`0600` replacement. Writable serving is loopback-only unless `--allow-remote` is explicit. Mutation bodies are capped at 256 KiB. Remote mode rate-limits annotation writes and shutdown per client address. Browser writes must be JSON and satisfy same-origin checks.
+Artifacts support node-level comment threads. Open an artifact and use **Comments** to select nodes, post replies, resolve threads, and copy a page link. Local writes require an existing artifact, are serialized per bundle, and use atomic mode-`0600` replacement. Writable serving is loopback-only unless `--allow-remote` is explicit. Mutation bodies are capped at 256 KiB. Browser writes must be JSON and satisfy same-origin checks.
 
 **Colab** mode lets a formatter or agent attach suggested comments without persisting them. You can review, edit, delete, or export those comments as Markdown.
 

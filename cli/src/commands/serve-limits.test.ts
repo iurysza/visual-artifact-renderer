@@ -3,11 +3,9 @@ import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { ANNOTATION_MUTATION_MAX_BYTES } from "../lib/annotation-body.ts"
-import { createFixedWindowRateLimiter } from "../lib/fixed-window-rate-limiter.ts"
-import { guardRemoteServeRequest, serveApi, serveExposure } from "./serve.ts"
+import { serveApi } from "./serve.ts"
 
 const API_PATH = "/api/annotations"
-const SHUTDOWN_PATH = "/api/shutdown"
 const MUTATION_PATH = "/api/annotations/example-project/example-artifact"
 
 const validAuthor = { name: "Iury Souza", email: "iury@example.com" }
@@ -150,79 +148,5 @@ describe("annotation mutation body limit", () => {
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
-  })
-})
-
-describe("remote serve rate limit", () => {
-  test("loopback mode does not limit mutation or shutdown requests", () => {
-    for (const host of ["127.0.0.1", "localhost", "::1", "127.8.8.8"]) {
-      expect(serveExposure({ allowRemote: false, host })).toBe("loopback")
-    }
-
-    const limiter = createFixedWindowRateLimiter({ maxRequests: 1, windowMs: 10_000, maxTrackedKeys: 4 })
-    const exposure = serveExposure({ allowRemote: false, host: "127.0.0.1" })
-    for (let attempt = 0; attempt < 5; attempt++) {
-      for (const pathname of [MUTATION_PATH, SHUTDOWN_PATH]) {
-        expect(guardRemoteServeRequest({
-          exposure,
-          method: "POST",
-          pathname,
-          apiPath: API_PATH,
-          shutdownPath: SHUTDOWN_PATH,
-          limiter,
-          clientKey: "203.0.113.10",
-          nowMs: attempt,
-        })).toEqual({ action: "continue" })
-      }
-    }
-    expect(limiter.trackedKeyCount()).toBe(0)
-  })
-
-  test("remote exposure limits mutation and shutdown and leaves static reads alone", async () => {
-    expect(serveExposure({ allowRemote: true, host: "127.0.0.1" })).toBe("remote")
-    expect(serveExposure({ allowRemote: false, host: "0.0.0.0" })).toBe("remote")
-
-    const limiter = createFixedWindowRateLimiter({ maxRequests: 1, windowMs: 5_000, maxTrackedKeys: 4 })
-    const base = {
-      exposure: "remote" as const,
-      apiPath: API_PATH,
-      shutdownPath: SHUTDOWN_PATH,
-      limiter,
-      clientKey: "203.0.113.10",
-    }
-
-    expect(guardRemoteServeRequest({
-      ...base,
-      method: "POST",
-      pathname: MUTATION_PATH,
-      nowMs: 0,
-    })).toEqual({ action: "continue" })
-
-    const blocked = guardRemoteServeRequest({
-      ...base,
-      method: "POST",
-      pathname: SHUTDOWN_PATH,
-      nowMs: 1_000,
-    })
-    expect(blocked.action).toBe("respond")
-    if (blocked.action !== "respond") return
-    expect(blocked.response.status).toBe(429)
-    expect(blocked.response.headers.get("retry-after")).toBe("4")
-    expect(blocked.response.headers.get("content-type")).toContain("application/json")
-    expect(await blocked.response.json()).toEqual({ error: "Too many requests" })
-
-    expect(guardRemoteServeRequest({
-      ...base,
-      method: "GET",
-      pathname: "/_next/static/app.js",
-      nowMs: 1_000,
-    })).toEqual({ action: "continue" })
-    expect(guardRemoteServeRequest({
-      ...base,
-      method: "GET",
-      pathname: "/api/annotations/author",
-      nowMs: 1_000,
-    })).toEqual({ action: "continue" })
-    expect(limiter.trackedKeyCount()).toBe(1)
   })
 })

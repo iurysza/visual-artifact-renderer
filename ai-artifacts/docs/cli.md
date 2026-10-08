@@ -71,7 +71,7 @@ Use `--json` for one versioned JSON document, `--plain` for stable tab-delimited
 | `visual-artifact validate [spec.json or -]` | Validate a spec without writing it. |
 | `visual-artifact trace inspect --project path --anchor file:start[-end]... [--allow-read dir]` | Extract ordered, deterministic source facts for execution-trace events. `--anchor` and `--allow-read` are repeatable. |
 | `visual-artifact contract` | Print the current artifact contract. |
-| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer, live artifact JSON, and writable annotation API. Non-loopback binds require global `--allow-remote` or `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. Mutation bodies are capped at 256 KiB. Remote mode rate-limits annotation writes and shutdown. |
+| `visual-artifact serve [--port n] [--host addr] [--no-open]` | Serve the static renderer, live artifact JSON, and writable annotation API. Non-loopback binds require global `--allow-remote` or `VISUAL_ARTIFACT_ALLOW_REMOTE=1`. Mutation bodies are capped at 256 KiB. |
 | `visual-artifact serve status [--host addr] [--port n]` | Check server health and whether it is tracked by local lifecycle state. |
 | `visual-artifact serve stop [--host addr] [--port n] [--force]` | Stop a tracked local server via tokenized shutdown, with conservative fallback process termination. |
 | `visual-artifact list [project]` | List projects or artifacts. |
