@@ -2,6 +2,7 @@ import { resolve, join } from "node:path"
 import { spawn } from "node:child_process"
 import { annotationMutationRequestRejection } from "@agents/visual-artifact-annotations"
 import { ConfigValidationError, loadConfig, localBaseUrl } from "../config.ts"
+import { ANNOTATION_MUTATION_MAX_BYTES, readAnnotationMutationBody } from "../lib/annotation-body.ts"
 import { artifactJsonPath, assetsDirPath, isInsideArtifactsDir, isReservedRootSegment, parseBundleRoute, parseProjectRoute } from "../lib/paths.ts"
 import { scanArtifacts, listProjectArtifacts } from "../lib/scan.ts"
 import {
@@ -137,6 +138,11 @@ export async function serve(opts: ServeOpts, log: Logger): Promise<number> {
     server = Bun.serve({
       port: config.port,
       hostname: config.host,
+      // Annotation mutations are small. Bun's default cap is 128MB, which is
+      // enough for one opted-in remote client to force a large parse and disk
+      // write. The same cap is enforced again in serveApi so the API returns
+      // JSON 413 when the handler actually reads the body.
+      maxRequestBodySize: ANNOTATION_MUTATION_MAX_BYTES,
       async fetch(req) {
         const url = new URL(req.url)
         const pathname = decodeURIComponent(url.pathname)
@@ -275,12 +281,11 @@ export async function serveApi(req: Request, stripped: string, artifactsDir: str
   const projectDir = resolve(artifactsDir, route.project)
   if (!isInsideArtifactsDir(projectDir, artifactsDir)) return badRequest("Invalid project or slug")
 
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return badRequest("Invalid JSON body")
-  }
+  const parsedBody = await readAnnotationMutationBody(req)
+  if (parsedBody._tag === "too-large") return payloadTooLarge()
+  if (parsedBody._tag === "invalid-content-length") return badRequest("Invalid Content-Length")
+  if (parsedBody._tag === "invalid-json") return badRequest("Invalid JSON body")
+  const body = parsedBody.value
 
   let mutations: AnnotationMutations
   try {
@@ -374,6 +379,13 @@ function notFound(): Response {
 
 function badRequest(message: string): Response {
   return jsonResponse(JSON.stringify({ error: message }, null, 2), { status: 400 })
+}
+
+function payloadTooLarge(): Response {
+  return jsonResponse(
+    JSON.stringify({ error: `Annotation mutation body exceeds ${ANNOTATION_MUTATION_MAX_BYTES} bytes` }, null, 2),
+    { status: 413 },
+  )
 }
 
 function methodNotAllowed(allow: string): Response {
