@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/iurysza/visual-artifact-renderer/compare/v0.10.0...v0.10.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **serve:** cap annotation mutation bodies ([#54](https://github.com/iurysza/visual-artifact-renderer/issues/54)) ([c385de4](https://github.com/iurysza/visual-artifact-renderer/commit/c385de4e9c5b17b04241820b6fad7c4fa1468a7c))
+
 ## [0.10.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.9.0...v0.10.0) (2026-10-07)
 
 
