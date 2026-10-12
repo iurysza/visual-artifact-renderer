@@ -14,10 +14,10 @@
     "@agents/visual-artifact-annotations": "file:../shared"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261003.1",
+    "@cloudflare/workers-types": "^5.20261009.1",
     "bun-types": "latest",
     "typescript": "^5.6.3",
-    "wrangler": "^4.147.0"
+    "wrangler": "^4.149.0"
   },
   "engines": {
     "node": "22.22.3",
