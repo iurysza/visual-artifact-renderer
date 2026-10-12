@@ -25,6 +25,7 @@ import {
   toggleOperator,
   type QueryOperator,
 } from "@/lib/artifacts/library-query"
+import { buildSearchCatalog, suggestQualifiers } from "@/lib/artifacts/library-suggest"
 import { replaceLocationSearch, useLocationSearch } from "@/lib/navigation/location-search"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -108,6 +109,8 @@ function ProjectLibrary({ project, artifacts, others }: { project: string; artif
 
   const all = useMemo(() => [...artifacts, ...others], [artifacts, others])
   const rows = useMemo(() => projectRows(all, project), [all, project])
+  const catalog = useMemo(() => buildSearchCatalog(rows, artifacts, now, { includeFixtures: true }), [rows, artifacts, now])
+  const suggest = useCallback((raw: string, caret: number) => suggestQualifiers(raw, caret, catalog), [catalog])
   const results = useMemo(() => filterRows(rows, q, now, { includeFixtures: true }), [rows, q, now])
   const groups = useMemo(() => groupRows(results, "week", now), [results, now])
   const topics = useMemo(() => projectTopics(artifacts), [artifacts])
@@ -173,6 +176,7 @@ function ProjectLibrary({ project, artifacts, others }: { project: string; artif
             label={`Search ${project}`}
             placeholder="Search"
             locked={[{ key: "project", value: project }]}
+            suggest={suggest}
           />
           <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.8125rem] text-ink-muted">
             <h2 id="proj-results-heading" className="lib-num" aria-live="polite">

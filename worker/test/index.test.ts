@@ -205,7 +205,55 @@ describe("Worker routes", () => {
       title: "Artifact 104",
       artifactType: "report",
       topics: ["release"],
+      openThreads: 0,
+      published: false,
     })
+  })
+
+  test("home and project indexes include open-comment and publish signals", async () => {
+    const objects = new Map<string, { body: string; uploaded: Date }>([
+      ["artifacts/demo/hello/artifact.json", {
+        body: JSON.stringify({ title: "Hello", artifactType: "review" }),
+        uploaded: new Date("2026-10-02T00:00:00Z"),
+      }],
+      ["artifacts/demo/hello/annotations.json", {
+        body: JSON.stringify({
+          threads: [
+            { status: "open", updatedAt: "2026-10-01T00:00:00Z", messages: [{ body: "older note" }] },
+            { status: "open", updatedAt: "2026-10-02T00:00:00Z", messages: [{ body: "  the last\n row is   incorrect " }] },
+            { status: "resolved", updatedAt: "2026-10-03T00:00:00Z", messages: [{ body: "done" }] },
+          ],
+        }),
+        uploaded: new Date("2026-10-02T00:00:00Z"),
+      }],
+      ["artifacts/demo/hello/publish.json", {
+        body: JSON.stringify({ status: "published" }),
+        uploaded: new Date("2026-10-02T00:00:00Z"),
+      }],
+      ["artifacts/demo/quiet/artifact.json", {
+        body: JSON.stringify({ title: "Quiet" }),
+        uploaded: new Date("2026-10-01T00:00:00Z"),
+      }],
+      ["artifacts/demo/broken/artifact.json", {
+        body: JSON.stringify({ title: "Broken" }),
+        uploaded: new Date("2026-09-01T00:00:00Z"),
+      }],
+      ["artifacts/demo/broken/annotations.json", { body: "{not json", uploaded: new Date("2026-09-01T00:00:00Z") }],
+    ])
+    const env = envWithObjects(objects)
+    const home = await handleRequest(new Request("https://example.com/data/artifacts/index.json"), env, {} as ExecutionContext)
+    const body = await home.json() as { artifacts: Array<{ slug: string; openThreads: number; openExcerpt?: string; published: boolean }> }
+    const hello = body.artifacts.find((artifact) => artifact.slug === "hello")
+    const quiet = body.artifacts.find((artifact) => artifact.slug === "quiet")
+    const broken = body.artifacts.find((artifact) => artifact.slug === "broken")
+    expect(hello).toMatchObject({ openThreads: 2, openExcerpt: "the last row is incorrect", published: true })
+    expect(quiet).toMatchObject({ openThreads: 0, published: false })
+    expect(quiet?.openExcerpt).toBeUndefined()
+    expect(broken).toMatchObject({ openThreads: 0, published: false })
+
+    const projectResponse = await handleRequest(new Request("https://example.com/data/artifacts/demo/index.json"), env, {} as ExecutionContext)
+    const project = await projectResponse.json() as { artifacts: Array<{ slug: string; openThreads: number; published: boolean }> }
+    expect(project.artifacts.find((artifact) => artifact.slug === "hello")).toMatchObject({ openThreads: 2, published: true })
   })
 
   test("follows R2 list cursors so a paged bucket still returns every artifact", async () => {
