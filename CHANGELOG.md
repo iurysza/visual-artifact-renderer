@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/iurysza/visual-artifact-renderer/compare/v0.10.1...v1.0.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* artifacts that use removed node types no longer validate or render. Keep the 0.10.x CLI to read old artifacts.
+
+### Features
+
+* visual-artifact 1.0 with contract 3 and a searchable library ([#56](https://github.com/iurysza/visual-artifact-renderer/issues/56)) ([9289e1e](https://github.com/iurysza/visual-artifact-renderer/commit/9289e1ea2aa10d2f5d7cf8b10839cba01f0ab4ab))
+
 ## [0.10.1](https://github.com/iurysza/visual-artifact-renderer/compare/v0.10.0...v0.10.1) (2026-10-09)
 
 
