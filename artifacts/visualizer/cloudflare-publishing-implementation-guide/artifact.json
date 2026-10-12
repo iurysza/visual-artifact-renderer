@@ -1,0 +1,800 @@
+{
+  "slug": "cloudflare-publishing-implementation-guide",
+  "title": "Cloudflare Publishing: Lead Engineer Implementation Guide",
+  "description": "A plain-language, step-by-step implementation plan for making Visualizer publishing work for any user-owned Cloudflare account.",
+  "data": {
+    "summary": [
+      {
+        "label": "Product model",
+        "value": "BYO Cloudflare",
+        "delta": "any account",
+        "trend": "up",
+        "caption": "Users publish to infrastructure they own.",
+        "tone": "success"
+      },
+      {
+        "label": "Setup UX",
+        "value": "Wizard",
+        "delta": "plug credentials",
+        "trend": "up",
+        "caption": "One command verifies tokens, deploys Worker, saves config.",
+        "tone": "accent"
+      },
+      {
+        "label": "Default URL",
+        "value": "workers.dev",
+        "delta": "domain optional",
+        "trend": "neutral",
+        "caption": "Do not block sharing on DNS setup.",
+        "tone": "success"
+      },
+      {
+        "label": "Risk",
+        "value": "Low",
+        "delta": "boring tech",
+        "trend": "up",
+        "caption": "Static renderer, R2 data, scoped user token.",
+        "tone": "success"
+      }
+    ],
+    "buildList": [
+      {
+        "Component": "BYO Cloudflare setup wizard",
+        "What it does": "Guides any user through auth, bucket selection/creation, Worker deploy, profile save, and smoke publish.",
+        "Files": "cli/src/commands/setup-cloudflare.ts, cli/src/publish/profile.ts"
+      },
+      {
+        "Component": "Cloudflare Worker + wrangler config",
+        "What it does": "Serves the static Next.js export and proxies JSON/annotation requests to R2.",
+        "Files": "app/wrangler.jsonc, worker/src/index.ts"
+      },
+      {
+        "Component": "R2 bucket",
+        "What it does": "Stores artifact bundles: artifact.json, annotations.json, and assets/.",
+        "Files": "Cloudflare dashboard or wrangler CLI"
+      },
+      {
+        "Component": "CLI publish helper",
+        "What it does": "Uploads a local artifact bundle to R2, updates indexes, purges cache.",
+        "Files": "cli/src/publish/cloudflare.ts"
+      },
+      {
+        "Component": "create --publish hook",
+        "What it does": "Calls the publish helper after writing the local bundle.",
+        "Files": "cli/src/commands/create.ts"
+      },
+      {
+        "Component": "CLI config",
+        "What it does": "Reads a saved publish profile plus env overrides; no hardcoded domain.",
+        "Files": "cli/src/types.ts, cli/src/config.ts, ~/.config/visual-artifact/publish.json"
+      }
+    ],
+    "howItWorks": [
+      {
+        "Step": "0. User runs setup once",
+        "Detail": "visual-artifact setup cloudflare verifies credentials, creates/uses an R2 bucket, deploys the Worker, and saves a local publish profile.",
+        "Who": "User + CLI"
+      },
+      {
+        "Step": "1. Build/deploy renderer",
+        "Detail": "The setup command or CI runs pnpm build in app/ and wrangler deploy. This puts the static renderer online.",
+        "Who": "CLI / CI"
+      },
+      {
+        "Step": "2. Create an artifact locally",
+        "Detail": "visual-artifact create writes the bundle to artifacts/<project>/<slug>/ locally, as it does today.",
+        "Who": "Pi / user"
+      },
+      {
+        "Step": "3. Upload to R2",
+        "Detail": "If --publish or VISUAL_ARTIFACT_PUBLISH=cloudflare is set, the CLI uploads artifact.json, annotations.json, and assets to the user's R2 bucket.",
+        "Who": "CLI"
+      },
+      {
+        "Step": "4. Update indexes",
+        "Detail": "The CLI rewrites index.json and <project>/index.json in R2 so the remote home and project pages include the artifact.",
+        "Who": "CLI"
+      },
+      {
+        "Step": "5. Purge cache",
+        "Detail": "The CLI purges only the changed JSON/index URLs. Static app assets stay cached.",
+        "Who": "CLI"
+      },
+      {
+        "Step": "6. Share the URL",
+        "Detail": "The CLI returns the user's URL: workers.dev by default, custom domain if configured.",
+        "Who": "User"
+      }
+    ],
+    "envVars": [
+      {
+        "Name": "VISUAL_ARTIFACT_PUBLISH",
+        "Example": "cloudflare",
+        "Required": "No",
+        "Purpose": "Make every create publish remotely by default."
+      },
+      {
+        "Name": "VISUAL_ARTIFACT_REMOTE_BASE_URL",
+        "Example": "https://viz.example.com/artifacts",
+        "Required": "Yes",
+        "Purpose": "The public URL users will share."
+      },
+      {
+        "Name": "CLOUDFLARE_ACCOUNT_ID",
+        "Example": "abc123...",
+        "Required": "Yes",
+        "Purpose": "Used to build the default R2 S3 endpoint."
+      },
+      {
+        "Name": "VISUAL_ARTIFACT_R2_BUCKET",
+        "Example": "visual-artifacts",
+        "Required": "Yes",
+        "Purpose": "The R2 bucket name."
+      },
+      {
+        "Name": "VISUAL_ARTIFACT_R2_ACCESS_KEY_ID",
+        "Example": "...",
+        "Required": "Yes",
+        "Purpose": "Scoped R2 API token key."
+      },
+      {
+        "Name": "VISUAL_ARTIFACT_R2_SECRET_ACCESS_KEY",
+        "Example": "...",
+        "Required": "Yes",
+        "Purpose": "Scoped R2 API token secret."
+      },
+      {
+        "Name": "VISUAL_ARTIFACT_R2_ENDPOINT",
+        "Example": "https://abc123.r2.cloudflarestorage.com",
+        "Required": "No",
+        "Purpose": "Override the auto-built endpoint."
+      },
+      {
+        "Name": "CLOUDFLARE_ZONE_ID",
+        "Example": "...",
+        "Required": "For purge",
+        "Purpose": "Needed to purge cache by URL."
+      },
+      {
+        "Name": "CLOUDFLARE_API_TOKEN",
+        "Example": "...",
+        "Required": "For purge",
+        "Purpose": "Token with cache purge permission only."
+      }
+    ],
+    "risks": [
+      {
+        "component": "R2 instead of KV",
+        "status": "ok",
+        "notes": "R2 is strongly consistent. KV is eventually consistent and would show stale artifacts.",
+        "meta": "Confirmed by Cloudflare docs."
+      },
+      {
+        "component": "Static export compatibility",
+        "status": "ok",
+        "notes": "app/next.config.ts already uses output: 'export', basePath: '/artifacts', trailingSlash: true.",
+        "meta": "No renderer changes."
+      },
+      {
+        "component": "Bundle upload",
+        "status": "warn",
+        "notes": "We must upload artifact.json + annotations.json + assets/* together. Missing assets breaks images.",
+        "meta": "CLI helper must walk the assets dir."
+      },
+      {
+        "component": "Cache invalidation",
+        "status": "warn",
+        "notes": "Single-file purge can take a few seconds to propagate globally.",
+        "meta": "Use short TTLs as backup."
+      },
+      {
+        "component": "Worker routing",
+        "status": "warn",
+        "notes": "Must set run_worker_first: true so /data/artifacts hits the Worker, not static assets.",
+        "meta": "One-line wrangler config."
+      },
+      {
+        "component": "Annotation API",
+        "status": "defer",
+        "notes": "First version can keep annotations local-only. Remote annotations need POST proxy + auth.",
+        "meta": "Product decision."
+      },
+      {
+        "component": "Credentials",
+        "status": "warn",
+        "notes": "Scoped R2 token stored locally. Avoid checking tokens into git.",
+        "meta": "Use env vars or local secrets."
+      },
+      {
+        "component": "Setup UX",
+        "status": "warn",
+        "notes": "Cloudflare credentials are confusing. The wizard must validate early and print exact missing permission names.",
+        "meta": "Critical for adoption."
+      }
+    ],
+    "routeTable": [
+      {
+        "What": "Artifact page",
+        "Local URL": "http://127.0.0.1:9998/artifacts/<project>/<slug>/",
+        "Remote URL": "https://viz.example.com/artifacts/<project>/<slug>/",
+        "R2 object key": "— (served by static assets)"
+      },
+      {
+        "What": "Artifact JSON",
+        "Local URL": "/artifacts/data/artifacts/<project>/<slug>/artifact.json",
+        "Remote URL": "/artifacts/data/artifacts/<project>/<slug>/artifact.json",
+        "R2 object key": "<project>/<slug>/artifact.json"
+      },
+      {
+        "What": "Annotations JSON",
+        "Local URL": "/artifacts/data/artifacts/<project>/<slug>/annotations.json",
+        "Remote URL": "/artifacts/data/artifacts/<project>/<slug>/annotations.json",
+        "R2 object key": "<project>/<slug>/annotations.json"
+      },
+      {
+        "What": "Asset file",
+        "Local URL": "/artifacts/data/artifacts/<project>/<slug>/assets/<file>",
+        "Remote URL": "/artifacts/data/artifacts/<project>/<slug>/assets/<file>",
+        "R2 object key": "<project>/<slug>/assets/<file>"
+      },
+      {
+        "What": "Project index",
+        "Local URL": "/artifacts/data/artifacts/<project>/index.json",
+        "Remote URL": "/artifacts/data/artifacts/<project>/index.json",
+        "R2 object key": "<project>/index.json"
+      },
+      {
+        "What": "Home index",
+        "Local URL": "/artifacts/data/artifacts/index.json",
+        "Remote URL": "/artifacts/data/artifacts/index.json",
+        "R2 object key": "index.json"
+      }
+    ],
+    "implementation": [
+      {
+        "Phase": "1. Build BYO setup wizard",
+        "Tasks": "Add visual-artifact setup cloudflare. Verify credentials, create/use R2 bucket, deploy Worker, save local publish profile.",
+        "Owner": "Engineer",
+        "Done": "No"
+      },
+      {
+        "Phase": "2. Add Worker + wrangler config",
+        "Tasks": "Add app/wrangler.jsonc and worker/src/index.ts. Serve static export; proxy data and annotation routes to R2.",
+        "Owner": "Engineer",
+        "Done": "No"
+      },
+      {
+        "Phase": "3. Add CLI publish helper",
+        "Tasks": "cli/src/publish/cloudflare.ts signs S3 PUTs, uploads bundle, updates indexes, purges cache.",
+        "Owner": "Engineer",
+        "Done": "No"
+      },
+      {
+        "Phase": "4. Wire create --publish",
+        "Tasks": "Add --publish flag and VISUAL_ARTIFACT_PUBLISH env to cli/src/commands/create.ts. Preserve local-only default.",
+        "Owner": "Engineer",
+        "Done": "No"
+      },
+      {
+        "Phase": "5. Local smoke test",
+        "Tasks": "Deploy once. Create an artifact with --publish. Open remote URL. Check indexes update.",
+        "Owner": "Engineer",
+        "Done": "No"
+      },
+      {
+        "Phase": "6. Document setup",
+        "Tasks": "README section: env vars, token scopes, deploy commands, troubleshooting.",
+        "Owner": "Engineer",
+        "Done": "No"
+      }
+    ],
+    "decisions": [
+      {
+        "Question": "Single project domain or BYO Cloudflare?",
+        "Recommendation": "BYO Cloudflare setup wizard. The user owns the account, bucket, Worker, and optional domain.",
+        "Impact": "This becomes a reusable product feature, not a one-off deploy."
+      },
+      {
+        "Question": "Custom domain or workers.dev?",
+        "Recommendation": "Start with workers.dev to avoid DNS setup. Switch to a custom domain later.",
+        "Impact": "URL users share."
+      },
+      {
+        "Question": "Direct R2 upload or Worker /publish endpoint?",
+        "Recommendation": "Direct R2 upload. Simpler, no 100 MB Worker body limit, fewer moving parts.",
+        "Impact": "CLI holds scoped R2 credentials."
+      },
+      {
+        "Question": "Remote annotations in MVP?",
+        "Recommendation": "No. Keep annotations local-only first. Add remote annotation mutations only if needed.",
+        "Impact": "Worker can return 501 for /api/annotations until then."
+      },
+      {
+        "Question": "Cache purge or short TTL?",
+        "Recommendation": "Both: set 60s TTL on JSON, plus explicit purge on every write.",
+        "Impact": "Updates are fast but stale reads are bounded."
+      }
+    ],
+    "productPrinciples": [
+      {
+        "Principle": "User-owned infrastructure",
+        "Meaning": "Publishing should use the user's Cloudflare account, R2 bucket, Worker, and optional domain.",
+        "Why it matters": "No central service, no billing problem, no abuse queue, no Iury-only domain."
+      },
+      {
+        "Principle": "No domain required for v1",
+        "Meaning": "The fastest path should work on a workers.dev URL.",
+        "Why it matters": "Users can share immediately without touching DNS."
+      },
+      {
+        "Principle": "Credentials stay local",
+        "Meaning": "The CLI reads scoped tokens from env or a local config file. Tokens are never sent to our service.",
+        "Why it matters": "Trust is simple: users control their account and blast radius."
+      },
+      {
+        "Principle": "One setup command",
+        "Meaning": "A wizard should verify auth, create/use a bucket, deploy the Worker, and save the publish profile.",
+        "Why it matters": "Nobody should hand-edit wrangler files just to share a chart."
+      },
+      {
+        "Principle": "Provider-shaped config",
+        "Meaning": "Config should say provider=cloudflare now, leaving room for other providers later.",
+        "Why it matters": "BYO Cloudflare first, managed or other storage later without CLI churn."
+      }
+    ],
+    "setupFlow": [
+      {
+        "Step": "1. Run setup",
+        "Command": "visual-artifact setup cloudflare",
+        "Outcome": "Starts an interactive wizard."
+      },
+      {
+        "Step": "2. Pick account",
+        "Command": "Cloudflare account ID or wrangler login",
+        "Outcome": "CLI knows where to deploy."
+      },
+      {
+        "Step": "3. Create/use bucket",
+        "Command": "visual-artifacts by default",
+        "Outcome": "R2 bucket exists."
+      },
+      {
+        "Step": "4. Deploy Worker",
+        "Command": "wrangler deploy",
+        "Outcome": "Static renderer + R2 proxy are live."
+      },
+      {
+        "Step": "5. Save profile",
+        "Command": "~/.config/visual-artifact/publish.json",
+        "Outcome": "Future create --publish needs no setup flags."
+      },
+      {
+        "Step": "6. Smoke publish",
+        "Command": "visual-artifact create demo.json --publish",
+        "Outcome": "Returns first shareable URL."
+      }
+    ],
+    "setupModes": [
+      {
+        "Mode": "Quickstart",
+        "Who it is for": "Most users",
+        "Input needed": "Cloudflare account + scoped R2 token",
+        "Output": "workers.dev share URL"
+      },
+      {
+        "Mode": "Custom domain",
+        "Who it is for": "People who want polished links",
+        "Input needed": "Cloudflare zone/domain + route",
+        "Output": "https://viz.example.com/artifacts/..."
+      },
+      {
+        "Mode": "Advanced existing infra",
+        "Who it is for": "Teams with existing buckets/workers",
+        "Input needed": "Bucket, Worker name, base URL, tokens",
+        "Output": "Uses their existing Cloudflare layout"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "We want remote publishing to work for any user, not just one hardcoded domain. The product shape is BYO Cloudflare: the user brings their Cloudflare account and scoped credentials, the CLI sets up the Worker/R2 path, and future artifacts publish to their own shareable URL.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Executive summary",
+        "deck": "What we are building and why it is the right shape."
+      },
+      "children": [
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": "BYO Cloudflare",
+                "label": "Product model",
+                "note": "Users publish to infra they own. · any account · up",
+                "signal": "new"
+              },
+              {
+                "value": "Wizard",
+                "label": "Setup UX",
+                "note": "No hand-editing config files. · plug credentials · up",
+                "signal": "new"
+              },
+              {
+                "value": "workers.dev",
+                "label": "Default URL",
+                "note": "Share immediately; DNS later. · domain optional · neutral",
+                "signal": "new"
+              },
+              {
+                "value": "Low",
+                "label": "Risk",
+                "note": "Static app, R2 data, scoped token. · boring tech · up",
+                "signal": "new"
+              }
+            ]
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "tone": "muted",
+            "content": "The big idea is not “deploy this to Iury’s domain.” The big idea is **make publishing portable**. A user runs one setup command, points the CLI at their Cloudflare account, and gets a reusable publish profile. After that, `visual-artifact create --publish` returns a public URL in their own Cloudflare deployment."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Product requirement: works for other people",
+        "deck": "This is a reusable BYO Cloudflare publishing flow, not a one-off domain setup."
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "The first version should assume the user owns the Cloudflare account. They should not need our domain, our storage, or our backend. They provide credentials, the CLI verifies them, deploys the Worker, creates or reuses an R2 bucket, and saves a local profile. The easiest output is a `workers.dev` URL. A custom domain is a polish step, not a blocker."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "productPrinciples",
+            "columns": [
+              "Principle",
+              "Meaning",
+              "Why it matters"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Setup wizard UX",
+        "deck": "The user-facing flow should be boring: run one command, answer a few prompts, then publish."
+      },
+      "children": [
+        {
+          "type": "code",
+          "props": {
+            "code": "# one-time setup\nvisual-artifact setup cloudflare\n\n# then, from any project\nvisual-artifact create artifact.json --publish --json\n\n# output includes the share URL\n# remoteUrl=https://your-worker.your-account.workers.dev/artifacts/my-project/my-artifact/",
+            "language": "bash",
+            "title": "Target user flow"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "setupFlow",
+            "columns": [
+              "Step",
+              "Command",
+              "Outcome"
+            ]
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "setupModes",
+            "columns": [
+              "Mode",
+              "Who it is for",
+              "Input needed",
+              "Output"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The architecture in one picture",
+        "deck": "How a created artifact travels from Pi to a viewer's browser."
+      },
+      "children": [
+        {
+          "type": "mermaid",
+          "props": {
+            "height": 560,
+            "code": "flowchart LR\n  subgraph Local [\"Local machine\"]\n    Pi[Pi agent]\n    CLI[visual-artifact CLI]\n    LocalStore[(local artifacts/)]\n  end\n\n  subgraph Cloudflare [\"Cloudflare\"]\n    Worker[Cloudflare Worker]\n    Static[Workers Static Assets\\napp/out]\n    R2[(R2 bucket)]\n    Cache[Cloudflare Cache]\n  end\n\n  subgraph Viewer [\"Viewer\"]\n    Browser[Browser]\n  end\n\n  Pi -->|emits spec JSON| CLI\n  CLI -->|writes bundle| LocalStore\n  CLI -->|if --publish| R2PUT[R2 signed PUT]\n  R2PUT --> R2\n  R2PUT -->|update indexes| R2\n  R2PUT -->|purge URLs| Cache\n\n  Browser -->|opens page| Worker\n  Worker -->|/_next/* and shells| Static\n  Worker -->|/data/artifacts/*| R2\n\n  classDef local fill:#f0fdf4,stroke:#22c55e,color:#14532d;\n  classDef cf fill:#fff7ed,stroke:#f97316,color:#7c2d12;\n  class Pi,CLI,LocalStore local;\n  class Worker,Static,R2,Cache cf;",
+            "caption": "End-to-end flow"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "What we actually build",
+        "deck": "Five concrete pieces. No platform rewrite."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "buildList",
+            "columns": [
+              "Component",
+              "What it does",
+              "Files"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "How it works step by step",
+        "deck": "The happy path from renderer deploy to shared URL."
+      },
+      "children": [
+        {
+          "type": "checklist",
+          "props": {
+            "items": [
+              {
+                "text": "Build the renderer",
+                "state": "done",
+                "note": "cd app && pnpm build emits a static export to app/out/."
+              },
+              {
+                "text": "Deploy to Cloudflare",
+                "state": "doing",
+                "note": "wrangler deploy uploads app/out as static assets and deploys the Worker."
+              },
+              {
+                "text": "Create an artifact locally",
+                "state": "todo",
+                "note": "visual-artifact create writes the bundle to artifacts/<project>/<slug>/ as today."
+              },
+              {
+                "text": "Upload the bundle to R2",
+                "state": "todo",
+                "note": "With --publish or VISUAL_ARTIFACT_PUBLISH=cloudflare, the CLI uploads artifact.json, annotations.json, and assets/."
+              },
+              {
+                "text": "Update indexes",
+                "state": "todo",
+                "note": "The CLI rewrites index.json and <project>/index.json in R2."
+              },
+              {
+                "text": "Purge cache",
+                "state": "todo",
+                "note": "The CLI tells Cloudflare to drop changed JSON URLs from edge cache."
+              },
+              {
+                "text": "Share the URL",
+                "state": "todo",
+                "note": "The CLI returns https://viz.example.com/artifacts/<project>/<slug>/."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Route contract",
+        "deck": "Local and remote URLs look identical. Only the origin changes."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "routeTable",
+            "columns": [
+              "What",
+              "Local URL",
+              "Remote URL",
+              "R2 object key"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The Worker",
+        "deck": "It does two things: serve static assets, and fetch data from R2."
+      },
+      "children": [
+        {
+          "type": "code",
+          "props": {
+            "code": "type Env = { ASSETS: Fetcher; ARTIFACTS: R2Bucket }\n\nconst DATA = \"/artifacts/data/artifacts/\"\nconst API = \"/artifacts/api/annotations/\"\n\nexport default {\n  async fetch(request: Request, env: Env): Promise<Response> {\n    const url = new URL(request.url)\n    const pathname = decodeURIComponent(url.pathname)\n\n    // Data routes: read from R2\n    if (pathname.startsWith(DATA)) {\n      const key = pathname.slice(DATA.length)\n      const object = await env.ARTIFACTS.get(key)\n      if (!object) return new Response(\"Not found\", { status: 404 })\n      return new Response(object.body, {\n        headers: {\n          \"Content-Type\": object.httpMetadata?.contentType ?? \"application/json\",\n          \"Cache-Control\": \"public, max-age=60, s-maxage=300\",\n        },\n      })\n    }\n\n    // Annotation API: defer to later; return 501 for now\n    if (pathname.startsWith(API)) {\n      return new Response(\"Remote annotations not implemented\", { status: 501 })\n    }\n\n    // Everything else: static export, with live shell fallback\n    return env.ASSETS.fetch(new Request(new URL(shellPath(pathname), url.origin), request))\n  },\n}\n\nfunction shellPath(pathname: string): string {\n  const stripped = pathname.startsWith(\"/artifacts\")\n    ? pathname.slice(\"/artifacts\".length) || \"/\"\n    : pathname\n  const parts = stripped.split(\"/\").filter(Boolean)\n  if (parts.length === 2) return \"/shell-artifact/\"\n  if (parts.length === 1 && ![\"_next\", \"data\", \"api\"].includes(parts[0])) return \"/shell-project/\"\n  return stripped\n}",
+            "language": "typescript",
+            "title": "worker/src/index.ts (shape)",
+            "file": "worker/src/index.ts (shape)"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The CLI changes",
+        "deck": "Add a publish helper and a flag. Keep the local path untouched."
+      },
+      "children": [
+        {
+          "type": "code",
+          "props": {
+            "code": "interface CreateOpts extends GlobalOpts {\n  project?: string\n  contract?: string\n  dryRun?: boolean\n  serve?: boolean\n  publish?: boolean | \"cloudflare\"\n}\n\n// after local bundle write:\nlet remote: Awaited<ReturnType<typeof publishToCloudflare>> | undefined\nconst shouldPublish = opts.publish || config.remote.provider === \"cloudflare\"\n\nif (shouldPublish) {\n  remote = await publishToCloudflare({\n    config: config.remote,\n    project: projectName,\n    slug: spec.slug,\n    spec,\n    annotations: await readAnnotationsBundle(config.artifactsDir, projectName, spec.slug),\n    assets: await listAssetFiles(config.artifactsDir, projectName, spec.slug),\n  })\n}\n\nlog.output({\n  ok: true,\n  slug: spec.slug,\n  projectName,\n  projectPath,\n  path: filePath,\n  bundleDir,\n  url,\n  published: Boolean(remote),\n  remoteUrl: remote?.remoteUrl,\n  remotePath: remote?.remotePath,\n})",
+            "language": "typescript",
+            "title": "cli/src/commands/create.ts (extra lines)",
+            "file": "cli/src/commands/create.ts (extra lines)"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Environment variables",
+        "deck": "Everything the CLI needs to publish remotely."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "envVars",
+            "columns": [
+              "Name",
+              "Example",
+              "Required",
+              "Purpose"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Risks and how we handle them",
+        "deck": "Honest operational readiness."
+      },
+      "children": [
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "risks",
+            "titleKey": "component",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "ok": "done",
+              "warn": "wait",
+              "defer": "wait"
+            },
+            "groupOrder": [
+              "ok",
+              "warn",
+              "defer"
+            ],
+            "metaKey": "meta"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Implementation order",
+        "deck": "Do it in this order. Each phase is shippable on its own."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "implementation",
+            "columns": [
+              "Phase",
+              "Tasks",
+              "Owner",
+              "Done"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Decisions we need now",
+        "deck": "Three questions that block the first line of code."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "decisions",
+            "columns": [
+              "Question",
+              "Recommendation",
+              "Impact"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Next actions",
+        "deck": "What to do today."
+      },
+      "children": [
+        {
+          "type": "steps",
+          "props": {
+            "items": [
+              {
+                "title": "Pick a domain",
+                "body": "workers.dev for speed, custom domain for polish."
+              },
+              {
+                "title": "Create R2 bucket + token",
+                "body": "Object Read & Write scoped to the bucket."
+              },
+              {
+                "title": "Bootstrap the Worker",
+                "body": "Add app/wrangler.jsonc and worker/src/index.ts."
+              },
+              {
+                "title": "Build the publish helper",
+                "body": "Upload bundle, update indexes, purge cache."
+              },
+              {
+                "title": "Smoke test",
+                "body": "Create one artifact remotely and open the public URL."
+              }
+            ],
+            "caption": "This week"
+          }
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "props": {
+        "tone": "muted",
+        "content": "This should feel like a product feature: bring your own Cloudflare credentials, run setup, publish. The domain is not the point. The point is portable sharing. Start with workers.dev because it works everywhere; custom domains can come later."
+      }
+    }
+  ]
+}

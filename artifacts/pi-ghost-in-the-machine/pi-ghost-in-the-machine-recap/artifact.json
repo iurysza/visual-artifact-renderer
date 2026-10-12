@@ -1,0 +1,369 @@
+{
+  "slug": "pi-ghost-in-the-machine-recap",
+  "title": "Ghost in the Machine — Project Recap",
+  "description": "Verified current-state recap for pi-ghost-in-the-machine, using the default 2-week Git window.",
+  "artifactType": "report",
+  "topics": [
+    "pi-extension",
+    "ghostty-shader",
+    "herdr-integration",
+    "project-recap"
+  ],
+  "layout": {
+    "type": "grid",
+    "columns": 2
+  },
+  "data": {
+    "activity": [
+      {
+        "date": "19 Jul 2026",
+        "title": "Standalone package established",
+        "description": "Initial Pi extension, controller, shaders, setup, packaging, and baseline tests landed together.",
+        "status": "complete"
+      },
+      {
+        "date": "19 Jul 2026",
+        "title": "Lifecycle and setup hardened",
+        "description": "Refined lifecycle behavior, setup, package contract, and test coverage.",
+        "status": "complete"
+      },
+      {
+        "date": "19 Jul 2026",
+        "title": "Sidebar becomes a visibility gate",
+        "description": "Collapse selects off; focus and pane memory decide what returns on expansion.",
+        "status": "complete"
+      },
+      {
+        "date": "19 Jul 2026",
+        "title": "Watcher moves to Node sockets",
+        "description": "One watcher per canonical Herdr socket replaces steady-state shell/JQ process churn.",
+        "status": "complete"
+      },
+      {
+        "date": "19 Jul 2026",
+        "title": "Expansion and lock recovery fixed",
+        "description": "Restore waits for current focus; lock handling is portable.",
+        "status": "complete"
+      },
+      {
+        "date": "19 Jul 2026",
+        "title": "Maintainer map consolidated",
+        "description": "Architecture, semantic state map, operations, roadmap, visual model, and performance report were reorganized.",
+        "status": "complete"
+      }
+    ],
+    "decisions": [
+      {
+        "decision": "Bundle the complete runtime",
+        "why": "One installable package owns the Pi extension, controller, shaders, and optional Herdr routing.",
+        "considered": "Separate shader checkout or shell wrapper; rejected by the public package contract."
+      },
+      {
+        "decision": "Keep one global renderer, remember per pane",
+        "why": "Ghostty is global while Pi and Herdr are pane-local; focus must select rather than overwrite remembered state.",
+        "considered": "Letting the active state stand in for pane state; unsafe because the copies may legitimately differ."
+      },
+      {
+        "decision": "Use a Node watcher per canonical socket",
+        "why": "Measured steady-state child launches fell from 756 to 0 and watcher CPU from 0.250 s to 0.070 s in the 15 s sample.",
+        "considered": "Legacy Bash/CLI/JQ polling; lower RSS but process churn. Upstream event remains preferred when available."
+      },
+      {
+        "decision": "Treat sidebar collapse as off",
+        "why": "A collapsed sidebar gates visibility; expansion restores the focused Pi pane’s remembered lifecycle state.",
+        "considered": "Always restoring idle; rejected because it loses the current pane’s state."
+      }
+    ],
+    "status": [
+      {
+        "area": "Working",
+        "state": "healthy",
+        "detail": "16/16 automated tests passed in this recap",
+        "meta": "npm test · 3.687 s"
+      },
+      {
+        "area": "In progress",
+        "state": "warn",
+        "detail": "Viewport-relative shader placement is modified but uncommitted",
+        "meta": "7 files · +280 / −68"
+      },
+      {
+        "area": "Degraded / risk",
+        "state": "risk",
+        "detail": "Global renderer still lacks the planned serialized control path",
+        "meta": "documented roadmap item"
+      },
+      {
+        "area": "Blocked externally",
+        "state": "warn",
+        "detail": "Polling cannot be removed until Herdr exposes a trustworthy sidebar visibility event",
+        "meta": "documented dependency"
+      }
+    ],
+    "evidence": [
+      {
+        "claim": "2-week activity",
+        "evidence": "13 commits · 35 paths · +798 / −616",
+        "source": "git rev-list / git log --name-only / --numstat"
+      },
+      {
+        "claim": "Current worktree",
+        "evidence": "7 modified files · source shader + 5 visible variants + visual-model doc",
+        "source": "git status --short --branch; git diff --stat"
+      },
+      {
+        "claim": "Validation",
+        "evidence": "16 passed · 0 failed · 3.687 s",
+        "source": "npm test"
+      },
+      {
+        "claim": "Branch divergence",
+        "evidence": "main and wip/palette-osc-rendering each contain 1 commit absent from current HEAD",
+        "source": "git for-each-ref --no-merged; git rev-list --left-right --count"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "**Elevator pitch:** a tiny ASCII face in Ghostty that mirrors Pi’s lifecycle—from thought to work to completion—then gets the hell out of the way when its pane is irrelevant.\n\n**Current read:** version `0.1.0`, an early package stage inferred from semantic versioning. It bundles the Pi extension, lifecycle shaders, Ghostty controller, and optional Herdr focus/sidebar routing. The operational heart is small, but it crosses three runtimes and one global renderer: that’s where the interesting debt lives.\n\n**Environment:** Pi `>=0.80.4` · Ghostty `>=1.3` · Node `>=22.19` · Bash/`pgrep`/`jq` · optional Herdr `>=0.7.4` for focus/sidebar routing."
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": "13",
+            "label": "Recent commits",
+            "note": "All dated 19 Jul 2026. · 2-week default window · up",
+            "signal": "new"
+          },
+          {
+            "value": "35",
+            "label": "Changed paths",
+            "note": "Across recent commit numstats. · +798 / −616 · up",
+            "signal": "new"
+          },
+          {
+            "value": "16/16",
+            "label": "Automated checks",
+            "note": "npm test · 3.687 s. · passed · up",
+            "signal": "new"
+          },
+          {
+            "value": "7 files",
+            "label": "Local worktree",
+            "note": "Shader placement work is uncommitted. · +280 / −68 · neutral",
+            "signal": "risk"
+          }
+        ]
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Architecture snapshot",
+        "deck": "Conceptual runtime: control state lives outside the shader; Ghostty receives one selected path."
+      },
+      "children": [
+        {
+          "type": "mermaid",
+          "props": {
+            "caption": "Pi produces lifecycle intent. The controller owns pane memory, focus/sidebar gating, the runtime fragment, and Ghostty reload. The watcher only observes sidebar transitions; the shader only renders pixels.",
+            "height": 600,
+            "code": "flowchart LR\n  PI[Pi extension\\nLifecycle + commands] -->|desired state| CTRL[Controller\\nPane memory + gates]\n  HERDR[Herdr\\nFocus + API socket] -->|focus| CTRL\n  WATCH[Node sidebar watcher\\ncanonical socket] -->|expanded / collapsed| CTRL\n  CTRL -->|zero or one custom-shader path| FRAG[ghostty-state.conf\\nRuntime fragment]\n  CTRL -->|SIGUSR2| GHOST[Ghostty]\n  FRAG --> GHOST\n  GHOST --> SHADER[Generated shader variant]\n  SHADER --> FACE[ASCII face]\n  subgraph State vocabulary\n    DESIRED[desired] --> PANE[pane] --> ACTIVE[active]\n    SIDE[sidebar] --> ACTIVE\n  end\n  CTRL --- PANE\n  CTRL --- ACTIVE"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Why this model matters\n\nThe copies of state are allowed to disagree.\n\n- **Desired** is what a Pi session wants.\n- **Pane** is controller memory for a Herdr pane.\n- **Active** is the last selection written for Ghostty’s global fragment.\n- **Sidebar** is a visibility gate.\n\nA focused pane may remember `working` while Ghostty is `off` because the sidebar is collapsed. Debug intent → focus → sidebar → fragment → reload → shader, in that order."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Recent activity",
+        "deck": "The 13 commits form a concentrated single-day build-and-harden cycle, then a documentation handoff."
+      },
+      "children": [
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "activity",
+            "titleKey": "title",
+            "markerKey": "date",
+            "descriptionKey": "description",
+            "statusKey": "status",
+            "caption": "Commit messages supply the chronology; current architecture and performance docs supply the durable rationale."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Activity by theme\n\n**Feature work.** The standalone package, lifecycle face, sidebar geometry probe, collapse gate, and dense visual language arrived.\n\n**Reliability.** Lifecycle/setup hardening, portable lock recovery, and expansion restoration targeted focus/sidebar races.\n\n**Infrastructure.** A Node socket watcher replaced the legacy steady-state Bash/CLI/JQ loop: 0 child launches vs 756 in the documented 15-second sample, at a ~40 MiB RSS cost.\n\n**Documentation.** The repo now has explicit architecture, semantic state, operations, visual, performance, and roadmap maps. There are still no ADRs—deliberately, because none has been recorded as durable enough yet."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Decision log",
+        "deck": "Decisions reconstructed only from the shipped contract, architecture, performance report, and roadmap."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "decisions",
+            "columns": [
+              {
+                "key": "decision",
+                "label": "Decision"
+              },
+              {
+                "key": "why",
+                "label": "Why"
+              },
+              {
+                "key": "considered",
+                "label": "Considered / boundary"
+              }
+            ],
+            "caption": "No commit-body rationale was available; this table does not invent one."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "State of things",
+        "deck": "Green is verified now; amber is unfinished or external; red is a known design risk, not a confirmed outage."
+      },
+      "children": [
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "status",
+            "titleKey": "area",
+            "bodyKey": "detail",
+            "groupKey": "state",
+            "signals": {
+              "healthy": "done",
+              "warn": "wait",
+              "risk": "risk"
+            },
+            "groupOrder": [
+              "healthy",
+              "warn",
+              "risk"
+            ],
+            "caption": "No live Herdr/Ghostty session or package dry-run was run in this recap.",
+            "metaKey": "meta"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Mental model essentials",
+        "deck": "The shortest list worth holding in your head before touching code."
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "1. **Global renderer, local panes.** Never let a focus change erase another pane’s remembered state.\n2. **`off` is visibility, not a face.** It removes the shader path rather than selecting an animated state.\n3. **The fragment wins.** `ghostty-state.conf` is Ghostty’s real input; `active.state` is only diagnostic memory.\n4. **One path only.** Multiple Ghostty shader entries form a pipeline, not alternatives.\n5. **Time is part of the contract.** Visible states last at least 2 seconds; queue only the newest request.\n6. **Error is turn-scoped.** Later successful tools do not clear a failure before settlement; new input does.\n7. **Watcher identity is socket identity.** Canonicalize the Herdr API socket; never target `herdr-client.sock`.\n8. **Generated variants are derived.** Edit the source shader, regenerate, then commit every visible variant together.\n9. **The sidebar heuristic is bounded.** `area.x <= 4` is verified only for the desktop geometry; hidden/mobile behavior is unknown.\n10. **Render and control stay split.** GLSL has no Pi/Herdr routing knowledge; controller code owns visibility and selection."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Cognitive debt hotspots",
+        "deck": "These are weak-understanding or high-coupling zones with concrete exits—not bug reports dressed as theatre."
+      },
+      "children": [
+        {
+          "type": "columns",
+          "props": {
+            "count": 3
+          },
+          "children": [
+            {
+              "type": "prose",
+              "props": {
+                "content": "### RED · Global output arbitration\n\nLifecycle events, manual commands, focus, sidebar, startup, and shutdown share a global Ghostty target without the roadmap’s planned serialized control path.\n\n**Risk:** stale focus/sidebar work can apply after newer focus wins.\n\n**Exit:** implement one serialized control path with explicit winner/ownership semantics, then add race tests around forced commands and rapid focus changes."
+              }
+            },
+            {
+              "type": "prose",
+              "props": {
+                "content": "### AMBER · Sidebar visibility is geometry\n\nThe watcher infers collapse from `area.x <= 4`; hidden-sidebar/mobile behavior is explicitly unknown.\n\n**Risk:** a layout heuristic becomes an accidental product contract.\n\n**Exit:** replace polling when Herdr exposes a trustworthy visibility event. Until then, keep scope to the verified desktop geometry and extend only with live evidence."
+              }
+            },
+            {
+              "type": "prose",
+              "props": {
+                "content": "### BLUE · Placement evidence is narrow\n\nUncommitted shader work uses cursor glyph width as a proxy for display mode: observed ~8 px Retina vs ~10 px ultrawide, otherwise original-layout fallback.\n\n**Risk:** cursor style and display mode are coupled indirectly; edge cases may revert or misplace the face.\n\n**Exit:** run `npm run check`, then capture a cursor-style × display-scale visual matrix before calling the placement rule stable."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Next steps",
+        "deck": "Ordered by the project’s stated trajectory and the current worktree."
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "1. **Finish the viewport-relative placement change:** regenerate/check the variants and run a live Ghostty matrix; commit the source shader, all generated visible variants, and visual-model doc together.\n2. **Serialize global control ownership:** make lifecycle/manual/focus/sidebar/startup/shutdown writes share one ordered path; prove stale events cannot win.\n3. **Harden watcher lifecycle:** make per-socket start/stop atomic; add explicit startup-stop overlap and non-`exec` child cleanup coverage.\n4. **Keep polling temporary:** swap the geometry heuristic for a Herdr visibility event only when one exists; do not pile up new guesses.\n5. **Reconcile branch divergence deliberately:** inspect the one commit outside current HEAD on `main` and `wip/palette-osc-rendering`; neither should silently rot."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Evidence ledger",
+        "deck": "Every numeric or current-state claim on this page is backed by this recap’s fact sheet."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "evidence",
+            "columns": [
+              {
+                "key": "claim",
+                "label": "Claim"
+              },
+              {
+                "key": "evidence",
+                "label": "Observed"
+              },
+              {
+                "key": "source",
+                "label": "Source"
+              }
+            ],
+            "caption": "Full fact sheet: ~/.agent/diagrams/pi-ghost-in-the-machine-recap-fact-sheet.md"
+          }
+        }
+      ]
+    }
+  ]
+}

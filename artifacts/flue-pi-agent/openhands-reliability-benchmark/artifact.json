@@ -1,0 +1,187 @@
+{
+  "slug": "openhands-reliability-benchmark",
+  "title": "OpenHands reliability benchmark — event-sourced persistence & delivery patterns",
+  "description": "Evidence-backed summary of OpenHands (OSS) persistence model, workspace/sandbox semantics, event delivery path, incident coverage, transferable patterns and suggested minimal integration for durable artifact delivery.",
+  "artifactType": "report",
+  "topics": [
+    "openhands",
+    "event-sourcing",
+    "app-server"
+  ],
+  "data": {
+    "openhands_features": [
+      {
+        "feature": "Per-event append-only persistence",
+        "how_openhands_implements_it": "events directory (one JSON per event) + base_state.json snapshot with locking and atomic append",
+        "integration_gap": "Workspace artifacts depend on workspace type; may need explicit copy-out for ephemeral Docker workspaces",
+        "evidence": "openhands-sdk/openhands/sdk/conversation/event_store.py"
+      },
+      {
+        "feature": "Workspace semantics",
+        "how_openhands_implements_it": "Pluggable workspaces: LocalWorkspace (host FS durable), Docker/Remote workspaces (ephemeral unless persistance_dir used)",
+        "integration_gap": "Ensure persistence_dir is set or copy artifacts to durable store on finish",
+        "evidence": "local_conversation.py + state.py (env_observation_persistence_dir)"
+      },
+      {
+        "feature": "Delivery to App Server / callbacks",
+        "how_openhands_implements_it": "Agent Server posts event batches to App Server; App Server persists then runs callback processors for side effects",
+        "integration_gap": "No built-in end-to-end delivery ack tying FINISHED to external channel ack; callbacks are custom processors",
+        "evidence": "OpenHands/app_server/event_callback/webhook_router.py"
+      },
+      {
+        "feature": "Reconnect & replay",
+        "how_openhands_implements_it": "RemoteEventsList with reconcile() does REST initial fetch + WS subscribe and dedup by event id",
+        "integration_gap": "Need to wire client-side reconcilers in bridges to avoid UI missed events",
+        "evidence": "remote_conversation.py (RemoteEventsList)"
+      }
+    ],
+    "openhands_incidents": [
+      {
+        "area": "Deterministic replay & resume",
+        "status": "pass",
+        "notes": "EventLog + base_state snapshot enable deterministic replay."
+      },
+      {
+        "area": "Durable artifact retention",
+        "status": "partial",
+        "notes": "Possible with LocalWorkspace; Docker/remote workspaces need explicit artifact copy-out to persistence_dir."
+      },
+      {
+        "area": "Delivery ack to external channels",
+        "status": "app",
+        "notes": "App Server callbacks do delivery but no end-to-end ACK guarantee; integrator must record delivery state."
+      },
+      {
+        "area": "Reconnect / missed WS frames",
+        "status": "pass",
+        "notes": "RemoteEventsList.reconcile and EventLog index rebuilding provide concrete recovery primitives."
+      }
+    ],
+    "openhands_next_steps": [
+      {
+        "order": 1,
+        "step": "E2E persistence test",
+        "action": "Run conversation with DockerWorkspace that writes an ObservationEvent to persistence_dir, shut down workspace, verify artifact retained in persistence_dir.",
+        "status": "planned"
+      },
+      {
+        "order": 2,
+        "step": "Delivery bridge prototype",
+        "action": "Implement a lightweight callback processor that reads FINISH event, fetches artifact from EventLog, posts to Telegram with idempotency key (event.id) and stores delivery state (delivered/delivery_failed).",
+        "status": "planned"
+      },
+      {
+        "order": 3,
+        "step": "Finish validator hook",
+        "action": "Add server-side post-FINISH validator that checks artifact existence and non-empty payload before allowing ConversationExecutionStatus -> FINISHED.",
+        "status": "todo"
+      }
+    ],
+    "openhands_evidence": [
+      {
+        "source": "Convo persistence docs",
+        "path_or_url": "https://docs.openhands.dev/sdk/guides/convo-persistence",
+        "quote": "Per-event files + base_state snapshot; autosave logic and persistence_dir docs."
+      },
+      {
+        "source": "EventLog implementation",
+        "path_or_url": "https://github.com/OpenHands/software-agent-sdk/blob/main/openhands-sdk/openhands/sdk/conversation/event_store.py",
+        "quote": "append semantics, locking, id-to-index mapping and atomic writes."
+      },
+      {
+        "source": "LocalConversation run loop",
+        "path_or_url": "https://github.com/OpenHands/software-agent-sdk/blob/main/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py",
+        "quote": "ConversationExecutionStatus enum and FINISHED treated as terminal by run loop."
+      },
+      {
+        "source": "App Server webhook router",
+        "path_or_url": "https://github.com/OpenHands/OpenHands/blob/3059ac42/openhands/app_server/event_callback/webhook_router.py",
+        "quote": "Webhook receiver persists events and dispatches callback processors."
+      },
+      {
+        "source": "RemoteEventsList / reconcile",
+        "path_or_url": "https://github.com/OpenHands/software-agent-sdk/blob/main/openhands-sdk/openhands/sdk/conversation/impl/remote_conversation.py",
+        "quote": "RemoteEventsList merges/deduplicates by event id and has reconcile() to fetch missed events."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "OpenHands reliability benchmark — event-sourced persistence & delivery patterns"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "OpenHands uses an append-only per-event file model with a base_state snapshot, making deterministic replay and idempotent read-back feasible. The platform separates execution from delivery: Agent Server pushes events to an App Server webhook which runs callback processors. Outbound channel delivery and guaranteed acknowledgements are integrator responsibilities. The evidence below cites exact OSS files for persistence, remote reconciliation, and webhook delivery logic."
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  Agent[AgentRuntime] --> EventLog[EventLog]\n  EventLog --> RemoteClient[RemoteEventsList]\n  AgentServer[AgentServer] -->|POST batches| AppServer[AppServer]\n  AppServer --> CallbackProcessor[CallbackProcessor]\n  Workspace[Workspace] -->|writes| EventLog",
+            "caption": "Event flow: agent writes per-event files + base snapshot; Agent Server pushes to App Server which runs callbacks to channels."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "openhands_features",
+            "columns": [
+              "feature",
+              "how_openhands_implements_it",
+              "integration_gap",
+              "evidence"
+            ],
+            "caption": "Feature implementation and integration gaps"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "openhands_incidents",
+            "titleKey": "area",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "pass": "done",
+              "partial": "wait",
+              "app": "none"
+            },
+            "groupOrder": [
+              "pass",
+              "partial",
+              "app"
+            ],
+            "caption": "Incident coverage (SOLVED / PARTIAL / APP)"
+          }
+        },
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "openhands_next_steps",
+            "titleKey": "step",
+            "markerKey": "order",
+            "descriptionKey": "action",
+            "statusKey": "status",
+            "caption": "Suggested experiments to close gaps"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "openhands_evidence",
+            "columns": [
+              "source",
+              "path_or_url",
+              "quote"
+            ],
+            "caption": "Primary evidence (files + docs)"
+          }
+        }
+      ]
+    }
+  ]
+}

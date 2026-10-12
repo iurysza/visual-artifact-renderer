@@ -1,0 +1,470 @@
+{
+  "slug": "artifact-direction-picker-contract-journey",
+  "title": "Artifact direction picker: contract journey",
+  "description": "A code-review walkthrough of how VAR asks for direction, binds it to creation, and keeps the extension-only value out of persisted artifact JSON.",
+  "artifactType": "review",
+  "topics": [
+    "pi-extension",
+    "artifact-generation",
+    "user-direction",
+    "code-review"
+  ],
+  "layout": {
+    "type": "default"
+  },
+  "data": {
+    "guards": [
+      {
+        "guard": "Direction selected",
+        "result": "enforced",
+        "evidence": "create_visual_artifact is blocked until the picker returns a non-empty instruction."
+      },
+      {
+        "guard": "Exact instruction carried forward",
+        "result": "enforced",
+        "evidence": "directionInstruction must exactly match the selected instruction."
+      },
+      {
+        "guard": "Cancelled or unavailable UI",
+        "result": "blocked",
+        "evidence": "The picker returns a cancelled result; the agent must ask in chat instead."
+      },
+      {
+        "guard": "Persisted artifact spec",
+        "result": "clean",
+        "evidence": "artifactSpecFromParams removes directionInstruction before CLI creation."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "This change turns a visual-artifact request into an explicit user contract: choose a direction first, carry that exact instruction into creation, then strip it before the JSON artifact is saved.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "callout",
+      "props": {
+        "tone": "note",
+        "body": "The change prevents silent direction drift at the extension boundary. It does not try to mechanically judge page aesthetics; it guarantees that creation is tied to the user-selected instruction.",
+        "title": "Review conclusion"
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Contract journey"
+      },
+      "children": [
+        {
+          "type": "checklist",
+          "props": {
+            "items": [
+              {
+                "text": "User asks for an artifact",
+                "state": "done",
+                "note": "The active Pi guidance requires a direction choice before source inspection or spec construction."
+              },
+              {
+                "text": "Picker presents 2–4 directions",
+                "state": "done",
+                "note": "choose_visual_artifact_direction opens Pi UI, includes an Other path, and receives the agent abort signal."
+              },
+              {
+                "text": "Extension records a valid selection",
+                "state": "done",
+                "note": "Only a non-cancelled selection with a non-blank instruction becomes the current request direction."
+              },
+              {
+                "text": "Create call proves the handoff",
+                "state": "done",
+                "note": "create_visual_artifact must carry the exact selected text as directionInstruction or the tool call is blocked."
+              },
+              {
+                "text": "CLI receives a clean artifact spec",
+                "state": "done",
+                "note": "directionInstruction is extension metadata and is removed before validation, storage, and optional publishing."
+              }
+            ]
+          }
+        },
+        {
+          "type": "steps",
+          "props": {
+            "items": [
+              {
+                "title": "User",
+                "body": "artifact request",
+                "tag": "artifact request"
+              },
+              {
+                "title": "Pi direction picker",
+                "body": "choice + instruction",
+                "tag": "choice + instruction"
+              },
+              {
+                "title": "Create gate",
+                "body": "exact-match check",
+                "tag": "exact-match check"
+              },
+              {
+                "title": "CLI",
+                "body": "strip metadata + validate"
+              },
+              {
+                "title": "Stored artifact",
+                "body": "renderable JSON only",
+                "tag": "renderable JSON only"
+              }
+            ],
+            "caption": "Responsibility path. The direction lives at the interactive extension boundary; the renderer and stored spec remain unchanged."
+          }
+        },
+        {
+          "type": "execution-trace",
+          "props": {
+            "title": "Debugger call stack: direction to creation",
+            "caption": "Static, source-backed trace of the happy path. The exact spans are revalidated at creation time; it is not a runtime capture.",
+            "provenance": {
+              "mode": "inferred",
+              "method": "static-analysis",
+              "summary": "Source facts were extracted from pi-extension/visual-artifact.ts in the dirty worktree.",
+              "confidence": "high",
+              "codeRevision": "6a91f9809a733d26eb708d6e1e40492c1b3627e5"
+            },
+            "events": [
+              {
+                "id": "reset-request-state",
+                "order": 0,
+                "phase": "input",
+                "kind": "boundary",
+                "label": "Start a new artifact request",
+                "summary": "before_agent_start clears any prior selection, so a direction cannot leak between user requests.",
+                "source": {
+                  "facts": {
+                    "span": {
+                      "file": "pi-extension/visual-artifact.ts",
+                      "startLine": 101,
+                      "endLine": 103
+                    },
+                    "excerpt": "  pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })",
+                    "sourceHash": "b497d301b1860e201d1c64208eb4195fe608c2646b08e2ae03f0a5176e630c20",
+                    "revision": "6a91f9809a733d26eb708d6e1e40492c1b3627e5",
+                    "worktree": "dirty",
+                    "language": "typescript",
+                    "syntaxKind": "call_expression",
+                    "focus": {
+                      "kind": "call",
+                      "text": "pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })",
+                      "symbol": "pi.on"
+                    },
+                    "scope": {
+                      "kind": "function",
+                      "symbol": "visualArtifactExtension",
+                      "startLine": 98,
+                      "endLine": 304
+                    },
+                    "resolution": "resolved"
+                  },
+                  "content": "import { execSync, spawnSync } from \"node:child_process\"\nimport { resolve } from \"node:path\"\nimport os from \"node:os\"\nimport type { ExtensionAPI } from \"@earendil-works/pi-coding-agent\"\n\nfunction findCli(): string | null {\n  try {\n    return execSync(\"command -v visual-artifact\", { encoding: \"utf8\", timeout: 3000 }).trim()\n  } catch {\n    const fallbacks = [\n      resolve(os.homedir(), \".local\", \"bin\", \"visual-artifact\"),\n      resolve(os.homedir(), \".pi\", \"bin\", \"visual-artifact\"),\n    ]\n    for (const fallback of fallbacks) {\n      try {\n        execSync(`test -x ${fallback}`, { timeout: 1000 })\n        return fallback\n      } catch {\n        // try next fallback\n      }\n    }\n    return null\n  }\n}\n\nexport function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params\n  return spec\n}\n\ninterface ArtifactDirection {\n  title: string\n  description: string\n  instruction: string\n}\n\ninterface ArtifactDirectionDetails {\n  question: string\n  directions: ArtifactDirection[]\n  selected: ArtifactDirection | { title: \"Custom\"; description: string; instruction: string } | null\n  cancelled: boolean\n}\n\nconst artifactDirectionSchema = {\n  type: \"object\",\n  properties: {\n    question: { type: \"string\", description: \"Question that frames the visual direction decision\" },\n    directions: {\n      type: \"array\",\n      minItems: 2,\n      maxItems: 4,\n      description: \"Two to four distinct visual/narrative directions for the requested artifact\",\n      items: {\n        type: \"object\",\n        properties: {\n          title: { type: \"string\", description: \"Short direction title shown in the picker\" },\n          description: { type: \"string\", description: \"One-sentence explanation of what the artifact will emphasize\" },\n          instruction: { type: \"string\", minLength: 1, description: \"Concrete generation instruction to apply after selection\" },\n        },\n        required: [\"title\", \"description\", \"instruction\"],\n      },\n    },\n  },\n  required: [\"question\", \"directions\"],\n} as any\n\nexport function visualDiffRequest(scope: string, cwd: string): string {\n  return (\n    `Run a visual diff review for this repo.\\n\\n` +\n    `Scope: ${scope}\\n` +\n    `Working directory: ${cwd}\\n\\n` +\n    `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +\n    `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +\n    `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +\n    `Then call create_visual_artifact with the diff-review artifact and return its URL.`\n  )\n}\n\nfunction runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {\n  const result = spawnSync(cli, [\"create\", \"-\", \"--project\", projectPath, \"--json\"], {\n    input: `${JSON.stringify(spec)}\\n`,\n    encoding: \"utf8\",\n    timeout: 30000,\n    maxBuffer: 10 * 1024 * 1024,\n  })\n\n  if (result.status !== 0) {\n    return { ok: false, error: result.stderr || result.stdout || \"visual-artifact create failed\" }\n  }\n\n  try {\n    return { ok: true, output: JSON.parse(result.stdout) }\n  } catch {\n    return { ok: false, error: `Could not parse CLI output: ${result.stdout}` }\n  }\n}\n\nexport default function visualArtifactExtension(pi: ExtensionAPI) {\n  let selectedDirection: ArtifactDirectionDetails[\"selected\"] = null\n\n  pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })\n\n  pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })\n\n  pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })\n\n  pi.registerTool({\n    name: \"choose_visual_artifact_direction\",\n    label: \"Choose Visual Artifact Direction\",\n    description: \"Ask the user to choose the narrative and visual direction before generating a visual artifact.\",\n    promptSnippet: \"Ask the user to choose an artifact direction before generating a requested visual artifact.\",\n    promptGuidelines: [\n      \"Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.\",\n      \"Use the selected instruction from choose_visual_artifact_direction as a binding generation constraint; do not replace it with an unselected direction. Pass that exact text as directionInstruction to create_visual_artifact.\",\n      \"If choose_visual_artifact_direction reports a cancellation or unavailable UI, do not create the artifact; ask the user for a direction in chat instead.\",\n    ],\n    parameters: artifactDirectionSchema,\n    executionMode: \"sequential\",\n    async execute(\n      _toolCallId: string,\n      params: { question: string; directions: ArtifactDirection[] },\n      signal: AbortSignal | undefined,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { hasUI?: boolean; ui: { select: (title: string, options: string[], options?: { signal?: AbortSignal }) => Promise<string | undefined>; input: (title: string, placeholder?: string, options?: { signal?: AbortSignal }) => Promise<string | undefined> } },\n    ) {\n      const details = (selected: ArtifactDirectionDetails[\"selected\"], cancelled: boolean): ArtifactDirectionDetails => ({\n        question: params.question,\n        directions: params.directions,\n        selected,\n        cancelled,\n      })\n\n      if (!ctx.hasUI) {\n        return {\n          content: [{ type: \"text\", text: \"Artifact direction was not chosen because interactive UI is unavailable. Ask the user in chat and wait.\" }],\n          details: details(null, true),\n        }\n      }\n\n      const customLabel = \"Other direction…\"\n      const choice = await ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )\n\n      if (!choice) {\n        return {\n          content: [{ type: \"text\", text: \"User cancelled artifact direction selection.\" }],\n          details: details(null, true),\n        }\n      }\n\n      if (choice === customLabel) {\n        const instruction = (await ctx.ui.input(\"Artifact direction\", \"Describe what the artifact should emphasize\", { signal }))?.trim()\n        if (!instruction) {\n          return {\n            content: [{ type: \"text\", text: \"User cancelled custom artifact direction.\" }],\n            details: details(null, true),\n          }\n        }\n\n        const selected = { title: \"Custom\" as const, description: instruction, instruction }\n        return {\n          content: [{ type: \"text\", text: `User chose custom artifact direction: ${instruction}` }],\n          details: details(selected, false),\n        }\n      }\n\n      const selected = params.directions.find(\n        (direction) => `${direction.title} — ${direction.description}` === choice,\n      )\n      if (!selected) {\n        throw new Error(\"Artifact direction picker returned an unknown option\")\n      }\n\n      return {\n        content: [{ type: \"text\", text: `User chose artifact direction: ${selected.title}\\nInstruction: ${selected.instruction}` }],\n        details: details(selected, false),\n      }\n    },\n  })\n\n  pi.registerCommand(\"visual-diff\", {\n    description: \"Generate a visual diff review as a visual artifact.\",\n    argumentHint: \"[branch|commit|range|#PR|HEAD]\",\n    handler: async (args, ctx) => {\n      const scope = args.trim() || \"main\"\n      await pi.sendUserMessage(visualDiffRequest(scope, ctx.cwd))\n    },\n  })\n\n  pi.registerCommand(\"visual-recap\", {\n    description: \"Generate a visual project recap.\",\n    argumentHint: \"[time-window]\",\n    handler: async (args, ctx) => {\n      const window = args.trim() || \"2 weeks\"\n      await pi.sendUserMessage(\n        `Generate a visual project recap for ${ctx.cwd}.\\n\\n` +\n        `Time window: ${window}\\n\\n` +\n        `Use the visual-artifact skill. Gather project identity, recent commits, changed files, and TODO/FIXME comments, ` +\n        `then call create_visual_artifact with a recap artifact. Return the artifact URL.`,\n      )\n    },\n  })\n\n  pi.registerTool({\n    name: \"create_visual_artifact\",\n    label: \"Create Visual Artifact\",\n    description: \"Validate and save a visual artifact JSON spec via the visual-artifact CLI, then return its URL.\",\n    promptSnippet: \"Create a polished visual artifact from any Pi session; save it via the CLI and return the URL.\",\n    promptGuidelines: [\n      \"For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.\",\n      \"For simple visual artifacts, call create_visual_artifact directly with a JSON spec after choosing a direction.\",\n      \"Set directionInstruction to the exact instruction returned by choose_visual_artifact_direction; it is an extension-only field and is not persisted in the artifact spec.\",\n      \"Run `visual-artifact contract` and only use supported node types, props, and resource limits.\",\n      \"Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.\",\n      \"Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.\",\n      \"The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.\",\n      \"The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.\",\n    ],\n    parameters: {\n      type: \"object\",\n      properties: {\n        slug: { type: \"string\", description: \"kebab-case artifact slug. Example: revenue-dashboard\" },\n        title: { type: \"string\", description: \"Artifact title\" },\n        description: { type: \"string\", description: \"Short artifact description\" },\n        artifactType: {\n          type: \"string\",\n          enum: [\"explainer\", \"dashboard\", \"review\", \"comparison\", \"report\", \"plan\", \"diagram\", \"idea\"],\n          description: \"Required closed classification used for artifact discovery.\",\n        },\n        topics: {\n          type: \"array\",\n          minItems: 2,\n          maxItems: 5,\n          uniqueItems: true,\n          items: {\n            type: \"string\",\n            minLength: 1,\n            maxLength: 40,\n            pattern: \"^[a-z0-9]+(?:-[a-z0-9]+)*$\",\n          },\n          description: \"Required searchable topics: 2–5 concise lowercase kebab-case values.\",\n        },\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],\n    } as any,\n    async execute(\n      _toolCallId: string,\n      params: Record<string, unknown>,\n      _signal: AbortSignal,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { cwd?: string },\n    ) {\n      const cli = findCli()\n      if (!cli) {\n        throw new Error(\"visual-artifact CLI not found in PATH. Install the visual-artifact skill.\")\n      }\n\n      const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? \".\")\n      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)\n\n      if (!result.ok) {\n        throw new Error(result.error)\n      }\n\n      const { slug, projectName, path: filePath, url } = result.output\n      return {\n        content: [{ type: \"text\", text: `Created visual artifact ${slug} in project ${projectName}. Open ${url}` }],\n        details: { slug, projectName, projectPath, path: filePath, url },\n      }\n    },\n  })\n}\n"
+                },
+                "boundary": {
+                  "kind": "input",
+                  "from": {
+                    "label": "User request",
+                    "system": "user"
+                  },
+                  "to": {
+                    "label": "Extension request state",
+                    "system": "runtime"
+                  },
+                  "outcome": "passed",
+                  "policy": "Reset selection for every agent start."
+                },
+                "evidence": {
+                  "origin": "inferred",
+                  "confidence": "high",
+                  "note": "Derived from the reviewed TypeScript source; no program execution was captured."
+                }
+              },
+              {
+                "id": "prompt-for-direction",
+                "order": 1,
+                "phase": "input",
+                "kind": "boundary",
+                "label": "Open the direction picker",
+                "summary": "The extension opens Pi selection UI with the requested directions and the current abort signal.",
+                "source": {
+                  "facts": {
+                    "span": {
+                      "file": "pi-extension/visual-artifact.ts",
+                      "startLine": 165,
+                      "endLine": 169
+                    },
+                    "excerpt": "      const choice = await ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )",
+                    "sourceHash": "b497d301b1860e201d1c64208eb4195fe608c2646b08e2ae03f0a5176e630c20",
+                    "revision": "6a91f9809a733d26eb708d6e1e40492c1b3627e5",
+                    "worktree": "dirty",
+                    "language": "typescript",
+                    "syntaxKind": "call_expression",
+                    "focus": {
+                      "kind": "call",
+                      "text": "ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )",
+                      "symbol": "ctx.ui.select"
+                    },
+                    "scope": {
+                      "kind": "callback",
+                      "symbol": "choice",
+                      "startLine": 165,
+                      "endLine": 169
+                    },
+                    "resolution": "resolved"
+                  },
+                  "content": "import { execSync, spawnSync } from \"node:child_process\"\nimport { resolve } from \"node:path\"\nimport os from \"node:os\"\nimport type { ExtensionAPI } from \"@earendil-works/pi-coding-agent\"\n\nfunction findCli(): string | null {\n  try {\n    return execSync(\"command -v visual-artifact\", { encoding: \"utf8\", timeout: 3000 }).trim()\n  } catch {\n    const fallbacks = [\n      resolve(os.homedir(), \".local\", \"bin\", \"visual-artifact\"),\n      resolve(os.homedir(), \".pi\", \"bin\", \"visual-artifact\"),\n    ]\n    for (const fallback of fallbacks) {\n      try {\n        execSync(`test -x ${fallback}`, { timeout: 1000 })\n        return fallback\n      } catch {\n        // try next fallback\n      }\n    }\n    return null\n  }\n}\n\nexport function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params\n  return spec\n}\n\ninterface ArtifactDirection {\n  title: string\n  description: string\n  instruction: string\n}\n\ninterface ArtifactDirectionDetails {\n  question: string\n  directions: ArtifactDirection[]\n  selected: ArtifactDirection | { title: \"Custom\"; description: string; instruction: string } | null\n  cancelled: boolean\n}\n\nconst artifactDirectionSchema = {\n  type: \"object\",\n  properties: {\n    question: { type: \"string\", description: \"Question that frames the visual direction decision\" },\n    directions: {\n      type: \"array\",\n      minItems: 2,\n      maxItems: 4,\n      description: \"Two to four distinct visual/narrative directions for the requested artifact\",\n      items: {\n        type: \"object\",\n        properties: {\n          title: { type: \"string\", description: \"Short direction title shown in the picker\" },\n          description: { type: \"string\", description: \"One-sentence explanation of what the artifact will emphasize\" },\n          instruction: { type: \"string\", minLength: 1, description: \"Concrete generation instruction to apply after selection\" },\n        },\n        required: [\"title\", \"description\", \"instruction\"],\n      },\n    },\n  },\n  required: [\"question\", \"directions\"],\n} as any\n\nexport function visualDiffRequest(scope: string, cwd: string): string {\n  return (\n    `Run a visual diff review for this repo.\\n\\n` +\n    `Scope: ${scope}\\n` +\n    `Working directory: ${cwd}\\n\\n` +\n    `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +\n    `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +\n    `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +\n    `Then call create_visual_artifact with the diff-review artifact and return its URL.`\n  )\n}\n\nfunction runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {\n  const result = spawnSync(cli, [\"create\", \"-\", \"--project\", projectPath, \"--json\"], {\n    input: `${JSON.stringify(spec)}\\n`,\n    encoding: \"utf8\",\n    timeout: 30000,\n    maxBuffer: 10 * 1024 * 1024,\n  })\n\n  if (result.status !== 0) {\n    return { ok: false, error: result.stderr || result.stdout || \"visual-artifact create failed\" }\n  }\n\n  try {\n    return { ok: true, output: JSON.parse(result.stdout) }\n  } catch {\n    return { ok: false, error: `Could not parse CLI output: ${result.stdout}` }\n  }\n}\n\nexport default function visualArtifactExtension(pi: ExtensionAPI) {\n  let selectedDirection: ArtifactDirectionDetails[\"selected\"] = null\n\n  pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })\n\n  pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })\n\n  pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })\n\n  pi.registerTool({\n    name: \"choose_visual_artifact_direction\",\n    label: \"Choose Visual Artifact Direction\",\n    description: \"Ask the user to choose the narrative and visual direction before generating a visual artifact.\",\n    promptSnippet: \"Ask the user to choose an artifact direction before generating a requested visual artifact.\",\n    promptGuidelines: [\n      \"Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.\",\n      \"Use the selected instruction from choose_visual_artifact_direction as a binding generation constraint; do not replace it with an unselected direction. Pass that exact text as directionInstruction to create_visual_artifact.\",\n      \"If choose_visual_artifact_direction reports a cancellation or unavailable UI, do not create the artifact; ask the user for a direction in chat instead.\",\n    ],\n    parameters: artifactDirectionSchema,\n    executionMode: \"sequential\",\n    async execute(\n      _toolCallId: string,\n      params: { question: string; directions: ArtifactDirection[] },\n      signal: AbortSignal | undefined,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { hasUI?: boolean; ui: { select: (title: string, options: string[], options?: { signal?: AbortSignal }) => Promise<string | undefined>; input: (title: string, placeholder?: string, options?: { signal?: AbortSignal }) => Promise<string | undefined> } },\n    ) {\n      const details = (selected: ArtifactDirectionDetails[\"selected\"], cancelled: boolean): ArtifactDirectionDetails => ({\n        question: params.question,\n        directions: params.directions,\n        selected,\n        cancelled,\n      })\n\n      if (!ctx.hasUI) {\n        return {\n          content: [{ type: \"text\", text: \"Artifact direction was not chosen because interactive UI is unavailable. Ask the user in chat and wait.\" }],\n          details: details(null, true),\n        }\n      }\n\n      const customLabel = \"Other direction…\"\n      const choice = await ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )\n\n      if (!choice) {\n        return {\n          content: [{ type: \"text\", text: \"User cancelled artifact direction selection.\" }],\n          details: details(null, true),\n        }\n      }\n\n      if (choice === customLabel) {\n        const instruction = (await ctx.ui.input(\"Artifact direction\", \"Describe what the artifact should emphasize\", { signal }))?.trim()\n        if (!instruction) {\n          return {\n            content: [{ type: \"text\", text: \"User cancelled custom artifact direction.\" }],\n            details: details(null, true),\n          }\n        }\n\n        const selected = { title: \"Custom\" as const, description: instruction, instruction }\n        return {\n          content: [{ type: \"text\", text: `User chose custom artifact direction: ${instruction}` }],\n          details: details(selected, false),\n        }\n      }\n\n      const selected = params.directions.find(\n        (direction) => `${direction.title} — ${direction.description}` === choice,\n      )\n      if (!selected) {\n        throw new Error(\"Artifact direction picker returned an unknown option\")\n      }\n\n      return {\n        content: [{ type: \"text\", text: `User chose artifact direction: ${selected.title}\\nInstruction: ${selected.instruction}` }],\n        details: details(selected, false),\n      }\n    },\n  })\n\n  pi.registerCommand(\"visual-diff\", {\n    description: \"Generate a visual diff review as a visual artifact.\",\n    argumentHint: \"[branch|commit|range|#PR|HEAD]\",\n    handler: async (args, ctx) => {\n      const scope = args.trim() || \"main\"\n      await pi.sendUserMessage(visualDiffRequest(scope, ctx.cwd))\n    },\n  })\n\n  pi.registerCommand(\"visual-recap\", {\n    description: \"Generate a visual project recap.\",\n    argumentHint: \"[time-window]\",\n    handler: async (args, ctx) => {\n      const window = args.trim() || \"2 weeks\"\n      await pi.sendUserMessage(\n        `Generate a visual project recap for ${ctx.cwd}.\\n\\n` +\n        `Time window: ${window}\\n\\n` +\n        `Use the visual-artifact skill. Gather project identity, recent commits, changed files, and TODO/FIXME comments, ` +\n        `then call create_visual_artifact with a recap artifact. Return the artifact URL.`,\n      )\n    },\n  })\n\n  pi.registerTool({\n    name: \"create_visual_artifact\",\n    label: \"Create Visual Artifact\",\n    description: \"Validate and save a visual artifact JSON spec via the visual-artifact CLI, then return its URL.\",\n    promptSnippet: \"Create a polished visual artifact from any Pi session; save it via the CLI and return the URL.\",\n    promptGuidelines: [\n      \"For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.\",\n      \"For simple visual artifacts, call create_visual_artifact directly with a JSON spec after choosing a direction.\",\n      \"Set directionInstruction to the exact instruction returned by choose_visual_artifact_direction; it is an extension-only field and is not persisted in the artifact spec.\",\n      \"Run `visual-artifact contract` and only use supported node types, props, and resource limits.\",\n      \"Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.\",\n      \"Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.\",\n      \"The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.\",\n      \"The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.\",\n    ],\n    parameters: {\n      type: \"object\",\n      properties: {\n        slug: { type: \"string\", description: \"kebab-case artifact slug. Example: revenue-dashboard\" },\n        title: { type: \"string\", description: \"Artifact title\" },\n        description: { type: \"string\", description: \"Short artifact description\" },\n        artifactType: {\n          type: \"string\",\n          enum: [\"explainer\", \"dashboard\", \"review\", \"comparison\", \"report\", \"plan\", \"diagram\", \"idea\"],\n          description: \"Required closed classification used for artifact discovery.\",\n        },\n        topics: {\n          type: \"array\",\n          minItems: 2,\n          maxItems: 5,\n          uniqueItems: true,\n          items: {\n            type: \"string\",\n            minLength: 1,\n            maxLength: 40,\n            pattern: \"^[a-z0-9]+(?:-[a-z0-9]+)*$\",\n          },\n          description: \"Required searchable topics: 2–5 concise lowercase kebab-case values.\",\n        },\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],\n    } as any,\n    async execute(\n      _toolCallId: string,\n      params: Record<string, unknown>,\n      _signal: AbortSignal,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { cwd?: string },\n    ) {\n      const cli = findCli()\n      if (!cli) {\n        throw new Error(\"visual-artifact CLI not found in PATH. Install the visual-artifact skill.\")\n      }\n\n      const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? \".\")\n      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)\n\n      if (!result.ok) {\n        throw new Error(result.error)\n      }\n\n      const { slug, projectName, path: filePath, url } = result.output\n      return {\n        content: [{ type: \"text\", text: `Created visual artifact ${slug} in project ${projectName}. Open ${url}` }],\n        details: { slug, projectName, projectPath, path: filePath, url },\n      }\n    },\n  })\n}\n"
+                },
+                "boundary": {
+                  "kind": "input",
+                  "from": {
+                    "label": "Extension direction options",
+                    "system": "runtime"
+                  },
+                  "to": {
+                    "label": "User choice",
+                    "system": "user"
+                  },
+                  "outcome": "passed",
+                  "policy": "Wait for an explicit selection or cancellation."
+                },
+                "evidence": {
+                  "origin": "inferred",
+                  "confidence": "high",
+                  "note": "Derived from the reviewed TypeScript source; no program execution was captured."
+                }
+              },
+              {
+                "id": "record-selection",
+                "order": 2,
+                "phase": "map",
+                "kind": "boundary",
+                "label": "Accept only a usable selection",
+                "summary": "tool_result records the chosen direction only when it is not cancelled and its instruction is non-blank.",
+                "source": {
+                  "facts": {
+                    "span": {
+                      "file": "pi-extension/visual-artifact.ts",
+                      "startLine": 105,
+                      "endLine": 111
+                    },
+                    "excerpt": "  pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })",
+                    "sourceHash": "b497d301b1860e201d1c64208eb4195fe608c2646b08e2ae03f0a5176e630c20",
+                    "revision": "6a91f9809a733d26eb708d6e1e40492c1b3627e5",
+                    "worktree": "dirty",
+                    "language": "typescript",
+                    "syntaxKind": "call_expression",
+                    "focus": {
+                      "kind": "call",
+                      "text": "pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })",
+                      "symbol": "pi.on"
+                    },
+                    "scope": {
+                      "kind": "function",
+                      "symbol": "visualArtifactExtension",
+                      "startLine": 98,
+                      "endLine": 304
+                    },
+                    "resolution": "resolved"
+                  },
+                  "content": "import { execSync, spawnSync } from \"node:child_process\"\nimport { resolve } from \"node:path\"\nimport os from \"node:os\"\nimport type { ExtensionAPI } from \"@earendil-works/pi-coding-agent\"\n\nfunction findCli(): string | null {\n  try {\n    return execSync(\"command -v visual-artifact\", { encoding: \"utf8\", timeout: 3000 }).trim()\n  } catch {\n    const fallbacks = [\n      resolve(os.homedir(), \".local\", \"bin\", \"visual-artifact\"),\n      resolve(os.homedir(), \".pi\", \"bin\", \"visual-artifact\"),\n    ]\n    for (const fallback of fallbacks) {\n      try {\n        execSync(`test -x ${fallback}`, { timeout: 1000 })\n        return fallback\n      } catch {\n        // try next fallback\n      }\n    }\n    return null\n  }\n}\n\nexport function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params\n  return spec\n}\n\ninterface ArtifactDirection {\n  title: string\n  description: string\n  instruction: string\n}\n\ninterface ArtifactDirectionDetails {\n  question: string\n  directions: ArtifactDirection[]\n  selected: ArtifactDirection | { title: \"Custom\"; description: string; instruction: string } | null\n  cancelled: boolean\n}\n\nconst artifactDirectionSchema = {\n  type: \"object\",\n  properties: {\n    question: { type: \"string\", description: \"Question that frames the visual direction decision\" },\n    directions: {\n      type: \"array\",\n      minItems: 2,\n      maxItems: 4,\n      description: \"Two to four distinct visual/narrative directions for the requested artifact\",\n      items: {\n        type: \"object\",\n        properties: {\n          title: { type: \"string\", description: \"Short direction title shown in the picker\" },\n          description: { type: \"string\", description: \"One-sentence explanation of what the artifact will emphasize\" },\n          instruction: { type: \"string\", minLength: 1, description: \"Concrete generation instruction to apply after selection\" },\n        },\n        required: [\"title\", \"description\", \"instruction\"],\n      },\n    },\n  },\n  required: [\"question\", \"directions\"],\n} as any\n\nexport function visualDiffRequest(scope: string, cwd: string): string {\n  return (\n    `Run a visual diff review for this repo.\\n\\n` +\n    `Scope: ${scope}\\n` +\n    `Working directory: ${cwd}\\n\\n` +\n    `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +\n    `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +\n    `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +\n    `Then call create_visual_artifact with the diff-review artifact and return its URL.`\n  )\n}\n\nfunction runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {\n  const result = spawnSync(cli, [\"create\", \"-\", \"--project\", projectPath, \"--json\"], {\n    input: `${JSON.stringify(spec)}\\n`,\n    encoding: \"utf8\",\n    timeout: 30000,\n    maxBuffer: 10 * 1024 * 1024,\n  })\n\n  if (result.status !== 0) {\n    return { ok: false, error: result.stderr || result.stdout || \"visual-artifact create failed\" }\n  }\n\n  try {\n    return { ok: true, output: JSON.parse(result.stdout) }\n  } catch {\n    return { ok: false, error: `Could not parse CLI output: ${result.stdout}` }\n  }\n}\n\nexport default function visualArtifactExtension(pi: ExtensionAPI) {\n  let selectedDirection: ArtifactDirectionDetails[\"selected\"] = null\n\n  pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })\n\n  pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })\n\n  pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })\n\n  pi.registerTool({\n    name: \"choose_visual_artifact_direction\",\n    label: \"Choose Visual Artifact Direction\",\n    description: \"Ask the user to choose the narrative and visual direction before generating a visual artifact.\",\n    promptSnippet: \"Ask the user to choose an artifact direction before generating a requested visual artifact.\",\n    promptGuidelines: [\n      \"Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.\",\n      \"Use the selected instruction from choose_visual_artifact_direction as a binding generation constraint; do not replace it with an unselected direction. Pass that exact text as directionInstruction to create_visual_artifact.\",\n      \"If choose_visual_artifact_direction reports a cancellation or unavailable UI, do not create the artifact; ask the user for a direction in chat instead.\",\n    ],\n    parameters: artifactDirectionSchema,\n    executionMode: \"sequential\",\n    async execute(\n      _toolCallId: string,\n      params: { question: string; directions: ArtifactDirection[] },\n      signal: AbortSignal | undefined,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { hasUI?: boolean; ui: { select: (title: string, options: string[], options?: { signal?: AbortSignal }) => Promise<string | undefined>; input: (title: string, placeholder?: string, options?: { signal?: AbortSignal }) => Promise<string | undefined> } },\n    ) {\n      const details = (selected: ArtifactDirectionDetails[\"selected\"], cancelled: boolean): ArtifactDirectionDetails => ({\n        question: params.question,\n        directions: params.directions,\n        selected,\n        cancelled,\n      })\n\n      if (!ctx.hasUI) {\n        return {\n          content: [{ type: \"text\", text: \"Artifact direction was not chosen because interactive UI is unavailable. Ask the user in chat and wait.\" }],\n          details: details(null, true),\n        }\n      }\n\n      const customLabel = \"Other direction…\"\n      const choice = await ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )\n\n      if (!choice) {\n        return {\n          content: [{ type: \"text\", text: \"User cancelled artifact direction selection.\" }],\n          details: details(null, true),\n        }\n      }\n\n      if (choice === customLabel) {\n        const instruction = (await ctx.ui.input(\"Artifact direction\", \"Describe what the artifact should emphasize\", { signal }))?.trim()\n        if (!instruction) {\n          return {\n            content: [{ type: \"text\", text: \"User cancelled custom artifact direction.\" }],\n            details: details(null, true),\n          }\n        }\n\n        const selected = { title: \"Custom\" as const, description: instruction, instruction }\n        return {\n          content: [{ type: \"text\", text: `User chose custom artifact direction: ${instruction}` }],\n          details: details(selected, false),\n        }\n      }\n\n      const selected = params.directions.find(\n        (direction) => `${direction.title} — ${direction.description}` === choice,\n      )\n      if (!selected) {\n        throw new Error(\"Artifact direction picker returned an unknown option\")\n      }\n\n      return {\n        content: [{ type: \"text\", text: `User chose artifact direction: ${selected.title}\\nInstruction: ${selected.instruction}` }],\n        details: details(selected, false),\n      }\n    },\n  })\n\n  pi.registerCommand(\"visual-diff\", {\n    description: \"Generate a visual diff review as a visual artifact.\",\n    argumentHint: \"[branch|commit|range|#PR|HEAD]\",\n    handler: async (args, ctx) => {\n      const scope = args.trim() || \"main\"\n      await pi.sendUserMessage(visualDiffRequest(scope, ctx.cwd))\n    },\n  })\n\n  pi.registerCommand(\"visual-recap\", {\n    description: \"Generate a visual project recap.\",\n    argumentHint: \"[time-window]\",\n    handler: async (args, ctx) => {\n      const window = args.trim() || \"2 weeks\"\n      await pi.sendUserMessage(\n        `Generate a visual project recap for ${ctx.cwd}.\\n\\n` +\n        `Time window: ${window}\\n\\n` +\n        `Use the visual-artifact skill. Gather project identity, recent commits, changed files, and TODO/FIXME comments, ` +\n        `then call create_visual_artifact with a recap artifact. Return the artifact URL.`,\n      )\n    },\n  })\n\n  pi.registerTool({\n    name: \"create_visual_artifact\",\n    label: \"Create Visual Artifact\",\n    description: \"Validate and save a visual artifact JSON spec via the visual-artifact CLI, then return its URL.\",\n    promptSnippet: \"Create a polished visual artifact from any Pi session; save it via the CLI and return the URL.\",\n    promptGuidelines: [\n      \"For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.\",\n      \"For simple visual artifacts, call create_visual_artifact directly with a JSON spec after choosing a direction.\",\n      \"Set directionInstruction to the exact instruction returned by choose_visual_artifact_direction; it is an extension-only field and is not persisted in the artifact spec.\",\n      \"Run `visual-artifact contract` and only use supported node types, props, and resource limits.\",\n      \"Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.\",\n      \"Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.\",\n      \"The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.\",\n      \"The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.\",\n    ],\n    parameters: {\n      type: \"object\",\n      properties: {\n        slug: { type: \"string\", description: \"kebab-case artifact slug. Example: revenue-dashboard\" },\n        title: { type: \"string\", description: \"Artifact title\" },\n        description: { type: \"string\", description: \"Short artifact description\" },\n        artifactType: {\n          type: \"string\",\n          enum: [\"explainer\", \"dashboard\", \"review\", \"comparison\", \"report\", \"plan\", \"diagram\", \"idea\"],\n          description: \"Required closed classification used for artifact discovery.\",\n        },\n        topics: {\n          type: \"array\",\n          minItems: 2,\n          maxItems: 5,\n          uniqueItems: true,\n          items: {\n            type: \"string\",\n            minLength: 1,\n            maxLength: 40,\n            pattern: \"^[a-z0-9]+(?:-[a-z0-9]+)*$\",\n          },\n          description: \"Required searchable topics: 2–5 concise lowercase kebab-case values.\",\n        },\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],\n    } as any,\n    async execute(\n      _toolCallId: string,\n      params: Record<string, unknown>,\n      _signal: AbortSignal,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { cwd?: string },\n    ) {\n      const cli = findCli()\n      if (!cli) {\n        throw new Error(\"visual-artifact CLI not found in PATH. Install the visual-artifact skill.\")\n      }\n\n      const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? \".\")\n      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)\n\n      if (!result.ok) {\n        throw new Error(result.error)\n      }\n\n      const { slug, projectName, path: filePath, url } = result.output\n      return {\n        content: [{ type: \"text\", text: `Created visual artifact ${slug} in project ${projectName}. Open ${url}` }],\n        details: { slug, projectName, projectPath, path: filePath, url },\n      }\n    },\n  })\n}\n"
+                },
+                "boundary": {
+                  "kind": "validation",
+                  "from": {
+                    "label": "Picker result",
+                    "system": "runtime"
+                  },
+                  "to": {
+                    "label": "Selected direction state",
+                    "system": "runtime"
+                  },
+                  "outcome": "passed",
+                  "policy": "Cancelled or blank instructions clear the state."
+                },
+                "evidence": {
+                  "origin": "inferred",
+                  "confidence": "high",
+                  "note": "Derived from the reviewed TypeScript source; no program execution was captured."
+                }
+              },
+              {
+                "id": "gate-create",
+                "order": 3,
+                "phase": "validate",
+                "kind": "boundary",
+                "label": "Gate artifact creation",
+                "summary": "The create call is blocked unless a direction exists and directionInstruction exactly equals the selected instruction.",
+                "source": {
+                  "facts": {
+                    "span": {
+                      "file": "pi-extension/visual-artifact.ts",
+                      "startLine": 113,
+                      "endLine": 129
+                    },
+                    "excerpt": "  pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })",
+                    "sourceHash": "b497d301b1860e201d1c64208eb4195fe608c2646b08e2ae03f0a5176e630c20",
+                    "revision": "6a91f9809a733d26eb708d6e1e40492c1b3627e5",
+                    "worktree": "dirty",
+                    "language": "typescript",
+                    "syntaxKind": "call_expression",
+                    "focus": {
+                      "kind": "call",
+                      "text": "pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })",
+                      "symbol": "pi.on"
+                    },
+                    "scope": {
+                      "kind": "function",
+                      "symbol": "visualArtifactExtension",
+                      "startLine": 98,
+                      "endLine": 304
+                    },
+                    "resolution": "resolved"
+                  },
+                  "content": "import { execSync, spawnSync } from \"node:child_process\"\nimport { resolve } from \"node:path\"\nimport os from \"node:os\"\nimport type { ExtensionAPI } from \"@earendil-works/pi-coding-agent\"\n\nfunction findCli(): string | null {\n  try {\n    return execSync(\"command -v visual-artifact\", { encoding: \"utf8\", timeout: 3000 }).trim()\n  } catch {\n    const fallbacks = [\n      resolve(os.homedir(), \".local\", \"bin\", \"visual-artifact\"),\n      resolve(os.homedir(), \".pi\", \"bin\", \"visual-artifact\"),\n    ]\n    for (const fallback of fallbacks) {\n      try {\n        execSync(`test -x ${fallback}`, { timeout: 1000 })\n        return fallback\n      } catch {\n        // try next fallback\n      }\n    }\n    return null\n  }\n}\n\nexport function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params\n  return spec\n}\n\ninterface ArtifactDirection {\n  title: string\n  description: string\n  instruction: string\n}\n\ninterface ArtifactDirectionDetails {\n  question: string\n  directions: ArtifactDirection[]\n  selected: ArtifactDirection | { title: \"Custom\"; description: string; instruction: string } | null\n  cancelled: boolean\n}\n\nconst artifactDirectionSchema = {\n  type: \"object\",\n  properties: {\n    question: { type: \"string\", description: \"Question that frames the visual direction decision\" },\n    directions: {\n      type: \"array\",\n      minItems: 2,\n      maxItems: 4,\n      description: \"Two to four distinct visual/narrative directions for the requested artifact\",\n      items: {\n        type: \"object\",\n        properties: {\n          title: { type: \"string\", description: \"Short direction title shown in the picker\" },\n          description: { type: \"string\", description: \"One-sentence explanation of what the artifact will emphasize\" },\n          instruction: { type: \"string\", minLength: 1, description: \"Concrete generation instruction to apply after selection\" },\n        },\n        required: [\"title\", \"description\", \"instruction\"],\n      },\n    },\n  },\n  required: [\"question\", \"directions\"],\n} as any\n\nexport function visualDiffRequest(scope: string, cwd: string): string {\n  return (\n    `Run a visual diff review for this repo.\\n\\n` +\n    `Scope: ${scope}\\n` +\n    `Working directory: ${cwd}\\n\\n` +\n    `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +\n    `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +\n    `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +\n    `Then call create_visual_artifact with the diff-review artifact and return its URL.`\n  )\n}\n\nfunction runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {\n  const result = spawnSync(cli, [\"create\", \"-\", \"--project\", projectPath, \"--json\"], {\n    input: `${JSON.stringify(spec)}\\n`,\n    encoding: \"utf8\",\n    timeout: 30000,\n    maxBuffer: 10 * 1024 * 1024,\n  })\n\n  if (result.status !== 0) {\n    return { ok: false, error: result.stderr || result.stdout || \"visual-artifact create failed\" }\n  }\n\n  try {\n    return { ok: true, output: JSON.parse(result.stdout) }\n  } catch {\n    return { ok: false, error: `Could not parse CLI output: ${result.stdout}` }\n  }\n}\n\nexport default function visualArtifactExtension(pi: ExtensionAPI) {\n  let selectedDirection: ArtifactDirectionDetails[\"selected\"] = null\n\n  pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })\n\n  pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })\n\n  pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })\n\n  pi.registerTool({\n    name: \"choose_visual_artifact_direction\",\n    label: \"Choose Visual Artifact Direction\",\n    description: \"Ask the user to choose the narrative and visual direction before generating a visual artifact.\",\n    promptSnippet: \"Ask the user to choose an artifact direction before generating a requested visual artifact.\",\n    promptGuidelines: [\n      \"Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.\",\n      \"Use the selected instruction from choose_visual_artifact_direction as a binding generation constraint; do not replace it with an unselected direction. Pass that exact text as directionInstruction to create_visual_artifact.\",\n      \"If choose_visual_artifact_direction reports a cancellation or unavailable UI, do not create the artifact; ask the user for a direction in chat instead.\",\n    ],\n    parameters: artifactDirectionSchema,\n    executionMode: \"sequential\",\n    async execute(\n      _toolCallId: string,\n      params: { question: string; directions: ArtifactDirection[] },\n      signal: AbortSignal | undefined,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { hasUI?: boolean; ui: { select: (title: string, options: string[], options?: { signal?: AbortSignal }) => Promise<string | undefined>; input: (title: string, placeholder?: string, options?: { signal?: AbortSignal }) => Promise<string | undefined> } },\n    ) {\n      const details = (selected: ArtifactDirectionDetails[\"selected\"], cancelled: boolean): ArtifactDirectionDetails => ({\n        question: params.question,\n        directions: params.directions,\n        selected,\n        cancelled,\n      })\n\n      if (!ctx.hasUI) {\n        return {\n          content: [{ type: \"text\", text: \"Artifact direction was not chosen because interactive UI is unavailable. Ask the user in chat and wait.\" }],\n          details: details(null, true),\n        }\n      }\n\n      const customLabel = \"Other direction…\"\n      const choice = await ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )\n\n      if (!choice) {\n        return {\n          content: [{ type: \"text\", text: \"User cancelled artifact direction selection.\" }],\n          details: details(null, true),\n        }\n      }\n\n      if (choice === customLabel) {\n        const instruction = (await ctx.ui.input(\"Artifact direction\", \"Describe what the artifact should emphasize\", { signal }))?.trim()\n        if (!instruction) {\n          return {\n            content: [{ type: \"text\", text: \"User cancelled custom artifact direction.\" }],\n            details: details(null, true),\n          }\n        }\n\n        const selected = { title: \"Custom\" as const, description: instruction, instruction }\n        return {\n          content: [{ type: \"text\", text: `User chose custom artifact direction: ${instruction}` }],\n          details: details(selected, false),\n        }\n      }\n\n      const selected = params.directions.find(\n        (direction) => `${direction.title} — ${direction.description}` === choice,\n      )\n      if (!selected) {\n        throw new Error(\"Artifact direction picker returned an unknown option\")\n      }\n\n      return {\n        content: [{ type: \"text\", text: `User chose artifact direction: ${selected.title}\\nInstruction: ${selected.instruction}` }],\n        details: details(selected, false),\n      }\n    },\n  })\n\n  pi.registerCommand(\"visual-diff\", {\n    description: \"Generate a visual diff review as a visual artifact.\",\n    argumentHint: \"[branch|commit|range|#PR|HEAD]\",\n    handler: async (args, ctx) => {\n      const scope = args.trim() || \"main\"\n      await pi.sendUserMessage(visualDiffRequest(scope, ctx.cwd))\n    },\n  })\n\n  pi.registerCommand(\"visual-recap\", {\n    description: \"Generate a visual project recap.\",\n    argumentHint: \"[time-window]\",\n    handler: async (args, ctx) => {\n      const window = args.trim() || \"2 weeks\"\n      await pi.sendUserMessage(\n        `Generate a visual project recap for ${ctx.cwd}.\\n\\n` +\n        `Time window: ${window}\\n\\n` +\n        `Use the visual-artifact skill. Gather project identity, recent commits, changed files, and TODO/FIXME comments, ` +\n        `then call create_visual_artifact with a recap artifact. Return the artifact URL.`,\n      )\n    },\n  })\n\n  pi.registerTool({\n    name: \"create_visual_artifact\",\n    label: \"Create Visual Artifact\",\n    description: \"Validate and save a visual artifact JSON spec via the visual-artifact CLI, then return its URL.\",\n    promptSnippet: \"Create a polished visual artifact from any Pi session; save it via the CLI and return the URL.\",\n    promptGuidelines: [\n      \"For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.\",\n      \"For simple visual artifacts, call create_visual_artifact directly with a JSON spec after choosing a direction.\",\n      \"Set directionInstruction to the exact instruction returned by choose_visual_artifact_direction; it is an extension-only field and is not persisted in the artifact spec.\",\n      \"Run `visual-artifact contract` and only use supported node types, props, and resource limits.\",\n      \"Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.\",\n      \"Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.\",\n      \"The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.\",\n      \"The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.\",\n    ],\n    parameters: {\n      type: \"object\",\n      properties: {\n        slug: { type: \"string\", description: \"kebab-case artifact slug. Example: revenue-dashboard\" },\n        title: { type: \"string\", description: \"Artifact title\" },\n        description: { type: \"string\", description: \"Short artifact description\" },\n        artifactType: {\n          type: \"string\",\n          enum: [\"explainer\", \"dashboard\", \"review\", \"comparison\", \"report\", \"plan\", \"diagram\", \"idea\"],\n          description: \"Required closed classification used for artifact discovery.\",\n        },\n        topics: {\n          type: \"array\",\n          minItems: 2,\n          maxItems: 5,\n          uniqueItems: true,\n          items: {\n            type: \"string\",\n            minLength: 1,\n            maxLength: 40,\n            pattern: \"^[a-z0-9]+(?:-[a-z0-9]+)*$\",\n          },\n          description: \"Required searchable topics: 2–5 concise lowercase kebab-case values.\",\n        },\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],\n    } as any,\n    async execute(\n      _toolCallId: string,\n      params: Record<string, unknown>,\n      _signal: AbortSignal,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { cwd?: string },\n    ) {\n      const cli = findCli()\n      if (!cli) {\n        throw new Error(\"visual-artifact CLI not found in PATH. Install the visual-artifact skill.\")\n      }\n\n      const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? \".\")\n      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)\n\n      if (!result.ok) {\n        throw new Error(result.error)\n      }\n\n      const { slug, projectName, path: filePath, url } = result.output\n      return {\n        content: [{ type: \"text\", text: `Created visual artifact ${slug} in project ${projectName}. Open ${url}` }],\n        details: { slug, projectName, projectPath, path: filePath, url },\n      }\n    },\n  })\n}\n"
+                },
+                "boundary": {
+                  "kind": "validation",
+                  "from": {
+                    "label": "Create tool arguments",
+                    "system": "runtime"
+                  },
+                  "to": {
+                    "label": "CLI creation boundary",
+                    "system": "cli"
+                  },
+                  "outcome": "passed",
+                  "policy": "Require an exact instruction match before creation."
+                },
+                "evidence": {
+                  "origin": "inferred",
+                  "confidence": "high",
+                  "note": "Derived from the reviewed TypeScript source; no program execution was captured."
+                }
+              },
+              {
+                "id": "declare-extension-field",
+                "order": 4,
+                "phase": "validate",
+                "kind": "boundary",
+                "label": "Mark directionInstruction as extension-only",
+                "summary": "The create tool schema requires directionInstruction while describing it as an exact selected instruction used for binding.",
+                "source": {
+                  "facts": {
+                    "span": {
+                      "file": "pi-extension/visual-artifact.ts",
+                      "startLine": 269,
+                      "endLine": 276
+                    },
+                    "excerpt": "        },\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],",
+                    "sourceHash": "b497d301b1860e201d1c64208eb4195fe608c2646b08e2ae03f0a5176e630c20",
+                    "revision": "6a91f9809a733d26eb708d6e1e40492c1b3627e5",
+                    "worktree": "dirty",
+                    "language": "typescript",
+                    "syntaxKind": "source-span",
+                    "focus": {
+                      "kind": "expression",
+                      "text": "},\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],"
+                    },
+                    "scope": {
+                      "kind": "function",
+                      "symbol": "visualArtifactExtension",
+                      "startLine": 98,
+                      "endLine": 304
+                    },
+                    "resolution": "resolved"
+                  },
+                  "content": "import { execSync, spawnSync } from \"node:child_process\"\nimport { resolve } from \"node:path\"\nimport os from \"node:os\"\nimport type { ExtensionAPI } from \"@earendil-works/pi-coding-agent\"\n\nfunction findCli(): string | null {\n  try {\n    return execSync(\"command -v visual-artifact\", { encoding: \"utf8\", timeout: 3000 }).trim()\n  } catch {\n    const fallbacks = [\n      resolve(os.homedir(), \".local\", \"bin\", \"visual-artifact\"),\n      resolve(os.homedir(), \".pi\", \"bin\", \"visual-artifact\"),\n    ]\n    for (const fallback of fallbacks) {\n      try {\n        execSync(`test -x ${fallback}`, { timeout: 1000 })\n        return fallback\n      } catch {\n        // try next fallback\n      }\n    }\n    return null\n  }\n}\n\nexport function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params\n  return spec\n}\n\ninterface ArtifactDirection {\n  title: string\n  description: string\n  instruction: string\n}\n\ninterface ArtifactDirectionDetails {\n  question: string\n  directions: ArtifactDirection[]\n  selected: ArtifactDirection | { title: \"Custom\"; description: string; instruction: string } | null\n  cancelled: boolean\n}\n\nconst artifactDirectionSchema = {\n  type: \"object\",\n  properties: {\n    question: { type: \"string\", description: \"Question that frames the visual direction decision\" },\n    directions: {\n      type: \"array\",\n      minItems: 2,\n      maxItems: 4,\n      description: \"Two to four distinct visual/narrative directions for the requested artifact\",\n      items: {\n        type: \"object\",\n        properties: {\n          title: { type: \"string\", description: \"Short direction title shown in the picker\" },\n          description: { type: \"string\", description: \"One-sentence explanation of what the artifact will emphasize\" },\n          instruction: { type: \"string\", minLength: 1, description: \"Concrete generation instruction to apply after selection\" },\n        },\n        required: [\"title\", \"description\", \"instruction\"],\n      },\n    },\n  },\n  required: [\"question\", \"directions\"],\n} as any\n\nexport function visualDiffRequest(scope: string, cwd: string): string {\n  return (\n    `Run a visual diff review for this repo.\\n\\n` +\n    `Scope: ${scope}\\n` +\n    `Working directory: ${cwd}\\n\\n` +\n    `Use the visual-artifact skill and follow its code-review reference. Gather git data; inspect changed files plus relevant callers, entrypoints, dependencies, and tests. ` +\n    `When the change has a meaningful behavior path—or the review mainly concerns API shape, interfaces, types, and boundaries—add an execution-trace derived from source without running the program. Prioritize boundary events and type definitions; use inferred/static-analysis provenance, symbolic unknown values, and derived fixture examples with source notes. ` +\n    `Never claim runtime capture, timings, or branch outcomes that static evidence cannot prove. Omit the trace when it would be decorative. ` +\n    `Then call create_visual_artifact with the diff-review artifact and return its URL.`\n  )\n}\n\nfunction runCreate(cli: string, spec: Record<string, unknown>, projectPath: string): { ok: boolean; output?: any; error?: string } {\n  const result = spawnSync(cli, [\"create\", \"-\", \"--project\", projectPath, \"--json\"], {\n    input: `${JSON.stringify(spec)}\\n`,\n    encoding: \"utf8\",\n    timeout: 30000,\n    maxBuffer: 10 * 1024 * 1024,\n  })\n\n  if (result.status !== 0) {\n    return { ok: false, error: result.stderr || result.stdout || \"visual-artifact create failed\" }\n  }\n\n  try {\n    return { ok: true, output: JSON.parse(result.stdout) }\n  } catch {\n    return { ok: false, error: `Could not parse CLI output: ${result.stdout}` }\n  }\n}\n\nexport default function visualArtifactExtension(pi: ExtensionAPI) {\n  let selectedDirection: ArtifactDirectionDetails[\"selected\"] = null\n\n  pi.on(\"before_agent_start\", () => {\n    selectedDirection = null\n  })\n\n  pi.on(\"tool_result\", (event) => {\n    if (event.toolName !== \"choose_visual_artifact_direction\") return\n\n    const details = event.details as Partial<ArtifactDirectionDetails> | undefined\n    const selected = details?.cancelled === false ? details.selected : null\n    selectedDirection = selected?.instruction?.trim() ? selected : null\n  })\n\n  pi.on(\"tool_call\", (event) => {\n    if (event.toolName !== \"create_visual_artifact\") return\n\n    if (!selectedDirection) {\n      return {\n        block: true,\n        reason: \"Choose an artifact direction with choose_visual_artifact_direction before creating an artifact.\",\n      }\n    }\n\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return {\n        block: true,\n        reason: \"Pass the exact selected instruction as directionInstruction when creating the artifact.\",\n      }\n    }\n  })\n\n  pi.registerTool({\n    name: \"choose_visual_artifact_direction\",\n    label: \"Choose Visual Artifact Direction\",\n    description: \"Ask the user to choose the narrative and visual direction before generating a visual artifact.\",\n    promptSnippet: \"Ask the user to choose an artifact direction before generating a requested visual artifact.\",\n    promptGuidelines: [\n      \"Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.\",\n      \"Use the selected instruction from choose_visual_artifact_direction as a binding generation constraint; do not replace it with an unselected direction. Pass that exact text as directionInstruction to create_visual_artifact.\",\n      \"If choose_visual_artifact_direction reports a cancellation or unavailable UI, do not create the artifact; ask the user for a direction in chat instead.\",\n    ],\n    parameters: artifactDirectionSchema,\n    executionMode: \"sequential\",\n    async execute(\n      _toolCallId: string,\n      params: { question: string; directions: ArtifactDirection[] },\n      signal: AbortSignal | undefined,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { hasUI?: boolean; ui: { select: (title: string, options: string[], options?: { signal?: AbortSignal }) => Promise<string | undefined>; input: (title: string, placeholder?: string, options?: { signal?: AbortSignal }) => Promise<string | undefined> } },\n    ) {\n      const details = (selected: ArtifactDirectionDetails[\"selected\"], cancelled: boolean): ArtifactDirectionDetails => ({\n        question: params.question,\n        directions: params.directions,\n        selected,\n        cancelled,\n      })\n\n      if (!ctx.hasUI) {\n        return {\n          content: [{ type: \"text\", text: \"Artifact direction was not chosen because interactive UI is unavailable. Ask the user in chat and wait.\" }],\n          details: details(null, true),\n        }\n      }\n\n      const customLabel = \"Other direction…\"\n      const choice = await ctx.ui.select(\n        params.question,\n        [...params.directions.map((direction) => `${direction.title} — ${direction.description}`), customLabel],\n        { signal },\n      )\n\n      if (!choice) {\n        return {\n          content: [{ type: \"text\", text: \"User cancelled artifact direction selection.\" }],\n          details: details(null, true),\n        }\n      }\n\n      if (choice === customLabel) {\n        const instruction = (await ctx.ui.input(\"Artifact direction\", \"Describe what the artifact should emphasize\", { signal }))?.trim()\n        if (!instruction) {\n          return {\n            content: [{ type: \"text\", text: \"User cancelled custom artifact direction.\" }],\n            details: details(null, true),\n          }\n        }\n\n        const selected = { title: \"Custom\" as const, description: instruction, instruction }\n        return {\n          content: [{ type: \"text\", text: `User chose custom artifact direction: ${instruction}` }],\n          details: details(selected, false),\n        }\n      }\n\n      const selected = params.directions.find(\n        (direction) => `${direction.title} — ${direction.description}` === choice,\n      )\n      if (!selected) {\n        throw new Error(\"Artifact direction picker returned an unknown option\")\n      }\n\n      return {\n        content: [{ type: \"text\", text: `User chose artifact direction: ${selected.title}\\nInstruction: ${selected.instruction}` }],\n        details: details(selected, false),\n      }\n    },\n  })\n\n  pi.registerCommand(\"visual-diff\", {\n    description: \"Generate a visual diff review as a visual artifact.\",\n    argumentHint: \"[branch|commit|range|#PR|HEAD]\",\n    handler: async (args, ctx) => {\n      const scope = args.trim() || \"main\"\n      await pi.sendUserMessage(visualDiffRequest(scope, ctx.cwd))\n    },\n  })\n\n  pi.registerCommand(\"visual-recap\", {\n    description: \"Generate a visual project recap.\",\n    argumentHint: \"[time-window]\",\n    handler: async (args, ctx) => {\n      const window = args.trim() || \"2 weeks\"\n      await pi.sendUserMessage(\n        `Generate a visual project recap for ${ctx.cwd}.\\n\\n` +\n        `Time window: ${window}\\n\\n` +\n        `Use the visual-artifact skill. Gather project identity, recent commits, changed files, and TODO/FIXME comments, ` +\n        `then call create_visual_artifact with a recap artifact. Return the artifact URL.`,\n      )\n    },\n  })\n\n  pi.registerTool({\n    name: \"create_visual_artifact\",\n    label: \"Create Visual Artifact\",\n    description: \"Validate and save a visual artifact JSON spec via the visual-artifact CLI, then return its URL.\",\n    promptSnippet: \"Create a polished visual artifact from any Pi session; save it via the CLI and return the URL.\",\n    promptGuidelines: [\n      \"For codebase visual artifacts, use the visual-artifact skill pipeline first, then call create_visual_artifact with the spec.\",\n      \"For simple visual artifacts, call create_visual_artifact directly with a JSON spec after choosing a direction.\",\n      \"Set directionInstruction to the exact instruction returned by choose_visual_artifact_direction; it is an extension-only field and is not persisted in the artifact spec.\",\n      \"Run `visual-artifact contract` and only use supported node types, props, and resource limits.\",\n      \"Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.\",\n      \"Do not generate standalone HTML, JSX, React components, routes, imports, or CSS; emit a constrained JSON spec and call create_visual_artifact.\",\n      \"The Pi tool never grants `--allow-read`; file-tree `src` values must resolve inside the canonical project root. Prefer inline `content` when the source is outside it.\",\n      \"The CLI validates the spec, writes an artifact bundle, and auto-starts the renderer if needed.\",\n    ],\n    parameters: {\n      type: \"object\",\n      properties: {\n        slug: { type: \"string\", description: \"kebab-case artifact slug. Example: revenue-dashboard\" },\n        title: { type: \"string\", description: \"Artifact title\" },\n        description: { type: \"string\", description: \"Short artifact description\" },\n        artifactType: {\n          type: \"string\",\n          enum: [\"explainer\", \"dashboard\", \"review\", \"comparison\", \"report\", \"plan\", \"diagram\", \"idea\"],\n          description: \"Required closed classification used for artifact discovery.\",\n        },\n        topics: {\n          type: \"array\",\n          minItems: 2,\n          maxItems: 5,\n          uniqueItems: true,\n          items: {\n            type: \"string\",\n            minLength: 1,\n            maxLength: 40,\n            pattern: \"^[a-z0-9]+(?:-[a-z0-9]+)*$\",\n          },\n          description: \"Required searchable topics: 2–5 concise lowercase kebab-case values.\",\n        },\n        layout: { type: \"object\", description: \"Layout options\" },\n        projectPath: { type: \"string\", description: \"Directory to derive the project name from. Defaults to caller's cwd.\" },\n        directionInstruction: { type: \"string\", minLength: 1, description: \"Exact instruction returned by choose_visual_artifact_direction; used only to bind this creation to the selected direction.\" },\n        data: { type: \"object\", description: \"Embedded datasets. Max 20 datasets.\" },\n        nodes: { type: \"array\", description: \"ArtifactNode[]. Max 30 nodes.\" },\n      },\n      required: [\"slug\", \"title\", \"artifactType\", \"topics\", \"nodes\", \"directionInstruction\"],\n    } as any,\n    async execute(\n      _toolCallId: string,\n      params: Record<string, unknown>,\n      _signal: AbortSignal,\n      _onUpdate: (update: { type: string; text: string }) => void,\n      ctx: { cwd?: string },\n    ) {\n      const cli = findCli()\n      if (!cli) {\n        throw new Error(\"visual-artifact CLI not found in PATH. Install the visual-artifact skill.\")\n      }\n\n      const projectPath = params.projectPath ? resolve(String(params.projectPath)) : resolve(ctx.cwd ?? \".\")\n      const result = runCreate(cli, artifactSpecFromParams(params), projectPath)\n\n      if (!result.ok) {\n        throw new Error(result.error)\n      }\n\n      const { slug, projectName, path: filePath, url } = result.output\n      return {\n        content: [{ type: \"text\", text: `Created visual artifact ${slug} in project ${projectName}. Open ${url}` }],\n        details: { slug, projectName, projectPath, path: filePath, url },\n      }\n    },\n  })\n}\n"
+                },
+                "boundary": {
+                  "kind": "validation",
+                  "from": {
+                    "label": "Extension tool schema",
+                    "system": "runtime"
+                  },
+                  "to": {
+                    "label": "Validated create arguments",
+                    "system": "cli"
+                  },
+                  "outcome": "passed",
+                  "policy": "Require non-empty directionInstruction alongside the artifact spec."
+                },
+                "evidence": {
+                  "origin": "inferred",
+                  "confidence": "high",
+                  "note": "Derived from the reviewed TypeScript source; no program execution was captured."
+                }
+              }
+            ],
+            "initialEventId": "gate-create",
+            "showCallStack": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Guard matrix"
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "guards",
+            "columns": [
+              "guard",
+              "result",
+              "evidence"
+            ],
+            "caption": "Behavior covered by the extension gate and focused tests.",
+            "statusKey": "result"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Relevant diff"
+      },
+      "children": [
+        {
+          "type": "code",
+          "props": {
+            "language": "typescript",
+            "title": "Extension-only binding metadata",
+            "caption": "The binding value is verified at the Pi boundary and deliberately excluded from the persisted artifact spec.",
+            "diffMode": "unified",
+            "before": "export function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, ...spec } = params\n  return spec\n}\n",
+            "after": "export function artifactSpecFromParams(params: Record<string, unknown>): Record<string, unknown> {\n  const { projectPath: _projectPath, directionInstruction: _directionInstruction, ...spec } = params\n  return spec\n}\n    if (event.input.directionInstruction !== selectedDirection.instruction) {\n      return { block: true, reason: \\\"Pass the exact selected instruction as directionInstruction when creating the artifact.\\\" }\n    }\n"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "choose_visual_artifact_direction({\n  question: \"Which direction should this artifact take?\",\n  directions: [/* 2–4 focused options */]\n})\n\ncreate_visual_artifact({\n  directionInstruction: \"<exact selected instruction>\",\n  slug, title, artifactType, topics, nodes\n})",
+            "language": "typescript",
+            "title": "Creation contract exposed to the agent",
+            "caption": "The extension accepts creation only after the selected instruction is repeated exactly."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Verification: focused Pi extension tests cover picker registration, selected-instruction output, cancellation/no-UI behavior, abort propagation, exact-match enforcement, blank instructions, and stripping directionInstruction before the CLI sees the spec."
+          }
+        }
+      ]
+    }
+  ]
+}

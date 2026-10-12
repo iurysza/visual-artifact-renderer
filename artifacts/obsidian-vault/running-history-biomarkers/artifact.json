@@ -1,0 +1,1024 @@
+{
+  "slug": "running-history-biomarkers",
+  "title": "Running History + Biomarkers",
+  "description": "A visual synthesis of running progress, race results, training load, physiology, and constraints pulled from the Obsidian fitness knowledge base.",
+  "layout": {
+    "type": "default"
+  },
+  "data": {
+    "timeline": [
+      {
+        "marker": "Sep 2022",
+        "title": "Running starts",
+        "description": "Early note says running began in September; by Jan 2023 lifetime volume was only ~60 km, with max runs around 13 km.",
+        "status": "seed"
+      },
+      {
+        "marker": "Jan 2023",
+        "title": "First marathon-shaped plan",
+        "description": "Goal: build toward 25–40 km/week, long-run progression from 14 km to 38 km, with speed work and cross-training.",
+        "status": "plan"
+      },
+      {
+        "marker": "2023",
+        "title": "Foundation year",
+        "description": "Training report: 1,057 km and 176 hours; first half marathons around 1:55.",
+        "status": "base"
+      },
+      {
+        "marker": "2024",
+        "title": "Pure running volume jumps",
+        "description": "Training report: 1,801 km, 219 hours, and a Berlin Marathon finish in 3:28:24.",
+        "status": "build"
+      },
+      {
+        "marker": "May 2025",
+        "title": "Lab physiology anchors zones",
+        "description": "Charité treadmill/lactate test: IAS/LT2 at 176 bpm / 4:36/km, calculated VO2max 52.8, lab HRmax 195.",
+        "status": "lab"
+      },
+      {
+        "marker": "Jun–Jul 2025",
+        "title": "Ceiling + tendon lesson",
+        "description": "Race-verified max HR 204 bpm in the 5x5 relay; July Achilles reactive tendinopathy resolved with progressive loading.",
+        "status": "warn"
+      },
+      {
+        "marker": "Nov 2025",
+        "title": "Marathon PR",
+        "description": "Nice–Cannes: 3:20:11 at 4:43/km, avg HR 172, low drift and controlled execution.",
+        "status": "pr"
+      },
+      {
+        "marker": "Mar 2026",
+        "title": "Sub-90 half marathon",
+        "description": "Lago Maggiore: 1:29:48 at 4:13/km, avg HR 176, cadence 173 spm.",
+        "status": "pr"
+      }
+    ],
+    "hmProgression": [
+      {
+        "race": "S25 2023",
+        "date": "2023-05-14",
+        "time_min": 115.92,
+        "avg_hr": 170
+      },
+      {
+        "race": "Sportscheck 2023",
+        "date": "2023-10-28",
+        "time_min": 115.13,
+        "avg_hr": 169
+      },
+      {
+        "race": "Generali 2024",
+        "date": "2024-04-07",
+        "time_min": 106.32,
+        "avg_hr": 174
+      },
+      {
+        "race": "Generalprobe 2024",
+        "date": "2024-08-25",
+        "time_min": 97.88,
+        "avg_hr": 174
+      },
+      {
+        "race": "S25 2025",
+        "date": "2025-05-11",
+        "time_min": 95.3,
+        "avg_hr": 173
+      },
+      {
+        "race": "Lago 2026",
+        "date": "2026-03-08",
+        "time_min": 89.8,
+        "avg_hr": 176
+      }
+    ],
+    "marathonProgression": [
+      {
+        "race": "Berlin 2024",
+        "date": "2024-09-29",
+        "time_min": 208.4,
+        "avg_hr": 173
+      },
+      {
+        "race": "Nice–Cannes 2025",
+        "date": "2025-11-09",
+        "time_min": 200.18,
+        "avg_hr": 172
+      }
+    ],
+    "annualVolume": [
+      {
+        "year": "2023",
+        "km": 1057,
+        "hours": 176
+      },
+      {
+        "year": "2024",
+        "km": 1801,
+        "hours": 219
+      },
+      {
+        "year": "2025",
+        "km": 1637,
+        "hours": 285
+      }
+    ],
+    "weeklyMileage": [
+      {
+        "week": "2024-W27",
+        "km": 51.6
+      },
+      {
+        "week": "2024-W28",
+        "km": 60.9
+      },
+      {
+        "week": "2024-W29",
+        "km": 65.5
+      },
+      {
+        "week": "2024-W30",
+        "km": 39.7
+      },
+      {
+        "week": "2024-W31",
+        "km": 76.7
+      },
+      {
+        "week": "2024-W32",
+        "km": 81.5
+      },
+      {
+        "week": "2024-W33",
+        "km": 55.1
+      },
+      {
+        "week": "2024-W34",
+        "km": 51.7
+      },
+      {
+        "week": "2024-W35",
+        "km": 64.8
+      },
+      {
+        "week": "2024-W36",
+        "km": 88.6
+      },
+      {
+        "week": "2024-W37",
+        "km": 48.4
+      },
+      {
+        "week": "2024-W38",
+        "km": 21.5
+      },
+      {
+        "week": "2024-W39",
+        "km": 60.9
+      },
+      {
+        "week": "2024-W40",
+        "km": 12.6
+      },
+      {
+        "week": "2024-W41",
+        "km": 14.8
+      },
+      {
+        "week": "2024-W42",
+        "km": 6.1
+      },
+      {
+        "week": "2024-W43",
+        "km": 12.3
+      },
+      {
+        "week": "2024-W44",
+        "km": 10.4
+      },
+      {
+        "week": "2024-W45",
+        "km": 13.2
+      },
+      {
+        "week": "2024-W46",
+        "km": 6
+      },
+      {
+        "week": "2024-W47",
+        "km": 6.2
+      },
+      {
+        "week": "2024-W48",
+        "km": 8.3
+      },
+      {
+        "week": "2024-W49",
+        "km": 11.3
+      },
+      {
+        "week": "2024-W50",
+        "km": 12.1
+      },
+      {
+        "week": "2024-W51",
+        "km": 31.9
+      },
+      {
+        "week": "2024-W52",
+        "km": 10.3
+      },
+      {
+        "week": "2025-W01",
+        "km": 26.2
+      },
+      {
+        "week": "2025-W02",
+        "km": 18.3
+      },
+      {
+        "week": "2025-W03",
+        "km": 11.8
+      },
+      {
+        "week": "2025-W04",
+        "km": 19.5
+      },
+      {
+        "week": "2025-W05",
+        "km": 12.1
+      },
+      {
+        "week": "2025-W06",
+        "km": 6.1
+      },
+      {
+        "week": "2025-W07",
+        "km": 22.8
+      },
+      {
+        "week": "2025-W08",
+        "km": 28.4
+      },
+      {
+        "week": "2025-W09",
+        "km": 33.4
+      },
+      {
+        "week": "2025-W10",
+        "km": 34.3
+      },
+      {
+        "week": "2025-W11",
+        "km": 7.4
+      },
+      {
+        "week": "2025-W12",
+        "km": 25.5
+      },
+      {
+        "week": "2025-W13",
+        "km": 40.3
+      },
+      {
+        "week": "2025-W14",
+        "km": 40.9
+      },
+      {
+        "week": "2025-W15",
+        "km": 43.8
+      },
+      {
+        "week": "2025-W16",
+        "km": 38
+      },
+      {
+        "week": "2025-W17",
+        "km": 53.5
+      },
+      {
+        "week": "2025-W18",
+        "km": 14.5
+      }
+    ],
+    "raceLedger": [
+      {
+        "distance": "5K",
+        "event": "Wasserbetriebe 5x5 Staffel",
+        "date": "2024-05-15",
+        "time": "23:21",
+        "pace": "4:37/km",
+        "avg_hr": "174",
+        "max_hr": "190",
+        "cadence": "176"
+      },
+      {
+        "distance": "5K",
+        "event": "Adidas City Night",
+        "date": "2024-07-27",
+        "time": "21:13",
+        "pace": "4:14/km",
+        "avg_hr": "185",
+        "max_hr": "195",
+        "cadence": "185"
+      },
+      {
+        "distance": "5K",
+        "event": "5x5 Relay",
+        "date": "2025-06-04",
+        "time": "21:28",
+        "pace": "4:16/km",
+        "avg_hr": "182",
+        "max_hr": "204",
+        "cadence": "170"
+      },
+      {
+        "distance": "HM",
+        "event": "S25 Half Marathon",
+        "date": "2023-05-14",
+        "time": "1:55:55",
+        "pace": "5:30/km",
+        "avg_hr": "170",
+        "max_hr": "186",
+        "cadence": "173"
+      },
+      {
+        "distance": "HM",
+        "event": "Generalprobe",
+        "date": "2024-08-25",
+        "time": "1:37:53",
+        "pace": "4:33/km",
+        "avg_hr": "174",
+        "max_hr": "192",
+        "cadence": "177"
+      },
+      {
+        "distance": "HM",
+        "event": "S25 Berlin",
+        "date": "2025-05-11",
+        "time": "1:35:18",
+        "pace": "4:29/km",
+        "avg_hr": "173",
+        "max_hr": "187",
+        "cadence": "169"
+      },
+      {
+        "distance": "HM",
+        "event": "Lago Maggiore",
+        "date": "2026-03-08",
+        "time": "1:29:48",
+        "pace": "4:13/km",
+        "avg_hr": "176",
+        "max_hr": "188",
+        "cadence": "173"
+      },
+      {
+        "distance": "Marathon",
+        "event": "Berlin Marathon",
+        "date": "2024-09-29",
+        "time": "3:28:24",
+        "pace": "4:52/km",
+        "avg_hr": "173",
+        "max_hr": "189",
+        "cadence": "175"
+      },
+      {
+        "distance": "Marathon",
+        "event": "Nice–Cannes",
+        "date": "2025-11-09",
+        "time": "3:20:11",
+        "pace": "4:43/km",
+        "avg_hr": "172",
+        "max_hr": "189",
+        "cadence": "170"
+      }
+    ],
+    "biomarkers": [
+      {
+        "marker": "Age / sex",
+        "value": "36 / male",
+        "source": "Training history profile",
+        "why_it_matters": "Context for age-graded interpretation and recovery expectations."
+      },
+      {
+        "marker": "Height / weight / BMI",
+        "value": "178.1 cm / 74.8 kg / 23.6",
+        "source": "Charité sports medicine, 2025-05-21",
+        "why_it_matters": "Body-size anchor for VO2max, race fueling, and strength-to-weight work."
+      },
+      {
+        "marker": "Body fat",
+        "value": "15.1% skinfold; 16% Aspria",
+        "source": "Charité + Aspria Pro",
+        "why_it_matters": "Already lean; performance gains likely from threshold/durability, not weight loss."
+      },
+      {
+        "marker": "Resting HR",
+        "value": "57–58 bpm",
+        "source": "Garmin sync / physiology note",
+        "why_it_matters": "Baseline aerobic marker and HRR-zone input."
+      },
+      {
+        "marker": "Max HR",
+        "value": "204 race-verified; 195 lab",
+        "source": "5x5 relay + Charité lab",
+        "why_it_matters": "Use race max for zones; lab max underestimates the ceiling."
+      },
+      {
+        "marker": "VO2max",
+        "value": "52.8 lab-calculated; 63 Aspria VO2 fitness",
+        "source": "Physiology note + Aspria Pro",
+        "why_it_matters": "Strong amateur endurance signal; source-dependent, so treat trend > single number."
+      },
+      {
+        "marker": "VLaMax",
+        "value": "0.60 mmol/l/s",
+        "source": "Physiology note",
+        "why_it_matters": "Moderate glycolytic capacity; enough speed reserve without being too anaerobic for marathon work."
+      },
+      {
+        "marker": "Blood pressure",
+        "value": "120/67 to 125/80-ish",
+        "source": "Aspria + Charité",
+        "why_it_matters": "Normal cardiovascular baseline in available reports."
+      }
+    ],
+    "thresholds": [
+      {
+        "marker": "LT1",
+        "speed": "8.4 km/h",
+        "pace": "7:06/km",
+        "hr": "146 bpm",
+        "lactate": "0.69 mmol/l"
+      },
+      {
+        "marker": "2 mmol",
+        "speed": "12.7 km/h",
+        "pace": "4:43/km",
+        "hr": "175 bpm",
+        "lactate": "2.0 mmol/l"
+      },
+      {
+        "marker": "IAS / LT2",
+        "speed": "13.0 km/h",
+        "pace": "4:36/km",
+        "hr": "176 bpm",
+        "lactate": "2.19 mmol/l"
+      },
+      {
+        "marker": "3 mmol",
+        "speed": "14.1 km/h",
+        "pace": "4:14/km",
+        "hr": "181 bpm",
+        "lactate": "3.0 mmol/l"
+      },
+      {
+        "marker": "4 mmol",
+        "speed": "15.0 km/h",
+        "pace": "3:59/km",
+        "hr": "186 bpm",
+        "lactate": "4.0 mmol/l"
+      }
+    ],
+    "zones": [
+      {
+        "zone": "Z1",
+        "name": "Recovery",
+        "hr": "<145",
+        "rpe": "2–3/10",
+        "use": "Active recovery"
+      },
+      {
+        "zone": "Z2",
+        "name": "Aerobic / Easy",
+        "hr": "146–164",
+        "rpe": "4–5/10",
+        "use": "Bulk weekly mileage"
+      },
+      {
+        "zone": "Z3",
+        "name": "Tempo / Marathon",
+        "hr": "165–178",
+        "rpe": "6–7/10",
+        "use": "Marathon pace, sustained aerobic work"
+      },
+      {
+        "zone": "Z4",
+        "name": "Threshold",
+        "hr": "179–188",
+        "rpe": "8/10",
+        "use": "Tempo runs, threshold intervals"
+      },
+      {
+        "zone": "Z5",
+        "name": "VO2 Max",
+        "hr": "189+",
+        "rpe": "9–10/10",
+        "use": "Speed work and intervals"
+      }
+    ],
+    "keySessions": [
+      {
+        "session": "Berlin Marathon 2024",
+        "signal": "First marathon conversion",
+        "evidence": "3:28:24, 4:52/km, avg HR 173; positive split 1:41:28 → 1:46:56.",
+        "read": "Endurance already strong; logistics/taper/backpack cost time."
+      },
+      {
+        "session": "Nice–Cannes 2025",
+        "signal": "Durable marathon PR",
+        "evidence": "3:20:11, avg HR 172; 76% Z3, +3.6% HR drift, only +2.5% pace decay.",
+        "read": "Controlled aerobic marathon, not a survival run."
+      },
+      {
+        "session": "HM pace vibe check 2026",
+        "signal": "Sub-90 rehearsal",
+        "evidence": "22.58 km total; fast block 8.75 km @ 4:13.6/km, avg HR 177.6.",
+        "read": "Race target was physiologically plausible before Lago."
+      },
+      {
+        "session": "Lago Maggiore 2026",
+        "signal": "Threshold holds",
+        "evidence": "1:29:48, 4:13/km, avg HR 176, max HR 188.",
+        "read": "Raced almost exactly at lab IAS HR for 90 minutes."
+      }
+    ],
+    "constraints": [
+      {
+        "item": "Achilles load management",
+        "status": "warn",
+        "description": "July 2025 reactive tendinopathy after sprinting cold in rain; returned within 2 weeks via progressive loading.",
+        "meta": "Keep heavy slow calf raises + warm-up discipline."
+      },
+      {
+        "item": "Grey-zone tendency",
+        "status": "warn",
+        "description": "May 2025 coaching note: many runs carried TE 3–5 and HR 150–165, even on non-workout days.",
+        "meta": "Protect easy days so quality days stay quality."
+      },
+      {
+        "item": "Hydration under high HR",
+        "status": "ok",
+        "description": "Nice strategy note identifies cup drinking at ~174 bpm as a bottleneck; solve by brief slowdowns and 300 ml / 30 min target.",
+        "meta": "Seconds lost beat minutes bonked."
+      },
+      {
+        "item": "Running economy",
+        "status": "healthy",
+        "description": "HM pace improved from 5:30/km to 4:13/km while average HR stayed in the same high-aerobic/threshold band.",
+        "meta": "Main success signal."
+      },
+      {
+        "item": "Hybrid base",
+        "status": "healthy",
+        "description": "2025 shifted toward more total hours with strength + hot yoga while retaining high run frequency.",
+        "meta": "Useful for resilience; watch fatigue stacking."
+      },
+      {
+        "item": "Heat / late-race fade",
+        "status": "risk",
+        "description": "Nice–Cannes rose from 14°C to 25°C; final 10K pace faded despite HR stability.",
+        "meta": "Heat acclimation and late-fuel practice matter."
+      }
+    ],
+    "sources": [
+      {
+        "file": "knowledge-base/fitness/notes/race-history.md",
+        "used_for": "PRs, race ledger, HM/marathon progression"
+      },
+      {
+        "file": "knowledge-base/fitness/notes/physiology.md",
+        "used_for": "Lab test, lactate thresholds, VO2max, RHR, HRmax notes"
+      },
+      {
+        "file": "knowledge-base/fitness/notes/training-zones.md",
+        "used_for": "Recommended practical racing HR zones"
+      },
+      {
+        "file": "knowledge-base/fitness/notes/nice-cannes-2025.md",
+        "used_for": "Nice–Cannes marathon execution, zones, drift, cadence"
+      },
+      {
+        "file": "knowledge-base/fitness/artifacts/run-17505131783-data.json",
+        "used_for": "2026 HM rehearsal segments, HR zones, weekly mileage ramp"
+      },
+      {
+        "file": "llm-context/fitness-context.md",
+        "used_for": "Garmin-style activity export through 2025-05 and raw weekly-mileage sample"
+      },
+      {
+        "file": "training-log-assesment.md",
+        "used_for": "Annual volume, hybrid training composition, peak 2025 block"
+      },
+      {
+        "file": "knowledge-base/health/notes/achilles-2025.md",
+        "used_for": "Achilles injury mechanism and recovery"
+      },
+      {
+        "file": "knowledge-base/health/notes/full-health-context.md",
+        "used_for": "Anthropometrics, body fat, BP, Aspria VO2 fitness context"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "**Main read:** the vault tells a clean three-year arc: from ~60 km lifetime volume and a “maybe marathon in 12 months” note to a **3:20 marathon** and a **sub-90 half**. The standout signal is not just faster PRs — it is **running economy**: half-marathon pace moved from 5:30/km to 4:13/km while race HR stayed in the same hard-aerobic/threshold band.\n\nScope: local Obsidian notes, Garmin-style exports, race reports, lab physiology, and health/training context. Published with full biomarker detail approved, but without personal address/DOB identifiers."
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": "~3 years",
+            "label": "Running age",
+            "note": "Structured running history in the vault. · Sep 2022 → 2026 · up",
+            "signal": "new"
+          },
+          {
+            "value": "1:29:48",
+            "label": "Half marathon PR",
+            "note": "Lago Maggiore 2026, 4:13/km. · -26:07 from first HM · up",
+            "signal": "new"
+          },
+          {
+            "value": "3:20:11",
+            "label": "Marathon PR",
+            "note": "Nice–Cannes 2025, 4:43/km. · -8:13 vs Berlin 2024 · up",
+            "signal": "new"
+          },
+          {
+            "value": "204 bpm",
+            "label": "Race max HR",
+            "note": "Use over lab max 195 for zones. · 5x5 relay · neutral",
+            "signal": "risk"
+          }
+        ]
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": "176 bpm",
+            "label": "LT2 / IAS",
+            "note": "Lab threshold from Charité test. · 4:36/km · neutral",
+            "signal": "new"
+          },
+          {
+            "value": "52.8",
+            "label": "VO2max",
+            "note": "Aspria VO2 fitness separately reports 63. · lab calc · neutral",
+            "signal": "new"
+          }
+        ]
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The running arc",
+        "deck": "Milestones that explain the jump from beginner volume to competitive amateur results."
+      },
+      "children": [
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "timeline",
+            "titleKey": "title",
+            "markerKey": "marker",
+            "descriptionKey": "description",
+            "statusKey": "status",
+            "caption": "Compiled from Running Plan, training reports, race history, physiology, Achilles, and race notes."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Performance progression",
+        "deck": "Time drops are meaningful because the heart-rate band stayed surprisingly stable."
+      },
+      "children": [
+        {
+          "type": "trend",
+          "props": {
+            "dataKey": "hmProgression",
+            "x": "race",
+            "y": "time_min",
+            "kind": "line",
+            "caption": "Half marathon time, minutes"
+          }
+        },
+        {
+          "type": "trend",
+          "props": {
+            "dataKey": "marathonProgression",
+            "x": "race",
+            "y": "time_min",
+            "kind": "bar",
+            "caption": "Marathon time, minutes"
+          }
+        },
+        {
+          "type": "trend",
+          "props": {
+            "dataKey": "annualVolume",
+            "x": "year",
+            "y": "km",
+            "kind": "bar",
+            "caption": "Annual running volume, km"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "raceLedger",
+            "columns": [
+              {
+                "key": "distance",
+                "label": "Distance"
+              },
+              {
+                "key": "event",
+                "label": "Event"
+              },
+              {
+                "key": "date",
+                "label": "Date"
+              },
+              {
+                "key": "time",
+                "label": "Time"
+              },
+              {
+                "key": "pace",
+                "label": "Pace"
+              },
+              {
+                "key": "avg_hr",
+                "label": "Avg HR"
+              },
+              {
+                "key": "max_hr",
+                "label": "Max HR"
+              },
+              {
+                "key": "cadence",
+                "label": "Cadence"
+              }
+            ],
+            "caption": "Selected race history from the vault."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Training load signature",
+        "deck": "2024 was the pure-running expansion; 2025 kept serious running while adding more strength/yoga hours."
+      },
+      "children": [
+        {
+          "type": "trend",
+          "props": {
+            "dataKey": "weeklyMileage",
+            "x": "week",
+            "y": "km",
+            "kind": "line",
+            "caption": "Raw Garmin weekly km sample: 2024-W27 → 2025-W18"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "annualVolume",
+            "columns": [
+              {
+                "key": "year",
+                "label": "Year"
+              },
+              {
+                "key": "km",
+                "label": "Run km"
+              },
+              {
+                "key": "hours",
+                "label": "Training hours"
+              }
+            ],
+            "caption": "Annual totals from the training-history report. 2025 has fewer run km than 2024 but more total training hours."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "- 2025 routine: **running 4–6x/week**, strength about **2x/week**, yoga/hot yoga **2–3x/week**.\n- Peak references in notes: **~301 km month** in Oct 2025 and **80 km week** during marathon prep. The raw Garmin snapshot also shows an **88.6 km week** in 2024-W36.\n- Pattern: double days show up repeatedly. Productive, but fatigue can hide in the seams."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Biomarkers + physiology",
+        "deck": "The useful body/engine markers, stripped of personal identifiers."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "biomarkers",
+            "columns": [
+              {
+                "key": "marker",
+                "label": "Marker"
+              },
+              {
+                "key": "value",
+                "label": "Value"
+              },
+              {
+                "key": "source",
+                "label": "Source"
+              },
+              {
+                "key": "why_it_matters",
+                "label": "Running read"
+              }
+            ],
+            "caption": "Full biomarker detail included per approval; personal address/DOB omitted."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "thresholds",
+            "columns": [
+              {
+                "key": "marker",
+                "label": "Threshold"
+              },
+              {
+                "key": "speed",
+                "label": "Speed"
+              },
+              {
+                "key": "pace",
+                "label": "Pace"
+              },
+              {
+                "key": "hr",
+                "label": "HR"
+              },
+              {
+                "key": "lactate",
+                "label": "Lactate"
+              }
+            ],
+            "caption": "Charité incremental treadmill/lactate test, 2025-05-21."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Practical HR zones",
+        "deck": "Recommended daily-use model from the training-zones note; anchored on race max HR 204 and LT2 around 176."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "zones",
+            "columns": [
+              {
+                "key": "zone",
+                "label": "Zone"
+              },
+              {
+                "key": "name",
+                "label": "Name"
+              },
+              {
+                "key": "hr",
+                "label": "HR range"
+              },
+              {
+                "key": "rpe",
+                "label": "RPE"
+              },
+              {
+                "key": "use",
+                "label": "Use"
+              }
+            ]
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "**Interpretation:** Lago Maggiore at avg HR 176 means the sub-90 HM was basically a 90-minute ride on the lab IAS line. Nice–Cannes at avg HR 172 sat in marathon/tempo Z3, which matches the note’s “textbook marathon execution” read."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Key sessions and what they prove",
+        "deck": "A short evidence board for the important performances."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "keySessions",
+            "columns": [
+              {
+                "key": "session",
+                "label": "Session"
+              },
+              {
+                "key": "signal",
+                "label": "Signal"
+              },
+              {
+                "key": "evidence",
+                "label": "Evidence"
+              },
+              {
+                "key": "read",
+                "label": "Read"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Constraints / next performance levers",
+        "deck": "The notes point to a few real limiters. None are mysterious."
+      },
+      "children": [
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "constraints",
+            "titleKey": "item",
+            "bodyKey": "description",
+            "groupKey": "status",
+            "signals": {
+              "warn": "wait",
+              "ok": "done",
+              "healthy": "done",
+              "risk": "risk"
+            },
+            "groupOrder": [
+              "warn",
+              "ok",
+              "healthy",
+              "risk"
+            ],
+            "metaKey": "meta"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Source map",
+        "deck": "Local vault files used to build this artifact."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "sources",
+            "columns": [
+              {
+                "key": "file",
+                "label": "File"
+              },
+              {
+                "key": "used_for",
+                "label": "Used for"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

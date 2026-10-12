@@ -1,0 +1,203 @@
+{
+  "slug": "agent-benchmark-usability-review",
+  "title": "Agent Benchmark — Usability Review",
+  "description": "Operator-focused edits required by ai-artifacts/agent-reliability-benchmark/review/usability.md: exact edits, target sections, operator impact, priority, disposition, and recommended critical path. Includes the one-page Operator playbook to insert verbatim.",
+  "artifactType": "review",
+  "topics": [
+    "agent-benchmark",
+    "usability"
+  ],
+  "data": {
+    "edits": [
+      {
+        "edit_id": 1,
+        "required_edit": "Insert 1-page Operator playbook after Section 1",
+        "target_section": "Section 1 (Executive verdict)",
+        "operator_impact": "Provides single-operator step-by-step commands and success criteria",
+        "priority": "High",
+        "disposition": "Accepted (apply immediately)"
+      },
+      {
+        "edit_id": 2,
+        "required_edit": "Replace each Incident A..D block with symptom↔root-cause↔file↔test mapping",
+        "target_section": "Section 2.2 (Incident mapping)",
+        "operator_impact": "Direct mapping enables exact code edits and tests for operator",
+        "priority": "High",
+        "disposition": "Accepted (apply immediately)"
+      },
+      {
+        "edit_id": 3,
+        "required_edit": "Move scored benchmark matrix to Appendix A and replace §5 with executive summary",
+        "target_section": "Section 5 (Scored benchmark matrix)",
+        "operator_impact": "Reduces noise on critical path; preserves matrix in appendix",
+        "priority": "Medium",
+        "disposition": "Accepted (apply; move large table to appendix)"
+      },
+      {
+        "edit_id": 4,
+        "required_edit": "Insert Plain-language Glossary after Section 8",
+        "target_section": "Section 8",
+        "operator_impact": "Improves operator understanding of ledger UI and logs",
+        "priority": "Medium",
+        "disposition": "Accepted"
+      },
+      {
+        "edit_id": 5,
+        "required_edit": "Make Phase 0 explicit, ordered, and include time estimates + owner lines",
+        "target_section": "Section 10 (Phase 0)",
+        "operator_impact": "Enables single-operator rollout execution",
+        "priority": "High",
+        "disposition": "Accepted"
+      },
+      {
+        "edit_id": 6,
+        "required_edit": "Add PR checklist at end of Section 10",
+        "target_section": "End of Section 10",
+        "operator_impact": "Reviewer checklist to ensure safety/rollback/readers-first deploy",
+        "priority": "High",
+        "disposition": "Accepted"
+      },
+      {
+        "edit_id": 7,
+        "required_edit": "Small copy edits (phrasing clarifications)",
+        "target_section": "Sections 1 and 8",
+        "operator_impact": "Prevents misreading and reduces straw-man debates",
+        "priority": "Low",
+        "disposition": "Accepted (small edits)"
+      }
+    ],
+    "mappingExample": [
+      {
+        "incident": "Incident C",
+        "symptom": "Bot announced a prepared transcription but the transcription text never appeared to the user",
+        "root_causes": "(1) No durable general-result record; (2) 'completed' set before durable delivery; (3) no durable outbox for Telegram sends",
+        "fix_files": "src/tools/task-tools.ts, src/durable-objects/task-ledger.ts, src/telegram/send.ts, src/cloudflare.ts",
+        "tests_to_add": "src/durable-objects/task-ledger.test.ts::persisted_result_for_general_task; src/telegram/send.test.ts::telegram_send_unknown_after_send; src/tools/task-tools.test.ts::completion_persists_result_before_marking_completed"
+      }
+    ],
+    "editsSummary": [
+      {
+        "id": 1,
+        "edit": "Operator playbook + Phase 0 insert",
+        "priority": "High",
+        "accepted_or_rejected": "Accepted",
+        "operator_impact": "Immediate, high impact — enables single operator"
+      },
+      {
+        "id": 2,
+        "edit": "Per-incident mapping tables",
+        "priority": "High",
+        "accepted_or_rejected": "Accepted",
+        "operator_impact": "Removes ambiguity for implementer"
+      },
+      {
+        "id": 3,
+        "edit": "Move matrix to appendix",
+        "priority": "Medium",
+        "accepted_or_rejected": "Accepted",
+        "operator_impact": "Cleaner critical path"
+      },
+      {
+        "id": 4,
+        "edit": "Glossary insertion",
+        "priority": "Medium",
+        "accepted_or_rejected": "Accepted",
+        "operator_impact": "Low friction comprehension improvement"
+      },
+      {
+        "id": 5,
+        "edit": "PR checklist addition",
+        "priority": "High",
+        "accepted_or_rejected": "Accepted",
+        "operator_impact": "Reviewer safety net"
+      },
+      {
+        "id": 6,
+        "edit": "Small copy edits",
+        "priority": "Low",
+        "accepted_or_rejected": "Accepted",
+        "operator_impact": "Clarity improvement"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Usability review — operator-actionable edits"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Scope: make the report immediately actionable by a single operator. This artifact records every required usability edit, the target section, operator impact, priority, disposition (accepted/rejected/deferred when known), and the recommended critical path. Source: ai-artifacts/agent-reliability-benchmark/review/usability.md."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "edits",
+            "columns": [
+              "edit_id",
+              "required_edit",
+              "target_section",
+              "operator_impact",
+              "priority",
+              "disposition"
+            ],
+            "caption": "Required usability edits (compact mapping)"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "Operator playbook — immediate steps (single operator)\n\nGoal: ship Phase 0 changes in a single focused rollout and verify Incident A–D are no longer reproducible.\n\nPrereqs: a checked-out repository at `1a6932ac...`, local dev toolchain working (see ai-artifacts/agent-reliability-benchmark/local-verification.md).\n\nSteps (do these in order):\n\n1. Baseline health check (5–15m):\n   - Run: `npm run typecheck && npm test && npm run build`\n   - Expect: same green baseline as local-verification.md (18 files, 73 tests). If tests fail, stop and fix tests first.\n\n2. Create migration placeholders (30–60m):\n   - Add an additive migration SQL under `migrations/` named `2026-07-30_add_task_results.sql` with `CREATE TABLE IF NOT EXISTS task_results (...)` and `CREATE TABLE IF NOT EXISTS task_delivery (...)` (see Section 9.3 for columns). Commit the migration.\n\n3. Implement minimal ledger RPCs (1–2h):\n   - Files to edit: `src/durable-objects/task-ledger.ts`\n   - Add thin RPCs: `saveTaskResult(taskId, expectedKind, resultTextOrManifest)` and `enqueueDelivery(taskId, resultVersion, channel, targetKey)` that create rows in the new tables. Keep these functions small and covered by unit tests.\n\n4. Persist result before completion (1–2h):\n   - Files to edit: `src/tools/task-tools.ts`\n   - Change completion path to call `saveTaskResult(...)` and ensure result persisted (and files copied to R2 if necessary) before marking the task `completed`.\n\n5. Add durable delivery intent (1–2h):\n   - Files to edit: `src/telegram/send.ts`, `src/durable-objects/task-ledger.ts`, `src/tasks/types.ts`\n   - Change send logic to create a `task_delivery` row in `pending` state and enqueue a delivery Queue message; consumer will flip state to `sending`/`delivered`/`unknown_after_send`/`failed`.\n\n6. Add and run focused tests (1–2h):\n   - Add/modify tests: `src/durable-objects/task-ledger.test.ts` (task_results + delivery assertions), `src/tools/task-tools.test.ts` (completion persistence), `src/telegram/send.test.ts` (delivery intent + unknown_after_send behavior).\n   - Run: `npm test` and ensure new tests pass.\n\n7. Smoke verify against Incident C (30–60m):\n   - Simulate a Telegram delivery failure (mock send to throw or return timeout). Confirm the task is `completed` only when the durable result exists and that delivery is `retrying` or `unknown_after_send`, and that `Sandbox` is not destroyed until result persist completes.\n\n8. Rollout: Deploy the migration and code changes behind a feature flag or with readers-first approach: deploy ledger RPCs and readers before changing writers; then deploy writers that use the new RPCs.\n\nSuccess criteria:\n- `npm test` green.\n- Running the above smoke verify reproduces the new behavior: result row exists in DO SQLite after completion, delivery row exists in `pending` or `unknown_after_send`, `Sandbox` is not destroyed until result persisted.",
+            "language": "text",
+            "title": "Operator playbook — immediate steps (insert verbatim after Executive verdict)",
+            "caption": "Insert this verbatim into report.md after Executive verdict"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "mappingExample",
+            "columns": [
+              "incident",
+              "symptom",
+              "root_causes",
+              "fix_files",
+              "tests_to_add"
+            ],
+            "caption": "Required per-incident mapping (apply to Incident A..D) — example replacement block for Incident C (copy into report)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Other exact edits requested (copy-paste):\n- Collapse scored benchmark matrix into an Appendix and replace §5 with a two-sentence executive summary.  \n- Insert a 1-column Plain-language Glossary after Section 8 with terms: outbox, unknown_after_send, dispatch_uncertain, result_version.  \n- Replace Section 10 (Phase 0) with an explicit ordered list including time estimates and a one-line owner field.  \n- Add a PR checklist at end of Section 10.\n- Small copy edits: replace 'Do not rewrite' with 'Do not rewrite the runtime in this change; follow the additive steps below.' and add clarifier about Bot API provider acceptance semantics in Section 8."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "editsSummary",
+            "columns": [
+              "id",
+              "edit",
+              "priority",
+              "accepted_or_rejected",
+              "operator_impact"
+            ],
+            "caption": "Summary table of edits, priorities, and disposition (from review/usability.md)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Recommended critical path (one-operator, top-priority):\n1) Insert Operator playbook and Phase 0 numbered items.  \n2) Implement the Phase 0 changes in the codebase with smoke tests.  \n3) Add per-incident mapping tables and the PR checklist.  \nThis makes the report actionable and enables a single operator to execute containment and verification quickly."
+          }
+        }
+      ]
+    }
+  ]
+}

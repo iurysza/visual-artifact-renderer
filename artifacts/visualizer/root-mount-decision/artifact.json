@@ -1,0 +1,56 @@
+{
+  "slug": "root-mount-decision",
+  "title": "Why We Serve the Cloud Renderer at Root",
+  "description": "A quick summary of the Workers.dev basePath change.",
+  "data": {
+    "changes": [
+      {
+        "component": "Local dev",
+        "status": "ok",
+        "notes": "keeps /artifacts prefix"
+      },
+      {
+        "component": "Workers.dev",
+        "status": "ok",
+        "notes": "serves at root"
+      },
+      {
+        "component": "Static asset rewrite",
+        "status": "removed",
+        "notes": "no longer needed"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "The renderer used to live under /artifacts everywhere. On Workers.dev that forced brittle path rewriting for static assets and shells.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "ledger",
+      "props": {
+        "dataKey": "changes",
+        "titleKey": "component",
+        "bodyKey": "notes",
+        "groupKey": "status",
+        "signals": {
+          "ok": "done",
+          "removed": "none"
+        },
+        "groupOrder": [
+          "ok",
+          "removed"
+        ]
+      }
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "Result: the Worker routes data and shells directly, and Next.js asset links resolve without stripping paths."
+      }
+    }
+  ]
+}

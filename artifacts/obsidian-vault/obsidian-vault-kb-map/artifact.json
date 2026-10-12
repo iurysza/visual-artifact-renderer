@@ -1,0 +1,626 @@
+{
+  "slug": "obsidian-vault-kb-map",
+  "title": "Agent-First Obsidian Knowledge Base",
+  "description": "A public-friendly map of how the vault stores knowledge, routes writing, and uses agent skills without exposing private content.",
+  "layout": {
+    "type": "default"
+  },
+  "data": {
+    "principles": [
+      {
+        "principle": "Progressive disclosure",
+        "status": "healthy",
+        "description": "Agents start at indexes and descriptions, then drill into MOCs, notes, and artifacts only when justified.",
+        "meta": "index → description → prose link → note"
+      },
+      {
+        "principle": "Prose carries graph meaning",
+        "status": "healthy",
+        "description": "Wikilinks are embedded in sentences so the surrounding words explain why a link matters.",
+        "meta": "no orphan link dumps"
+      },
+      {
+        "principle": "Markdown is canonical",
+        "status": "healthy",
+        "description": "Canvas, Bases, audio, dashboards, and reports orbit around markdown notes rather than replacing them.",
+        "meta": "portable, git-friendly"
+      },
+      {
+        "principle": "Domain-by-domain maintenance",
+        "status": "healthy",
+        "description": "The KB avoids vault-wide rewrites; skills repair one domain at a time to preserve context.",
+        "meta": "safe graph healing"
+      },
+      {
+        "principle": "Agent outputs are versioned",
+        "status": "healthy",
+        "description": "Plans, reports, trackers, and generated work live under ai-artifacts so the agent trail is inspectable.",
+        "meta": "ai-artifacts/"
+      },
+      {
+        "principle": "Public map, private contents omitted",
+        "status": "ok",
+        "description": "This artifact explains the system shape, not sensitive personal domains or individual records.",
+        "meta": "sanitized view"
+      }
+    ],
+    "vaultZones": [
+      {
+        "zone": "knowledge-base/",
+        "role": "Durable semantic graph",
+        "contains": "Domain indexes, MOCs, atomic notes, raw artifacts",
+        "example": "career, finance, content creation, fitness, housing"
+      },
+      {
+        "zone": "journal/",
+        "role": "Chronological spine",
+        "contains": "Daily and weekly notes that anchor time and decisions",
+        "example": "what changed, when, and why"
+      },
+      {
+        "zone": "projects/",
+        "role": "Active workspaces",
+        "contains": "Clusters for ongoing initiatives before facts graduate into the KB",
+        "example": "app ideas, research projects, talk prep"
+      },
+      {
+        "zone": "newsletter/",
+        "role": "Publishing pipeline",
+        "contains": "Weekly packs, item notes, outlines, drafts, review files",
+        "example": "2026-Wxx issue folders"
+      },
+      {
+        "zone": "ai-artifacts/",
+        "role": "Agent workbench",
+        "contains": "Plans, goals, reports, trackers, temporary research, generated assets",
+        "example": "focus reports, visual plans, goal packages"
+      },
+      {
+        "zone": ".agents/skills/",
+        "role": "Workflow manuals",
+        "contains": "Task-specific agent instructions for KB, writing, reports, Obsidian ops, and publishing",
+        "example": "kb-manager, writing-router, newsletter skills"
+      },
+      {
+        "zone": "scripts/",
+        "role": "Automation layer",
+        "contains": "Node, Python, Ruby, and shell scripts that sync, archive, inspect, and normalize data",
+        "example": "social archive, PDF sync, Notes Calendar queries"
+      },
+      {
+        "zone": ".obsidian/",
+        "role": "Runtime config",
+        "contains": "Plugins, templates, CSS snippets, workspace state, Obsidian metadata behavior",
+        "example": "Dataview, Templater, Canvas, Bases"
+      }
+    ],
+    "skillLanes": [
+      {
+        "lane": "Knowledge intake",
+        "skills": "kb-manager, audio-import, audio-transcribe",
+        "reads_writes": "knowledge-base/{domain}/_index.md, mocs/, notes/, artifacts/",
+        "job": "Classify raw material, create atomic notes, and weave them into prose-linked domain maps."
+      },
+      {
+        "lane": "Obsidian-native structure",
+        "skills": "obsidian-cli, obsidian-markdown, json-canvas, obsidian-bases",
+        "reads_writes": "Markdown, Canvas, Base files, live Obsidian metadata cache",
+        "job": "Keep the vault usable from both Obsidian UI and terminal-driven agents."
+      },
+      {
+        "lane": "Writing router",
+        "skills": "writing-router, deslopify, newsletter-outline-pack, newsletter-draft-review, bluesky-thread",
+        "reads_writes": "knowledge-base/content-creation/, newsletter/{week}/, social drafts",
+        "job": "Load voice context, choose the narrowest writing workflow, and keep drafts from becoming generic AI sludge."
+      },
+      {
+        "lane": "Content archive",
+        "skills": "content-logger, update-content-base, twitter",
+        "reads_writes": "content-creation social notes, raw sidecars, checkpoints, Base-friendly fields",
+        "job": "Sync authored public posts into searchable notes with provenance and dedupe checkpoints."
+      },
+      {
+        "lane": "Reports and briefings",
+        "skills": "daily-focus-report, weekly-report, visual-artifact",
+        "reads_writes": "ai-artifacts/reports/, weekly-report/, published artifact pages",
+        "job": "Turn vault activity and selected external signals into reviewable summaries and shareable visuals."
+      },
+      {
+        "lane": "Publishing assets",
+        "skills": "newsletter-cover-image, podcast-newsletter-tts, text-print-cover",
+        "reads_writes": "newsletter workspaces, ai-artifacts/skill/, generated images and audio",
+        "job": "Create cover art, social images, and narrated audio from markdown drafts."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "This vault is a local-first, git-backed knowledge system: Obsidian is the interface, Markdown is the source of truth, and agent skills are the operating procedures that turn raw material into navigable knowledge and publishable writing.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": 11,
+            "label": "Public-safe domains shown",
+            "note": "Examples only; sensitive domains are intentionally omitted.",
+            "signal": "new"
+          },
+          {
+            "value": 26,
+            "label": "Project skills",
+            "note": "Workflow manuals under .agents/skills/.",
+            "signal": "new"
+          },
+          {
+            "value": 17,
+            "label": "Automation scripts",
+            "note": "Sync, archive, inspect, and normalize data.",
+            "signal": "new"
+          },
+          {
+            "value": "Markdown",
+            "label": "Canonical format",
+            "note": "Portable notes, frontmatter, wikilinks, git diffs."
+          }
+        ]
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": "ai-artifacts/",
+            "label": "Agent memory home",
+            "note": "Plans, reports, trackers, and generated assets."
+          },
+          {
+            "value": "Local-first",
+            "label": "Privacy posture",
+            "note": "This map shows architecture, not private contents.",
+            "signal": "new"
+          }
+        ]
+      }
+    },
+    {
+      "type": "mermaid",
+      "props": {
+        "caption": "High-level public architecture: skills turn inputs into structured markdown, Obsidian renders it, Git versions it, and selected outputs become reports or public artifacts.",
+        "height": 520,
+        "code": "flowchart TB\n  U[User asks / adds source / drafts writing] --> R{Agent skill router}\n\n  R --> KBM[kb-manager\nraw source → domain note]\n  R --> WR[writing-router\nvoice → draft/rewrite/review]\n  R --> REP[report skills\nweekly / focus / visual]\n  R --> OBS[obsidian-cli + markdown/canvas/base skills]\n\n  KBM --> KG[knowledge-base/\n_index + mocs + notes + artifacts]\n  WR --> PUB[newsletter/ + content-creation/\nissue packs, drafts, public posts]\n  REP --> ART[ai-artifacts/\nplans, reports, trackers, generated pages]\n  OBS --> VAULT[Obsidian vault runtime\nmetadata cache, plugins, templates]\n\n  KG --> VAULT\n  PUB --> VAULT\n  ART --> VAULT\n  VAULT --> GIT[Git-backed history]\n  ART --> SHARE[Published visual artifacts\npublic-safe summaries only]\n\n  classDef safe fill:#eef6ff,stroke:#4069a8,stroke-width:1px;\n  classDef store fill:#f7f7f7,stroke:#777,stroke-width:1px;\n  class R,KBM,WR,REP,OBS safe;\n  class KG,PUB,ART,VAULT,GIT,SHARE store;"
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The knowledge-base contract",
+        "deck": "Every durable domain follows the same shape so humans and agents can navigate without reading everything."
+      },
+      "children": [
+        {
+          "type": "columns",
+          "props": {
+            "count": 2
+          },
+          "children": [
+            {
+              "type": "prose",
+              "props": {
+                "content": "### _index.md\n\nThe entry point. It explains what the domain is for and routes readers into the right subtopic or note."
+              }
+            },
+            {
+              "type": "prose",
+              "props": {
+                "content": "### mocs/*.md\n\nMaps of content. They hold event, project, or topic clusters that would bloat the domain index."
+              }
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "props": {
+            "count": 2
+          },
+          "children": [
+            {
+              "type": "prose",
+              "props": {
+                "content": "### notes/*.md\n\nAtomic facts. One concept per file, with a description field for scan-first agent traversal."
+              }
+            },
+            {
+              "type": "prose",
+              "props": {
+                "content": "### artifacts/*\n\nRaw evidence. PDFs, transcripts, exports, JSON sidecars, media, and source files linked from notes."
+              }
+            }
+          ]
+        },
+        {
+          "type": "steps",
+          "props": {
+            "items": [
+              {
+                "title": "New source",
+                "body": "PDF, note, URL, audio, post. A raw input arrives."
+              },
+              {
+                "title": "Classify domain",
+                "body": "Choose the durable home: career, finance, content, fitness, housing, etc.",
+                "tag": "kb-manager"
+              },
+              {
+                "title": "Create atomic note",
+                "body": "Write frontmatter, description, source link, and compact facts.",
+                "tag": "notes/*.md"
+              },
+              {
+                "title": "Weave prose link",
+                "body": "Add a sentence that explains why the note is reachable.",
+                "tag": "_index.md or mocs/*.md"
+              },
+              {
+                "title": "Reuse",
+                "body": "reports / writing / search. Later workflows can traverse the graph instead of rediscovering context."
+              }
+            ],
+            "caption": "How a source becomes knowledge. The important move is not just saving a file; it is weaving it into prose so future agents know why it matters."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Representative folder map",
+        "deck": "Sanitized view. It shows the public-safe shape and examples, not every private domain or record."
+      },
+      "children": [
+        {
+          "type": "file-tree",
+          "props": {
+            "defaultExpanded": true,
+            "density": "compact",
+            "iconSet": "standard",
+            "items": [
+              {
+                "name": "obsidian-vault",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "AGENTS.md",
+                    "type": "file"
+                  },
+                  {
+                    "name": "knowledge-base",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "_index.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "career",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "_index.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mocs/job-search-2026.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "notes/cv.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "artifacts/",
+                            "type": "directory"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "finance",
+                        "type": "directory",
+                        "children": [
+                          {
+                            "name": "_index.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "mocs/investment-planning-2026.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "notes/current-spending-baseline.md",
+                            "type": "file"
+                          },
+                          {
+                            "name": "artifacts/",
+                            "type": "directory"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "content-creation",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "fitness",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "housing",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "talks-conferences",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "work",
+                        "type": "directory"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "newsletter",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "2026-Wxx/00-week-pack.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "2026-Wxx/01-mindmap.canvas",
+                        "type": "file"
+                      },
+                      {
+                        "name": "2026-Wxx/items/*.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "2026-Wxx/40-draft.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ai-artifacts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "goals/",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "plans/",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "reports/",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "tracker/",
+                        "type": "directory"
+                      },
+                      {
+                        "name": "writing/",
+                        "type": "directory"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".agents/skills",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "kb-manager/SKILL.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "writing-router/SKILL.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "newsletter-week-pack/SKILL.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "update-content-base/SKILL.md",
+                        "type": "file"
+                      },
+                      {
+                        "name": "obsidian-cli/SKILL.md",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "scripts",
+                    "type": "directory",
+                    "children": [
+                      {
+                        "name": "social-archiver.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "update-content-base.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "list-notes-calendar-changes.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "pdf-sync.js",
+                        "type": "file"
+                      },
+                      {
+                        "name": "sync-supernote.sh",
+                        "type": "file"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ".obsidian/",
+                    "type": "directory"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The operating principles",
+        "deck": "Rules that make the vault useful to both humans and agents."
+      },
+      "children": [
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "principles",
+            "titleKey": "principle",
+            "bodyKey": "description",
+            "groupKey": "status",
+            "signals": {
+              "healthy": "done",
+              "ok": "done"
+            },
+            "groupOrder": [
+              "healthy",
+              "ok"
+            ],
+            "caption": "This is why the vault is more than a folder of notes: it has traversal rules.",
+            "metaKey": "meta"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Skill lanes",
+        "deck": "Skills are small workflow manuals. They decide how agents ingest, write, review, publish, and inspect without improvising every time."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "skillLanes",
+            "columns": [
+              {
+                "key": "lane",
+                "label": "Lane"
+              },
+              {
+                "key": "skills",
+                "label": "Representative skills"
+              },
+              {
+                "key": "reads_writes",
+                "label": "Reads / writes"
+              },
+              {
+                "key": "job",
+                "label": "Job"
+              }
+            ],
+            "caption": "Only public-friendly lanes are shown. Private workflows are intentionally not listed."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "What belongs where",
+        "deck": "The vault separates durable knowledge, active work, generated artifacts, and runtime configuration. That separation keeps the system sane."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "vaultZones",
+            "columns": [
+              {
+                "key": "zone",
+                "label": "Zone"
+              },
+              {
+                "key": "role",
+                "label": "Role"
+              },
+              {
+                "key": "contains",
+                "label": "Contains"
+              },
+              {
+                "key": "example",
+                "label": "Example"
+              }
+            ],
+            "caption": "The same project can touch several zones: a newsletter may draw from the KB, draft in newsletter/, generate audio under ai-artifacts/, and publish via external tooling."
+          }
+        }
+      ]
+    },
+    {
+      "type": "details",
+      "props": {
+        "summary": "Privacy boundary for this public artifact"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "This page explains the architecture, not the private contents. It intentionally avoids naming sensitive personal domains, individual records, private relationships, therapy details, or message threads. The examples are generic: job hunting, finance, content creation, fitness, housing, talks, and work notes."
+          }
+        }
+      ]
+    },
+    {
+      "type": "details",
+      "props": {
+        "summary": "Why prose-linked notes matter"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "A bare wikilink says only that two files are adjacent. A prose sentence says *why* the link matters. That lets an agent decide whether to follow it before spending context on a full note. The graph is navigable because the edges have meaning."
+          }
+        }
+      ]
+    },
+    {
+      "type": "details",
+      "props": {
+        "summary": "How the writing system plugs in"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "The writing path starts with `writing-router`: load voice context, classify the job, then route to a narrow workflow such as newsletter outline, draft review, Bluesky thread, email draft, or cleanup. The rule is simple: one primary route, then a deslopify pass when the copy sounds too generic."
+          }
+        }
+      ]
+    }
+  ]
+}

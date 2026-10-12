@@ -1,0 +1,304 @@
+{
+  "slug": "agent-reliability-score-matrix",
+  "title": "Agent Reliability Score Matrix — Final",
+  "description": "Canonical 13-dimension benchmark from the accepted final report, plus the draft-to-final score corrections made during evidence review.",
+  "artifactType": "report",
+  "topics": [
+    "reliability",
+    "benchmark",
+    "scores"
+  ],
+  "data": {
+    "matrix": [
+      {
+        "dimension": "1. Conversation continuity and natural follow-up routing",
+        "this_project": 1,
+        "flue_primitives": 1,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/durable-objects/task-ledger.ts:336-386",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "2. Durable task/session/event state",
+        "this_project": 3,
+        "flue_primitives": 3,
+        "cloudflare_agents": 3,
+        "openhands": 3,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/durable-objects/task-ledger.ts and tests",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "3. Durable final result or artifact",
+        "this_project": 2,
+        "flue_primitives": 1,
+        "cloudflare_agents": 1,
+        "openhands": 2,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/tools/task-tools.ts:323-344; src/durable-objects/task-ledger.ts:1470-1488",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "4. Structured completion validation",
+        "this_project": 1,
+        "flue_primitives": 1,
+        "cloudflare_agents": 1,
+        "openhands": 1,
+        "telegram_peers": 1,
+        "evidence": "research/21-score-matrix-draft.md; no enforced validator found in src/tools/task-tools.ts",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "5. Provider acceptance, retry, redelivery",
+        "this_project": 1,
+        "flue_primitives": 1,
+        "cloudflare_agents": 1,
+        "openhands": 1,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/tools/task-tools.ts:323-344; src/tools/task-tools.ts:398-424",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "6. Stage-scoped retries and idempotency",
+        "this_project": 2,
+        "flue_primitives": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/cloudflare.ts; src/tasks/queue-state.ts",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "7. Workspace reconstruction/resume",
+        "this_project": 1,
+        "flue_primitives": 1,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "telegram_peers": 0,
+        "evidence": "research/21-score-matrix-draft.md; src/observability/task-activity.ts:148-163",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "8. Tool failure classification",
+        "this_project": 1,
+        "flue_primitives": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/observability/task-activity.ts",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "9. Cancellation and timeout behavior",
+        "this_project": 2,
+        "flue_primitives": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "telegram_peers": 1,
+        "evidence": "research/21-score-matrix-draft.md; src/cloudflare.ts:84-103",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "10. Safe, actionable operator observability",
+        "this_project": 2,
+        "flue_primitives": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/observability/task-activity.ts",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "11. Attachment/media lifecycle",
+        "this_project": 1,
+        "flue_primitives": 1,
+        "cloudflare_agents": 1,
+        "openhands": 1,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/telegram/files.ts:23-46",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "12. Security and task/repository isolation",
+        "this_project": 3,
+        "flue_primitives": 2,
+        "cloudflare_agents": 2,
+        "openhands": 1,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; src/durable-objects/task-ledger.ts:664-720",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      },
+      {
+        "dimension": "13. Operational simplicity for one user",
+        "this_project": 2,
+        "flue_primitives": 2,
+        "cloudflare_agents": 2,
+        "openhands": 1,
+        "telegram_peers": 2,
+        "evidence": "research/21-score-matrix-draft.md; local test/build info in research/05",
+        "caveats": "Canonical score from report.md §5; research/21 was an earlier draft"
+      }
+    ],
+    "leaders": [
+      {
+        "finding": "flue-pi-agent strengths",
+        "status": "pass",
+        "notes": "Durable task/session state = 3; security and task/repository isolation = 3."
+      },
+      {
+        "finding": "Platform primitive strength",
+        "status": "pass",
+        "notes": "Flue, Cloudflare Agents, and OpenHands score 3 for durable task/session/event state; most end-to-end behaviors remain partial."
+      },
+      {
+        "finding": "flue-pi-agent reliability holes",
+        "status": "warn",
+        "notes": "Conversation continuity, structured completion, provider acceptance/redelivery, workspace resume, tool failure classification, and media lifecycle each score 1."
+      }
+    ],
+    "corrections": [
+      {
+        "dimension": "1",
+        "change": "Cloudflare 3 → 2",
+        "reason": "Continuity is partial, not enforced end to end"
+      },
+      {
+        "dimension": "3",
+        "change": "Cloudflare 2 → 1",
+        "reason": "Final-result durability remains application-owned"
+      },
+      {
+        "dimension": "4",
+        "change": "Project 0 → 1; Cloudflare 2 → 1; OpenHands 0 → 1",
+        "reason": "Primitive validation exists, but no peer enforces this task-specific contract"
+      },
+      {
+        "dimension": "5",
+        "change": "Cloudflare 2 → 1; OpenHands 2 → 1",
+        "reason": "Third-party provider acceptance/redelivery is not supplied end to end"
+      },
+      {
+        "dimension": "6",
+        "change": "Cloudflare 3 → 2",
+        "reason": "Stage idempotency remains partial"
+      },
+      {
+        "dimension": "7",
+        "change": "OpenHands 3 → 2; OpenClaw 1 → 0",
+        "reason": "Resume is partial; Telegram peer has no coding-workspace mechanism"
+      },
+      {
+        "dimension": "8",
+        "change": "Project 2 → 1",
+        "reason": "Current public error taxonomy is too coarse"
+      },
+      {
+        "dimension": "9",
+        "change": "Cloudflare 3 → 2",
+        "reason": "Cancellation/timeout behavior is partial across composed primitives"
+      },
+      {
+        "dimension": "10",
+        "change": "Cloudflare 3 → 2",
+        "reason": "Safe operator observability still needs application integration"
+      },
+      {
+        "dimension": "11",
+        "change": "Cloudflare 2 → 1; OpenHands 2 → 1; OpenClaw 3 → 2",
+        "reason": "Media handling does not equal durable result lifecycle"
+      },
+      {
+        "dimension": "12",
+        "change": "Project 2 → 3; OpenHands 2 → 1",
+        "reason": "Local security boundaries are enforced; OpenHands comparison is weaker for this threat model"
+      },
+      {
+        "dimension": "13",
+        "change": "Cloudflare 1 → 2",
+        "reason": "Native primitives remain manageable for one operator"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "The accepted matrix is deliberately conservative: this project is strong on durable task state and security isolation, but weak where the incidents happened—completion, delivery, recovery, and tool/error contracts.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "Canonical scores come from the accepted `report.md` §5. The original `research/21-score-matrix-draft.md` remains visible as research input; the correction table below records every score changed during evidence audit and final synthesis."
+      }
+    },
+    {
+      "type": "table",
+      "props": {
+        "dataKey": "matrix",
+        "columns": [
+          "dimension",
+          "this_project",
+          "flue_primitives",
+          "cloudflare_agents",
+          "openhands",
+          "telegram_peers",
+          "evidence",
+          "caveats"
+        ],
+        "caption": "Dimension | flue-pi-agent | Flue primitives | Cloudflare Agents/Workflows | OpenHands | Telegram peers",
+        "statusKey": "this_project"
+      }
+    },
+    {
+      "type": "ledger",
+      "props": {
+        "dataKey": "leaders",
+        "titleKey": "finding",
+        "bodyKey": "notes",
+        "groupKey": "status",
+        "signals": {
+          "pass": "done",
+          "warn": "wait"
+        },
+        "groupOrder": [
+          "pass",
+          "warn"
+        ],
+        "caption": "Leaders and notable holes (qualitative)"
+      }
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "**Read the shape, not a winner.** No peer enforces the whole Telegram coding-agent contract. Platform SDKs provide durable primitives; this application must still persist canonical results, create an outbox, record provider acceptance or ambiguity, and support redelivery."
+      },
+      "metadata": {
+        "id": "synthesis-notes"
+      }
+    },
+    {
+      "type": "code",
+      "props": {
+        "code": "Canonical: ai-artifacts/agent-reliability-benchmark/report.md §5\nDraft input: ai-artifacts/agent-reliability-benchmark/research/21-score-matrix-draft.md\nEvidence audit: ai-artifacts/agent-reliability-benchmark/research/20-evidence-audit.md\nFinal corrections: ai-artifacts/agent-reliability-benchmark/review/fix-handoff.md",
+        "language": "text",
+        "title": "Canonical and research sources"
+      }
+    },
+    {
+      "type": "table",
+      "props": {
+        "dataKey": "corrections",
+        "columns": [
+          "dimension",
+          "change",
+          "reason"
+        ],
+        "caption": "Every draft-to-final score correction made by the accepted synthesis"
+      }
+    }
+  ]
+}

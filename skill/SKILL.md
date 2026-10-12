@@ -231,7 +231,7 @@ Removed node types do not parse or render. The table below is a writing guide, n
 | `quotes` | `quote` or `ledger` with `meta` |
 | `button` | `links` |
 
-The CLI rejects removed types. Older bundles containing them must be rewritten before opening with this runtime. There is no migration command.
+The CLI rejects removed types. Older bundles containing them must be rewritten before opening with this runtime. There is no `visual-artifact migrate` command. From `cli/`, `bun run scripts/port-contract-3.ts --from <dir> --to <artifacts-dir>` rewrites a saved spec onto these nodes.
 
 ## Code explanations
 

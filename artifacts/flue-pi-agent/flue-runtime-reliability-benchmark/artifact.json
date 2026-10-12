@@ -1,0 +1,232 @@
+{
+  "slug": "flue-runtime-reliability-benchmark",
+  "title": "Flue runtime reliability benchmark — 1.0.0-beta.1 (verified)",
+  "description": "Standalone evidence-based summary of Flue 1.0.0-beta.1 runtime guarantees, app-owned responsibilities, incident coverage, version caveats, evidence, and recommended next steps.",
+  "artifactType": "report",
+  "topics": [
+    "flue-framework",
+    "durable-execution",
+    "cloudflare"
+  ],
+  "data": {
+    "guarantees_vs_responsibilities": [
+      {
+        "aspect": "Dispatch semantics",
+        "runtime_guarantee": "dispatch() admits input and returns a DispatchReceipt (dispatchId, acceptedAt)",
+        "application_responsibility": "Wait/observe final reply via event stream or SDK read()/wait(); ensure dedupe if needed",
+        "evidence": "dist/flue-app-D77HBJu_.mjs — enqueueDispatch; docs: /docs/api/agent-api/",
+        "status": "pass"
+      },
+      {
+        "aspect": "Canonical conversation stream",
+        "runtime_guarantee": "Durable append-only canonical stream per persistent agent instance (Cloudflare DO) with offsets & replay",
+        "application_responsibility": "Use stream offsets for resumption; ensure any external side effects are idempotent and referenced by stream events",
+        "evidence": "Cloudflare internals: node_modules/@flue/runtime/dist/cloudflare/internal.mjs; docs: /docs/concepts/durable-execution/",
+        "status": "pass"
+      },
+      {
+        "aspect": "Tool calls after interruption",
+        "runtime_guarantee": "Interrupted tool calls are recorded as interrupted; runtime will not auto-replay uncertain provider/tool completion",
+        "application_responsibility": "Implement idempotent tool handlers and app-level retries/compensation; inspect SubmissionInterruptedError.meta",
+        "evidence": "node_modules/@flue/runtime/dist/errors-BgJQChy2.mjs (SubmissionInterruptedError)",
+        "status": "warn"
+      },
+      {
+        "aspect": "observe() behavior",
+        "runtime_guarantee": "observe() delivers live-only events (turn_request) synchronously; persisted vs in-process-only fields differ",
+        "application_responsibility": "Design exporters and observers to treat turn_request as non-persistent; read persisted events from durable stream for canonical state",
+        "evidence": "node_modules/@flue/runtime/dist/events-D94wk5Oa.mjs; docs: events-reference",
+        "status": "pass"
+      },
+      {
+        "aspect": "Channels (Telegram/GitHub)",
+        "runtime_guarantee": "Channels verify signatures but are stateless; do not deduplicate deliveries",
+        "application_responsibility": "Deduplicate webhook deliveries and implement idempotency and admission-time dedupe when needed",
+        "evidence": "node_modules/@flue/telegram/dist/index.mjs; node_modules/@flue/github/dist/index.mjs",
+        "status": "warn"
+      },
+      {
+        "aspect": "Durability defaults",
+        "runtime_guarantee": "Runtime exposes defaults: maxAttempts=10, timeoutMs=3_600_000, leaseDurationMs=30_000",
+        "application_responsibility": "Tune durability config per workload and test recovery timing under your deployment",
+        "evidence": "node_modules/@flue/runtime/dist/persisted-image-placement-qyxGKalp.mjs",
+        "status": "pass"
+      }
+    ],
+    "incident_coverage": [
+      {
+        "component": "Session persistence",
+        "status": "pass",
+        "notes": "Durable DO-backed streams and state on Cloudflare: solved for persistent agents; Node in-memory queues are non-durable."
+      },
+      {
+        "component": "Dispatch admission vs completion",
+        "status": "pass",
+        "notes": "dispatch() is admit-only; use streams/SDK to read final completion."
+      },
+      {
+        "component": "Retries & idempotency",
+        "status": "warn",
+        "notes": "Runtime conservative on uneasy replays; app must manage idempotency and retriggering."
+      },
+      {
+        "component": "Tool failures & interrupted calls",
+        "status": "warn",
+        "notes": "Interrupted tool calls recorded as interrupted; runtime does not auto-replay uncertain external effects."
+      },
+      {
+        "component": "Channel dedup and webhook semantics",
+        "status": "warn",
+        "notes": "Channel handlers verify signatures but do not dedupe — app must dedupe by deliveryId when required."
+      }
+    ],
+    "next_steps": [
+      {
+        "order": 1,
+        "step": "Controlled Cloudflare DO test",
+        "action": "Deploy a test agent with beta.1 on Cloudflare, force DO restart and observe submission_settled vs submission_interrupted flows; record timings.",
+        "status": "planned"
+      },
+      {
+        "order": 2,
+        "step": "Version decision",
+        "action": "Choose to pin to beta.1 or upgrade to latest beta; run SDK integration tests for dispatch/read wait semantics.",
+        "status": "planned"
+      },
+      {
+        "order": 3,
+        "step": "Idempotency harness",
+        "action": "Implement idempotent wrappers for external tools and a delivery outbox referencing stream event ids before marking tasks complete.",
+        "status": "todo"
+      }
+    ],
+    "evidence_list": [
+      {
+        "source": "Local installed package",
+        "path_or_url": "node_modules/@flue/runtime/package.json",
+        "quote": "\"version\": \"1.0.0-beta.1\""
+      },
+      {
+        "source": "Dispatch admission code",
+        "path_or_url": "node_modules/@flue/runtime/dist/flue-app-D77HBJu_.mjs",
+        "quote": "enqueueDispatch returns receipt (dispatchId, acceptedAt) — dispatch resolves at admission"
+      },
+      {
+        "source": "Error classes",
+        "path_or_url": "node_modules/@flue/runtime/dist/errors-BgJQChy2.mjs",
+        "quote": "SubmissionInterruptedError and SubmissionRetryExhaustedError — meta includes interruptedTools and phase"
+      },
+      {
+        "source": "Durability defaults",
+        "path_or_url": "node_modules/@flue/runtime/dist/persisted-image-placement-qyxGKalp.mjs",
+        "quote": "DURABILITY_DEFAULT_MAX_ATTEMPTS = 10; DURABILITY_DEFAULT_TIMEOUT_MS = 3600000; LEASE_DURATION_MS = 30000"
+      },
+      {
+        "source": "Channel packages",
+        "path_or_url": "node_modules/@flue/telegram/dist/index.mjs",
+        "quote": "\"The channel is stateless and does not deduplicate `update_id` values.\""
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Flue runtime reliability benchmark — verified 1.0.0-beta.1"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "This report captures the concrete runtime guarantees and limits observed in the local installed Flue package (node_modules/@flue/runtime v1.0.0-beta.1), clarifies what the runtime enforces vs what the application must implement, records incident coverage (solved/partial/left), and lists actionable next steps with exact source evidence.\n\nDo not treat Flue dispatch() as blocking work; dispatch() admits work and returns a receipt. The runtime is conservative about replaying uncertain tool work — interrupted tool calls are recorded as interrupted and left for app-level remediation."
+          }
+        },
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": "1.0.0-beta.1",
+                "label": "Installed runtime version",
+                "note": "node_modules/@flue/runtime/package.json",
+                "signal": "new"
+              },
+              {
+                "value": 10,
+                "label": "Default maxAttempts",
+                "note": "DURABILITY_DEFAULT_MAX_ATTEMPTS"
+              },
+              {
+                "value": 3600000,
+                "label": "Default timeout (ms)",
+                "note": "DURABILITY_DEFAULT_TIMEOUT_MS (1h)"
+              }
+            ]
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "guarantees_vs_responsibilities",
+            "columns": [
+              "aspect",
+              "runtime_guarantee",
+              "application_responsibility",
+              "evidence"
+            ],
+            "caption": "What Flue enforces vs what your app must do",
+            "statusKey": "status"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "incident_coverage",
+            "titleKey": "component",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "pass": "done",
+              "warn": "wait"
+            },
+            "groupOrder": [
+              "pass",
+              "warn"
+            ],
+            "caption": "Incident coverage: SOLVED / PARTIAL / LEFT"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  subgraph Cloudflare\n    DO[Durable Object per-agent]\n    Stream[(append-only canonical stream)]\n  end\n  Client[ClientChannelWebhook] -->|webhook| Runtime[Runtime webhook handler]\n  Runtime -->|admit -> receipt| DO\n  DO --> Stream\n  Stream -->|observe/stream| SDK[SDK event stream]\n  DO -->|recovery decisions from stream| Runtime",
+            "caption": "Topology: dispatch admission, DO canonical stream, observation & recovery."
+          }
+        },
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "next_steps",
+            "titleKey": "step",
+            "markerKey": "order",
+            "descriptionKey": "action",
+            "statusKey": "status",
+            "caption": "Recommended next steps and tests (short-term)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "evidence_list",
+            "columns": [
+              "source",
+              "path_or_url",
+              "quote"
+            ],
+            "caption": "Key source evidence (local files + docs)"
+          }
+        }
+      ]
+    }
+  ]
+}

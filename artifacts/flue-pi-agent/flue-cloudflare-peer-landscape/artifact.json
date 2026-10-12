@@ -1,0 +1,201 @@
+{
+  "slug": "flue-cloudflare-peer-landscape",
+  "title": "Flue + Cloudflare: Peer Landscape",
+  "description": "Verified candidate table and analysis derived from ai-artifacts/agent-reliability-benchmark/research/16-peer-landscape.md — repos, actual stack, completeness, maintenance, incident-class coverage, and why no true peer exists.",
+  "artifactType": "comparison",
+  "topics": [
+    "cloudflare",
+    "flue",
+    "peer-landscape"
+  ],
+  "data": {
+    "candidates": [
+      {
+        "repo": "https://github.com/cloudflare/agents",
+        "maintenance": "Actively maintained (org repo; last push cited 2026-07-30)",
+        "actual_stack": "Workers + Durable Objects + AI binding (packages/ai-chat, examples/playground/wrangler.jsonc)",
+        "completeness": "Full SDK + playground + UI examples",
+        "key_behaviors": "Chat, scheduling, tools, sandboxes, observability",
+        "av": "Y",
+        "st": "Y",
+        "dp": "P",
+        "cs": "P",
+        "mm": "P",
+        "cr": "Y",
+        "se": "P",
+        "ob": "Y"
+      },
+      {
+        "repo": "https://github.com/withastro/flue",
+        "maintenance": "Actively maintained (pushed 2026-07-24)",
+        "actual_stack": "Flue runtime (TS) + targets: Node & Cloudflare; examples/cloudflare (wrangler.jsonc, R2/D1/DO)",
+        "completeness": "Framework + Cloudflare-targeted examples",
+        "key_behaviors": "Agent harness, sandboxes (container+virtual), skills, tools",
+        "av": "P",
+        "st": "Y",
+        "dp": "P",
+        "cs": "P",
+        "mm": "P",
+        "cr": "P",
+        "se": "Y",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/withastro/flue/tree/main/examples/cloudflare",
+        "maintenance": "Maintained inside main repo",
+        "actual_stack": "wrangler.jsonc declares AI binding, worker_loaders, r2_buckets, DO migrations",
+        "completeness": "End-to-end example(s) demonstrating hydration, sandbox, chat",
+        "key_behaviors": "Cloudflare-specific flows and deploy patterns",
+        "av": "P",
+        "st": "Y",
+        "dp": "P",
+        "cs": "P",
+        "mm": "P",
+        "cr": "P",
+        "se": "P",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/ethanolivertroy/flue-grc-engineer-demo",
+        "maintenance": "Small demo (recent pushes May 2026)",
+        "actual_stack": "Flue + Cloudflare + Durable Object binding (wrangler.jsonc)",
+        "completeness": "Focused end-to-end GRC agent; deploy scripts present",
+        "key_behaviors": "GRC triage agent; container sandbox",
+        "av": "P",
+        "st": "Y",
+        "dp": "Y",
+        "cs": "N",
+        "mm": "P",
+        "cr": "P",
+        "se": "P",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/adewale/MaintainerBot",
+        "maintenance": "Personal project/demo (pushed 2026-07-11)",
+        "actual_stack": "Flue + Cloudflare Worker + R2 for durable context bundles",
+        "completeness": "Complete workflow; deployed Worker; read-only safety model",
+        "key_behaviors": "Daily audits, context bundling to R2",
+        "av": "P",
+        "st": "Y",
+        "dp": "Y",
+        "cs": "P",
+        "mm": "P",
+        "cr": "P",
+        "se": "N",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/cloudflare/agents-starter",
+        "maintenance": "Starter template (active)",
+        "actual_stack": "Agents SDK + Workers AI binding (README)",
+        "completeness": "Starter app/demo (templated)",
+        "key_behaviors": "Streaming chat, scheduling, approvals",
+        "av": "P",
+        "st": "Y",
+        "dp": "P",
+        "cs": "P",
+        "mm": "P",
+        "cr": "Y",
+        "se": "P",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/akazwz/workersai",
+        "maintenance": "Community demo (updated 2025/2026 metadata)",
+        "actual_stack": "Workers + Durable Objects + AI binding + KV (backend/wrangler.jsonc)",
+        "completeness": "Full-stack demo (frontend+backend)",
+        "key_behaviors": "AI chat, TTS/STT, session management",
+        "av": "P",
+        "st": "Y",
+        "dp": "P",
+        "cs": "P",
+        "mm": "P",
+        "cr": "Y",
+        "se": "N",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/cloudflare/workers-chat-demo",
+        "maintenance": "Canonical chat sample (older but updated)",
+        "actual_stack": "Workers + Durable Objects + WebSockets",
+        "completeness": "Minimal chat demo",
+        "key_behaviors": "Real-time chat with DO-based history",
+        "av": "P",
+        "st": "Y",
+        "dp": "N",
+        "cs": "N",
+        "mm": "N",
+        "cr": "Y",
+        "se": "N",
+        "ob": "P"
+      },
+      {
+        "repo": "https://github.com/cloudflare/durable-chat-template",
+        "maintenance": "Template for chat with updated DO SQL storage",
+        "actual_stack": "DO SQL storage + WebSocket patterns",
+        "completeness": "Template",
+        "key_behaviors": "Chat rooms + SQL-backed history",
+        "av": "P",
+        "st": "Y",
+        "dp": "N",
+        "cs": "N",
+        "mm": "N",
+        "cr": "Y",
+        "se": "N",
+        "ob": "P"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Peer landscape — Flue + Cloudflare Workers/Durable Objects"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Summary: Two high-quality open-source peers were identified and verified: Cloudflare's official `cloudflare/agents` (production-grade Durable Objects + Workers SDK with ai-chat/examples) and `withastro/flue` (an agent harness with explicit Cloudflare deployment examples). Several community demos exist (workersai, agents-starter, flue demos) but are example-quality not full platforms. Source: ai-artifacts/agent-reliability-benchmark/research/16-peer-landscape.md (section Summary and Findings)."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "candidates",
+            "columns": [
+              "repo",
+              "maintenance",
+              "actual_stack",
+              "completeness",
+              "key_behaviors",
+              "av",
+              "st",
+              "dp",
+              "cs",
+              "mm",
+              "cr",
+              "se",
+              "ob"
+            ],
+            "caption": "Verified candidate evaluation (columns AV=Availability, ST=State loss, DP=Data privacy, CS=Cost/runaway, MM=Model misbehavior, CR=Concurrency, SE=Sandbox escape, OB=Observability)",
+            "statusKey": "completeness"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Why no single true peer exists (evidence):\n- cloudflare/agents is the broadest, production-grade SDK with explicit mitigations for state-loss, concurrency, and observability (see: packages/ai-chat README; examples/playground/wrangler.jsonc).  \n- withastro/flue provides an explicit Cloudflare target and end-to-end examples (examples/cloudflare/wrangler.jsonc) but is a framework/harness rather than a full platform with enterprise governance.  \n- Multiple community repos (ethanolivertroy/flue-grc-engineer-demo, adewale/MaintainerBot, akazwz/workersai) are end-to-end but narrow demos and not broad, maintained platforms.  \nConclusion (from research file): there is no other large independent open-source project that combines Workers + Durable Objects + AI bindings with a full remote-agent + chat/task surface the way Cloudflare/agents does. (ai-artifacts/.../research/16-peer-landscape.md, Findings 1–7)."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Next actions suggested in the research (verbatim guidance):\n- Run a smoke deployment of a Flue Cloudflare example and Cloudflare agents playground to validate: scheduled tasks, Durable Object eviction/restart, stream disconnect/reconnect recovery, tool approval flows.  \n- Test cost-control approaches (route model calls through AI Gateway and simulate traffic).  \n- If security is critical, run a sandbox-audit exercise and consult Cloudflare engineering.  \n(See research/16-peer-landscape.md, Suggested next steps)."
+          }
+        }
+      ]
+    }
+  ]
+}

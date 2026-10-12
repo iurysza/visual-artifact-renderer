@@ -1,0 +1,259 @@
+{
+  "slug": "cloudflare-agents-reliability-benchmark",
+  "title": "Cloudflare agents reliability benchmark — Agents SDK vs DOs vs Workflows vs Queues vs Sandbox",
+  "description": "Evidence-backed comparison of Cloudflare Agents SDK, Durable Objects, Workflows, Queues (product), and Sandbox SDK across reliability dimensions: persistence, checkpoints, retries, DLQ, idempotency, outbox, websockets, and incident coverage.",
+  "artifactType": "comparison",
+  "topics": [
+    "cloudflare-agents",
+    "durable-objects",
+    "workflows",
+    "cloudflare-queues"
+  ],
+  "data": {
+    "agents_comparison": [
+      {
+        "component": "Session persistence",
+        "agents_sdk": "Built-in (SQLite tables: sessions/compactions)",
+        "durable_objects": "Primitive backing storage; single-threaded per ID",
+        "workflows": "Not session-first; step state persisted per workflow",
+        "queues": "Message persistence (delivery-focused)",
+        "sandbox": "Workspace FS depends on workspace type (Local persistent, Docker ephemeral)",
+        "evidence": "cloudflare/agents docs (sessions.md)",
+        "status": "pass"
+      },
+      {
+        "component": "Checkpointing / fibers",
+        "agents_sdk": "runFiber/startFiber with stash() and onFiberRecovered hooks; app resumes from snapshots",
+        "durable_objects": "Can store snapshots per object for resume",
+        "workflows": "Step-level checkpoints (step.do) persisted",
+        "queues": "No checkpointing primitives; messages are units of work",
+        "sandbox": "No checkpointing; orchestrate externally",
+        "evidence": "agents/durable-execution.md",
+        "status": "pass"
+      },
+      {
+        "component": "Retries & DLQ",
+        "agents_sdk": "retry helpers but no built-in DLQ for internal queue; app must persist failed items",
+        "durable_objects": "coordinator for dedupe; no DLQ by itself",
+        "workflows": "per-step retries configurable; errored workflow shown in UI",
+        "queues": "At-least-once with DLQ support configurable",
+        "sandbox": "No delivery DLQ; retries must be orchestrated",
+        "evidence": "agents/retries.md; queues docs",
+        "status": "partial"
+      },
+      {
+        "component": "Idempotency patterns",
+        "agents_sdk": "idempotencyKey on startFiber; ledger patterns for tool runs but app must implement handlers",
+        "durable_objects": "single-threaded DO is ideal for idempotency keys",
+        "workflows": "author must write idempotent steps",
+        "queues": "use DO/KV for idempotency with queue messages",
+        "sandbox": "tool outputs must be written to durable store by integrator",
+        "evidence": "packages/agents/src/index.ts + queues examples",
+        "status": "partial"
+      },
+      {
+        "component": "WebSocket & chat recovery",
+        "agents_sdk": "Connection state persisted; session history durable; per-client ACKs left to app",
+        "durable_objects": "stateful resume possible",
+        "workflows": "not designed for socket resume",
+        "queues": "not applicable",
+        "sandbox": "not applicable",
+        "evidence": "agents/http-websockets.md; sessions.md",
+        "status": "partial"
+      },
+      {
+        "component": "Tool execution isolation",
+        "agents_sdk": "agent-tool ledger + detached runs but handlers must be idempotent",
+        "durable_objects": "coordinator for detachment claims",
+        "workflows": "can call external tool endpoints as steps",
+        "queues": "push to consumers running tools",
+        "sandbox": "Designed for isolated exec (STI) but orchestration external",
+        "evidence": "packages/agents/src/index.ts + sandbox-sdk README",
+        "status": "partial"
+      }
+    ],
+    "incident_matrix": [
+      {
+        "incident": "Session persistence",
+        "status": "pass",
+        "notes": "Agents SDK provides session tables and compaction; DO SQLite default persists session state."
+      },
+      {
+        "incident": "Task ledger & durable runs",
+        "status": "partial",
+        "notes": "Agents provide runs/fibers and agent-tool ledger; resume/compensate policy is app-defined."
+      },
+      {
+        "incident": "Retries / idempotency",
+        "status": "partial",
+        "notes": "Retry primitives exist but DLQ/dedupe remain app concerns; prefer Queues for high throughput."
+      },
+      {
+        "incident": "Alarms / resume",
+        "status": "pass",
+        "notes": "DO alarms + runFiber recovery and SDK defensive measures present."
+      },
+      {
+        "incident": "Final delivery / per-client ACKs",
+        "status": "partial",
+        "notes": "SDK persists outputs but per-client ACK and final-channel delivery semantics must be implemented by app."
+      }
+    ],
+    "recommendations_timeline": [
+      {
+        "order": 1,
+        "phase": "Immediate (0-2 days)",
+        "action": "Use Agents SDK for session-backed chat and light background work; avoid head-of-line tasks and test _flushQueue behavior.",
+        "status": "planned"
+      },
+      {
+        "order": 2,
+        "phase": "Short (1-2 weeks)",
+        "action": "For long-running multi-step orchestration migrate core pipelines to Workflows and use Agents for UI/state; or use Queues + DO for high-throughput ingestion.",
+        "status": "planned"
+      },
+      {
+        "order": 3,
+        "phase": "Medium (2-4 weeks)",
+        "action": "Implement DLQ persistence for failed agent-queue items and an outbox DO pattern for delivery ack.",
+        "status": "todo"
+      }
+    ],
+    "evidence_table": [
+      {
+        "source": "cloudflare/agents repo",
+        "path_or_url": "https://github.com/cloudflare/agents",
+        "note": "Core repo: sessions, fibers, queues, agent-tool ledger"
+      },
+      {
+        "source": "Agents sessions doc",
+        "path_or_url": "https://github.com/cloudflare/agents/blob/main/docs/agents/sessions.md",
+        "note": "Session tables, compaction, storage providers"
+      },
+      {
+        "source": "Agents durable execution doc",
+        "path_or_url": "https://github.com/cloudflare/agents/blob/main/docs/agents/durable-execution.md",
+        "note": "runFiber/startFiber semantics and onFiberRecovered hook"
+      },
+      {
+        "source": "Workflows docs",
+        "path_or_url": "https://developers.cloudflare.com/workflows/build/sleeping-and-retrying/",
+        "note": "Step-level retries, sleep, rollback handlers"
+      },
+      {
+        "source": "Queues docs",
+        "path_or_url": "https://developers.cloudflare.com/queues/reference/how-queues-works/",
+        "note": "At-least-once delivery, consumer ack semantics"
+      },
+      {
+        "source": "Sandbox SDK",
+        "path_or_url": "https://github.com/cloudflare/sandbox-sdk",
+        "note": "Isolated exec runtime for tools"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Cloudflare reliability benchmark — Agents SDK, DOs, Workflows, Queues, Sandbox"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "This artifact compares the Cloudflare Agents SDK, Durable Objects primitives, Cloudflare Workflows, Cloudflare Queues (product), and the Sandbox SDK across reliability dimensions important to agent platforms. It highlights which incidents each primitive solves, partial coverage, or leaves to application code, with concrete evidence links to repos and docs."
+          }
+        },
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": "cloudflare/agents",
+                "label": "Agents SDK (repo)",
+                "note": "stateful Durable Object SDK + SQLite default",
+                "signal": "new"
+              },
+              {
+                "value": "managed steps",
+                "label": "Workflows",
+                "note": "step-level retries + sleep/waits"
+              },
+              {
+                "value": "at-least-once",
+                "label": "Queues (product)",
+                "note": "explicit ack, DLQ support"
+              }
+            ]
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "agents_comparison",
+            "columns": [
+              "component",
+              "agents_sdk",
+              "durable_objects",
+              "workflows",
+              "queues",
+              "sandbox",
+              "evidence"
+            ],
+            "caption": "Feature parity and responsibilities across primitives",
+            "statusKey": "status"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "incident_matrix",
+            "titleKey": "incident",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "pass": "done",
+              "partial": "wait"
+            },
+            "groupOrder": [
+              "pass",
+              "partial"
+            ],
+            "caption": "Which incidents are solved / partial / left to app code"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  AgentsSDK[AgentsSDK] --> DO[DurableObject]\n  DO --> SQLite[(SQLite tables)]\n  User[UserChannel] -->|webhook| AgentsSDK\n  Workflows[Workflows] --> ExternalSteps[StepState]\n  Queues[Queues] --> Consumers[Consumers]\n  Sandbox[Sandbox] --> Tools[ToolRuntime]",
+            "caption": "High-level topology: Agents uses DO+SQLite; Workflows and Queues are different durability primitives; Sandbox is tool runtime."
+          }
+        },
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "recommendations_timeline",
+            "titleKey": "phase",
+            "markerKey": "order",
+            "descriptionKey": "action",
+            "statusKey": "status",
+            "caption": "Short recommended rollout and evaluation timeline"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "evidence_table",
+            "columns": [
+              "source",
+              "path_or_url",
+              "note"
+            ],
+            "caption": "Primary sources (repo/docs)"
+          }
+        }
+      ]
+    }
+  ]
+}
