@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "linkedom": "^0.18.13",
-    "mermaid": "^12.1.0",
-    "zod": "^4.6.5"
+    "mermaid": "^12.2.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
