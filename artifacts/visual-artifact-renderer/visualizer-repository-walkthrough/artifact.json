@@ -1,0 +1,347 @@
+{
+  "slug": "visualizer-repository-walkthrough",
+  "title": "Visualizer: JSON In, Trusted UI Out",
+  "description": "A repository walkthrough of how Pi turns a constrained artifact spec into a validated, rendered page.",
+  "data": {
+    "components": [
+      {
+        "layer": "Skill",
+        "location": "skill/",
+        "job": "Teaches the agent to inspect evidence, read the contract, choose nodes, and emit JSON.",
+        "handoff": "VisualArtifactSpec"
+      },
+      {
+        "layer": "Pi extension",
+        "location": "pi-extension/visual-artifact.ts",
+        "job": "Registers create_visual_artifact and delegates creation to the installed CLI.",
+        "handoff": "JSON over stdin"
+      },
+      {
+        "layer": "Shared contract",
+        "location": "shared/src/artifact-schema.ts + contract.ts",
+        "job": "Defines executable Zod validation, resource limits, and the agent-facing node manifest.",
+        "handoff": "Validated typed spec"
+      },
+      {
+        "layer": "CLI",
+        "location": "cli/src/commands/create.ts",
+        "job": "Parses, validates, checks Mermaid, safely inlines allowed file sources, writes the bundle, and starts serving.",
+        "handoff": "artifact.json + URL"
+      },
+      {
+        "layer": "Static server",
+        "location": "cli/src/commands/serve.ts",
+        "job": "Serves the exported Next.js shell plus live artifact JSON and assets.",
+        "handoff": "HTTP shell + JSON"
+      },
+      {
+        "layer": "Renderer",
+        "location": "app/src/components/",
+        "job": "Fetches and parses the saved spec, then dispatches every node type to a trusted adapter.",
+        "handoff": "Rendered page"
+      }
+    ],
+    "boundaries": [
+      {
+        "title": "Agent → tool",
+        "status": "constrained",
+        "description": "The model supplies VisualArtifactSpec JSON—not React, JSX, routes, CSS, or full HTML.",
+        "meta": "skill + exported contract"
+      },
+      {
+        "title": "CLI → disk",
+        "status": "validated",
+        "description": "Shared schema, resource preflight, and Mermaid parsing run before artifact.json is written.",
+        "meta": "create.ts"
+      },
+      {
+        "title": "Disk → browser",
+        "status": "validated",
+        "description": "ClientArtifactLoader bounds the response and parses it again with VisualArtifactSpecSchema.",
+        "meta": "client-artifact-loader.tsx"
+      },
+      {
+        "title": "Node → UI",
+        "status": "trusted",
+        "description": "componentRegistry maps the discriminated node type to a repository-owned adapter.",
+        "meta": "component-registry.tsx"
+      },
+      {
+        "title": "Local files",
+        "status": "guarded",
+        "description": "Pi grants no --allow-read; relative file-tree sources must remain inside the canonical project root.",
+        "meta": "source safety"
+      }
+    ],
+    "changeMap": [
+      {
+        "change": "Add a node type",
+        "start": "shared/src/contract.ts + artifact-schema.ts",
+        "then": "adapter → registry → exported contract",
+        "verify": "export:contract, verify:artifacts, build"
+      },
+      {
+        "change": "Change artifact paths",
+        "start": "app/src/lib/artifacts/paths.ts",
+        "then": "CLI create/serve/open + docs",
+        "verify": "dev and static-server routes"
+      },
+      {
+        "change": "Change creation behavior",
+        "start": "cli/src/commands/create.ts",
+        "then": "config/util/tests + extension assumptions",
+        "verify": "CLI tests, typecheck, build"
+      },
+      {
+        "change": "Change visual treatment",
+        "start": "app adapters + globals.css",
+        "then": "design docs if contract changes",
+        "verify": "lint, build, visual:qa"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "Visualizer is a local presentation layer for agents. Pi describes content with a small typed JSON vocabulary; the repository—not the model—owns validation, storage, layout, styling, and interaction.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The Repository at a Glance",
+        "deck": "Four runtime faces surround one shared contract."
+      },
+      "children": [
+        {
+          "type": "code",
+          "props": {
+            "code": "skill/          agent instructions and composition guidance\npi-extension/   thin Pi tool wrapper\nshared/         executable artifact + annotation contracts\ncli/            validate, create, serve, open, publish\napp/            Next.js static shell, loaders, renderer, adapters\nworker/         optional Cloudflare/R2 public runtime",
+            "language": "text",
+            "title": "Mental model",
+            "caption": "Start in shared/ for the language, cli/ for the write boundary, and app/ for what users see."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "components",
+            "columns": [
+              {
+                "key": "layer",
+                "label": "Layer"
+              },
+              {
+                "key": "location",
+                "label": "Where"
+              },
+              {
+                "key": "job",
+                "label": "Responsibility"
+              },
+              {
+                "key": "handoff",
+                "label": "Output"
+              }
+            ],
+            "caption": "Each layer has a narrow handoff; arbitrary generated UI code never crosses one."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "How a Person Generates an Artifact with Pi",
+        "deck": "The person asks in natural language; Pi performs the contract-driven assembly."
+      },
+      "children": [
+        {
+          "type": "checklist",
+          "props": {
+            "items": [
+              {
+                "text": "Ask Pi for a visual artifact",
+                "state": "done",
+                "note": "Example: “Walk me through this repository using a visual artifact.”"
+              },
+              {
+                "text": "Pi inspects source and skill guidance",
+                "state": "done",
+                "note": "For architecture work, the skill pipeline collects facts, chooses a thesis, and plans the visual structure."
+              },
+              {
+                "text": "Pi reads the current contract",
+                "state": "done",
+                "note": "visual-artifact contract exposes supported nodes, props, data requirements, and resource limits."
+              },
+              {
+                "text": "Pi emits VisualArtifactSpec JSON",
+                "state": "done",
+                "note": "It selects semantic nodes such as text, Mermaid, tables, flows, and code blocks."
+              },
+              {
+                "text": "Pi calls create_visual_artifact",
+                "state": "done",
+                "note": "The extension sends JSON through stdin to visual-artifact create - --project <cwd> --json."
+              },
+              {
+                "text": "Open the returned URL",
+                "state": "done",
+                "note": "The CLI writes the bundle, starts the local renderer if needed, and returns /artifacts/<project>/<slug>/."
+              }
+            ]
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "{\n  \"slug\": \"architecture-tour\",\n  \"title\": \"Architecture Tour\",\n  \"data\": { \"rows\": [/* structured evidence */] },\n  \"nodes\": [\n    { \"type\": \"text\", \"props\": { \"text\": \"Opening thesis\", \"size\": \"lg\" } },\n    { \"type\": \"mermaid\", \"props\": { \"caption\": \"Runtime flow\", \"code\": \"flowchart LR\\n  Pi --> CLI --> Renderer\" } }\n  ]\n}",
+            "language": "json",
+            "title": "What Pi conceptually sends",
+            "caption": "The actual tool parameters mirror the root spec and add projectPath only for project-name derivation."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "The End-to-End Spec Flow",
+        "deck": "Two validation passes guard a live-JSON rendering path."
+      },
+      "children": [
+        {
+          "type": "mermaid",
+          "props": {
+            "caption": "Creation runs left to right; browser rendering then fetches the saved JSON and dispatches trusted adapters.",
+            "height": 570,
+            "code": "flowchart LR\n  U[\"Person prompt\"] --> P[\"Pi agent\"]\n  S[\"skill/SKILL.md\"] -. guidance .-> P\n  C[\"visual-artifact contract\"] -. node vocabulary .-> P\n  P -->|VisualArtifactSpec| T[\"create_visual_artifact\"]\n  T -->|stdin to create command| CLI[\"CLI create\"]\n  SC[\"shared executable schema\"] --> CLI\n  CLI --> V{\"Valid?\"}\n  V -->|no| E[\"Return validation error\"]\n  V -->|yes| B[\"Write artifact bundle\"]\n  B --> A[\"artifact.json\"]\n  B --> SRV[\"CLI static and live JSON server\"]\n  SRV --> SH[\"Next.js static shell\"]\n  SRV --> J[\"artifact JSON endpoint\"]\n  SH --> L[\"ClientArtifactLoader\"]\n  J --> L\n  L -->|bounded fetch and Zod parse| R[\"VisualArtifactRenderer\"]\n  R --> REG[\"componentRegistry\"]\n  REG --> AD[\"Trusted adapters\"]\n  AD --> PAGE[\"Polished artifact page\"]"
+          }
+        },
+        {
+          "type": "steps",
+          "props": {
+            "items": [
+              {
+                "title": "Agent",
+                "body": "Build constrained JSON",
+                "tag": "choose nodes"
+              },
+              {
+                "title": "Pi tool",
+                "body": "Strip projectPath from spec and invoke CLI",
+                "tag": "delegate"
+              },
+              {
+                "title": "CLI",
+                "body": "Write bundle and ensure server",
+                "tag": "validate + save"
+              },
+              {
+                "title": "Loader",
+                "body": "Read live artifact.json",
+                "tag": "fetch + parse"
+              },
+              {
+                "title": "Registry",
+                "body": "Map node.type to adapter",
+                "tag": "dispatch"
+              },
+              {
+                "title": "Browser",
+                "body": "Repository-owned UI",
+                "tag": "render"
+              }
+            ],
+            "caption": "The shortest runtime path. The same spec is validated before persistence and again before rendering."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Contracts That Keep It Safe and Predictable",
+        "deck": "The important architecture is in the boundaries, not the number of components."
+      },
+      "children": [
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "boundaries",
+            "titleKey": "title",
+            "bodyKey": "description",
+            "groupKey": "status",
+            "signals": {
+              "constrained": "none",
+              "validated": "done",
+              "trusted": "done",
+              "guarded": "none"
+            },
+            "groupOrder": [
+              "constrained",
+              "validated",
+              "trusted",
+              "guarded"
+            ],
+            "caption": "Validation is deliberate at both system boundaries.",
+            "metaKey": "meta"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "~/.local/share/visual-artifact/\n├── app/out/                         # installed static renderer\n└── artifacts/<project>/<slug>/\n    ├── artifact.json                # validated VisualArtifactSpec\n    ├── annotations.json             # optional persisted threads\n    └── assets/                      # optional sidecars\n\nPage: /artifacts/<project>/<slug>/\nJSON: /artifacts/data/artifacts/<project>/<slug>/artifact.json",
+            "language": "text",
+            "title": "Bundle and URL contract",
+            "caption": "Source development may use the repository's artifacts/ directory; installed use defaults to the local data root."
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Where to Start When Changing It",
+        "deck": "These hotspots concentrate the mental model."
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "changeMap",
+            "columns": [
+              {
+                "key": "change",
+                "label": "Change"
+              },
+              {
+                "key": "start",
+                "label": "Start here"
+              },
+              {
+                "key": "then",
+                "label": "Follow through"
+              },
+              {
+                "key": "verify",
+                "label": "Verify"
+              }
+            ],
+            "caption": "The shared contract is the handshake; path math and registry dispatch are other key single sources of truth."
+          }
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "Bottom line: Pi decides what the page says; the contract limits how it can say it; the CLI makes the result durable; the renderer makes it polished.",
+        "size": "lead"
+      }
+    }
+  ]
+}

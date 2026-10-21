@@ -1,0 +1,143 @@
+{
+  "slug": "agent-benchmark-fix-handoff",
+  "title": "Agent Benchmark — Fix Handoff",
+  "description": "Applied changes, rejected/deferred suggestions, validations performed, and final report status — derived from ai-artifacts/agent-reliability-benchmark/review/fix-handoff.md.",
+  "artifactType": "review",
+  "topics": [
+    "agent-benchmark",
+    "fix-handoff"
+  ],
+  "data": {
+    "applied": [
+      {
+        "change": "Clarified ledger 'deliveries' role",
+        "details": "Changed wording to indicate deliveries table is for ingress dedupe, not per-task egress state",
+        "evidence_or_files": "report.md; src/durable-objects/task-ledger.ts"
+      },
+      {
+        "change": "Clarified Telegram semantics",
+        "details": "Bot API success = provider acceptance, not human receipt; defined unknown_after_send",
+        "evidence_or_files": "report.md; src/telegram/send.ts"
+      },
+      {
+        "change": "Moved durable result + outbox invariant into next-release blocker set",
+        "details": "Result metadata and outbound intents commit before legacy completion or Sandbox teardown",
+        "evidence_or_files": "report.md §9–10"
+      },
+      {
+        "change": "Result versioning corrected",
+        "details": "(task_id, result_version) uniqueness and renamed delivered->accepted",
+        "evidence_or_files": "report.md schema notes"
+      },
+      {
+        "change": "Annotated external canonical links with 2026-07-30 check dates",
+        "details": "Pinned code-level links retained; unpinned docs annotated with check date",
+        "evidence_or_files": "research/20-evidence-audit.md; report.md"
+      },
+      {
+        "change": "Added Phase 0 acceptance gate and updated incident A–D traces",
+        "details": "Exact test traces and acceptance checklist added",
+        "evidence_or_files": "report.md §10–11"
+      }
+    ],
+    "rejected": [
+      {
+        "suggestion": "Copy-paste implementation playbook with time estimates and owners",
+        "reason": "Speculative implementation details, unverified migration locations, exceeds architecture/benchmark scope"
+      },
+      {
+        "suggestion": "Move scored matrix to appendix",
+        "reason": "Scored matrix required by synthesis contract; it's core evidence not incidental"
+      },
+      {
+        "suggestion": "Proposed PR checklist with owner placeholders",
+        "reason": "Requires edits to other artifacts and assumes implementation details not yet approved"
+      }
+    ],
+    "validation": [
+      {
+        "check": "Re-read synthesis-contract.md, research/20-evidence-audit.md, reviews and report",
+        "action": "Manual review",
+        "result": "passed"
+      },
+      {
+        "check": "Verified local semantics match code",
+        "action": "Inspected src/durable-objects/task-ledger.ts, src/tasks/transitions.ts, src/cloudflare.ts, src/telegram/send.ts",
+        "result": "confirmed behaviors (deliveries table, agent_end whitelist, queue attempts semantics)"
+      },
+      {
+        "check": "Markdown and formatting checks",
+        "action": "Whitespace and fence balance scan",
+        "result": "no accidental formatting issues found"
+      },
+      {
+        "check": "Test/build",
+        "action": "Not run (documentation-only changes)",
+        "result": "skipped"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Fix handoff — applied, rejected, validations, final status"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Scope: this artifact records the exact applied documentation edits, items rejected or deferred (with reasons), validations run, and final report status as described in ai-artifacts/agent-reliability-benchmark/review/fix-handoff.md."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "applied",
+            "columns": [
+              "change",
+              "details",
+              "evidence_or_files"
+            ],
+            "caption": "Applied changes (from review/fix-handoff.md)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "rejected",
+            "columns": [
+              "suggestion",
+              "reason"
+            ],
+            "caption": "Rejected or deferred suggestions and why (from review/fix-handoff.md)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "validation",
+            "columns": [
+              "check",
+              "action",
+              "result"
+            ],
+            "caption": "Validation steps performed and outcomes (from review/fix-handoff.md)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Final report file and location: `ai-artifacts/agent-reliability-benchmark/report.md` (see final line of review/fix-handoff.md). The handoff concluded documentation edits only; no src/ code changes were made in this pass."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Notes: deferred items include feature-level implementation choices (dedicated delivery queue, runtime replacement, automatic replay strategy), kept as deferred pending measurement or separate implementation design work."
+          }
+        }
+      ]
+    }
+  ]
+}

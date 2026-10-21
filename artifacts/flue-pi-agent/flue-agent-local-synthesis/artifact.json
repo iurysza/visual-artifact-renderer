@@ -1,0 +1,211 @@
+{
+  "slug": "flue-agent-local-synthesis",
+  "title": "Flue agent local synthesis — architecture diagnosis",
+  "description": "Five root causes, strengths to preserve, exact missing invariants, file map, and prioritized local fix slices with file:line evidence.",
+  "artifactType": "report",
+  "topics": [
+    "synthesis",
+    "architecture",
+    "reliability"
+  ],
+  "data": {
+    "rootCauses": [
+      {
+        "root_cause": "Completion decoupled from delivery",
+        "what_happens": "ledger.complete* called before outbound notify",
+        "consequence": "Task shows completed while user may have received nothing",
+        "evidence": "src/tools/task-tools.ts:323-344; src/tools/task-tools.ts:398-424"
+      },
+      {
+        "root_cause": "Results live only in sandbox",
+        "what_happens": "final files exist only in sandbox; ledger stores metadata only",
+        "consequence": "No durable artifacts to resend after sandbox.destroy",
+        "evidence": "src/telegram/files.ts:23-46; src/durable-objects/task-ledger.ts:1470-1488"
+      },
+      {
+        "root_cause": "Agent narration treated as success (no validator)",
+        "what_happens": "agent may narrate success without calling terminal tool",
+        "consequence": "observer may destroy sandbox; no deliverable exists",
+        "evidence": "src/agents/coding-agent.ts (agent prompt); src/observability/task-activity.ts:148-163"
+      },
+      {
+        "root_cause": "Setup stages in single retry scope",
+        "what_happens": "All setup steps run inside one queue attempt; failures replay from start, retries exhausted => generic terminal failure",
+        "consequence": "Repeated transient errors become terminal with redacted diagnostics",
+        "evidence": "src/tasks/processor.ts:259-405; src/cloudflare.ts:84-103"
+      },
+      {
+        "root_cause": "Conversation routing is command-centric",
+        "what_happens": "Natural follow-ups are rejected unless '/task' or specific query",
+        "consequence": "Recovery attempts start new tasks; prior results not re-sent",
+        "evidence": "src/durable-objects/task-ledger.ts:336-386; src/telegram/format.ts:84"
+      }
+    ],
+    "strengths": [
+      {
+        "strength": "Durable ledger bookkeeping",
+        "status": "ok",
+        "notes": "task_events/task_activity tables + conditional updates. src/durable-objects/task-ledger.ts"
+      },
+      {
+        "strength": "Queue state machine prevents unsafe replay",
+        "status": "ok",
+        "notes": "decideQueueClaim + in_progress/uncertain handling. src/tasks/queue-state.ts; src/cloudflare.ts"
+      },
+      {
+        "strength": "Tool-level idempotency exists",
+        "status": "ok",
+        "notes": "publishDraftPullRequest idempotency guards; terminalEffectDecision. src/tools/task-tools.ts:239-346"
+      },
+      {
+        "strength": "Webhook delivery dedupe",
+        "status": "ok",
+        "notes": "deliveries table prevents duplicate admission. src/durable-objects/task-ledger.ts:116-124"
+      },
+      {
+        "strength": "Conversation isolation & callback validation",
+        "status": "ok",
+        "notes": "conversationKey checks & message_id validation. src/durable-objects/task-ledger.ts:664-816"
+      },
+      {
+        "strength": "Existing unit tests for ledger & observability",
+        "status": "ok",
+        "notes": "durable-object tests & projectTaskActivity projections. src/durable-objects/task-ledger.test.ts; src/observability/task-activity.test.ts"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Local synthesis — architecture diagnosis"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Job: present a compact architecture diagnosis that explains why multiple incidents cascade from the same design gaps, list strengths to preserve, enumerate exact missing invariants to enforce, map file evidence, and provide a prioritized set of local fix slices (P0..P2). Preserve uncertainty; do not invent numbers."
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  Draft[Draft collection]\n  Draft --> Queue[Task ledger and TASK_QUEUE]\n  Queue --> Setup[Setup stages]\n  Setup --> Dispatch[Begin dispatch to Flue]\n  Dispatch --> Agent[Agent run]\n  Agent --> TerminalTool[Terminal tool]\n  TerminalTool --> LedgerComplete[Ledger complete]\n  LedgerComplete --> Notify[Notify requester]\n  LedgerComplete --> Destroy[Destroy sandbox]\n  Agent --> Narration[Agent narration without tool]\n",
+            "caption": "High-level topology: where root causes appear (setup, dispatch, agent, delivery, sandbox)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "rootCauses",
+            "columns": [
+              "root_cause",
+              "what_happens",
+              "consequence",
+              "evidence"
+            ],
+            "caption": "Five root causes with concrete consequences and evidence (file:line)"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "strengths",
+            "titleKey": "strength",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "ok": "done"
+            },
+            "groupOrder": [
+              "ok"
+            ],
+            "caption": "Existing strengths to preserve"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "groups": [
+              {
+                "label": "Definitions",
+                "rows": [
+                  {
+                    "title": "Invariant: validated deliverable before completion",
+                    "body": "Do not mark completed unless a structured deliverable exists (summary or file or PR URL persisted)."
+                  },
+                  {
+                    "title": "Invariant: results outlive sandboxes",
+                    "body": "Artifacts or references must be stored durably before sandbox.destroy is called."
+                  },
+                  {
+                    "title": "Invariant: stage-scoped durable checkpoints",
+                    "body": "Each setup stage must have a durable checkpoint and classified transient/permanent error handling."
+                  },
+                  {
+                    "title": "Invariant: delivery ack recorded",
+                    "body": "Outbound delivery must produce a persisted acknowledgement (or enter delivery_failed) before task is final."
+                  },
+                  {
+                    "title": "Invariant: natural-repair routing",
+                    "body": "Natural-language recovery should route to the latest task context rather than create a new task."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "steps",
+          "props": {
+            "items": [
+              {
+                "title": "P0 — block empty completion & add tests",
+                "body": "Add deliverable validator; unit tests for processTaskMessage pre/post-dispatch; completeGeneralTask…",
+                "tag": "P0"
+              },
+              {
+                "title": "P1 — split stages & add reconciliation",
+                "body": "Introduce per-stage checkpoints (setup_github, setup_workspace, dispatching, delivering) and add bo…",
+                "tag": "P1"
+              },
+              {
+                "title": "P1 — durable deliverable & outbox",
+                "body": "Persist final artifacts (R2/KV or ledger blob) before sandbox.destroy; record delivery_ack state an…",
+                "tag": "P1"
+              },
+              {
+                "title": "P2 — policy & tool profile changes",
+                "body": "Restrict repo tooling to confirmed repo tasks; classify errors; expose structured diagnostic tokens…",
+                "tag": "P2"
+              }
+            ],
+            "caption": "Prioritized local fixes (P0..P2)"
+          }
+        },
+        {
+          "type": "details",
+          "props": {
+            "summary": "Full step notes"
+          },
+          "children": [
+            {
+              "type": "prose",
+              "props": {
+                "content": "**P0 — block empty completion & add tests.** P0 — Add deliverable validator; unit tests for processTaskMessage pre/post-dispatch; completeGeneralTask/publish tests. Evidence: src/tools/task-tools.ts:323-344; src/tasks/processor.ts:259-405.\n\n**P1 — split stages & add reconciliation.** P1 — Introduce per-stage checkpoints (setup_github, setup_workspace, dispatching, delivering) and add bounded retries and a dispatch reconciliation job using dispatchId. Evidence: src/durable-objects/task-ledger.ts:1258-1294; src/tasks/processor.ts:369-389.\n\n**P1 — durable deliverable & outbox.** P1 — Persist final artifacts (R2/KV or ledger blob) before sandbox.destroy; record delivery_ack state and implement /resend command. Evidence: src/tools/task-tools.ts:398-424; src/telegram/files.ts:23-46.\n\n**P2 — policy & tool profile changes.** P2 — Restrict repo tooling to confirmed repo tasks; classify errors; expose structured diagnostic tokens for ops (error_class, failed_stage). Evidence: src/durable-objects/task-ledger.ts:336-386; src/tasks/processor.ts:32-39."
+              }
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "- Completion before delivery: src/tools/task-tools.ts:323-344, 398-424\n- Sandbox staging & metadata: src/telegram/files.ts:23-46; src/durable-objects/task-ledger.ts:1470-1488\n- Dispatch lifecycle & uncertainty: src/tasks/processor.ts:352-389; src/durable-objects/task-ledger.ts:1258-1294\n- Queue retry & finalization: src/cloudflare.ts:84-103, 105-119, 130-149\n- Observability mapping / activity: src/observability/task-activity.ts\n- Intake & draft collection: src/durable-objects/task-ledger.ts:447-666; src/tasks/intake.ts:98-130\n- Missing tests referenced: src/tasks/processor.test.ts (new), src/tools/task-tools.test.ts (new), src/telegram/files.test.ts (new)",
+            "language": "text",
+            "title": "File map (exact evidence references)"
+          }
+        }
+      ]
+    }
+  ]
+}

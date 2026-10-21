@@ -1,0 +1,151 @@
+{
+  "slug": "flue-agent-incident-taxonomy",
+  "title": "Flue Agent — Incident Taxonomy (evidence-only)",
+  "description": "Every root failure mapped to symptoms/cascades with severity, layer, confidence, and direct evidence citations from the transcript and repo.",
+  "artifactType": "diagram",
+  "topics": [
+    "incident-taxonomy",
+    "forensics",
+    "flue-agent"
+  ],
+  "data": {
+    "rootFailures": [
+      {
+        "id": "RF1",
+        "root_failure": "Repository workspace setup failure (auth/network/restore)",
+        "severity": "high",
+        "layer": "infra / sandbox / GitHub",
+        "confidence": "medium-high",
+        "primary_evidence": "incident-transcript.md:11-25; research/01-incident-taxonomy.md:lines 1-20; src/tasks/processor.ts:259-415 (report citations)"
+      },
+      {
+        "id": "RF2",
+        "root_failure": "Messaging/tool delivery failure (report_progress / send)",
+        "severity": "medium",
+        "layer": "channel / external API",
+        "confidence": "high",
+        "primary_evidence": "incident-transcript.md:13; research/01-incident-taxonomy.md:lines 30-40; src/telegram/send.ts:23-67"
+      },
+      {
+        "id": "RF3",
+        "root_failure": "Missing durable delivery of general-task output (no result persisted)",
+        "severity": "high",
+        "layer": "application contract / ledger / outbox",
+        "confidence": "high",
+        "primary_evidence": "incident-transcript.md:124-142,162-190; research/01-incident-taxonomy.md:lines 50-90; src/durable-objects/task-ledger.ts:97-166; src/tools/task-tools.ts:406-449"
+      },
+      {
+        "id": "RF4",
+        "root_failure": "Attachments and workspace artifacts are ephemeral",
+        "severity": "high",
+        "layer": "sandbox storage / task lifecycle",
+        "confidence": "high",
+        "primary_evidence": "incident-transcript.md:113-142,184; research/01-incident-taxonomy.md:lines 90-120; src/telegram/files.ts:23-45; task-ledger staged_attachments references"
+      },
+      {
+        "id": "RF5",
+        "root_failure": "Observability / public diagnostic masking",
+        "severity": "medium",
+        "layer": "observability / UX",
+        "confidence": "high",
+        "primary_evidence": "incident-transcript.md:36-40; research/01-incident-taxonomy.md:lines 120-140; src/tasks/processor.ts:436 (failTaskMessage redaction)"
+      },
+      {
+        "id": "RF6",
+        "root_failure": "Command-centric routing rejects natural followups",
+        "severity": "medium",
+        "layer": "routing / product policy",
+        "confidence": "high",
+        "primary_evidence": "incident-transcript.md:43-50; research/01-incident-taxonomy.md:lines 140-160; src/durable-objects/task-ledger.ts:380-396"
+      }
+    ],
+    "symptomMapping": [
+      {
+        "root_failure": "Repository workspace setup failure",
+        "symptoms": "Repeated 'Reading project files' logs, eventual 'Task setup failed after retries'",
+        "primary_cascade": "Repo tasks aborted; repeated setup attempts; no resume checkpoint",
+        "example_evidence": "incident-transcript.md:11-25; research/01-incident-taxonomy.md:section 1"
+      },
+      {
+        "root_failure": "Messaging/tool delivery failure",
+        "symptoms": "'Using tool report_progress failed' and no progress messages to user",
+        "primary_cascade": "Loss of intermediate observability; possible delivery failures",
+        "example_evidence": "incident-transcript.md:13; research/01-incident-taxonomy.md:section 2"
+      },
+      {
+        "root_failure": "Missing durable delivery of general-task output",
+        "symptoms": "Agent claims 'prepared' output but no chat message; later 'no artifacts available'",
+        "primary_cascade": "Permanent user-visible data loss; re-run required",
+        "example_evidence": "incident-transcript.md:124-142,162-190; research/01-incident-taxonomy.md:section 3"
+      },
+      {
+        "root_failure": "Attachments/workspace ephemeral",
+        "symptoms": "Scratch workspace contains only empty repo scaffold on recovery",
+        "primary_cascade": "Cannot recover attachments or results after sandbox teardown",
+        "example_evidence": "incident-transcript.md:180-190; research/01-incident-taxonomy.md:section 4"
+      },
+      {
+        "root_failure": "Observability masking",
+        "symptoms": "Opaque 'inspect protected Workers Logs' messages",
+        "primary_cascade": "Operators cannot self-triage; protected logs required",
+        "example_evidence": "incident-transcript.md:36-40; research/01-incident-taxonomy.md:section 5"
+      },
+      {
+        "root_failure": "Command-centric routing",
+        "symptoms": "Natural 'Where's the output?' replies prompt 'Tap /task'",
+        "primary_cascade": "Repair paths forced into new isolated tasks; no recovery",
+        "example_evidence": "incident-transcript.md:152-162; research/01-incident-taxonomy.md:section 6"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Incident taxonomy — root failures & cascades"
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "rootFailures",
+            "columns": [
+              "id",
+              "root_failure",
+              "severity",
+              "layer",
+              "confidence",
+              "primary_evidence"
+            ],
+            "caption": "Root failures with severity, layer, confidence, and primary evidence (evidence-first)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "symptomMapping",
+            "columns": [
+              "root_failure",
+              "symptoms",
+              "primary_cascade",
+              "example_evidence"
+            ],
+            "caption": "Root → symptom/cascade mapping (operational examples)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Summary (evidence-only)\n\nTranscript reveals three failure classes: setup-time infra failures; messaging/delivery failures; and durability/design gaps (sandbox-only artifacts + no outbox). The simplest consistent explanation for lost deliverables is missing persistence before sandbox teardown."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Confidence notes: 'High' indicates code and transcript directly align (verified). 'Medium' indicates code paths suggest the mechanism but raw protected logs or provider responses are absent. All items cite transcript lines and repository code examples where present."
+          }
+        }
+      ]
+    }
+  ]
+}

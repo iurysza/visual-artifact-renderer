@@ -1,0 +1,50 @@
+{
+  "slug": "deploy-smoke-dashboard",
+  "title": "Deploy Smoke Dashboard",
+  "description": "Checks we run after every Cloudflare deploy.",
+  "data": {
+    "checks": [
+      {
+        "name": "home shell",
+        "status": "pass"
+      },
+      {
+        "name": "home index JSON",
+        "status": "pass"
+      },
+      {
+        "name": "artifact page shell",
+        "status": "pass"
+      },
+      {
+        "name": "artifact JSON",
+        "status": "pass"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "The deploy smoke test verifies the Worker, R2 data, and static assets in one command.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "table",
+      "props": {
+        "dataKey": "checks",
+        "columns": [
+          {
+            "key": "name",
+            "label": "Check"
+          },
+          {
+            "key": "status",
+            "label": "Status"
+          }
+        ]
+      }
+    }
+  ]
+}

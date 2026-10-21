@@ -1,10 +1,13 @@
 # Runtime output from `visual-artifact create`.
-# Keep this directory in the repo, but do not ship generated projects,
-# JSON specs, or sidecar assets.
+# Keep this directory in the repo, but do not ship generated projects
+# or sidecar assets. Checked-in contract 3 bundles are the published
+# specs: <project>/<slug>/artifact.json.
 *
 !.gitignore
 !.gitkeep
-!visualizer/
+# A parent directory stays ignored until it is un-ignored, so nested
+# artifact.json exceptions need these directory exceptions first.
+!*/
+!*/*/
+!*/*/artifact.json
 !visualizer/component-library.json
-!visualizer/call-stack-excerpts/
-!visualizer/call-stack-excerpts/artifact.json

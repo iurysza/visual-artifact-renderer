@@ -1,0 +1,136 @@
+{
+  "slug": "agent-benchmark-synthesis-contract",
+  "title": "Agent Benchmark — Synthesis Contract",
+  "description": "Evidence hierarchy, scoring dimensions, required report sections, recommendation constraints, and the quality gate for the Flue agent benchmark.",
+  "artifactType": "plan",
+  "topics": [
+    "synthesis-contract",
+    "benchmark",
+    "reliability"
+  ],
+  "data": {
+    "dimensions": [
+      {
+        "#": 1,
+        "dimension": "Conversation continuity and follow-up routing",
+        "short_description": "Same-conversation replies and trusted resends"
+      },
+      {
+        "#": 2,
+        "dimension": "Durable task/session/event state",
+        "short_description": "Ledger and event persistence"
+      },
+      {
+        "#": 3,
+        "dimension": "Durable final result or artifact",
+        "short_description": "Canonical result text or R2 artifact"
+      },
+      {
+        "#": 4,
+        "dimension": "Structured completion validation",
+        "short_description": "Validator ensures requested deliverable exists"
+      },
+      {
+        "#": 5,
+        "dimension": "Delivery acknowledgement and redelivery",
+        "short_description": "Outbox + provider acceptance tracking"
+      },
+      {
+        "#": 6,
+        "dimension": "Stage-scoped retries & idempotency",
+        "short_description": "Stage checkpoints and idempotent retries"
+      },
+      {
+        "#": 7,
+        "dimension": "Workspace reconstruction/resume",
+        "short_description": "Recreate or resume workspace safely"
+      },
+      {
+        "#": 8,
+        "dimension": "Tool failure classification",
+        "short_description": "Business-safe error taxonomy"
+      },
+      {
+        "#": 9,
+        "dimension": "Cancellation & timeout behavior",
+        "short_description": "Coordinated cancel/timeouts across stages"
+      },
+      {
+        "#": 10,
+        "dimension": "Operator observability",
+        "short_description": "Actionable sanitized status & correlation IDs"
+      },
+      {
+        "#": 11,
+        "dimension": "Attachment/media lifecycle",
+        "short_description": "Durable artifact handling and R2 manifest"
+      },
+      {
+        "#": 12,
+        "dimension": "Security & isolation",
+        "short_description": "Auth, allowlists, and write-token separation"
+      },
+      {
+        "#": 13,
+        "dimension": "Operational simplicity",
+        "short_description": "Low ops burden for single-user deployment"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Synthesis contract — benchmark rules"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Goal: produce one concise but comprehensive report comparing the repository with peers and recommend the smallest reliable architecture for a one-user agent. Evidence order: 1) supplied transcript; 2) repository source & tests; 3) pinned framework source; 4) upstream docs; 5) secondary sources only when primary unavailable."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "dimensions",
+            "columns": [
+              "#",
+              "dimension",
+              "short_description"
+            ],
+            "caption": "Scoring dimensions (0 absent → 3 enforced)"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "groups": [
+              {
+                "label": "Definitions",
+                "rows": [
+                  {
+                    "title": "Required report sections",
+                    "body": "Exec verdict; root causes & cascades; architecture strengths/gaps; peer selection & limits; scored matrix; per-peer findings; responsibilities; Cloudflare primitives; recommended architecture & state model; roadmap; test suite; risks & gaps; sources."
+                  },
+                  {
+                    "title": "Recommendation constraints",
+                    "body": "Preserve authorization, isolation, redaction, allowlists, DO migration compatibility. Prefer additive app-layer fixes over runtime rewrites."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "callout",
+          "props": {
+            "tone": "risk",
+            "body": "Phase-0 acceptance: result and outbox rows survive Sandbox/Worker teardown; resend reads ledger with zero model/Sandbox calls; typecheck/tests/build pass; new tests assert these invariants.",
+            "title": "Quality gate (example)"
+          }
+        }
+      ]
+    }
+  ]
+}

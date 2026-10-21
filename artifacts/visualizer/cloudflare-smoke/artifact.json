@@ -1,0 +1,12 @@
+{
+  "slug": "cloudflare-smoke",
+  "title": "Cloudflare Smoke",
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "Hello from R2"
+      }
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "slug": "agent-benchmark-evidence-audit",
+  "title": "Agent benchmark evidence audit",
+  "description": "Shows challenged claims, corrections, confidence changes, source quality notes, and unresolved evidence gaps for the agent-reliability-benchmark research files.",
+  "artifactType": "report",
+  "topics": [
+    "evidence",
+    "audit",
+    "benchmark"
+  ],
+  "data": {
+    "reports": [
+      {
+        "report": "05-local-synthesis.md",
+        "corrections": "Reword Root-cause 3: agent_end not always authoritative; observer marks failed only when task still active",
+        "confidence_change": "upgrade to HIGH for 'completion before outbound' and 'sandbox-local artifacts' claims",
+        "why_or_rationale": "Verified ledger.complete* calls and sandbox destroy paths (src/tools/task-tools.ts:323-344; src/telegram/files.ts:23-46)",
+        "evidence_gaps": "No unit/integration tests for processTaskMessage post-dispatch uncertain path; preserve as gap"
+      },
+      {
+        "report": "10-flue-runtime-benchmark.md",
+        "corrections": "None to core claims about installed runtime version",
+        "confidence_change": "upgrade to HIGH for installed runtime contract claims; downgrade to MEDIUM for production timing claims",
+        "why_or_rationale": "Local node_modules reveal flue runtime version and exported dispatch receipts; production timing requires live tests",
+        "evidence_gaps": "Need live Cloudflare experiments for DO wake/hot start behavior"
+      },
+      {
+        "report": "11-cloudflare-agents-benchmark.md",
+        "corrections": "Pin commits/tags for repo references recommended",
+        "confidence_change": "downgrade to MEDIUM for production-edge claims",
+        "why_or_rationale": "Repo/docs unpinned; claims rely on docs not verified under stress",
+        "evidence_gaps": "No load/chaos experiments validating DLQ semantics"
+      },
+      {
+        "report": "12-openhands-benchmark.md",
+        "corrections": "None internal; cautious interpretations retained",
+        "confidence_change": "downgrade to MEDIUM for deterministic replay claim",
+        "why_or_rationale": "Replay depends on workspace implementation; doc already noted this",
+        "evidence_gaps": "Missing E2E experiment for workspace durability under sandbox teardown"
+      },
+      {
+        "report": "14-telegram-agent-benchmark.md",
+        "corrections": "Treat external OpenClaw references as unpinned; confidence reduced for operational readiness claims",
+        "confidence_change": "downgrade to MEDIUM for operational readiness",
+        "why_or_rationale": "No pinned external clone; repo-level claims not locally verified",
+        "evidence_gaps": "Missing pinned commit references and benchmark incident definitions"
+      },
+      {
+        "report": "15-durable-execution-patterns.md",
+        "corrections": "No corrections to conceptual claims",
+        "confidence_change": "downgrade to MEDIUM for product-specific guarantees",
+        "why_or_rationale": "Product docs evolve; pragmatic recommendation stands but requires hands-on validation",
+        "evidence_gaps": "Missing hands-on validation of Queue + DO pattern under realistic failures"
+      },
+      {
+        "report": "16-peer-landscape.md",
+        "corrections": "Treat push dates and metadata as ephemeral unless pinned",
+        "confidence_change": "downgrade to MEDIUM for operational/quantitative claims",
+        "why_or_rationale": "Push dates not pinned to commits",
+        "evidence_gaps": "Missing smoke deployments for DO recovery, sandbox eviction timing"
+      }
+    ],
+    "confidenceSummary": [
+      {
+        "report": "05-local-synthesis.md",
+        "confidence": "HIGH",
+        "notes": "Key app-level claims validated (completion ordering, sandbox-only artifacts)."
+      },
+      {
+        "report": "10-flue-runtime-benchmark.md",
+        "confidence": "MEDIUM",
+        "notes": "Runtime contract validated locally; timing claims need lab tests."
+      },
+      {
+        "report": "11-cloudflare-agents-benchmark.md",
+        "confidence": "MEDIUM",
+        "notes": "Design claim accurate; operational claims need load testing."
+      },
+      {
+        "report": "12-openhands-benchmark.md",
+        "confidence": "MEDIUM",
+        "notes": "Concepts correct but E2E not verified."
+      },
+      {
+        "report": "14-telegram-agent-benchmark.md",
+        "confidence": "MEDIUM",
+        "notes": "External references unpinned."
+      },
+      {
+        "report": "15-durable-execution-patterns.md",
+        "confidence": "MEDIUM",
+        "notes": "Requires operational validation."
+      },
+      {
+        "report": "16-peer-landscape.md",
+        "confidence": "MEDIUM",
+        "notes": "Landscape qualitative; missing quantitative experiments."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Evidence audit — agent-reliability-benchmark"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Job: record exactly which claims were corrected, which are upgraded/downgraded in confidence, why, and what evidence gaps remain. This is a conservative audit — every claim links back to local repo evidence or a preserved gap."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "reports",
+            "columns": [
+              "report",
+              "corrections",
+              "confidence_change",
+              "why_or_rationale",
+              "evidence_gaps"
+            ],
+            "caption": "Per-report corrections, confidence changes, and outstanding evidence gaps"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "confidenceSummary",
+            "titleKey": "report",
+            "bodyKey": "notes",
+            "groupKey": "confidence",
+            "signals": {
+              "HIGH": "risk",
+              "MEDIUM": "wait"
+            },
+            "groupOrder": [
+              "HIGH",
+              "MEDIUM"
+            ],
+            "caption": "Quick confidence summary (HIGH/MEDIUM/LOW)"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "- Distinguish runtime guarantees from application design choices: keep that separation explicit; many reports mixed the two.\n- 05-local-synthesis: reword Root-cause 3 to avoid overstating; agent_end only marks failure if task not already completed (see src/observability/task-activity.ts handling).\n- 10,11,15: production operational claims require live experiments (downgrade to MEDIUM where noted).\n- Preserve explicit evidence gaps (no unit tests for processTaskMessage paths, no outbox/delivery retry tests, lack of pinned commit links to external repos).",
+            "language": "text",
+            "title": "Cross-report contradictions & preservation notes"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Actionable next step: prioritize filling the tests listed in research/04 and adding pinned links for external repo citations where the benchmark depends on remote code (cloudflare/agents, OpenClaw)."
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "- 05-local-synthesis.md (research) — corrections and upgrades referenced src/tools/task-tools.ts, src/observability/task-activity.ts\n- 10-flue-runtime-benchmark.md — validated installed runtime package lines, but operational timing claims require live tests\n- 11-cloudflare-agents-benchmark.md — recommended pinning external repo links (no local clone pin)\n- 12-openhands-benchmark.md — missing E2E verification for workspace snapshot durability\n- 14-telegram-agent-benchmark.md — treat external repo references as unpinned\n- 15-durable-execution-patterns.md — lacks hands-on DLQ/Queue behavior tests\n- 16-peer-landscape.md — missing quantitative smoke deployments for cross-DO recovery",
+            "language": "text",
+            "title": "Exact file references used during audit"
+          }
+        }
+      ]
+    }
+  ]
+}

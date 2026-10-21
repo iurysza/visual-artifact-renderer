@@ -1,0 +1,170 @@
+{
+  "slug": "agent-benchmark-architecture-review",
+  "title": "Agent Benchmark — Architecture Review",
+  "description": "Architecture review derived from ai-artifacts/agent-reliability-benchmark/review/architecture.md: blockers, smallest fixes (Phase 0..1), persistence/outbox/R2 ordering, unknown_after_send handling, rollout sequence, deferred complexity, and final verdict.",
+  "artifactType": "review",
+  "topics": [
+    "agent-benchmark",
+    "architecture"
+  ],
+  "data": {
+    "blockers": [
+      {
+        "id": 1,
+        "blocker": "Persisted-result-before-delivery invariant",
+        "why_blocker": "System records task completion before a canonical durable result or delivery intent is persisted; no canonical object to read for retries/reconciliations.",
+        "evidence": "src/tools/task-tools.ts:348-446; src/durable-objects/task-ledger.ts:1518-1529",
+        "minimal_fix": "Persist a canonical result record and enqueue durable delivery intent before marking task 'completed' or destroying the Sandbox."
+      },
+      {
+        "id": 2,
+        "blocker": "Durable outbound outbox missing",
+        "why_blocker": "No per-channel delivery state (attempt_count, provider_message_id, unknown_after_send) persisted; sends are thin wrappers and do not persist provider evidence.",
+        "evidence": "src/telegram/send.ts:50-90; no task_delivery table exists",
+        "minimal_fix": "Add task_delivery table, persist provider_message_id and final delivery state in task_delivery, and implement a delivery consumer that persists evidence before acking queue messages."
+      },
+      {
+        "id": 3,
+        "blocker": "Sandbox teardown race",
+        "why_blocker": "Attachments are staged in Sandbox and destroyed immediately after completion, losing artifact bytes referenced by persisted results.",
+        "evidence": "src/telegram/files.ts:23-34; src/tools/task-tools.ts:410-446",
+        "minimal_fix": "Copy required files to R2 and record artifact_manifest before destroying Sandbox; only destroy after result was persisted."
+      }
+    ],
+    "phase0": [
+      {
+        "step": "Add task_results table (durable-objects/task-ledger.ts)",
+        "files_to_edit": "src/durable-objects/task-ledger.ts",
+        "estimate_h": "1-2"
+      },
+      {
+        "step": "Modify completeGeneralTask to persist result and copy files to R2 before marking completed",
+        "files_to_edit": "src/tools/task-tools.ts",
+        "estimate_h": "1-2"
+      },
+      {
+        "step": "Create task_delivery row(s) and enqueue delivery Queue message instead of direct send",
+        "files_to_edit": "src/telegram/send.ts, src/cloudflare.ts, src/durable-objects/task-ledger.ts",
+        "estimate_h": "1-2"
+      },
+      {
+        "step": "Implement delivery consumer to call Telegram and persist provider evidence",
+        "files_to_edit": "src/tasks/delivery.ts or extend src/cloudflare.ts queue consumer",
+        "estimate_h": "1-3"
+      },
+      {
+        "step": "Expose a trusted /resend handler to enqueue delivery intents (no re-run of Flue)",
+        "files_to_edit": "src/lib/telegram-input.ts, src/durable-objects/task-ledger.ts",
+        "estimate_h": "1-3"
+      }
+    ],
+    "verdict": [
+      {
+        "component": "Phase 0 acceptance gate",
+        "status": "warn",
+        "notes": "Must persist result + copy files + enqueue delivery intents before marking completed"
+      },
+      {
+        "component": "Durable migration pattern",
+        "status": "pass",
+        "notes": "Use CREATE TABLE IF NOT EXISTS guards; deploy readers before writers"
+      },
+      {
+        "component": "Sandbox artifact safety",
+        "status": "warn",
+        "notes": "Ensure R2 copy before delete; add TTL and retention policy"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Architecture review — blockers and minimal fixes"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Scope: This artifact records the architecture blockers, the smallest fixes (ordered Phase 0 then Phase 1), persistence/outbox/R2 ordering, unknown_after_send handling, rollout guidance, and the final verdict. Source: ai-artifacts/agent-reliability-benchmark/review/architecture.md (full file)."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "blockers",
+            "columns": [
+              "id",
+              "blocker",
+              "why_blocker",
+              "evidence",
+              "minimal_fix"
+            ],
+            "caption": "Critical architecture blockers and minimal fixes (from review/architecture.md)"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "caption": "Phase 0 → Phase 1 rollout sequence (readers-first, additive migrations)",
+            "code": "sequenceDiagram\n  participant Dev as Developer\n  participant DO as DurableObject (readers)\n  participant CodeWriters as Writers\n  participant Delivery as DeliveryConsumer\n  Dev->>DO: Deploy readers (lookup helpers, APIs)\n  Dev->>CodeWriters: Deploy writers that use new ledger RPCs (behind FF)\n  Dev->>Delivery: Deploy delivery consumer\n  Delivery->>DO: persist delivery state (task_delivery)\n  Note over Dev,Delivery: Use additive CREATE TABLE IF NOT EXISTS migrations"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Persistence and outbox ordering (explicit):\n1) Persist canonical task_result (task_id, result_version, artifact_manifest) and copy any files to R2.  \n2) Create durable delivery intent(s) in task_delivery (state=pending) and enqueue delivery queue message.  \n3) Only after the above succeed, mark task.completed and destroy Sandbox.  \nEvidence: recommended in review/architecture.md Phase 0 steps and code references (src/tools/task-tools.ts:348-446; src/durable-objects/task-ledger.ts:1518-1529)."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "unknown_after_send handling: on ambiguous outcomes (network timeout after provider acceptance or Worker crash before persisting provider evidence), set delivery.state = 'unknown_after_send', surface to operator UI, and do not auto-replay. Add manual operator dedupe guidance and a small policy to retry transient 5xx/429 using Retry-After. (See review/architecture.md notes on provider-side duplication risk and 'unknown_after_send'.)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "phase0",
+            "columns": [
+              "step",
+              "files_to_edit",
+              "estimate_h"
+            ],
+            "caption": "Phase 0 steps (ordered, smallest surface area) — copy from review/architecture.md"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Overengineering and deferred items (explicitly deferred in the review): do NOT adopt a second runtime, Workflows, or full workspace snapshotting as part of this Phase 0. Consider a separate DELIVERY queue only if delivery starvation is observed (deferred)."
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "verdict",
+            "titleKey": "component",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "warn": "wait",
+              "pass": "done"
+            },
+            "groupOrder": [
+              "warn",
+              "pass"
+            ],
+            "caption": "Final verdict and acceptance gate summary"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Final verdict: The report's minimal target architecture is correct: add task_results, add durable outbox (task_delivery), copy artifacts to R2 before Sandbox teardown, and implement a delivery consumer. Execute Phase 0 immediately (persist result before completion, copy files to R2, enqueue durable delivery intents). These changes are additive and compatible with the existing Durable Object migration pattern."
+          }
+        }
+      ]
+    }
+  ]
+}

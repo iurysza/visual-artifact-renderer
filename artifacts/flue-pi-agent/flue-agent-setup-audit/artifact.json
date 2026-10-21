@@ -1,0 +1,154 @@
+{
+  "slug": "flue-agent-setup-audit",
+  "title": "Flue agent setup audit (incident A)",
+  "description": "Exact setup stages, queue retry & replay behavior, dispatch uncertainty window, state transitions, missing tests, and narrow fixes. All evidence cited to repo files and lines.",
+  "artifactType": "report",
+  "topics": [
+    "flue-agent",
+    "queue-reliability",
+    "durable-ledger"
+  ],
+  "data": {
+    "stageStatus": [
+      {
+        "stage": "Admission (webhook/claim)",
+        "status": "ok",
+        "notes": "deliveries dedupe; claimTelegram/claimGitHub. src/durable-objects/task-ledger.ts:232-256"
+      },
+      {
+        "stage": "Queue consumer",
+        "status": "warn",
+        "notes": "Cloudflare queue retry/backoff and MAX_QUEUE_ATTEMPTS(6). src/cloudflare.ts:84-103,130-149"
+      },
+      {
+        "stage": "Prepare workspace",
+        "status": "warn",
+        "notes": "prepareRepositoryWorkspace / requireCommand; non-transactional sandbox ops. src/tasks/processor.ts:283-326"
+      },
+      {
+        "stage": "Attachments staging",
+        "status": "warn",
+        "notes": "stageTelegramAttachments writes to sandbox; download limits enforced. src/telegram/files.ts:23-45; src/telegram/download.ts:11-50"
+      },
+      {
+        "stage": "Begin dispatch",
+        "status": "risk",
+        "notes": "phase='dispatching' is set before dispatch; ledger must be updated after external runtime starts. src/durable-objects/task-ledger.ts:1258-1275; src/tasks/processor.ts:352-366"
+      },
+      {
+        "stage": "Ledger finalization",
+        "status": "warn",
+        "notes": "markQueueDispatched/completeQueueEvent may fail leaving runtime/ledger inconsistent. src/durable-objects/task-ledger.ts:1278-1294"
+      }
+    ],
+    "missingTests": [
+      {
+        "test": "processTaskMessage — pre-dispatch failure path",
+        "targets": "src/tasks/processor.ts",
+        "evidence": "processor catch & releaseQueueEvent: src/tasks/processor.ts:405-415",
+        "priority": "High"
+      },
+      {
+        "test": "processTaskMessage — post-dispatch 'uncertain' path",
+        "targets": "src/tasks/processor.ts, src/cloudflare.ts",
+        "evidence": "dispatchBegan semantics & uncertain handling: src/tasks/processor.ts:367-416; src/cloudflare.ts:105-116",
+        "priority": "High"
+      },
+      {
+        "test": "Cloudflare.queue retry & finalization",
+        "targets": "src/cloudflare.ts",
+        "evidence": "MAX_QUEUE_ATTEMPTS handling & failTaskMessage: src/cloudflare.ts:84-103,130-149",
+        "priority": "High"
+      },
+      {
+        "test": "Dispatch reconciliation (integration)",
+        "targets": "src/tasks/processor.ts, src/durable-objects/task-ledger.ts",
+        "evidence": "lack of reconciliation when dispatch succeeds but ledger write fails: src/tasks/processor.ts:369-389; src/durable-objects/task-ledger.ts:1278-1294",
+        "priority": "High"
+      },
+      {
+        "test": "stageTelegramAttachments write behavior",
+        "targets": "src/telegram/files.ts",
+        "evidence": "staging writes into sandbox: src/telegram/files.ts:23-45",
+        "priority": "Medium"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Flue agent setup audit — incident A"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Job: give an operator a single-page, evidence-backed diagnosis of why setup/dispatch attempts become terminal or “uncertain”, where replays are safe/unsafe, and which focused tests/fixes will prevent recurrence.\n\nKey summary (short):\n- Admission → queue consumer → prepare workspace → stage attachments → begin dispatch → dispatch → ledger finalization. See detailed flow and exact file:line citations below. (Primary evidence: src/tasks/processor.ts, src/durable-objects/task-ledger.ts, src/cloudflare.ts.)\n- Two failure classes: pre-dispatch failures (safe to retry; ledger.releaseQueueEvent is used) and post-dispatch failures (unsafe to replay; code returns 'uncertain' and the queue terminalizes). See processor catch paths and cloudflare queue logic."
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  Q[TASK_QUEUE consumer]\n  Q --> LG[ledger.claimQueueEvent]\n  LG --> PREP[prepare workspace]\n  PREP --> STG[stage attachments]\n  STG --> BEGIN[beginQueueDispatch - dispatching]\n  BEGIN --> DISPATCH[dispatch to Flue runtime]\n  DISPATCH --> MARK[markQueueDispatched]\n  MARK --> COMPLETE[recordTaskActivity and notify requester]",
+            "caption": "Setup & dispatch flow (see evidence table below)"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "stageStatus",
+            "titleKey": "stage",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "ok": "done",
+              "warn": "wait",
+              "risk": "risk"
+            },
+            "groupOrder": [
+              "ok",
+              "warn",
+              "risk"
+            ],
+            "caption": "Stage health & primary code evidence (repo:line)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "missingTests",
+            "columns": [
+              "test",
+              "targets",
+              "evidence",
+              "priority"
+            ],
+            "caption": "Missing/weak tests and where to add them (high priority first)."
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "stateDiagram-v2\n  [*] --> queued\n  queued --> dispatching : beginQueueDispatch\\n(src/durable-objects/task-ledger.ts:1258-1275)\n  dispatching --> dispatched : markQueueDispatched\\n(src/durable-objects/task-ledger.ts:1278-1286)\n  dispatched --> completed : completeQueueEvent\\n(src/durable-objects/task-ledger.ts:1288-1294)\n  dispatching --> uncertain : error after dispatchBegan\\n(src/tasks/processor.ts:367-416)\n  uncertain --> failed : failUncertainDispatch\\n(src/tasks/processor.ts:449-467)\n  queued --> in_progress : decideQueueClaim 'in_progress'\\n(src/tasks/queue-state.ts:15-22)\n  in_progress --> queued : retry/backoff (Cloudflare.queue)\\n(src/cloudflare.ts:84-103)",
+            "caption": "Queue state machine & dispatch uncertainty (evidence lines)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Narrow fixes (implement in this order):\n\nP0 (immediate): add unit+integration tests for processTaskMessage failure modes and failTaskMessage.\n  - Tests: processTaskMessage success, pre-dispatch failure -> ledger.releaseQueueEvent called, post-dispatch failure -> return 'uncertain' and failUncertainDispatch. (See src/tasks/processor.ts:259-405; desired tests in src/tasks/processor.test.ts.)\n\nP1: add a reconciliation path for dispatch receipts: persist dispatchId atomically (or enqueue reconciliation job) when dispatch(...) returns but ledger writes fail (src/tasks/processor.ts:369-389; src/durable-objects/task-ledger.ts:1278-1294).\n\nP1: record richer diagnostics in protected task_activity entries (dispatchId, sandbox logs) so operators can reconcile ambiguous states (src/tasks/processor.ts:369-405; src/observability/task-activity.ts).\n\nP1: bounded retries around ledger.markQueueDispatched/completeQueueEvent immediately after a successful dispatch to reduce false 'uncertain' terminals."
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "- Cloudflare queue consumer and retry logic: src/cloudflare.ts:84-103, 105-119, 130-149\n- processTaskMessage (setup, dispatch, error handling): src/tasks/processor.ts:259-405, 406-415\n- decideQueueClaim: src/tasks/queue-state.ts:15-22, 24-28\n- ledger begin/mark/complete/release: src/durable-objects/task-ledger.ts:1206-1255, 1258-1296, 1278-1294\n- durable prepareTask & conditional updates: src/durable-objects/task-ledger.ts:1445-1468\n- attachments & download: src/telegram/files.ts:23-45; src/telegram/download.ts:11-50\n- tool idempotency & terminal effects: src/tools/task-tools.ts:239-346, 360-370",
+            "language": "text",
+            "title": "Quick file references (precise evidence)"
+          }
+        }
+      ]
+    }
+  ]
+}

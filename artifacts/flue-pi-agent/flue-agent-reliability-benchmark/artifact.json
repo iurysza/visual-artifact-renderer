@@ -1,0 +1,266 @@
+{
+  "slug": "flue-agent-reliability-benchmark",
+  "title": "Flue Agent Reliability Benchmark",
+  "description": "Evidence-backed verdict, peer scores, failure architecture, phased repair plan, and incident tests.",
+  "artifactType": "report",
+  "topics": [
+    "reliability-benchmark",
+    "architecture",
+    "flue-agent"
+  ],
+  "data": {
+    "scoredMatrix": [
+      {
+        "dimension": "1. Conversation continuity and natural follow-up routing",
+        "this_project": 1,
+        "flue_beta": 1,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "openclaw": 2
+      },
+      {
+        "dimension": "2. Durable task/session/event state",
+        "this_project": 3,
+        "flue_beta": 3,
+        "cloudflare_agents": 3,
+        "openhands": 3,
+        "openclaw": 2
+      },
+      {
+        "dimension": "3. Durable final result or artifact",
+        "this_project": 2,
+        "flue_beta": 1,
+        "cloudflare_agents": 1,
+        "openhands": 2,
+        "openclaw": 2
+      },
+      {
+        "dimension": "4. Structured completion validation",
+        "this_project": 1,
+        "flue_beta": 1,
+        "cloudflare_agents": 1,
+        "openhands": 1,
+        "openclaw": 1
+      },
+      {
+        "dimension": "5. Provider acceptance, retry, redelivery",
+        "this_project": 1,
+        "flue_beta": 1,
+        "cloudflare_agents": 1,
+        "openhands": 1,
+        "openclaw": 2
+      },
+      {
+        "dimension": "6. Stage-scoped retries and idempotency",
+        "this_project": 2,
+        "flue_beta": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "openclaw": 2
+      },
+      {
+        "dimension": "7. Workspace reconstruction/resume",
+        "this_project": 1,
+        "flue_beta": 1,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "openclaw": 0
+      },
+      {
+        "dimension": "8. Tool failure classification",
+        "this_project": 1,
+        "flue_beta": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "openclaw": 2
+      },
+      {
+        "dimension": "9. Cancellation and timeout behavior",
+        "this_project": 2,
+        "flue_beta": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "openclaw": 1
+      },
+      {
+        "dimension": "10. Safe, actionable operator observability",
+        "this_project": 2,
+        "flue_beta": 2,
+        "cloudflare_agents": 2,
+        "openhands": 2,
+        "openclaw": 2
+      },
+      {
+        "dimension": "11. Attachment/media lifecycle",
+        "this_project": 1,
+        "flue_beta": 1,
+        "cloudflare_agents": 1,
+        "openhands": 1,
+        "openclaw": 2
+      },
+      {
+        "dimension": "12. Security and task/repository isolation",
+        "this_project": 3,
+        "flue_beta": 2,
+        "cloudflare_agents": 2,
+        "openhands": 1,
+        "openclaw": 2
+      },
+      {
+        "dimension": "13. Operational simplicity for one user",
+        "this_project": 2,
+        "flue_beta": 2,
+        "cloudflare_agents": 2,
+        "openhands": 1,
+        "openclaw": 2
+      }
+    ],
+    "roadmap": [
+      {
+        "phaseStep": 0,
+        "phase": "Phase 0 — next release",
+        "action": "(1) Add result and outbox schema; (2) Persist canonical result + outbound intent before completion; (3) Copy required files to R2 before manifest; (4) Send from durable outbox; (5) Add conversation-scoped resend",
+        "status": "planned"
+      },
+      {
+        "phaseStep": 1,
+        "phase": "Phase 1 — setup & dispatch reliability",
+        "action": "Add stage-attempt records and safe error classes; reconcile dispatch receipt loss; configure DLQ",
+        "status": "planned"
+      },
+      {
+        "phaseStep": 2,
+        "phase": "Phase 2 — conversation repair",
+        "action": "Route result retrieval and resend in control-plane; bind replies to latest same-conversation task; /run explicit outcomes",
+        "status": "planned"
+      },
+      {
+        "phaseStep": 3,
+        "phase": "Phase 3 — hardening",
+        "action": "Mode-specific execution profiles; operator-safe status; retention policy; chaos testing; Flue upgrade review",
+        "status": "planned"
+      }
+    ],
+    "incidentTests": [
+      {
+        "id": "11.1",
+        "title": "Incident A variants — setup retry and dispatch ambiguity",
+        "intent": "Inject transient and permanent setup failures, dispatch-accepted followed by ledger-write-failure, duplicate queue messages",
+        "assertions": "No duplicate execution; dispatch_uncertain recorded; DLQ custody on exhaustion; setup stage checkpoints persist"
+      },
+      {
+        "id": "11.2",
+        "title": "Incident B — conversation continuity",
+        "intent": "Health/help queries and same-conversation replies to active and terminal tasks",
+        "assertions": "Health queries pass without /task; terminal-task 'where is the output' triggers controlled resend; cross-conversation denied"
+      },
+      {
+        "id": "11.3",
+        "title": "Incident C — result validation and delivery",
+        "intent": "Completion with only a summary; Telegram send failures; provider acceptance recording",
+        "assertions": "Completion rejected without canonical result; persisted result exists before any send; failed sends set retry_wait/unknown_after_send"
+      },
+      {
+        "id": "11.4",
+        "title": "Incident D — prior output recovery",
+        "intent": "Repair/replay requests mapped to latest same-conversation task",
+        "assertions": "Resend reads task_results; zero Flue/Sandbox/model calls; idempotent delivery"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "Keep the current stack. The next release must persist the canonical result, create a durable delivery intent, and preserve Telegram acceptance or ambiguity before declaring success.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "columns",
+      "props": {
+        "count": 2
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Verdict\n\nKeep the current stack; do not rewrite the runtime. Failures are application-layer contract gaps (result persistence, outbox, delivery, routing). See recommended Phase 0 changes."
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Top operational blockers\n\n1) No durable general result; 2) No outbound outbox; 3) Completion conflates execution & delivery; 4) Scratch-only artifacts; 5) Command-only routing."
+          }
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "props": {
+        "dataKey": "scoredMatrix",
+        "columns": [
+          "dimension",
+          "this_project",
+          "flue_beta",
+          "cloudflare_agents",
+          "openhands",
+          "openclaw"
+        ],
+        "caption": "Scored benchmark matrix (0–3) — evidence in report sections"
+      }
+    },
+    {
+      "type": "mermaid",
+      "props": {
+        "code": "flowchart LR\n  TG[Telegram/GitHub] --> Auth[Auth & dedupe]\n  Auth --> Ledger[TaskLedger]\n  Ledger --> Queue[TASK_QUEUE]\n  Queue --> Setup[Setup]\n  Setup --> Dispatch[Flue dispatch]\n  Dispatch --> Validator[Validator]\n  Validator --> Persist[Persist results]\n  Persist --> Outbox[Outbox]\n  Outbox --> Delivery[Delivery consumer]\n  Delivery --> TGAPI[Telegram API]\n  TGAPI -->|accepted| Accepted[delivery accepted]\n  TGAPI -->|failure| Failed[delivery retry/unknown]",
+        "caption": "Recommended minimal architecture: persist result before sending; send from durable outbox; record provider acceptance or ambiguity."
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "State model (concise)"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Additive tables (keep old fields): task_results — canonical per-task result versions; task_delivery — per-channel delivery records and states; task_stage_attempts — stage-scoped attempt records. Invariants: (task_id, result_version) unique; persist result before advancing legacy completed state; delivery rows never delete results."
+          }
+        }
+      ]
+    },
+    {
+      "type": "timeline",
+      "props": {
+        "dataKey": "roadmap",
+        "titleKey": "phase",
+        "markerKey": "phaseStep",
+        "descriptionKey": "action",
+        "statusKey": "status",
+        "caption": "Prioritized implementation roadmap (phases and key actions)"
+      }
+    },
+    {
+      "type": "table",
+      "props": {
+        "dataKey": "incidentTests",
+        "columns": [
+          "id",
+          "title",
+          "intent",
+          "assertions"
+        ],
+        "caption": "Incident-level test suite (selection). Use ledger/Queue/Sandbox failure injection to assert invariants."
+      }
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "### Risks & non-goals\n\nDo not migrate to a second runtime. Preserve allowlists, DO migration compatibility, activity redaction, and write-token separation. A DLQ helps diagnostics but is not a substitute for result/state invariants."
+      }
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "slug": "durable-agent-execution-patterns",
+  "title": "Durable agent execution patterns — recommended smallest pattern (Queues + Durable Objects)",
+  "description": "Comparative benchmark of Cloudflare Workflows, Queues+DO, Temporal, Inngest, Trigger.dev across checkpoints, retries, idempotency, cancellation, outbox, DLQ; includes smallest recommended architecture and next steps.",
+  "artifactType": "plan",
+  "topics": [
+    "durable-execution",
+    "cloudflare-queues",
+    "temporal",
+    "inngest"
+  ],
+  "data": {
+    "durable_matrix": [
+      {
+        "dimension": "Checkpoints / stage persistence",
+        "workflows": "Step-level checkpoints automatically persisted per workflow step",
+        "queues_plus_do": "Message-level checkpoints + DO persisted state; manual checkpointing achievable",
+        "temporal": "Full workflow history with deterministic replay — richest checkpointing",
+        "inngest": "Step checkpointing; good for functions-based flows",
+        "triggerdev": "Task/subtask persistence; good visibility",
+        "evidence": "Workflows docs; Queues docs; Temporal docs",
+        "status": "pass"
+      },
+      {
+        "dimension": "Retries scope & DLQ",
+        "workflows": "Per-step retries; no DLQ (workflow instance error view)",
+        "queues_plus_do": "At-least-once queue with configurable DLQ; individual acking avoids batch replays",
+        "temporal": "Per-activity retries with heartbeat/timeout semantics; admin tooling for failed workflows",
+        "inngest": "Per-step retries; failure handlers exist",
+        "triggerdev": "Configurable retries + idempotency keys; failed runs visible in dashboard",
+        "evidence": "Queues batching/retries; Workflows retry docs; Temporal activity timeouts",
+        "status": "pass"
+      },
+      {
+        "dimension": "Idempotency primitives",
+        "workflows": "Author must implement idempotency in steps",
+        "queues_plus_do": "Use DO single-threaded semantics + stored idempotency keys; recommended pattern",
+        "temporal": "Use heartbeats + external DB for idempotency patterns",
+        "inngest": "Event-level idempotency (24h window) + CEL keys",
+        "triggerdev": "Built-in idempotencyKey with TTL (30d)",
+        "evidence": "Queues + DO examples; Inngest idempotency; Trigger.dev idempotency",
+        "status": "pass"
+      },
+      {
+        "dimension": "Cancellation & heartbeats",
+        "workflows": "Cancel/workflow termination APIs; no activity heartbeat primitive",
+        "queues_plus_do": "No built-in heartbeat; implement chunking/ping messages or DO lease pattern",
+        "temporal": "First-class cancellation & heartbeating built-in",
+        "inngest": "No Temporal-style heartbeat; chunk into steps",
+        "triggerdev": "Cancel run API; no heartbeat primitive",
+        "evidence": "Workflows docs; Temporal docs",
+        "status": "partial"
+      },
+      {
+        "dimension": "Outbox & delivery guarantees",
+        "workflows": "No native outbox, implement with external store",
+        "queues_plus_do": "Natural fit: DO outbox + per-message ack + DLQ",
+        "temporal": "Strong patterns available via activities + durable history",
+        "inngest": "Outbox as functions with idempotency key; needs storage",
+        "triggerdev": "Outbox via idempotencyKey pattern",
+        "evidence": "Queues DO example; Temporal patterns",
+        "status": "pass"
+      },
+      {
+        "dimension": "Operational complexity",
+        "workflows": "Low (managed), limited for long activities",
+        "queues_plus_do": "Low-medium (Cloudflare native primitives), easy for single-user agent",
+        "temporal": "High: server + determinism constraints; heavy",
+        "inngest": "Hosted medium complexity",
+        "triggerdev": "Hosted low-medium complexity",
+        "evidence": "docs: Workflows, Queues, Temporal, Inngest, Trigger.dev",
+        "status": "pass"
+      }
+    ],
+    "durable_incidents": [
+      {
+        "capability": "Short orchestration, simple retries",
+        "status": "ok",
+        "notes": "Workflows or Queues+DO both workable; Workflows lower-code if steps short."
+      },
+      {
+        "capability": "High-fidelity heartbeating / long activities",
+        "status": "heavy",
+        "notes": "Temporal provides native heartbeats; do not attempt inside Workflows single-step timeouts."
+      },
+      {
+        "capability": "Guaranteed single-delivery to channels",
+        "status": "ok",
+        "notes": "Queues + DO (outbox pattern) provides explicit ack and DLQ; implement idempotency keys."
+      },
+      {
+        "capability": "Developer velocity for simple agents",
+        "status": "ok",
+        "notes": "Workflows reduces code; Queues+DO is lightweight to implement and stays Cloudflare-native."
+      }
+    ],
+    "durable_evidence": [
+      {
+        "source": "Cloudflare Workflows — Sleeping and retrying",
+        "path_or_url": "https://developers.cloudflare.com/workflows/build/sleeping-and-retrying/",
+        "note": "Step retries, NonRetryableError, sleep/wait semantics."
+      },
+      {
+        "source": "Cloudflare Queues — Batching and retries",
+        "path_or_url": "https://developers.cloudflare.com/queues/configuration/batching-retries/",
+        "note": "At-least-once delivery, per-message ack, DLQ examples."
+      },
+      {
+        "source": "Cloudflare Durable Objects — Error handling guidance",
+        "path_or_url": "https://developers.cloudflare.com/durable-objects/best-practices/error-handling/",
+        "note": "DO state, .retryable/.overloaded flags and single-threaded semantics."
+      },
+      {
+        "source": "Temporal — activity timeouts & heartbeats",
+        "path_or_url": "https://temporal.io/blog/activity-timeouts",
+        "note": "Activity heartbeats and rich failure model."
+      },
+      {
+        "source": "Inngest — Idempotency & error handling guides",
+        "path_or_url": "https://www.inngest.com/docs/guides/handling-idempotency",
+        "note": "Event-level idempotency patterns."
+      },
+      {
+        "source": "Trigger.dev — idempotency keys",
+        "path_or_url": "https://trigger.dev/docs/idempotency",
+        "note": "Built-in idempotencyKey primitives."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Durable agent execution patterns — recommended smallest pattern"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "This brief compares five durable execution approaches for agent workloads (Cloudflare Workflows, Queues+Durable Objects, Temporal, Inngest, Trigger.dev) across the requested dimensions and produces a smallest-viable recommendation for a one-user Cloudflare-hosted personal agent: Cloudflare Queues + Durable Objects (producer -> Queue consumer Worker -> per-agent DO for idempotency/outbox). Evidence and tradeoffs are cited."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "durable_matrix",
+            "columns": [
+              "dimension",
+              "workflows",
+              "queues_plus_do",
+              "temporal",
+              "inngest",
+              "triggerdev",
+              "evidence"
+            ],
+            "caption": "Feature-by-feature comparison",
+            "statusKey": "status"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "durable_incidents",
+            "titleKey": "capability",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "ok": "done",
+              "heavy": "none"
+            },
+            "groupOrder": [
+              "ok",
+              "heavy"
+            ],
+            "caption": "Which tool solves which capabilities (OK / needs-glue / heavy)"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  User[User/request] --> Producer[Producer Worker]\n  Producer -->|enqueue| CFQueue[Cloudflare Queue]\n  Consumer[Consumer Worker] -->|pull batch| CFQueue\n  Consumer --> DO[Per-user Durable Object]\n  DO -->|persist idempotency/outbox| DO\n  DO -->|call| ExternalAPI[LLM / Telegram / Webhook]\n  ExternalAPI -->|2xx ack| DO",
+            "caption": "Smallest recommended architecture: Producer enqueues messages, Consumer checks DO for idempotency/outbox, calls external APIs, ack per-message, DLQ on retries exhausted."
+          }
+        },
+        {
+          "type": "checklist",
+          "props": {
+            "items": [
+              {
+                "text": "Phase 1 — MVP",
+                "state": "done",
+                "note": "Producer + Queue consumer Worker + per-agent DO for idempotency and outbox (ack per message)."
+              },
+              {
+                "text": "Phase 2 — Hardening",
+                "state": "doing",
+                "note": "Add DLQ persistence, per-message retry policies, monitoring metrics and backoff circuit-breakers in DO."
+              },
+              {
+                "text": "Phase 3 — Scale / Migration",
+                "state": "todo",
+                "note": "If features like activity heartbeats or complex compensation needed, evaluate Temporal or hosted Inngest/Trigger.dev."
+              }
+            ]
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "durable_evidence",
+            "columns": [
+              "source",
+              "path_or_url",
+              "note"
+            ],
+            "caption": "Primary source evidence"
+          }
+        }
+      ]
+    }
+  ]
+}

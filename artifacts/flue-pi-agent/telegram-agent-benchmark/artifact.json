@@ -1,0 +1,250 @@
+{
+  "slug": "telegram-agent-benchmark",
+  "title": "Telegram agent benchmark — corrected incidents (flue-pi-agent)",
+  "description": "Corrected benchmark artifact: replaces suggested default incidents with the actual observed Incidents B–D, preserves peer capability comparison (OpenClaw/Rasa/Botpress), and provides a focused Phase‑0 remediation plan with acceptance gates and evidence links.",
+  "artifactType": "review",
+  "topics": [
+    "telegram-benchmark",
+    "agent-reliability",
+    "openclaw-comparison"
+  ],
+  "layout": {
+    "type": "default",
+    "columns": 1
+  },
+  "data": {
+    "incidents": [
+      {
+        "id": "B",
+        "observed": "Ordinary chat rejected: user message \"U on?\" → assistant replied \"Tap /task, then send the task request\" (needs_task_request).",
+        "effect": "Natural follow-up blocked; user must explicitly create a task—loss of in-conversation recovery and continuity.",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md: lines 43–50; report.md §2.2 Incident B",
+        "confidence": "verified"
+      },
+      {
+        "id": "C",
+        "observed": "Transcription claimed but requested deliverable missing: voice note transcribed/verified and agent reported a tightened copy prepared, but the requested chat output never appeared.",
+        "effect": "False success: task transitioned to completed while the durable deliverable was not persisted or sent; completion conflated with delivery.",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md: lines 82–142; report.md §2.2 Incident C; src/tools/task-tools.ts evidence",
+        "confidence": "verified"
+      },
+      {
+        "id": "D",
+        "observed": "Previous output unrecoverable: a user repair request 'Where's the output?' was rejected and then became a new general task; the new task had an isolated scratch workspace and no access to prior task artifacts.",
+        "effect": "No recovery path: follow-up created an isolated task and prior result was not accessible because no durable general result existed.",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md: lines 145–190; report.md §2.2 Incident D",
+        "confidence": "verified"
+      }
+    ],
+    "peers": [
+      {
+        "peer": "OpenClaw (319fd69)",
+        "solved": "Telegram continuity: thread/topic routing, message cache, reply correlation, STT preflight, chunking, write‑ahead outbound queue with retries.",
+        "partial": "Does not supply a productized task‑result validator or application‑scoped durable result store by itself.",
+        "application_owned": "task_results + task_delivery table, R2 artifact persistence, conversation‑scoped resend, business validation of expected output.",
+        "notes": "Strong Telegram UX; higher operational surface (SSRF, provider auth, STT cost)."
+      },
+      {
+        "peer": "Rasa",
+        "solved": "Durable tracker stores (SQL/Redis) for conversation history (framework-level durability).",
+        "partial": "Telegram connector is intentionally minimal; STT, chunking, and reply correlation require developer work.",
+        "application_owned": "outbound outbox, provider acceptance recording, durable task artifact store, redelivery policy.",
+        "notes": "Good for conversation persistence; lacks Telegram UX primitives out-of-the-box."
+      },
+      {
+        "peer": "Botpress (Messaging)",
+        "solved": "Messaging normalization and Telegram conduit (Telegraf) that exposes chat/thread identity and file fetching.",
+        "partial": "Less first‑party STT/preflight, and no enforced per‑message delivery tracing by default.",
+        "application_owned": "STT preflight, durable results, outbox and resend logic, provider acceptance mapping.",
+        "notes": "Useful normalization layer; application must implement guarantee layers."
+      },
+      {
+        "peer": "This project (flue‑pi‑agent, reviewed revision)",
+        "solved": "Durable task/event ledger, ingress dedupe, conversation isolation, conservative dispatch admission/receipt.",
+        "partial": "No durable `task_results` table, no outbound outbox, completion conflates execution and delivery, no resend-from-ledger path.",
+        "application_owned": "Implement task_results, task_delivery, R2 persistence, delivery outbox, trusted /resend, and acceptance reconciliation.",
+        "notes": "Keep Flue runtime; add application-level result & delivery invariants per report §9–10."
+      }
+    ],
+    "actions": [
+      {
+        "priority": "1",
+        "action": "Add `task_results` and `task_delivery` tables to TaskLedger (additive schema).",
+        "files": "src/durable-objects/task-ledger.ts, src/tasks/types.ts",
+        "acceptance": "Readers deployed before writers; additive fields only; tests & typecheck pass."
+      },
+      {
+        "priority": "2",
+        "action": "Persist canonical result and outbound intents before advancing completion.",
+        "files": "src/tools/task-tools.ts, src/durable-objects/task-ledger.ts",
+        "acceptance": "Result rows and outbox intents are committed in the same DO transaction before legacy completion state changes."
+      },
+      {
+        "priority": "3",
+        "action": "Persist required files to R2 and record manifest (copy before Sandbox teardown).",
+        "files": "src/tools/task-tools.ts, src/env.ts, wrangler.jsonc",
+        "acceptance": "R2 objects exist with length and SHA256 recorded before manifest commit."
+      },
+      {
+        "priority": "4",
+        "action": "Send from durable outbox; record provider_message_id or `unknown_after_send` and handle retries.",
+        "files": "src/telegram/send.ts, src/durable-objects/task-ledger.ts, src/cloudflare.ts",
+        "acceptance": "Delivery consumer writes provider acceptance or `unknown_after_send`; Queue ack semantics preserve delivery state."
+      },
+      {
+        "priority": "5",
+        "action": "Add trusted control-plane `/resend` and same‑conversation retrieval without invoking Flue/Sandbox/model.",
+        "files": "src/lib/telegram-input.ts, src/durable-objects/task-ledger.ts, src/channels/telegram.ts",
+        "acceptance": "`/resend` reads task_results and enqueues delivery; performs zero model/Sandbox/GitHub calls."
+      }
+    ],
+    "links": [
+      {
+        "title": "Incident transcript (B–D)",
+        "url": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md"
+      },
+      {
+        "title": "Final report (detailed analysis)",
+        "url": "ai-artifacts/agent-reliability-benchmark/report.md"
+      },
+      {
+        "title": "OpenClaw Telegram channel (pinned)",
+        "url": "https://github.com/openclaw/openclaw/blob/319fd692d1c83bc05b3a38e4673f2e2fa5398db0/extensions/telegram/src/channel.ts"
+      },
+      {
+        "title": "Flue durable execution docs",
+        "url": "https://flueframework.com/docs/concepts/durable-execution/"
+      },
+      {
+        "title": "Cloudflare Queues delivery guarantees",
+        "url": "https://developers.cloudflare.com/queues/reference/delivery-guarantees/"
+      },
+      {
+        "title": "Telegram Bot API",
+        "url": "https://core.telegram.org/bots/api"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Telegram agent benchmark — corrected incidents (flue-pi-agent)"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Executive summary\n\nThis artifact replaces the earlier invented/suggested incident defaults with the actual observed incidents B–D (incident-transcript.md and report.md). Short verdict: keep the Flue + Cloudflare stack but add an application-level durable canonical result and a delivery outbox. Root causes: (1) no durable per-task result, (2) completion conflated with delivery, (3) recovery routing creates new isolated tasks instead of reusing persisted results. See the incidents table and peer comparison below for evidence and remediation."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "incidents",
+            "columns": [
+              "id",
+              "observed",
+              "effect",
+              "evidence",
+              "confidence"
+            ],
+            "caption": "Observed incidents (from incident-transcript.md and final report)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "peers",
+            "columns": [
+              "peer",
+              "solved",
+              "partial",
+              "application_owned",
+              "notes"
+            ],
+            "caption": "Peer capabilities: what each peer solves, what is partial, and what remains application-owned (explicit)"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "caption": "Recommended minimal state model and delivery flow (Phase 0)",
+            "code": "flowchart LR\n  T[Telegram_and_GitHub] --> Auth[Authorization_and_dedupe]\n  Auth --> Ledger[TaskLedger_task_event]\n  Ledger --> Queue[Task_Queue]\n  Queue --> Setup[Setup_and_Flue_dispatch]\n  Setup --> Exec[Execution_Sandbox_Flue]\n  Exec --> Validate[Result_validator]\n  Validate --> Persist[Persist_task_results_and_R2]\n  Persist --> Outbox[Durable_outbox_record]\n  Outbox --> DeliveryQ[Delivery_Queue]\n  DeliveryQ --> Provider[Telegram_Bot_API]\n  Provider --> Acceptance[Record_provider_message_or_unknown_after_send]\n  Acceptance --> Ledger\n  Ledger --> Resend[Trusted_resend_read_task_results_enqueue_delivery]\n  Resend --> DeliveryQ"
+          }
+        },
+        {
+          "type": "callout",
+          "props": {
+            "tone": "note",
+            "body": "OpenClaw provides strong Telegram continuity (session/thread routing), STT preflight, chunking, and a write-ahead outbound queue, but these features alone do NOT guarantee a durable canonical task result, a task‑tied provider‑acceptance state, nor an application‑controlled redelivery path. Application must persist task_results + task_delivery, copy required files to durable storage (R2), and send…",
+            "title": "Important: OpenClaw patterns do NOT replace application delivery invariants"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "OpenClaw provides strong Telegram continuity (session/thread routing), STT preflight, chunking, and a write-ahead outbound queue, but these features alone do NOT guarantee a durable canonical task result, a task‑tied provider‑acceptance state, nor an application‑controlled redelivery path. Application must persist task_results + task_delivery, copy required files to durable storage (R2), and send from an outbox committed in the same Durable Object transaction before declaring completion."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "actions",
+            "columns": [
+              "priority",
+              "action",
+              "files",
+              "acceptance"
+            ],
+            "caption": "Phase 0 prioritized actions (atomic rollout; items 1–4 are one invariant)"
+          }
+        },
+        {
+          "type": "callout",
+          "props": {
+            "tone": "risk",
+            "body": "Protected raw logs, durable task activity rows, and live interruption experiments were not supplied. That prevents definitive attribution of Incident A's low-level failure and prevents measurement of DO / Queue restart timing and DLQ partial-batch behavior. Obtain these protected traces and run the listed chaos checks before claiming operational guarantees.",
+            "title": "Evidence gap (concise)"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "groups": [
+              {
+                "label": "Definitions",
+                "rows": [
+                  {
+                    "title": "Primary incident transcript",
+                    "body": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md (observed B–D)"
+                  },
+                  {
+                    "title": "Final report (detailed analysis & recommendations)",
+                    "body": "ai-artifacts/agent-reliability-benchmark/report.md (see Sections 2.2, 3, 9, 10, 11)"
+                  },
+                  {
+                    "title": "OpenClaw Telegram channel (pinned)",
+                    "body": "https://github.com/openclaw/openclaw/blob/319fd692d1c83bc05b3a38e4673f2e2fa5398db0/extensions/telegram/src/channel.ts"
+                  },
+                  {
+                    "title": "Flue durable execution docs",
+                    "body": "https://flueframework.com/docs/concepts/durable-execution/"
+                  },
+                  {
+                    "title": "Cloudflare Queues delivery guarantees",
+                    "body": "https://developers.cloudflare.com/queues/reference/delivery-guarantees/"
+                  },
+                  {
+                    "title": "Telegram Bot API",
+                    "body": "https://core.telegram.org/bots/api"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

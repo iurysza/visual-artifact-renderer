@@ -1,0 +1,238 @@
+{
+  "slug": "worker-annotation-persistence-walkthrough",
+  "title": "Worker Annotation Persistence Implementation Walkthrough",
+  "description": "How remote comments were fixed on the Cloudflare Workers deployment.",
+  "data": {
+    "diagnosis": [
+      {
+        "symptom": "Next.js bootstrap error: getAssetPrefix / document.currentScript",
+        "severity": "red herring",
+        "notes": "Console error only. Page bootstraps and comments UI renders."
+      },
+      {
+        "symptom": "React hydration error #418",
+        "severity": "red herring",
+        "notes": "Caused by shell pattern (server renders loader, client renders artifact). Non-fatal."
+      },
+      {
+        "symptom": "POST /api/annotations/<project>/<slug> returns 501",
+        "severity": "root cause",
+        "notes": "Worker had no mutation handler; comments could not be saved."
+      },
+      {
+        "symptom": "GET /api/annotations/author returns 404",
+        "severity": "root cause",
+        "notes": "Worker had no author endpoint; UI fell back to Local Author."
+      }
+    ],
+    "mutations": [
+      {
+        "type": "createThread",
+        "effect": "Adds a new thread with an anchor and initial message"
+      },
+      {
+        "type": "addMessage",
+        "effect": "Appends a reply to an existing thread"
+      },
+      {
+        "type": "editMessage",
+        "effect": "Updates a message body and timestamps"
+      },
+      {
+        "type": "deleteMessage",
+        "effect": "Removes a message; deletes the thread if it becomes empty"
+      },
+      {
+        "type": "resolveThread",
+        "effect": "Marks a thread as resolved"
+      },
+      {
+        "type": "reopenThread",
+        "effect": "Marks a thread as open again"
+      }
+    ],
+    "validation": [
+      {
+        "check": "Worker unit tests",
+        "status": "pass",
+        "notes": "24 tests cover parsing, mutation application, and route handling"
+      },
+      {
+        "check": "CLI tests",
+        "status": "pass",
+        "notes": "96 tests unaffected"
+      },
+      {
+        "check": "pnpm build:cloud",
+        "status": "pass",
+        "notes": "Static export for Workers.dev succeeds"
+      },
+      {
+        "check": "pnpm build (local)",
+        "status": "pass",
+        "notes": "Local /artifacts basePath build still works"
+      },
+      {
+        "check": "wrangler deploy",
+        "status": "pass",
+        "notes": "Worker deployed to visual-artifact.iurysza.workers.dev"
+      },
+      {
+        "check": "Live browser comment test",
+        "status": "pass",
+        "notes": "Created, posted, and deleted a comment on the live artifact"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Worker Annotation Persistence Implementation"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "This walkthrough covers how comments were fixed on the published Cloudflare Worker URL. The fix adds server-side persistence for annotation mutations so remote deployments are no longer read-only."
+          }
+        },
+        {
+          "type": "chapter",
+          "props": {
+            "title": "Diagnosis"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "The user reported comments not working and shared two console errors. Investigation showed the UI actually loaded; the real blocker was missing backend support."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "diagnosis",
+            "columns": [
+              {
+                "key": "symptom",
+                "label": "Symptom"
+              },
+              {
+                "key": "severity",
+                "label": "Severity"
+              },
+              {
+                "key": "notes",
+                "label": "Notes"
+              }
+            ],
+            "caption": "Console errors were non-fatal; the 501/404 responses were the real failure."
+          }
+        },
+        {
+          "type": "chapter",
+          "props": {
+            "title": "Architecture"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "sequenceDiagram\n    participant Browser as Visualizer client\n    participant Worker as Cloudflare Worker\n    participant R2 as R2 Bucket\n\n    Browser->>Worker: POST /api/annotations/proj/slug\n    Note over Browser,Worker: Array of mutations (createThread, addMessage, etc.)\n    Worker->>R2: GET artifacts/proj/slug/annotations.json\n    R2-->>Worker: existing doc or empty\n    Worker->>Worker: parse + apply mutations\n    Worker->>R2: PUT updated annotations.json\n    R2-->>Worker: ok\n    Worker-->>Browser: updated annotation document",
+            "caption": "Comment save flow on Workers.dev"
+          }
+        },
+        {
+          "type": "chapter",
+          "props": {
+            "title": "Mutation types handled"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "mutations",
+            "columns": [
+              {
+                "key": "type",
+                "label": "Mutation"
+              },
+              {
+                "key": "effect",
+                "label": "Effect"
+              }
+            ]
+          }
+        },
+        {
+          "type": "chapter",
+          "props": {
+            "title": "Files changed"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "worker/src/annotations.ts          # NEW parsing + mutation application\nworker/src/routes.ts               # author endpoint + POST handler + R2 put\nworker/test/annotations.test.ts    # NEW unit tests for mutation logic\nworker/test/index.test.ts          # route tests for author + persistence",
+            "language": "typescript",
+            "title": "New and modified files",
+            "caption": "Only the Worker package changed; app and CLI behavior is unchanged."
+          }
+        },
+        {
+          "type": "chapter",
+          "props": {
+            "title": "Validation"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "validation",
+            "titleKey": "check",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "pass": "done"
+            },
+            "groupOrder": [
+              "pass"
+            ]
+          }
+        },
+        {
+          "type": "chapter",
+          "props": {
+            "title": "Result"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Comments now persist on the live Worker. You can open any published artifact, click Comments, select a component, write, and post. The change is committed as `71b37fc` but not pushed."
+          }
+        },
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": "28",
+                "label": "Tests added / updated",
+                "note": "Full test coverage for parsing, mutation application, and route handling · 24…",
+                "signal": "new"
+              }
+            ]
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "**Tests added / updated.** 28 — Full test coverage for parsing, mutation application, and route handling"
+          }
+        }
+      ]
+    }
+  ]
+}
