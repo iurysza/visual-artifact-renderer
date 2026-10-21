@@ -7,6 +7,12 @@ export interface ArtifactListing {
   artifactType?: ArtifactType
   topics?: string[]
   modifiedAt: string
+  /** Open annotation threads. Always present so library qualifiers match the local index. */
+  openThreads: number
+  /** First message of the newest open thread, one line. */
+  openExcerpt?: string
+  /** True when publish.json says the bundle is published. */
+  published: boolean
 }
 
 export interface ProjectListing {
@@ -29,6 +35,9 @@ export interface RecentArtifact {
   topics?: string[]
   modifiedAt: string
   project: string
+  openThreads: number
+  openExcerpt?: string
+  published: boolean
 }
 
 export interface ProjectIndex {
@@ -38,6 +47,15 @@ export interface ProjectIndex {
 
 const BUNDLE_PREFIX = "artifacts/"
 const ARTIFACT_FILE = "artifact.json"
+const ANNOTATIONS_FILE = "annotations.json"
+const PUBLISH_FILE = "publish.json"
+const EXCERPT_MAX = 80
+
+interface BundleSignals {
+  openThreads: number
+  openExcerpt?: string
+  published: boolean
+}
 
 interface ParsedKey {
   project: string
@@ -109,9 +127,11 @@ export async function buildProjectIndex(bucket: R2Bucket, project: string): Prom
     }
   }
 
+  const keys = new Set(objects.map((object) => object.key))
   const artifactList: ArtifactListing[] = []
   for (const [slug, { modifiedAt }] of artifacts.entries()) {
     const metadata = await readArtifactMetadata(bucket, project, slug)
+    const signals = await readBundleSignals(bucket, project, slug, keys)
     artifactList.push({
       slug,
       title: metadata.title ?? slug,
@@ -119,6 +139,7 @@ export async function buildProjectIndex(bucket: R2Bucket, project: string): Prom
       artifactType: metadata.artifactType,
       topics: metadata.topics,
       modifiedAt: modifiedAt.toISOString(),
+      ...signals,
     })
   }
 
@@ -129,13 +150,16 @@ export async function buildProjectIndex(bucket: R2Bucket, project: string): Prom
 }
 
 async function buildRecentArtifacts(bucket: R2Bucket): Promise<RecentArtifact[]> {
-  const artifactObjects = (await listAll(bucket, BUNDLE_PREFIX))
+  const objects = await listAll(bucket, BUNDLE_PREFIX)
+  const keys = new Set(objects.map((object) => object.key))
+  const artifactObjects = objects
     .map((object) => ({ object, parsed: parseBundleKey(object.key) }))
     .filter(({ parsed }) => parsed?.filename === ARTIFACT_FILE)
     .sort((a, b) => b.object.uploaded.getTime() - a.object.uploaded.getTime())
 
   return Promise.all(artifactObjects.map(async ({ object, parsed }) => {
     const metadata = await readArtifactMetadata(bucket, parsed!.project, parsed!.slug)
+    const signals = await readBundleSignals(bucket, parsed!.project, parsed!.slug, keys)
     return {
       project: parsed!.project,
       slug: parsed!.slug,
@@ -144,8 +168,45 @@ async function buildRecentArtifacts(bucket: R2Bucket): Promise<RecentArtifact[]>
       artifactType: metadata.artifactType,
       topics: metadata.topics,
       modifiedAt: object.uploaded.toISOString(),
+      ...signals,
     }
   }))
+}
+
+async function readJson(bucket: R2Bucket, key: string): Promise<unknown> {
+  try {
+    const object = await bucket.get(key)
+    if (!object) return undefined
+    return JSON.parse(await object.text())
+  } catch {
+    return undefined
+  }
+}
+
+/** Open comments and publish state. Missing or broken sidecars count as none. */
+async function readBundleSignals(bucket: R2Bucket, project: string, slug: string, keys: Set<string>): Promise<BundleSignals> {
+  const signals: BundleSignals = { openThreads: 0, published: false }
+  const annotationsKey = `${BUNDLE_PREFIX}${project}/${slug}/${ANNOTATIONS_FILE}`
+  const publishKey = `${BUNDLE_PREFIX}${project}/${slug}/${PUBLISH_FILE}`
+  if (keys.has(annotationsKey)) {
+    const annotations = await readJson(bucket, annotationsKey)
+    const threads = annotations && typeof annotations === "object" && Array.isArray((annotations as { threads?: unknown }).threads)
+      ? (annotations as { threads: unknown[] }).threads
+      : []
+    const open = threads.filter((thread): thread is { updatedAt?: unknown; messages?: unknown } =>
+      !!thread && typeof thread === "object" && (thread as { status?: unknown }).status === "open")
+    const newest = [...open].sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0]
+    const firstMessage = newest && Array.isArray(newest.messages) ? newest.messages[0] : undefined
+    const body = firstMessage && typeof firstMessage === "object" ? (firstMessage as { body?: unknown }).body : undefined
+    const line = typeof body === "string" ? body.replace(/\s+/g, " ").trim() : ""
+    signals.openThreads = open.length
+    if (line) signals.openExcerpt = line.length > EXCERPT_MAX ? `${line.slice(0, EXCERPT_MAX - 1)}…` : line
+  }
+  if (keys.has(publishKey)) {
+    const publish = await readJson(bucket, publishKey)
+    signals.published = !!publish && typeof publish === "object" && (publish as { status?: unknown }).status === "published"
+  }
+  return signals
 }
 
 interface ArtifactMetadata {
