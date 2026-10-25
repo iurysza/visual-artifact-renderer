@@ -1,0 +1,203 @@
+{
+  "slug": "coding-agent-alternatives-benchmark",
+  "title": "Coding agent alternatives benchmark — SWE-ReX / mini‑SWE‑agent vs Coder Tasks / AgentAPI",
+  "description": "Comparative SWE/ReX vs Coder analysis: storage, provisioning, retries, logs, follow-ups, final output, cancellation, delivery guarantees, and recommended hybrid architecture for durable delivery.",
+  "artifactType": "comparison",
+  "topics": [
+    "swe-rex",
+    "coder-tasks",
+    "agentapi"
+  ],
+  "data": {
+    "systems_comparison": [
+      {
+        "criterion": "Storage of final artifacts",
+        "swerex_mini": "Writes trajectories (.traj.json) locally; durability depends on backend (local disk/volume)",
+        "coder_agentapi": "Conversation state + SSE events; persistence configurable",
+        "coder_tasks_platform": "Persistent snapshots when template enables state persistence; log snapshots on pause",
+        "evidence": "mini-swe-agent docs; AgentAPI README; Coder tasks docs",
+        "status": "partial"
+      },
+      {
+        "criterion": "Provisioning / workspace",
+        "swerex_mini": "Not provided; runner must supply shells/containers (Modal/Fargate/Docker)",
+        "coder_agentapi": "AgentAPI is a runtime plus integration plumbing; provisioning is external",
+        "coder_tasks_platform": "Templates, Terraform modules, identity mapping — production-grade provisioning",
+        "evidence": "SWE-ReX server + Coder docs",
+        "status": "pass"
+      },
+      {
+        "criterion": "Retries / resume",
+        "swerex_mini": "No multi-stage durable checkpointing; ResponseManager caches last response in memory only",
+        "coder_agentapi": "Supports state persistence hooks; resume semantics depend on storage config",
+        "coder_tasks_platform": "Pause/resume with persistent volumes when enabled; stronger resume guarantees",
+        "evidence": "SWE-ReX ResponseManager; AgentAPI; Coder Task lifecycle",
+        "status": "partial"
+      },
+      {
+        "criterion": "Logs & flight recorder",
+        "swerex_mini": "Full trajectory + preds.json for offline replay and scoring",
+        "coder_agentapi": "SSE events and message endpoints; good real-time observability",
+        "coder_tasks_platform": "Centralized task metadata and server-side log snapshots",
+        "evidence": "mini-traj docs; AgentAPI SSE; Coder task docs",
+        "status": "pass"
+      },
+      {
+        "criterion": "Follow-up / reattachment",
+        "swerex_mini": "Linear history + artifacts; no built-in message routing from chat channels",
+        "coder_agentapi": "Designed for conversational IDE/CLI integration with SSE and state restore",
+        "coder_tasks_platform": "Designed to re-open workspaces for humans to continue tasks",
+        "evidence": "AgentAPI; Coder docs",
+        "status": "pass"
+      },
+      {
+        "criterion": "Cancellation & shutdown",
+        "swerex_mini": "close_session/stop; artifacts saved but no standard external ack",
+        "coder_agentapi": "pause/stop hooks; graceful shutdown depends on template scripts",
+        "coder_tasks_platform": "Shutdown reason captured and state snapshots available",
+        "evidence": "SWE-ReX and Coder docs",
+        "status": "partial"
+      },
+      {
+        "criterion": "Delivery guarantees to external channels",
+        "swerex_mini": "Not provided; integrator must implement delivery + idempotency",
+        "coder_agentapi": "Hooks available; no built-in deliver-with-ack primitive",
+        "coder_tasks_platform": "Platform gives hooks but delivery ack is integrator work",
+        "evidence": "Repo searches",
+        "status": "left"
+      }
+    ],
+    "coding_next_steps": [
+      {
+        "order": 1,
+        "phase": "Design",
+        "action": "Define ledger schema (task states: executing/validated/delivery_pending/delivered/delivery_failed) and idempotency keys (conversation_id+event_id).",
+        "status": "planned"
+      },
+      {
+        "order": 2,
+        "phase": "Implement",
+        "action": "Control plane (Cloudflare DO/KV) stores idempotency keys and outbox; execution runs remotely (SWE‑ReX or Coder) and writes artifacts to R2/S3 before marking complete.",
+        "status": "planned"
+      },
+      {
+        "order": 3,
+        "phase": "Test",
+        "action": "Add tests for: abrupt workspace shutdown→resume; delivery failure→resend from artifact store; no-empty-artifact validator before marking complete.",
+        "status": "todo"
+      }
+    ],
+    "coding_evidence": [
+      {
+        "source": "SWE-ReX server",
+        "path_or_url": "https://github.com/SWE-agent/SWE-ReX/blob/main/src/swerex/server.py",
+        "note": "Session & execution API (create_session, run_in_session, read/write file endpoints)."
+      },
+      {
+        "source": "mini-SWE-agent DefaultAgent.save",
+        "path_or_url": "https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/agents/default.py",
+        "note": "Trajectory file writer (.traj.json and preds.json)."
+      },
+      {
+        "source": "AgentAPI (Coder) repo",
+        "path_or_url": "https://github.com/coder/agentapi",
+        "note": "SSE/events and message endpoints for conversational integrations."
+      },
+      {
+        "source": "Coder Tasks docs",
+        "path_or_url": "https://coder.com/docs/ai-coder/task-lifecycle",
+        "note": "Pause/resume semantics and persistent volume guidance."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Coding-agent alternatives — SWE‑ReX / mini‑SWE‑agent vs Coder Tasks / AgentAPI"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "This comparison focuses on what each stack provides out-of-the-box for execution durability and what remains integrator work. SWE‑ReX / mini‑SWE‑agent excel at flight-recording and interactive execution; Coder Tasks + AgentAPI provide control‑plane features (workspace provisioning, pause/resume, identity mapping) closer to production guarantees. None enforce end‑to‑end external channel delivery ack without additional glue."
+          }
+        },
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": "interactive runtime +…",
+                "label": "SWE‑ReX",
+                "note": "interactive runtime + file APIs · session + run artifacts (.traj.json)",
+                "signal": "new"
+              },
+              {
+                "value": "flight recorder",
+                "label": "mini‑SWE‑agent",
+                "note": "trajectory files + preds.json"
+              },
+              {
+                "value": "control plane &…",
+                "label": "Coder Tasks + AgentAPI",
+                "note": "control plane & provisioning · pause/resume, templates, identity"
+              }
+            ]
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "**SWE‑ReX.** interactive runtime + file APIs — session + run artifacts (.traj.json)\n\n**Coder Tasks + AgentAPI.** control plane & provisioning — pause/resume, templates, identity"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "systems_comparison",
+            "columns": [
+              "criterion",
+              "swerex_mini",
+              "coder_agentapi",
+              "coder_tasks_platform",
+              "evidence"
+            ],
+            "caption": "Feature-wise comparison (storage, provisioning, retries, logs, follow-ups, final output, cancellation, delivery)",
+            "statusKey": "status"
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  ControlPlane[ControlPlane] --> Orchestrator[Orchestrator]\n  Orchestrator --> Exec[ExecutionBackend]\n  Exec --> ArtifactStore[ArtifactStore]\n  Deliverer[DeliveryBridge] --> ArtifactStore\n  User[UserChannel] --> Orchestrator",
+            "caption": "Recommended hybrid: Cloudflare control plane + remote execution (SWE‑ReX or Coder) + durable artifact store + delivery bridge."
+          }
+        },
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "coding_next_steps",
+            "titleKey": "phase",
+            "markerKey": "order",
+            "descriptionKey": "action",
+            "statusKey": "status",
+            "caption": "Minimal implementation steps"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "coding_evidence",
+            "columns": [
+              "source",
+              "path_or_url",
+              "note"
+            ],
+            "caption": "Primary repo/docs evidence"
+          }
+        }
+      ]
+    }
+  ]
+}

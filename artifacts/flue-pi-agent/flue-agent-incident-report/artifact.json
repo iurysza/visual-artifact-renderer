@@ -1,0 +1,196 @@
+{
+  "slug": "flue-agent-incident-report",
+  "title": "Flue Agent — Incident Command Board",
+  "description": "Command board for the Cloud Clanker incidents: severity counts, root-vs-cascade matrix, evidence table, required invariants, and immediate priority sequence. Uses direct transcript and code evidence.",
+  "artifactType": "report",
+  "topics": [
+    "reliability-benchmark",
+    "incident-response",
+    "flue-agent"
+  ],
+  "data": {
+    "rootCascadeMatrix": [
+      {
+        "root_cause": "No durable final result",
+        "primary_cascade": "Missing deliverable → unrecoverable; user sees 'completed' without content",
+        "severity": "P0",
+        "confidence": "high",
+        "evidence": "incident-transcript.md:124-142; src/durable-objects/task-ledger.ts:97-166"
+      },
+      {
+        "root_cause": "No durable outbox/delivery state",
+        "primary_cascade": "Completed before provider acceptance → silent loss / no redelivery",
+        "severity": "P0",
+        "confidence": "high",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/report.md:Verified conclusions (items 1-3); src/telegram/send.ts:23-67"
+      },
+      {
+        "root_cause": "Ephemeral sandbox storage for artifacts",
+        "primary_cascade": "Workspace destroyed → files lost; later recovery impossible",
+        "severity": "P0",
+        "confidence": "high",
+        "evidence": "incident-transcript.md:142,184; src/telegram/files.ts:23-45; src/durable-objects/task-ledger.ts:1470-1486"
+      },
+      {
+        "root_cause": "Coarse setup retry scope (no stage checkpoints)",
+        "primary_cascade": "Repeated setup work and terminal failures; lost resume points",
+        "severity": "P1",
+        "confidence": "high",
+        "evidence": "incident-transcript.md:11-25; src/tasks/processor.ts:259-415"
+      },
+      {
+        "root_cause": "Tool/reporting failures tolerated",
+        "primary_cascade": "Progress lost or misleading status → agent improvises around missing control tooling",
+        "severity": "P1",
+        "confidence": "high",
+        "evidence": "incident-transcript.md:13; src/tools/task-tools.ts:506; src/telegram/send.ts:23-67"
+      },
+      {
+        "root_cause": "Routing rejects natural followups (command-centric)",
+        "primary_cascade": "Repair prompts spawn new tasks instead of resending previous results",
+        "severity": "P1",
+        "confidence": "high",
+        "evidence": "incident-transcript.md:152-190; src/durable-objects/task-ledger.ts:380-396"
+      },
+      {
+        "root_cause": "Completion schema accepts any non-empty summary",
+        "primary_cascade": "Freeform prose satisfies completion without expected result kind",
+        "severity": "P1",
+        "confidence": "high",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/report.md:complete_general_task behavior; src/tools/task-tools.ts:557-572"
+      }
+    ],
+    "evidenceTable": [
+      {
+        "evidence": "Agent claims transcript prepared but no message delivered",
+        "source": "incident-transcript.md:124-142",
+        "proves": "Agent finished model work; claims prepared output",
+        "does_not_prove": "That Telegram delivery succeeded or that a durable result exists"
+      },
+      {
+        "evidence": "'/status' shows completed despite no content",
+        "source": "incident-transcript.md:130-132",
+        "proves": "Task state advanced to completed in ledger",
+        "does_not_prove": "Provider acceptance or durable result persisted"
+      },
+      {
+        "evidence": "'Reading project files failed' during transcription",
+        "source": "incident-transcript.md:118-120",
+        "proves": "Agent attempted a repo/tool operation in a general task's scratch workspace",
+        "does_not_prove": "That repo read caused missing final deliverable"
+      },
+      {
+        "evidence": "Task setup failed after retries message",
+        "source": "incident-transcript.md:36-40",
+        "proves": "Setup stage reached a terminal error after retries",
+        "does_not_prove": "Which specific infra or auth sub-step failed (protected logs hidden)"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Incident Command Board — Cloud Clanker"
+      },
+      "children": [
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": 3,
+                "label": "P0 (critical)",
+                "note": "False success / missing deliverable",
+                "signal": "risk"
+              },
+              {
+                "value": 7,
+                "label": "P1 (high)",
+                "note": "Setup, delivery, routing gaps",
+                "signal": "risk"
+              },
+              {
+                "value": 5,
+                "label": "P2 (medium)",
+                "note": "UX, timestamps, tooling noise"
+              }
+            ]
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "rootCascadeMatrix",
+            "columns": [
+              "root_cause",
+              "primary_cascade",
+              "severity",
+              "confidence"
+            ],
+            "caption": "Root cause → primary cascade mapping (evidence-coded)",
+            "statusKey": "severity"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "evidenceTable",
+            "columns": [
+              "evidence",
+              "source",
+              "proves",
+              "does_not_prove"
+            ],
+            "caption": "Evidence table: transcript and code citations, and what each proves / cannot prove"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "groups": [
+              {
+                "label": "Definitions",
+                "rows": [
+                  {
+                    "title": "No completion without a result",
+                    "body": "Terminal success requires a non-empty, schema-valid deliverable or durable artifact reference (from incident report invariants)."
+                  },
+                  {
+                    "title": "No completion before delivery",
+                    "body": "Telegram acknowledgement must be persisted; failures enter a retryable delivery state."
+                  },
+                  {
+                    "title": "Results outlive sandboxes",
+                    "body": "Bounded result text/artifacts are written durably before sandbox teardown."
+                  },
+                  {
+                    "title": "Redelivery never reruns work",
+                    "body": "Resend reads ledger/artifact store and uses idempotency keys."
+                  },
+                  {
+                    "title": "Retries resume stages",
+                    "body": "Setup and execution have separate durable attempt/checkpoint records."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  U[User Telegram] -->|Task request| Ingress[Ingress + TaskLedger]\n  Ingress --> Queue[TASK_QUEUE]\n  Queue --> Setup[Setup stages: auth, network, workspace]\n  Setup -->|dispatch| Exec[Flue dispatch / execution]\n  Exec --> Validate[Structured result validator]\n  Validate --> Persist[task_results + R2 artifact manifest]\n  Persist --> Outbox[durable outbox entry]\n  Outbox --> Delivery[Queue consumer -> Telegram]\n  Delivery -->|provider accepted| Ledger[task_delivery accepted]\n  Delivery -->|failure| Ledger[task_delivery retry_wait/unknown_after_send]",
+            "caption": "Minimal flow showing the critical persist-before-deliver invariant"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Immediate priorities (short sequence)\n\n1) Block empty completions; 2) Persist canonical result; 3) Persist outbound intent before Sandbox teardown; 4) Add delivery outbox and resend; 5) Split setup/execution/delivery states."
+          }
+        }
+      ]
+    }
+  ]
+}

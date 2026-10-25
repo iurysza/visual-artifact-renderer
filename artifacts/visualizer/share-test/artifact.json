@@ -1,0 +1,13 @@
+{
+  "slug": "share-test",
+  "title": "Share Test",
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "Published to the root-mounted Worker.",
+        "size": "lead"
+      }
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "slug": "agent-benchmark-accuracy-review",
+  "title": "Agent Benchmark — Accuracy Review",
+  "description": "Every concrete factual/citation correction from ai-artifacts/agent-reliability-benchmark/review/accuracy.md: severity, exact quote, evidence, smallest fix, disposition, and final accuracy verdict.",
+  "artifactType": "review",
+  "topics": [
+    "agent-benchmark",
+    "accuracy"
+  ],
+  "data": {
+    "accuracyCorrections": [
+      {
+        "id": 1,
+        "severity": "Minor",
+        "report_quote": "\"The durable ledger has no general-result text, artifact record, delivery state, provider message ID, or retry schedule (`src/durable-objects/task-ledger.ts:95-166`; `src/tasks/types.ts:1-82`).\"",
+        "why_correct": "The ledger does contain a `deliveries` table used for ingress deduplication; the statement as written can be misread as claiming literally no deliveries table. The intent (no per-task egress delivery state) is correct but ambiguous.",
+        "evidence": "src/durable-objects/task-ledger.ts: contains CREATE TABLE IF NOT EXISTS deliveries ... and uses deliveries in claimTelegram()/claimGitHub() for dedupe",
+        "smallest_fix": "Reword to explicitly note `deliveries` exists and that per-task egress delivery state is missing. Suggested one-line replacement present in this artifact.",
+        "disposition": "Apply: rewrite wording as suggested (not a code change)."
+      },
+      {
+        "id": 2,
+        "severity": "Medium",
+        "report_quote": "Primary sources: mixed unpinned doc/website links and pinned GitHub snapshots (b814b82, a68736f, 319fd69).",
+        "why_correct": "Unpinned links reduce reproducibility; commits/branches can change semantics. The evidence audit already flags this as a citation-quality issue.",
+        "evidence": "research/20-evidence-audit.md and repo metadata (node_modules packages contain installed versions; external links are unpinned)",
+        "smallest_fix": "Pin external links to commit/tag permalinks or annotate with a '(checked YYYY-MM-DD; not pinned)' parenthetical.",
+        "disposition": "Apply: prefer pinned permalinks; where not possible add check date. (Operational requirement for auditability)."
+      },
+      {
+        "id": 3,
+        "severity": "Minor",
+        "report_quote": "\"agent narration alone is not operational success. An `agent_end` attempts to fail and clean up only if the task is still active; a task already completed by a terminal tool is not overwritten (`src/observability/task-activity.ts:92-114,144-163`; `src/durable-objects/task-ledger.ts:1303-1321`).\"",
+        "why_correct": "Accurate, but needs the explicit ACTIVE_TASK_STATUSES whitelist so readers don't open code to confirm behavior.",
+        "evidence": "src/observability/task-activity.ts and src/tasks/transitions.ts define ACTIVE_TASK_STATUSES = ['accepted','queued','running']",
+        "smallest_fix": "Add parenthetical naming the statuses: '(markTaskStatus only updates from ACTIVE_TASK_STATUSES — accepted, queued, running)'.",
+        "disposition": "Apply minor-edit (documentation)."
+      },
+      {
+        "id": 4,
+        "severity": "Minor",
+        "report_quote": "\"pre-dispatch exceptions cause queue retry; six application attempts are allowed, with exponential delay, before `failTaskMessage` (`src/cloudflare.ts:84-149`). Wrangler also configures the Queue consumer with `max_retries: 5` (`wrangler.jsonc:35-43`).\"",
+        "why_correct": "Statements are correct but risk off-by-one confusion — config `max_retries:5` plus initial attempt equals up to 6 attempts, which matches MAX_QUEUE_ATTEMPTS = 6 in code.",
+        "evidence": "src/cloudflare.ts sets MAX_QUEUE_ATTEMPTS = 6; wrangler.jsonc sets max_retries: 5 in queue consumer.",
+        "smallest_fix": "Add clarifying parenthetical: '(Wrangler\\'s `max_retries: 5` config leads to up to 6 total attempts including the initial delivery; this matches `MAX_QUEUE_ATTEMPTS = 6` in `src/cloudflare.ts`.)'",
+        "disposition": "Apply minor-edit (documentation)."
+      },
+      {
+        "id": 5,
+        "severity": "Note",
+        "report_quote": "Test coverage gaps called out in report (missing E2E tests for delivery-failure and result-persistence scenarios).",
+        "why_correct": "Coverage gap exists; report already recommends tests to add.",
+        "evidence": "report sections and local-verification.md references to missing test exercises; tests to add suggested in review/accuracy.md",
+        "smallest_fix": "Add tests: src/tools/task-tools.test.ts to inject Telegram failures; src/tasks/processor.test.ts to exercise pre-dispatch uncertainty.",
+        "disposition": "Follow-up: operational engineering task; recommended but not applied in review pass."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Accuracy review — factual corrections and disposition"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Scope: this artifact encodes every concrete correction called out in ai-artifacts/agent-reliability-benchmark/review/accuracy.md (five numbered items), the evidence references, the smallest fix, and the final accuracy verdict. Verdict summary: all issues are wording/citation clarifications (none are blockers)."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "accuracyCorrections",
+            "columns": [
+              "id",
+              "severity",
+              "report_quote",
+              "why_correct",
+              "evidence",
+              "smallest_fix",
+              "disposition"
+            ],
+            "caption": "Concrete corrections, evidence, and minimal fixes (from review/accuracy.md)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Final accuracy verdict: The report's core factual claims (completion persisted pre-delivery; sandbox artifacts staged; missing per-task egress delivery state; dispatch uncertainty window; recovery routing policy) are supported by repository code and tests. Implement the three preferred edits: (1) clarify ledger/deliveries wording, (2) pin or annotate upstream links with check date, and (3) add two parenthetical clarifiers about attempt counts and agent_end active-status whitelist. None are blockers."
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "\"The durable ledger has no per-task durable egress delivery state or a `task_results` table for general results; it does have an ingress `deliveries` table used for webhook deduplication, but no persisted per-task provider_message_id, delivery_state, or automated delivery retry schedule. (See src/durable-objects/task-ledger.ts and src/tasks/types.ts.)\"",
+            "language": "text",
+            "title": "Suggested exact rewording for deliveries line",
+            "caption": "From accuracy.md suggested replacement (item 1)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Recommended next steps (from review): apply the three copy/citation edits and add the end-to-end tests called out in the report (e.g., tests to inject Telegram failures, pre-dispatch failures) as follow-up engineering work. See review/accuracy.md for exact test file names."
+          }
+        }
+      ]
+    }
+  ]
+}

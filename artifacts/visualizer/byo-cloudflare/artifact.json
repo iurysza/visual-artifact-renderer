@@ -1,0 +1,39 @@
+{
+  "slug": "byo-cloudflare",
+  "title": "BYO Cloudflare Publishing",
+  "description": "How visual artifacts get durable public URLs.",
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "Visualizer can publish artifacts to your own Cloudflare account: R2 stores the JSON and assets, a Worker serves the renderer.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": "visual-artifact-renderer",
+            "label": "Bucket"
+          },
+          {
+            "value": "visual-artifact",
+            "label": "Worker"
+          },
+          {
+            "value": "workers.dev root",
+            "label": "Base URL"
+          }
+        ]
+      }
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "Run visual-artifact setup cloudflare once, then create --publish from any spec."
+      }
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "slug": "flue-agent-output-lifecycle-audit",
+  "title": "Flue agent output lifecycle audit (Telegram tasks)",
+  "description": "Shows current result lifecycle vs required lifecycle, evidence of delivery-before/after completion, sandbox teardown data loss, routing behavior, and missing tests with file:line citations.",
+  "artifactType": "report",
+  "topics": [
+    "flue-agent",
+    "output-lifecycle",
+    "telegram"
+  ],
+  "data": {
+    "lifecycleComparison": [
+      {
+        "aspect": "When ledger marks 'completed'",
+        "current": "ledger.completeTask / completeGeneralTask is called before outbound notify",
+        "required": "persist deliverable and/or obtain durable notify ack before 'completed'",
+        "evidence": "src/tools/task-tools.ts:323-344; src/tools/task-tools.ts:398-424",
+        "status": "warn"
+      },
+      {
+        "aspect": "Where final artifacts live",
+        "current": "General-task files live only in sandbox (destroyed after delivery attempts)",
+        "required": "persist artifact bytes or R2 reference in ledger before sandbox.destroy",
+        "evidence": "src/telegram/files.ts:23-46; src/durable-objects/task-ledger.ts:1470-1488; src/tools/task-tools.ts:398-424",
+        "status": "risk"
+      },
+      {
+        "aspect": "Notification ordering & retries",
+        "current": "Notifications are best-effort; failures logged but not transitioned to delivery_pending/delivery_failed state",
+        "required": "delivery acknowledgement recorded; failures produce delivery_failed with retry schedule",
+        "evidence": "src/tools/task-tools.ts:323-344; src/tools/task-tools.ts:398-424",
+        "status": "warn"
+      },
+      {
+        "aspect": "Natural-language recovery/routing",
+        "current": "Natural follow-ups often cause new tasks; ledger.applyTelegramInput returns needs_task_request when no active draft (src/durable-objects/task-ledger.ts:336-386)",
+        "required": "recognize recovery intents and offer /resend or redelivery actions reading durable artifacts",
+        "evidence": "src/durable-objects/task-ledger.ts:336-386; src/telegram/format.ts:84",
+        "status": "warn"
+      }
+    ],
+    "deliveryStatus": [
+      {
+        "component": "Durable PR/URL persistence",
+        "status": "ok",
+        "notes": "PR URLs and metadata persisted (publish pathway). src/tools/task-tools.ts:323-344"
+      },
+      {
+        "component": "General-task artifact persistence",
+        "status": "risk",
+        "notes": "Files are sandbox-local and destroyed; ledger stores metadata only. src/telegram/files.ts:23-46; src/durable-objects/task-ledger.ts:1470-1488"
+      },
+      {
+        "component": "Notify ack & retry",
+        "status": "warn",
+        "notes": "Notify is best-effort; failures recorded as task_activity but not moved to retryable state. src/tools/task-tools.ts:323-344; src/tools/task-tools.ts:398-424"
+      },
+      {
+        "component": "Delivery observability",
+        "status": "ok",
+        "notes": "Delivery failures are recorded in task_activity for operators to inspect. src/observability/task-activity.ts"
+      }
+    ],
+    "missingTests": [
+      {
+        "test": "publishDraftPullRequest notification failure",
+        "targets": "src/tools/task-tools.ts",
+        "evidence": "ledger.completeTask then notify; notification errors ignored. src/tools/task-tools.ts:323-344",
+        "priority": "High"
+      },
+      {
+        "test": "completeGeneralTask delivery failure + retry path",
+        "targets": "src/tools/task-tools.ts",
+        "evidence": "completeGeneralTask completes then tries sendDocument; no retry asserted. src/tools/task-tools.ts:398-424",
+        "priority": "High"
+      },
+      {
+        "test": "artifact persistence vs sandbox destroy",
+        "targets": "src/tools/task-tools.ts, src/telegram/files.ts",
+        "evidence": "sandbox.destroy called after send attempts; no durable artifact written. src/tools/task-tools.ts:398-424; src/telegram/files.ts:23-46",
+        "priority": "High"
+      },
+      {
+        "test": "delivery error recorded in task_activity",
+        "targets": "src/observability/task-activity.ts, src/tools/task-tools.ts",
+        "evidence": "task_activity records delivery failures; verify recorded rows. src/observability/task-activity.ts; src/tools/task-tools.ts:398-424",
+        "priority": "Medium"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Flue agent output lifecycle audit — Telegram tasks (incidents B–D)"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Job: make delivery semantics and artifact lifetimes obvious to an operator. This page demonstrates where the ledger marks completion, where Telegram/GitHub delivery occurs (best-effort), what is lost at sandbox teardown, and which focused tests will reveal these failures.\n\nShort gist:\n- The app marks durable completion (ledger.completeTask / ledger.completeGeneralTask) before attempting outbound delivery. Notification failures are logged but do not revert completion (src/tools/task-tools.ts:323-344; 398-424).\n- General-task artifacts live only inside the sandbox and are destroyed on completion (src/telegram/files.ts:23-46; src/tools/task-tools.ts:398-424). Recoverability is therefore not possible unless artifacts are persisted to durable storage before destroy.\n- Routing: inbound dedupe and conversation isolation are enforced, but natural-language repair requests currently start new tasks rather than read the latest completed task."
+          }
+        },
+        {
+          "type": "mermaid",
+          "props": {
+            "code": "flowchart LR\n  Draft[Draft collection]\n  Draft --> Run[run interpretation]\n  Run --> Enqueue[enqueue intake work item]\n  Enqueue --> Queue[TASK_QUEUE]\n  Queue --> Dispatch[Agent dispatch]\n  Dispatch --> TerminalTool[Agent calls terminal tool]\n  TerminalTool --> LedgerComplete[ledger.completeTask or completeGeneralTask]\n  LedgerComplete --> Notify[sendTelegramMessage and sendDocument]\n  Notify --> Destroy[sandbox.destroy]\n  Dispatch --> AgentNarration[agent ends without terminal tool]\n  AgentNarration --> PossibleFail[observer marks failed and destroy]\n",
+            "caption": "Task lifecycle showing where durable completion vs delivery happen (evidence below)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "lifecycleComparison",
+            "columns": [
+              "aspect",
+              "current",
+              "required",
+              "evidence"
+            ],
+            "caption": "Current vs required lifecycle behaviour",
+            "statusKey": "status"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "deliveryStatus",
+            "titleKey": "component",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "ok": "done",
+              "risk": "risk",
+              "warn": "wait"
+            },
+            "groupOrder": [
+              "ok",
+              "risk",
+              "warn"
+            ],
+            "caption": "Delivery and artifact persistence status (operational risk)"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "missingTests",
+            "columns": [
+              "test",
+              "targets",
+              "evidence",
+              "priority"
+            ],
+            "caption": "Concrete tests to add (high priority first)"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "- publishDraftPullRequest: ledger.completeTask THEN notify (src/tools/task-tools.ts:323-344)\n- completeGeneralTask: claimTaskCompletion + completeGeneralTask THEN sendTelegramDocument, then sandbox.destroy (src/tools/task-tools.ts:398-424)\n- Telegram send throws on non-OK responses (src/telegram/send.ts:14-30,50-66,86-110)\n- Attachments staged only in sandbox; ledger keeps metadata (src/telegram/files.ts:23-46; src/durable-objects/task-ledger.ts:1470-1488)\n- Intake, draft collection, interpretation evidence: src/durable-objects/task-ledger.ts:447-666; src/tasks/intake.ts:98-130",
+            "language": "text",
+            "title": "Key evidence (file:line)"
+          }
+        }
+      ]
+    }
+  ]
+}

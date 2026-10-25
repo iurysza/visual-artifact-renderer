@@ -1,0 +1,124 @@
+{
+  "slug": "agent-benchmark-final-validation",
+  "title": "Agent Benchmark — Final Validation",
+  "description": "Acceptance board with each checked claim from ai-artifacts/agent-reliability-benchmark/review/final-validation.md: evidence, pass result, remaining implementation work, and scope verification.",
+  "artifactType": "review",
+  "topics": [
+    "agent-benchmark",
+    "validation"
+  ],
+  "data": {
+    "acceptanceBoard": [
+      {
+        "claim": "A durable 'deliveries' table exists but no 'task_results' or 'task_delivery' tables",
+        "evidence_reference": "src/durable-objects/task-ledger.ts:117; search: no matches for task_results|task_delivery",
+        "pass_result": "PASS",
+        "remaining_work": "Add task_results and task_delivery tables in upcoming implementation (migrations)",
+        "scope_verification": "Documentation-only claim; code changes not applied in this review"
+      },
+      {
+        "claim": "Completion is persisted before Telegram send and before Sandbox teardown",
+        "evidence_reference": "src/tools/task-tools.ts:409-418; src/durable-objects/task-ledger.ts:1518",
+        "pass_result": "PASS",
+        "remaining_work": "Change execution so result persisted + artifacts copied before marking completed in implementation",
+        "scope_verification": "Claim verified against current code; implementation change required for fix"
+      },
+      {
+        "claim": "Telegram send primitives are thin wrappers and do not persist provider_message_id/delivery state",
+        "evidence_reference": "src/telegram/send.ts:50-90",
+        "pass_result": "PASS",
+        "remaining_work": "Implement durable delivery consumer and task_delivery persistence",
+        "scope_verification": "Accurate for current code; future code changes expected"
+      },
+      {
+        "claim": "Dispatch acceptance/uncertain window ordering is correctly described",
+        "evidence_reference": "src/tasks/processor.ts:361-388; src/durable-objects/task-ledger.ts:1258-1288",
+        "pass_result": "PASS",
+        "remaining_work": "Add dispatch reconciliation workers/records in Phase 1 as recommended",
+        "scope_verification": "Documentation matches code; implementation pending"
+      },
+      {
+        "claim": "agent_end only updates tasks in ACTIVE_TASK_STATUSES",
+        "evidence_reference": "src/tasks/transitions.ts:5; src/observability/task-activity.ts:92-114",
+        "pass_result": "PASS",
+        "remaining_work": "None (documentation edit suggested to name whitelist explicitly)",
+        "scope_verification": "Verified; small doc edit recommended"
+      }
+    ],
+    "summary": [
+      {
+        "check": "Corrected report implements requested factual and citation fixes",
+        "result": "pass",
+        "notes": "Applied edits for deliveries wording, Telegram semantics, unknown_after_send, result/outbox invariant, result_version, active-status whitelist, rollout additive guidance"
+      },
+      {
+        "check": "No blockers found in corrected report",
+        "result": "pass",
+        "notes": "Report marks implementation tasks as next-release work; acceptance gate requires Phase 0 implementation when releasing code changes"
+      },
+      {
+        "check": "Repository unchanged for source files",
+        "result": "pass",
+        "notes": "Reviewed git metadata; HEAD commit recorded as evidence"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Final validation — acceptance board"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Scope: acceptance checks performed on the corrected report and evidence verified in repository source. Source: ai-artifacts/agent-reliability-benchmark/review/final-validation.md. Verdict: PASS — the corrected report implements the recommended factual and citation fixes and is internally consistent with repository state. Implementation work remains (additive DO tables, R2 persistence, delivery consumer) but those are outside the report approval scope."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "acceptanceBoard",
+            "columns": [
+              "claim",
+              "evidence_reference",
+              "pass_result",
+              "remaining_work",
+              "scope_verification"
+            ],
+            "caption": "Checked claims, exact evidence, pass result, and remaining implementation work (from review/final-validation.md)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Selected evidence notes (exact):\n- Durable object schema: src/durable-objects/task-ledger.ts:117 (CREATE TABLE IF NOT EXISTS deliveries ...). No `task_results`/`task_delivery` tables present.  \n- Completion persisted before sends: src/tools/task-tools.ts (completeGeneralTask) — ledger.claimTaskCompletion & ledger.completeGeneralTask occur before send calls (tools/task-tools.ts:409-418) and DO completeGeneralTask at src/durable-objects/task-ledger.ts:1518.  \n- Telegram send wrappers do not write ledger entries (src/telegram/send.ts:50-90).  \n- Dispatch acceptance ordering: src/tasks/processor.ts:361-388 (dispatch(...) then ledger.markQueueDispatched/completeQueueEvent).  \n- agent_end whitelist: src/tasks/transitions.ts:5 (ACTIVE_TASK_STATUSES = ['accepted','queued','running']) and observability/task-activity.ts behavior."
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "summary",
+            "titleKey": "check",
+            "bodyKey": "notes",
+            "groupKey": "result",
+            "signals": {
+              "pass": "done"
+            },
+            "groupOrder": [
+              "pass"
+            ],
+            "caption": "Summary acceptance board status"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Repository state verification performed during review:  \n- Current HEAD commit cited in review: 1a6932ac80cbad152becb0a8c995c4dcc92821cd (used to tie reviewed revision).  \n- No modified tracked source files were found; documentation-only changes were recorded.  \n(See review/final-validation.md 'No tracked source/project files were changed' and 'git ls-files -m' checks.)\n\nPASS: The corrected report is acceptable to merge as documentation; remaining items are implementation tasks tracked separately."
+          }
+        }
+      ]
+    }
+  ]
+}

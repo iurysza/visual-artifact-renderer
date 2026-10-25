@@ -1,0 +1,194 @@
+{
+  "slug": "visualizer-e2e-release-v0-3-3",
+  "title": "Visualizer e2e release validation",
+  "description": "End-to-end validation of the visual-artifact renderer releases from v0.3.1 through v0.3.3, including fixes, local install verification, and Cloudflare Worker deploy status.",
+  "createdAt": "2026-07-08T00:00:00Z",
+  "layout": {
+    "type": "default",
+    "columns": 2
+  },
+  "data": {
+    "releasePath": [
+      {
+        "version": "v0.3.1",
+        "marker": "#11",
+        "description": "Release failed and Cloudflare Worker deploy failed: app could not resolve @agents/visual-artifact-annotations during build.",
+        "status": "fail"
+      },
+      {
+        "version": "v0.3.2",
+        "marker": "#12",
+        "description": "Build-order fix landed. Cloudflare Worker deploy succeeded, but release failed while smoke-testing Linux binaries on macOS.",
+        "status": "warn"
+      },
+      {
+        "version": "v0.3.3",
+        "marker": "#13",
+        "description": "Release succeeded and uploaded assets. Cloudflare Worker deploy succeeded. Local curl install verified with visual-artifact doctor.",
+        "status": "pass"
+      }
+    ],
+    "fixes": [
+      {
+        "issue": "Build failed resolving @agents/visual-artifact-annotations",
+        "fix": "Build the shared package before the renderer in the release script and Cloudflare deploy workflow."
+      },
+      {
+        "issue": "Release failed smoke-testing Linux binaries on macOS",
+        "fix": "Skip incompatible binary smoke tests in the release script."
+      }
+    ],
+    "doctorChecks": [
+      {
+        "check": "out-dir",
+        "status": "ok",
+        "notes": "present"
+      },
+      {
+        "check": "artifacts-dir",
+        "status": "ok",
+        "notes": "present"
+      },
+      {
+        "check": "contract",
+        "status": "ok",
+        "notes": "valid"
+      },
+      {
+        "check": "server",
+        "status": "ok",
+        "notes": "reachable"
+      },
+      {
+        "check": "bun",
+        "status": "ok",
+        "notes": "installed"
+      },
+      {
+        "check": "pnpm",
+        "status": "ok",
+        "notes": "installed"
+      },
+      {
+        "check": "binary",
+        "status": "ok",
+        "notes": "functional"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "callout",
+      "props": {
+        "tone": "note",
+        "body": "Install visual-artifact v0.3.3. Release v0.3.3 succeeded, assets were uploaded, and the Cloudflare Worker deployment is live.",
+        "title": "Conclusion"
+      }
+    },
+    {
+      "type": "figures",
+      "props": {
+        "items": [
+          {
+            "value": "0.3.3",
+            "label": "Installed version",
+            "note": "up"
+          },
+          {
+            "value": "succeeded",
+            "label": "Release",
+            "note": "assets uploaded · up"
+          },
+          {
+            "value": "live",
+            "label": "Cloudflare Worker",
+            "note": "deploy succeeded · up"
+          }
+        ]
+      }
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Release path"
+      },
+      "children": [
+        {
+          "type": "timeline",
+          "props": {
+            "dataKey": "releasePath",
+            "titleKey": "version",
+            "markerKey": "marker",
+            "descriptionKey": "description",
+            "statusKey": "status"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Fixes that unblocked the release"
+      },
+      "children": [
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "fixes",
+            "columns": [
+              "issue",
+              "fix"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Install and smoke check"
+      },
+      "children": [
+        {
+          "type": "code",
+          "props": {
+            "code": "curl -fsSL https://github.com/iurysza/visual-artifact-renderer/releases/latest/download/install.sh | sh",
+            "language": "bash",
+            "title": "Install latest release"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "visual-artifact --version\nvisual-artifact doctor",
+            "language": "bash",
+            "title": "Smoke check"
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "props": {
+        "title": "visual-artifact doctor results"
+      },
+      "children": [
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "doctorChecks",
+            "titleKey": "check",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "ok": "done"
+            },
+            "groupOrder": [
+              "ok"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

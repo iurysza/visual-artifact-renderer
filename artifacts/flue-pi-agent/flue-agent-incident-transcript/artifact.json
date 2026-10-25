@@ -1,0 +1,117 @@
+{
+  "slug": "flue-agent-incident-transcript",
+  "title": "Flue Agent — Forensic Transcript Timeline",
+  "description": "Four-incident forensic timeline with exact observed messages/outcomes and an explicit statement of what each proves and does not prove (transcript-sourced).",
+  "artifactType": "explainer",
+  "topics": [
+    "reliability-benchmark",
+    "forensics",
+    "telegram"
+  ],
+  "data": {
+    "forensicTimeline": [
+      {
+        "marker": "A",
+        "title": "Incident A — repository setup retries & terminal failure",
+        "summary": "Model turns and tool attempts, repeated 'Reading project files' and network/restore steps, final public message 'Task setup failed after retries'. Observable sequence shows setup broken after retries; raw infra error redacted.",
+        "status": "failed",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:1-39"
+      },
+      {
+        "marker": "B",
+        "title": "Incident B — ordinary chat rejected (command-only)",
+        "summary": "User: 'U on?' → Bot: 'Tap /task, then send the task request in your next message.' Shows command-centric routing rejecting lightweight queries.",
+        "status": "info",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:43-50"
+      },
+      {
+        "marker": "C",
+        "title": "Incident C — transcription claimed, deliverable missing",
+        "summary": "User executes /task, provides voice note, agent claims 'Transcribed the supplied 7m 52s voice note, verified the complete transcript, and prepared the requested tightened copy. No workspace files were retained.' No Telegram message with the content appears.",
+        "status": "critical",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:95-142"
+      },
+      {
+        "marker": "D",
+        "title": "Incident D — previous output unrecoverable",
+        "summary": "User asks 'Where's the output?' → Bot forces /task flow; new task reports sandbox contains no prior artifacts and completes. Recovery produced no result.",
+        "status": "failed",
+        "evidence": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:145-190"
+      }
+    ],
+    "incidentMessages": [
+      {
+        "incident": "A",
+        "observed_messages": "Cloud Clanker: 'Model turn completed', 'Using tool report_progress failed after 0.2s', 'Reading project files failed after 0.4s', 'Workspace ready; agent dispatch accepted' then 'Task setup failed after retries'",
+        "outcome": "Task failed during setup; generic terminal failure",
+        "proves": "Setup stages were reached and repeated; tool/report failures observed",
+        "does_not_prove": "Which specific infra sub-step (auth/proxy/git) failed or whether dispatch succeeded in an atomic durable sense; protected logs required for proof",
+        "source": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:9-40"
+      },
+      {
+        "incident": "B",
+        "observed_messages": "User: 'U on?' → Cloud Clanker: 'Tap /task, then send the task request in your next message.'",
+        "outcome": "Chat-level query rejected; no task created",
+        "proves": "System enforces explicit /task intake for freeform messages",
+        "does_not_prove": "That help/health queries cannot be supported by product change",
+        "source": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:43-50"
+      },
+      {
+        "incident": "C",
+        "observed_messages": "'Download Telegram attachments', 'Reading project files failed after 1.0s', 'The voice note was transcribed and verified end-to-end. I’ve distilled it...'",
+        "outcome": "Agent claims prepared transcript but no deliverable observed in chat",
+        "proves": "The bot emitted a success claim and status-like summary while the requested content was absent from the observed chat",
+        "does_not_prove": "That Telegram delivery occurred successfully or that the final result was persisted outside the sandbox",
+        "source": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:113-142"
+      },
+      {
+        "incident": "D",
+        "observed_messages": "'Where's the output?' → Bot: 'Tap /task'; later new task reports 'no prior task context, files, or artifacts are available in this scratch workspace.'",
+        "outcome": "Prior output unrecoverable; new general task completed with no prior artifacts",
+        "proves": "The recovery request was routed into a new isolated task whose scratch workspace could not access the prior task workspace",
+        "does_not_prove": "Whether the original task attempted delivery and failed, or never attempted durable persistence",
+        "source": "ai-artifacts/agent-reliability-benchmark/incident-transcript.md:162-190"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "prose",
+      "props": {
+        "content": "The transcript proves a false-success failure, not a successful transcription: the requested text never appeared, and the next recovery attempt was routed into an isolated task with no durable result to resend.",
+        "size": "lead"
+      }
+    },
+    {
+      "type": "timeline",
+      "props": {
+        "dataKey": "forensicTimeline",
+        "titleKey": "title",
+        "markerKey": "marker",
+        "descriptionKey": "summary",
+        "statusKey": "status",
+        "caption": "Each row is one incident; summary is a concise narrative of observed messages and outcome."
+      }
+    },
+    {
+      "type": "table",
+      "props": {
+        "dataKey": "incidentMessages",
+        "columns": [
+          "incident",
+          "observed_messages",
+          "outcome",
+          "proves",
+          "does_not_prove"
+        ],
+        "caption": "Exact observed messages / outcomes and forensic claim mapping (quote excerpts with sources)"
+      }
+    },
+    {
+      "type": "prose",
+      "props": {
+        "content": "### Forensic takeaways (short)\n\nThe evidence shows repeated setup attempts, command-only routing, a success claim without the requested deliverable, and recovery through the wrong isolation boundary. It does not reveal Incident A’s protected infrastructure error or prove that transcription work actually completed."
+      }
+    }
+  ]
+}

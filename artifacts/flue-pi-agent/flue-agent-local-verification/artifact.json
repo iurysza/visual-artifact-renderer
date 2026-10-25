@@ -1,0 +1,165 @@
+{
+  "slug": "flue-agent-local-verification",
+  "title": "Flue Agent — Local Verification vs Production Contract",
+  "description": "Compact verification: what passed locally (tests/typecheck/build) and what remains untested against the production reliability contract (durable result, outbox, resend, stage checkpoints).",
+  "artifactType": "review",
+  "topics": [
+    "local-verification",
+    "reliability-tests",
+    "flue-agent"
+  ],
+  "data": {
+    "localChecks": [
+      {
+        "component": "npm test",
+        "status": "pass",
+        "notes": "18 files, 73 tests"
+      },
+      {
+        "component": "typecheck",
+        "status": "pass",
+        "notes": "TypeScript checks passed"
+      },
+      {
+        "component": "build",
+        "status": "pass",
+        "notes": "Cloudflare Worker build succeeded"
+      }
+    ],
+    "untestedContract": [
+      {
+        "invariant": "Persist final result before completion",
+        "tested_locally": "no",
+        "risk": "High",
+        "why_not_tested": "Local tests run unit-paths; no injected Telegram failure or DO persistence check (local-verification.md)"
+      },
+      {
+        "invariant": "Durable outbound outbox & provider acceptance",
+        "tested_locally": "no",
+        "risk": "High",
+        "why_not_tested": "No tests simulate Telegram API acceptance/timeout or ledger write-before-send (report.md evidence)"
+      },
+      {
+        "invariant": "Same-conversation resend without re-execution",
+        "tested_locally": "no",
+        "risk": "High",
+        "why_not_tested": "Control-plane resend uses ledger and R2; no tests assert zero Flue/Sandbox calls"
+      },
+      {
+        "invariant": "Stage-scoped retries and idempotency",
+        "tested_locally": "no",
+        "risk": "Medium",
+        "why_not_tested": "Processor-level retry/dispatch windows are not fuzzed by unit tests; need Queue/ledger integration tests"
+      },
+      {
+        "invariant": "Attachment durability (R2 manifest)",
+        "tested_locally": "no",
+        "risk": "High",
+        "why_not_tested": "Attachments written to sandbox paths only; no R2 copy test"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Local verification — quick verdict"
+      },
+      "children": [
+        {
+          "type": "figures",
+          "props": {
+            "items": [
+              {
+                "value": "18 files",
+                "label": "Test files",
+                "note": "73 tests passed",
+                "signal": "new"
+              },
+              {
+                "value": "passed",
+                "label": "Typecheck",
+                "note": "TS typecheck ok",
+                "signal": "new"
+              },
+              {
+                "value": "passed",
+                "label": "Build",
+                "note": "Cloudflare target built",
+                "signal": "new"
+              }
+            ]
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "localChecks",
+            "titleKey": "component",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "pass": "done"
+            },
+            "groupOrder": [
+              "pass"
+            ],
+            "caption": "Local CI checks executed during review"
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "untestedContract",
+            "columns": [
+              "invariant",
+              "tested_locally",
+              "risk",
+              "why_not_tested"
+            ],
+            "caption": "Production contract invariants not covered by local checks (short evidence)"
+          }
+        },
+        {
+          "type": "steps",
+          "props": {
+            "items": [
+              {
+                "title": "Add result persistence test",
+                "body": "Inject completion with simulated Telegram failure; assert task_results created and Sandbox not dest…"
+              },
+              {
+                "title": "Outbox delivery/resend simulation",
+                "body": "Simulate provider accept, provider timeout, and unknown_after_send; verify task_delivery states and…"
+              },
+              {
+                "title": "Stage-scoped retry tests",
+                "body": "Test setup stage retry vs execution stage retry; ensure checkpoints remain and no duplicate executi…"
+              }
+            ]
+          }
+        },
+        {
+          "type": "details",
+          "props": {
+            "summary": "Full step notes"
+          },
+          "children": [
+            {
+              "type": "prose",
+              "props": {
+                "content": "**Add result persistence test.** Inject completion with simulated Telegram failure; assert task_results created and Sandbox not destroyed; expected outcome: result persisted and outbox row created.\n\n**Outbox delivery/resend simulation.** Simulate provider accept, provider timeout, and unknown_after_send; verify task_delivery states and resend reads ledger (no Flue rerun).\n\n**Stage-scoped retry tests.** Test setup stage retry vs execution stage retry; ensure checkpoints remain and no duplicate execution."
+              }
+            }
+          ]
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "### Interpretation\n\nLocal unit tests, typecheck, and build are necessary hygiene but do not exercise the critical end-to-end invariants: result persistence, durable outbox, delivery acceptance recording, and in-conversation resend. See items under 'untested' for specific gaps."
+          }
+        }
+      ]
+    }
+  ]
+}

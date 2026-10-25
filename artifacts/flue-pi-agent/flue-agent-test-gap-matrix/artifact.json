@@ -1,0 +1,142 @@
+{
+  "slug": "flue-agent-test-gap-matrix",
+  "title": "Flue agent test gap matrix",
+  "description": "Incident→existing test→gap→new test→priority matrix with a concrete release gate. Uses actual repo findings and file:line evidence.",
+  "artifactType": "report",
+  "topics": [
+    "tests",
+    "coverage",
+    "reliability"
+  ],
+  "data": {
+    "testMatrix": [
+      {
+        "incident": "A — setup retries / terminal failure",
+        "existing_tests": "projectTaskActivity projection tests; ledger unit tests (src/observability/task-activity.test.ts; src/durable-objects/task-ledger.test.ts)",
+        "what_they_prove": "Observability mapping and durable bookkeeping (claim/dispatch flows)",
+        "gap": "No unit/integration tests for processTaskMessage (pre-dispatch release, post-dispatch 'uncertain') or cloudflare.queue retry finalization",
+        "new_test": "src/tasks/processor.test.ts: (1) success; (2) pre-dispatch failure -> ledger.releaseQueueEvent called; (3) post-dispatch failure -> 'uncertain' & failUncertainDispatch. Add cloudflare.queue test for MAX_QUEUE_ATTEMPTS exhaustion.",
+        "priority": "High",
+        "release_gate": "Must have processor pre/post-dispatch tests + cloudflare queue test (see gateSummary 'processor-tests' & 'queue-tests')"
+      },
+      {
+        "incident": "B — ordinary chat guidance 'Tap /task'",
+        "existing_tests": "ledger claim tests and formatting tests (src/durable-objects/task-ledger.test.ts; src/telegram/format.test.ts)",
+        "what_they_prove": "Ledger classification and user-facing formatting",
+        "gap": "No channels-level webhook test verifying final webhook reply structure",
+        "new_test": "src/channels/telegram.test.ts: stub ledger.claimTelegram -> needs_task_request and assert webhook reply { method: 'sendMessage', text contains 'Tap /task' }",
+        "priority": "Medium",
+        "release_gate": "Optional for immediate hotfix; required before UI changes that affect webhook response format"
+      },
+      {
+        "incident": "C — intake/transcription OK but workspace/cleanup problems",
+        "existing_tests": "interpretTaskIntake audio tests; readResponseBodyWithLimit streaming tests (src/tasks/intake.test.ts; src/telegram/files.test.ts)",
+        "what_they_prove": "Audio transcription integration + safe streaming",
+        "gap": "stageTelegramAttachments (write into sandbox) and completeGeneralTask (delivery + sandbox.destroy) are not unit-tested",
+        "new_test": "src/telegram/files.test.ts: stageTelegramAttachments behavior; src/tools/task-tools.test.ts: completeGeneralTask happy/failure (delivery failure -> record activity, sandbox.destroy called)",
+        "priority": "High",
+        "release_gate": "Must have completeGeneralTask delivery tests and artifact persistence assertions (gateSummary 'tools-delivery')"
+      },
+      {
+        "incident": "D — previous output cannot be recovered",
+        "existing_tests": "ledger listing, logs selection, formatting tests (src/durable-objects/task-ledger.test.ts; src/telegram/format.test.ts)",
+        "what_they_prove": "Ledger exposes activity & formatting works",
+        "gap": "No tests for publishDraftPullRequest and retention model (sandbox.destroy removes files; lack of durable artifact test)",
+        "new_test": "src/tools/task-tools.test.ts: publishDraftPullRequest happy path + notification failure path; retention-model test asserting sandbox.destroy removes workspace while ledger retains PR URL/metadata",
+        "priority": "High",
+        "release_gate": "Must include publish/persistence tests and a retention-model assertion (gateSummary 'publish-tests' & 'retention-test')"
+      }
+    ],
+    "gateSummary": [
+      {
+        "check": "processor-tests",
+        "status": "required",
+        "notes": "processor pre/post-dispatch unit tests (src/tasks/processor.test.ts) must pass"
+      },
+      {
+        "check": "queue-tests",
+        "status": "required",
+        "notes": "cloudflare.queue retry/exhaustion test must pass"
+      },
+      {
+        "check": "tools-delivery",
+        "status": "required",
+        "notes": "publishDraftPullRequest + completeGeneralTask delivery/failure tests must pass"
+      },
+      {
+        "check": "telegram-files",
+        "status": "recommended",
+        "notes": "stageTelegramAttachments unit tests recommended before broad changes to attachments"
+      },
+      {
+        "check": "retention-test",
+        "status": "required",
+        "notes": "test demonstrating retention vs sandbox destroy semantics (policy decision)"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "type": "chapter",
+      "props": {
+        "title": "Test gap matrix — agent-reliability-benchmark"
+      },
+      "children": [
+        {
+          "type": "prose",
+          "props": {
+            "content": "Job: present a dense, actionable matrix mapping each incident to the existing tests that touch it, the precise gaps, the new tests to write, and the priority. Include an explicit release gate (what must land before rolling a fix)."
+          }
+        },
+        {
+          "type": "table",
+          "props": {
+            "dataKey": "testMatrix",
+            "columns": [
+              "incident",
+              "existing_tests",
+              "what_they_prove",
+              "gap",
+              "new_test",
+              "priority",
+              "release_gate"
+            ],
+            "caption": "Incident → tests → gaps → new tests → priority"
+          }
+        },
+        {
+          "type": "ledger",
+          "props": {
+            "dataKey": "gateSummary",
+            "titleKey": "check",
+            "bodyKey": "notes",
+            "groupKey": "status",
+            "signals": {
+              "required": "wait",
+              "recommended": "new"
+            },
+            "groupOrder": [
+              "required",
+              "recommended"
+            ],
+            "caption": "Release gate checklist (summary)"
+          }
+        },
+        {
+          "type": "code",
+          "props": {
+            "code": "# Release gate for reliability patch\n# 1) add & pass processor pre/post-dispatch tests (src/tasks/processor.test.ts)\n# 2) add & pass publish/complete delivery-failure tests (src/tools/task-tools.test.ts)\n# 3) add stageTelegramAttachments tests (src/telegram/files.test.ts)\n# 4) add cloudflare.queue retry exhaustion test (src/cloudflare.test.ts)\n# 5) CI must show zero regressions; docs updated with 'delivery_failed' state and retention policy\n\n# Example CI job names that must pass:\n# - test:processor\n# - test:tools-delivery\n# - test:telegram-files\n# - test:cloudflare-queue\n",
+            "language": "bash",
+            "title": "Exact release gate (copyable)"
+          }
+        },
+        {
+          "type": "prose",
+          "props": {
+            "content": "Notes: priorities drawn from research/04-local-test-gap-matrix.md. 'High' tests are minimally sufficient to reproduce the incidents and prevent regressions; 'Medium' tests harden secondary behaviors (routing, intake), 'Low' tests are polish."
+          }
+        }
+      ]
+    }
+  ]
+}

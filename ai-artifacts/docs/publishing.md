@@ -97,6 +97,32 @@ https://<worker>.<subdomain>.workers.dev/<project>/<slug>/
 
 `localUrl` is included for debugging.
 
+## Republish a contract 3 port
+
+Contract 3 dropped the legacy node types. Specs already stored in R2 stay on the old contract until someone uploads a replacement `artifact.json`. The public Worker `https://visual-artifact.iurysza.workers.dev` reads those objects from the R2 bucket `visual-artifact-renderer` at:
+
+```text
+artifacts/<project>/<slug>/artifact.json
+```
+
+Ported copies of the 38 specs that index served on 12 October 2026 are in this repo under `artifacts/<project>/<slug>/artifact.json`. `visual-artifact validate` accepts each one, and the dev server renders them. This repo change does not upload them.
+
+To port another saved spec:
+
+```bash
+cd cli
+bun run scripts/port-contract-3.ts --from <dir-of-old-specs> --to <artifacts-dir>
+```
+
+`<dir-of-old-specs>` may hold `project/slug/artifact.json`, `project/slug.json`, or `project__slug.json`.
+
+To replace a live spec, upload that file to the same R2 key. You need a publish profile (`visual-artifact setup cloudflare`) plus:
+
+- `VISUAL_ARTIFACT_CLOUDFLARE_R2_ACCESS_KEY_ID`
+- `VISUAL_ARTIFACT_CLOUDFLARE_R2_SECRET_ACCESS_KEY`
+
+Leave `annotations.json` in place. `visual-artifact create --publish` uploads the whole bundle, and a missing local `annotations.json` becomes an empty hosted comment document. `create` also names the project from the git root of `--project`, so running it in this checkout would publish under `visual-artifact-renderer` instead of the original project. Put only `artifact.json` on the existing key.
+
 The CLI writes `publish.json` beside `artifact.json`. It stores non-secret publish state only. Secrets stay in environment variables. Publish profiles are stored under:
 
 ```text
