@@ -18,7 +18,7 @@
     "./mermaid-validator": "./dist/mermaid-validator.js"
   },
   "dependencies": {
-    "linkedom": "^0.18.13",
+    "linkedom": "^0.18.14",
     "mermaid": "^12.2.0",
     "zod": "^4.6.7"
   },
