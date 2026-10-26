@@ -74,6 +74,13 @@ describe("library filtering", () => {
     assert.deepEqual(keys("project:ui-v2-samples"), ["diagram-gallery"], "a folded copy's project still finds its row")
     assert.deepEqual(keys("is:published"), ["diagram-gallery"])
     assert.deepEqual(keys("updated:7d"), ["week", "diagram-gallery"])
+    assert.deepEqual(keys("date:>7d"), ["week", "diagram-gallery"])
+    assert.deepEqual(keys("has:comments"), ["week", "refactor-v3"])
+    assert.deepEqual(keys("type:explainer has:comments"), ["week"])
+    assert.deepEqual(keys("topic:agents topic:missing"), ["bench"])
+    assert.deepEqual(keys("is:open is:published"), ["week", "diagram-gallery", "refactor-v3"])
+    assert.deepEqual(keys("date:7d..90d"), ["bench"])
+    assert.deepEqual(keys("created:>7d tag:react"), [], "unknown qualifiers stay free text and match nothing here")
   })
 
   test("facet counts ignore their own selection", () => {
