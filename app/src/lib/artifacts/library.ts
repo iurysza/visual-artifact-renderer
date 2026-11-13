@@ -2,7 +2,7 @@ import { differenceInCalendarWeeks, format, startOfWeek } from "date-fns"
 
 import { ARTIFACT_TYPES, type ArtifactType } from "@/lib/contract/artifact-schema"
 import type { RecentArtifact } from "./artifact-index"
-import { parseLibraryQuery, type LibraryQuery, type LibraryState } from "./library-query"
+import { dateMatches, parseLibraryQuery, type LibraryQuery, type LibraryState } from "./library-query"
 
 const DAY_MS = 86_400_000
 export const NEW_WITHIN_DAYS = 7
@@ -142,8 +142,13 @@ export interface MatchOptions {
   includeFixtures?: boolean
 }
 
+function hasTopic(row: LibraryRow, topic: string): boolean {
+  return (row.artifact.topics ?? []).some((value) => value.toLowerCase() === topic)
+}
+
 /**
- * Operators of one key are OR, different keys are AND, terms are AND.
+ * Qualifiers of one key are OR, different keys are AND, terms are AND.
+ * `date:` and `updated:` share one OR group because both read `modifiedAt`.
  * Fixtures stay out unless `is:fixture` is set or the reader typed a search term.
  */
 export function rowMatches(row: LibraryRow, query: LibraryQuery, { now, ignore, includeFixtures }: MatchOptions): boolean {
@@ -151,10 +156,11 @@ export function rowMatches(row: LibraryRow, query: LibraryQuery, { now, ignore, 
   if (ignore !== "type" && query.types.length > 0 && !(a.artifactType && query.types.includes(a.artifactType))) return false
   if (ignore !== "project" && query.projects.length > 0
     && !query.projects.includes(a.project) && !row.folded.some((f) => query.projects.includes(f.artifact.project))) return false
-  if (query.topics.length > 0 && !query.topics.every((topic) => a.topics?.includes(topic))) return false
-  if (query.updatedWithinDays !== undefined && now - Date.parse(a.modifiedAt) > query.updatedWithinDays * DAY_MS) return false
+  if (query.topics.length > 0 && !query.topics.some((topic) => hasTopic(row, topic))) return false
+  if (query.dates.length > 0 && !query.dates.some((clause) => dateMatches(a.modifiedAt, clause, now))) return false
+  if (query.has.length > 0 && !query.has.some((flag) => flag === "comments" && row.openThreads > 0)) return false
   if (ignore !== "state") {
-    if (!query.states.every((state) => hasState(row, state, now))) return false
+    if (query.states.length > 0 && !query.states.some((state) => hasState(row, state, now))) return false
     if (!includeFixtures && row.fixture && !query.states.includes("fixture") && query.terms.length === 0) return false
   }
   if (query.terms.length > 0) {

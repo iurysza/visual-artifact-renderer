@@ -31,6 +31,7 @@ import {
   withoutKey,
   type LibraryState,
 } from "@/lib/artifacts/library-query"
+import { buildSearchCatalog, suggestQualifiers } from "@/lib/artifacts/library-suggest"
 import { replaceLocationSearch, useLocationSearch } from "@/lib/navigation/location-search"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -107,6 +108,8 @@ function Library({ index }: { index: ArtifactIndex }) {
 
   const artifacts = useMemo(() => index.artifacts ?? index.recent ?? [], [index])
   const rows = useMemo(() => foldArtifacts(artifacts), [artifacts])
+  const catalog = useMemo(() => buildSearchCatalog(rows, artifacts, now), [rows, artifacts, now])
+  const suggest = useCallback((raw: string, caret: number) => suggestQualifiers(raw, caret, catalog), [catalog])
   const results = useMemo(() => filterRows(rows, q, now), [rows, q, now])
   const facets = useMemo(() => libraryFacets(rows, q, now), [rows, q, now])
   const groups = useMemo(() => groupRows(results.slice(0, limit), grouping, now), [results, limit, grouping, now])
@@ -161,6 +164,7 @@ function Library({ index }: { index: ArtifactIndex }) {
             inputRef={inputRef}
             label="Search the library"
             placeholder="Search, or try is:open type:review"
+            suggest={suggest}
           />
         </div>
         <Sheet>
