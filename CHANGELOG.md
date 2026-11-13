@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/iurysza/visual-artifact-renderer/compare/v1.0.1...v1.0.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* **extension:** make visual artifact guidelines opt-in ([#85](https://github.com/iurysza/visual-artifact-renderer/issues/85)) ([977f897](https://github.com/iurysza/visual-artifact-renderer/commit/977f8974fafbd6a48399c1cdd8e5b6dc1653b3cd))
+
 ## [1.0.1](https://github.com/iurysza/visual-artifact-renderer/compare/v1.0.0...v1.0.1) (2026-10-12)
 
 
