@@ -77,7 +77,7 @@ describe("Pi package", () => {
     const directionTool = tools[0]!
     expect(directionTool.parameters.required).toEqual(["question", "directions"])
     expect(directionTool.promptGuidelines).toContain(
-      "Before creating a user-requested visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.",
+      "Once the user has explicitly asked for a visual artifact, call choose_visual_artifact_direction exactly once with 2–4 distinct directions tailored to the request. Do this before inspecting sources or building the spec.",
     )
 
     const tool = tools[1]!
@@ -90,6 +90,23 @@ describe("Pi package", () => {
     expect(tool.promptGuidelines).toContain(
       "Always classify the artifact with exactly one artifactType and 2–5 concise lowercase kebab-case topics.",
     )
+  })
+
+  test("scopes every guideline to an explicit visual artifact request", () => {
+    const tools: Array<{ name: string; promptGuidelines: string[]; promptSnippet: string }> = []
+    visualArtifactExtension({
+      on: () => {},
+      registerCommand: () => {},
+      registerTool: (tool: (typeof tools)[number]) => tools.push(tool),
+    } as never)
+
+    for (const tool of tools) {
+      expect(tool.promptGuidelines[0]).toContain("opt-in")
+      expect(tool.promptGuidelines[0]).toContain("write plain HTML as asked")
+      expect(tool.promptSnippet).toContain("explicitly asks for a visual artifact")
+    }
+    const rule = tools[1]!.promptGuidelines.find((g) => g.includes("standalone HTML"))!
+    expect(rule).toContain("restricts visual artifacts only")
   })
 
   test("returns the selected direction as a generation instruction", async () => {

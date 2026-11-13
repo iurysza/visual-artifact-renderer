@@ -1,11 +1,11 @@
 ---
 name: visual-artifact
-description: Use when the user wants a rendered visual artifact from code or data.
+description: Use only when the user explicitly asks for a visual artifact or VAR by name. Not for plain HTML, report or page requests.
 ---
 
 # visual-artifact
 
-Use this skill when the user wants a rendered artifact page: report, dashboard, diagram, code review, architecture brief, explainer, component gallery, or structured summary.
+Use this skill only when the user explicitly asks for a visual artifact or VAR by name. A plain request for HTML, a page or a report is not one: write HTML as asked. When they do ask, it covers a rendered artifact page: report, dashboard, diagram, code review, architecture brief, explainer, component gallery, or structured summary.
 
 ## Core rule
 
