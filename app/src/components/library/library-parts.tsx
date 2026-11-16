@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type RefObject } from "react"
+import { useEffect, useId, useRef, useState, type RefObject } from "react"
 import Link from "next/link"
 import { format, formatDistanceToNowStrict } from "date-fns"
 import { SearchIcon, XIcon } from "lucide-react"
@@ -8,7 +8,8 @@ import { SearchIcon, XIcon } from "lucide-react"
 import type { ArtifactType } from "@/lib/contract/artifact-schema"
 import { artifactPagePath } from "@/lib/artifacts/paths"
 import { isNew, type LibraryRow } from "@/lib/artifacts/library"
-import { operatorToken, queryOperators, withoutOperator, type QueryOperator } from "@/lib/artifacts/library-query"
+import { activeToken, operatorToken, queryOperators, withoutOperator, type QueryOperator } from "@/lib/artifacts/library-query"
+import { applySuggestion, type QualifierSuggestion } from "@/lib/artifacts/library-suggest"
 
 export type LoadState<T> =
   | { status: "loading" }
@@ -87,35 +88,134 @@ interface SearchBoxProps {
   onChange: (value: string) => void
   placeholder: string
   inputRef: RefObject<HTMLInputElement | null>
-  /** Operators that cannot be removed here, such as the page's own project. */
+  /** Qualifiers that cannot be removed here, such as the page's own project. */
   locked?: QueryOperator[]
   label: string
+  /** Qualifier completions for the token under the caret. Omit to disable the menu. */
+  suggest?: (raw: string, cursor: number) => QualifierSuggestion[]
 }
 
-/** Search input with removable operator chips. Chips mirror the text; the text stays editable. */
-export function SearchBox({ value, onChange, placeholder, inputRef, locked = [], label }: SearchBoxProps) {
+/** Search input with removable qualifier chips and a completion menu. */
+export function SearchBox({ value, onChange, placeholder, inputRef, locked = [], label, suggest }: SearchBoxProps) {
   const ops = queryOperators(value)
+  const listId = useId().replace(/:/g, "")
+  const [cursor, setCursor] = useState(0)
+  const [focused, setFocused] = useState(false)
+  const [closedFor, setClosedFor] = useState<string | null>(null)
+  const token = activeToken(value, cursor)
+  const atEnd = cursor === token.end
+  const suggestions = atEnd ? suggest?.(value, cursor) ?? [] : []
+  const open = focused && suggestions.length > 0 && closedFor !== token.text
+  const [active, setActive] = useState(0)
+  const signature = suggestions.map((item) => item.insert).join("\0")
+  const [signatureSeen, setSignatureSeen] = useState(signature)
+  if (signature !== signatureSeen) {
+    setSignatureSeen(signature)
+    setActive(0)
+  }
+  const activeIndex = suggestions.length === 0 ? 0 : Math.min(active, suggestions.length - 1)
+  const optionId = (index: number) => `${listId}-opt-${index}`
+  const pendingCaret = useRef<number | null>(null)
+
+  useEffect(() => {
+    const caret = pendingCaret.current
+    if (caret === null) return
+    pendingCaret.current = null
+    const input = inputRef.current
+    if (!input) return
+    input.focus()
+    input.setSelectionRange(caret, caret)
+    setCursor(caret)
+  }, [value, inputRef])
+
+  useEffect(() => {
+    if (!open) return
+    document.getElementById(`${listId}-opt-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" })
+  }, [open, activeIndex, listId])
+
+  function syncCursor(target: HTMLInputElement) {
+    setCursor(target.selectionStart ?? target.value.length)
+  }
+
+  function accept(suggestion: QualifierSuggestion) {
+    const next = applySuggestion(value, cursor, suggestion)
+    pendingCaret.current = next.cursor
+    onChange(next.value)
+    setCursor(next.cursor)
+    setClosedFor(null)
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      <label className="lib-search">
-        <SearchIcon aria-hidden className="size-4 shrink-0 text-ink-muted" />
-        {locked.map((op) => <span key={operatorToken(op)} className="lib-chip">{operatorToken(op)}</span>)}
-        <span className="sr-only">{label}</span>
-        <input
-          ref={inputRef}
-          type="search"
-          value={value}
-          spellCheck={false}
-          autoComplete="off"
-          placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Escape") return
-            if (value) { event.preventDefault(); onChange("") } else event.currentTarget.blur()
-          }}
-        />
-        <span className="lib-kbd hidden sm:inline" aria-hidden>/</span>
-      </label>
+      <div className="relative">
+        <label className="lib-search">
+          <SearchIcon aria-hidden className="size-4 shrink-0 text-ink-muted" />
+          {locked.map((op) => <span key={operatorToken(op)} className="lib-chip">{operatorToken(op)}</span>)}
+          <span className="sr-only">{label}</span>
+          <input
+            ref={inputRef}
+            type="search"
+            role="combobox"
+            value={value}
+            spellCheck={false}
+            autoComplete="off"
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-activedescendant={open ? optionId(activeIndex) : undefined}
+            aria-haspopup="listbox"
+            placeholder={placeholder}
+            onFocus={(event) => { setFocused(true); syncCursor(event.currentTarget) }}
+            onBlur={() => setFocused(false)}
+            onSelect={(event) => syncCursor(event.currentTarget)}
+            onKeyUp={(event) => syncCursor(event.currentTarget)}
+            onClick={(event) => syncCursor(event.currentTarget)}
+            onChange={(event) => { onChange(event.target.value); syncCursor(event.target) }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                if (suggestions.length === 0) return
+                event.preventDefault()
+                setClosedFor(null)
+                if (!open) {
+                  setActive(event.key === "ArrowUp" ? suggestions.length - 1 : 0)
+                  return
+                }
+                const delta = event.key === "ArrowDown" ? 1 : -1
+                setActive(Math.max(0, Math.min(suggestions.length - 1, activeIndex + delta)))
+                return
+              }
+              if ((event.key === "Enter" || event.key === "Tab") && open) {
+                event.preventDefault()
+                const suggestion = suggestions[activeIndex]
+                if (suggestion) accept(suggestion)
+                return
+              }
+              if (event.key !== "Escape") return
+              if (open) { event.preventDefault(); setClosedFor(token.text); return }
+              if (value) { event.preventDefault(); onChange("") } else event.currentTarget.blur()
+            }}
+          />
+          <span className="lib-kbd hidden sm:inline" aria-hidden>/</span>
+        </label>
+        {open && (
+          <ul id={listId} role="listbox" aria-label="Search suggestions" className="lib-suggest">
+            {suggestions.map((suggestion, index) => (
+              <li
+                key={suggestion.insert}
+                id={optionId(index)}
+                role="option"
+                aria-selected={index === activeIndex}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActive(index)}
+                onClick={() => accept(suggestion)}
+              >
+                <span>{suggestion.label}</span>
+                {suggestion.hint && <span className="hint lib-num">{suggestion.hint}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       {ops.length > 0 && (
         <div className="flex flex-wrap gap-1.5" aria-label="Active filters">
           {ops.map((op) => (
