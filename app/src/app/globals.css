@@ -363,6 +363,10 @@ html.dark {
 .lib-search:focus-within { border-color: var(--rule-strong); box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal-wait) 18%, transparent); }
 .lib-search input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline: none; font-size: 0.9375rem; color: var(--ink); }
 .lib-search input::placeholder { color: var(--ink-muted); }
+.lib-suggest { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; max-height: 18rem; overflow: auto; margin: 0; padding: 4px; list-style: none; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 12px 32px oklch(0 0 0 / 0.1); }
+.lib-suggest [role="option"] { display: flex; align-items: baseline; gap: 12px; padding: 7px 8px; border-radius: 6px; font: 500 0.8125rem/1.35 var(--font-geist-mono), ui-monospace, monospace; color: var(--ink); cursor: pointer; }
+.lib-suggest [role="option"][aria-selected="true"] { background: var(--lib-fill); }
+.lib-suggest .hint { margin-left: auto; font-weight: 400; color: var(--ink-muted); }
 .lib-chip { display: inline-flex; align-items: center; gap: 4px; font: 500 0.75rem/1 var(--font-geist-mono), ui-monospace, monospace; background: var(--lib-fill); color: var(--ink); border-radius: 6px; padding: 5px 7px; white-space: nowrap; }
 .lib-chip button { color: var(--ink-muted); line-height: 1; padding: 0 0 0 2px; border-radius: 3px; }
 .lib-chip button:hover { color: var(--ink); }
